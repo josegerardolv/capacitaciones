@@ -9,5 +9,6 @@ export const environment = {
     tokenUrl: 'http://192.168.1.204:3000/oauth/token',
     revokeUrl: 'http://192.168.1.204:3000/oauth/revoke',
     introspectUrl: 'http://192.168.1.204:3000/oauth/introspect'
-  }
+  },
+  useMockAuth: true
 };

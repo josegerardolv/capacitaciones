@@ -10,6 +10,10 @@ import { routes } from './app/app.routes';
 import { authInterceptor } from './app/core/interceptors/auth.interceptor';
 import { errorInterceptor } from './app/core/interceptors/error.interceptor';
 
+import { environment } from './environments/environment';
+import { AuthService } from './app/core/services/auth.service';
+import { MockAuthService } from './app/core/services/mock-auth.service';
+
 bootstrapApplication(AppComponent, {
   providers: [
     provideRouter(routes),
@@ -20,7 +24,11 @@ bootstrapApplication(AppComponent, {
       ])
     ),
     provideAnimations(),
-  // Material Design providers: habilitar MatIconModule para <mat-icon>
-  importProvidersFrom(MatIconModule),
+    importProvidersFrom(MatIconModule),
+    // Provider conditional for Mock Auth
+    {
+      provide: AuthService,
+      useClass: environment.useMockAuth ? MockAuthService : AuthService
+    }
   ]
 }).catch(err => console.error(err));
