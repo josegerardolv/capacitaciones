@@ -1,0 +1,62 @@
+{
+  "name": "semovi-frontend",
+  "version": "1.0.0",
+  "scripts": {
+    "ng": "ng",
+    "start": "ng serve",
+    "start:all": "ng serve --host 0.0.0.0 --port 4200",
+    "build": "ng build",
+    "build:prod": "ng build --configuration production",
+    "watch": "ng build --watch --configuration development",
+    "test": "ng test",
+    "lint": "ng lint"
+  },
+  "private": true,
+  "dependencies": {
+    "@angular/animations": "^20.2.4",
+    "@angular/cdk": "^20.2.2",
+    "@angular/common": "^20.2.4",
+    "@angular/compiler": "^20.2.4",
+    "@angular/core": "^20.2.4",
+    "@angular/forms": "^20.2.4",
+    "@angular/material": "^20.2.2",
+    "@angular/platform-browser": "^20.2.4",
+    "@angular/platform-browser-dynamic": "^20.2.4",
+    "@angular/router": "^20.2.4",
+    "@angular/service-worker": "^20.2.4",
+    "@types/qrcode": "^1.5.5",
+    "@zxing/library": "^0.21.3",
+    "@zxing/ngx-scanner": "^20.0.0",
+    "material-design-icons": "^3.0.1",
+    "qrcode": "^1.5.4",
+    "rxjs": "^7.8.2",
+    "tslib": "^2.8.1",
+    "zone.js": "~0.15.0"
+  },
+  "devDependencies": {
+    "@angular-devkit/build-angular": "^20.2.2",
+    "@angular/cli": "^20.2.2",
+    "@angular/compiler-cli": "^20.2.4",
+    "@tailwindcss/forms": "^0.5.9",
+    "@tailwindcss/typography": "^0.5.15",
+    "@types/jasmine": "~5.1.9",
+    "@types/node": "^18.19.123",
+    "autoprefixer": "^10.4.20",
+    "jasmine-core": "~5.9.0",
+    "karma": "~6.4.4",
+    "karma-chrome-launcher": "~3.2.0",
+    "karma-coverage": "~2.2.1",
+    "karma-jasmine": "~5.1.0",
+    "karma-jasmine-html-reporter": "~2.1.0",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17",
+    "typescript": "~5.9.2"
+  },
+  "overrides": {
+    "vite": ">=7.1.11"
+  },
+  "engines": {
+    "node": ">=18.13.0",
+    "npm": ">=8.19.0"
+  }
+}

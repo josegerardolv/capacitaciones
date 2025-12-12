@@ -1,0 +1,144 @@
+/* Institutional Table Sticky Columns - Maximum Specificity Override */
+
+/* Ultra-specific selectors to override global CSS */
+.institucional-table-responsive .institucional-table.has-sticky-columns,
+.institucional-table-responsive .institucional-table:has(.institucional-table-column-sticky-right),
+.institucional-table-responsive table.institucional-table {
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  table-layout: fixed !important;
+  position: relative !important;
+}
+
+/* Ultra-specific sticky column selectors */
+.institucional-table-responsive .institucional-table th.institucional-table-header.institucional-table-column-sticky-right,
+.institucional-table-responsive .institucional-table td.institucional-table-cell.institucional-table-column-sticky-right {
+  position: sticky !important;
+  position: -webkit-sticky !important;
+  right: 0 !important;
+  z-index: 1000 !important;
+  min-width: 180px !important;
+  width: 180px !important;
+  max-width: 180px !important;
+  border-left: 3px solid var(--institucional-secundario) !important;
+  box-shadow: -5px 0 15px rgba(139, 21, 56, 0.3) !important;
+}
+
+/* === RESPONSIVE STICKY COLUMNS === */
+@media (max-width: 768px) {
+  .institucional-table-responsive .institucional-table th.institucional-table-header.institucional-table-column-sticky-right,
+  .institucional-table-responsive .institucional-table td.institucional-table-cell.institucional-table-column-sticky-right {
+    min-width: 140px !important;
+    width: 140px !important;
+    max-width: 140px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .institucional-table-responsive .institucional-table th.institucional-table-header.institucional-table-column-sticky-right,
+  .institucional-table-responsive .institucional-table td.institucional-table-cell.institucional-table-column-sticky-right {
+    min-width: 120px !important;
+    width: 120px !important;
+    max-width: 120px !important;
+  }
+}
+
+/* Headers with ultra-high specificity */
+.institucional-table-responsive .institucional-table thead th.institucional-table-header.institucional-table-column-sticky-right {
+  background: linear-gradient(135deg, var(--institucional-primario) 0%, var(--institucional-secundario) 50%, var(--institucional-terciario) 100%) !important;
+  color: white !important;
+  z-index: 1001 !important;
+  top: 0 !important;
+}
+
+/* Data cells with ultra-high specificity */
+.institucional-table-responsive .institucional-table tbody td.institucional-table-cell.institucional-table-column-sticky-right {
+  background-color: #ffffff !important;
+  z-index: 1000 !important;
+}
+
+/* Left sticky (if needed) */
+.institucional-table-responsive .institucional-table th.institucional-table-header.institucional-table-column-sticky-left,
+.institucional-table-responsive .institucional-table td.institucional-table-cell.institucional-table-column-sticky-left {
+  position: sticky !important;
+  position: -webkit-sticky !important;
+  left: 0 !important;
+  z-index: 1000 !important;
+  border-right: 3px solid var(--institucional-secundario) !important;
+  box-shadow: 5px 0 15px rgba(139, 21, 56, 0.3) !important;
+}
+
+/* Enhanced hover with max specificity */
+.institucional-table-responsive .institucional-table tbody tr:hover td.institucional-table-cell.institucional-table-column-sticky-right {
+  background-color: rgba(139, 21, 56, 0.05) !important;
+}
+
+/* Container styling with max specificity */
+.institucional-table-responsive {
+  position: relative !important;
+  overflow-x: auto !important;
+  overflow-y: visible !important;
+  width: 100% !important;
+  -webkit-overflow-scrolling: touch !important; /* Smooth scrolling on iOS */
+}
+
+/* === RESPONSIVE SCROLLBAR === */
+/* Force container to respect sticky positioning */
+.institucional-table-responsive::-webkit-scrollbar {
+  height: 8px !important;
+}
+
+.institucional-table-responsive::-webkit-scrollbar-track {
+  background: #f1f1f1 !important;
+}
+
+.institucional-table-responsive::-webkit-scrollbar-thumb {
+  background: var(--institucional-secundario) !important;
+  border-radius: 4px !important;
+}
+
+/* Mobile scrollbar improvements */
+@media (max-width: 768px) {
+  .institucional-table-responsive::-webkit-scrollbar {
+    height: 6px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .institucional-table-responsive::-webkit-scrollbar {
+    height: 4px !important;
+  }
+}
+
+/* === RESPONSIVE TABLE IMPROVEMENTS === */
+@media (max-width: 640px) {
+  .institucional-table-responsive {
+    margin: 0 -1rem !important; /* Extend to screen edges on mobile */
+    border-radius: 0 !important;
+  }
+}
+
+/* CSS Grid fallback for extreme cases */
+@supports not (position: sticky) {
+  .institucional-table-responsive {
+    display: grid !important;
+    grid-template-columns: 1fr 180px !important;
+  }
+  
+  .institucional-table-column-sticky-right {
+    grid-column: 2 !important;
+    position: relative !important;
+  }
+  
+  @media (max-width: 768px) {
+    .institucional-table-responsive {
+      grid-template-columns: 1fr 140px !important;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .institucional-table-responsive {
+      grid-template-columns: 1fr 120px !important;
+    }
+  }
+}

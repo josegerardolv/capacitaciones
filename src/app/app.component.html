@@ -1,0 +1,14 @@
+<!-- Layout administrativo para rutas admin (con sidebar, notificaciones, etc.) -->
+<app-layout-wrapper *ngIf="isAdminLayout"></app-layout-wrapper>
+
+<!-- Layout público para rutas públicas (header institucional + footer) -->
+<app-public-layout *ngIf="isPublicLayout"></app-public-layout>
+
+<!-- Router outlet directo para rutas sin layout (login, 404, unauthorized) -->
+<router-outlet *ngIf="isNoLayout"></router-outlet>
+
+<!-- Contenedor de notificaciones globales -->
+<app-notification-container></app-notification-container>
+
+<!-- Modal de carga global -->
+<app-loading-modal [isOpen]="loadingOpen" [config]="loadingConfig" [hasContent]="false" (modalClose)="loadingOpen = false"></app-loading-modal>

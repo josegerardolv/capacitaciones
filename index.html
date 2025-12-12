@@ -1,0 +1,438 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Asignar persona a área — Maquetado</title>
+  <style>
+    :root{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;--muted:#666;}
+    body{max-width:900px;margin:28px auto;padding:20px;border:1px solid #eee;border-radius:8px;background:#fff;}
+    h1{font-size:20px;margin:0 0 12px;}
+    form{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+    label{font-size:13px;color:var(--muted);display:block;margin-bottom:6px;}
+    input[type="text"], input[type="date"], select, textarea{
+      width:100%;padding:8px;border:1px solid #ccc;border-radius:6px;font-size:14px;
+    }
+    .full{grid-column:1 / -1;}
+    .tree{max-height:200px;overflow:auto;border:1px solid #e6e6e6;padding:8px;border-radius:6px;background:#fafafa;}
+    .area-node{padding:4px 6px;border-radius:4px;cursor:pointer;}
+    .area-node:hover{background:#eef;}
+    .suggestions{position:relative;}
+    .list{position:absolute;background:#fff;border:1px solid #ddd;border-radius:6px;z-index:10;width:100%;max-height:160px;overflow:auto;margin-top:6px;}
+    .list div{padding:8px;cursor:pointer;}
+    .list div:hover{background:#f0f8ff;}
+    .meta{font-size:12px;color:var(--muted);}
+    .btn{padding:10px 14px;border-radius:6px;border:0;background:#0b6cff;color:#fff;cursor:pointer;}
+    .btn:disabled{opacity:.6;cursor:not-allowed;}
+    .error{color:#b00020;font-size:13px;margin-top:6px;}
+    .help{font-size:12px;color:var(--muted);}
+    .summary{background:#f7f9fc;padding:10px;border-radius:6px;border:1px solid #eef;margin-top:12px;}
+  .badge{display:inline-block;padding:2px 8px;border-radius:999px;background:#eef;color:#024;color:#024;font-size:12px;margin-left:6px}
+  .card{background:#fff;border:1px solid #e6e6e6;padding:8px;border-radius:6px;display:flex;gap:8px;align-items:center}
+  .avatar{width:40px;height:40px;border-radius:50%;background:#0b6cff;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600}
+  .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .muted{color:var(--muted);font-size:13px}
+  .progress{height:8px;background:#e9eefb;border-radius:6px;overflow:hidden}
+  .progress > i{display:block;height:100%;background:#0b6cff;width:0%}
+  .breadcrumb{font-size:13px;color:#333;margin-top:6px}
+  .small-btn{padding:6px 10px;border-radius:6px;border:0;background:#e6eefc;color:#0b6cff;cursor:pointer}
+  </style>
+</head>
+<body>
+  <h1>Formulario: Asignar persona a un área</h1>
+
+  <p class="help" style="margin-top:6px;">Sigue estos pasos: 1) busca o escribe el nombre de la persona; 2) selecciona el área desde el árbol (puedes buscar áreas); 3) selecciona rol/plaza y fechas; luego guarda.</p>
+
+  <form id="assignForm" autocomplete="off">
+    <div class="full">
+      <label for="person">Persona (buscar)</label>
+      <div class="suggestions">
+        <input id="person" name="person" type="text" placeholder="Nombre, número de empleado o email" />
+        <div id="personList" class="list" style="display:none"></div>
+      </div>
+      <div id="personMeta" class="meta"></div>
+    </div>
+
+    <div class="full">
+      <label for="areaFilter">Área (seleccionar en el árbol)</label>
+  <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
+        <input id="areaFilter" type="search" placeholder="Buscar área por nombre" aria-label="Buscar área" style="flex:1;padding:8px;border-radius:6px;border:1px solid #ccc;" />
+        <button id="clearAreaFilter" type="button" class="btn" style="background:#666">Limpiar</button>
+      </div>
+  <div class="help" style="margin-bottom:6px;">Consejo: primero elige el sector principal, luego selecciona el área; usa el filtro para encontrar nombres.</div>
+  <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center;">
+    <select id="areaRoot" aria-label="Sector principal" style="min-width:220px;padding:8px;border-radius:6px;border:1px solid #ccc;"></select>
+    <select id="areaSelect" aria-label="Seleccionar área" style="flex:1;padding:8px;border-radius:6px;border:1px solid #ccc;"></select>
+    <button id="showAllAreas" type="button" class="small-btn" title="Mostrar todas las áreas">Mostrar todo</button>
+  </div>
+  <div style="display:flex;justify-content:space-between;align-items:center;">
+    <div id="areaResults" class="muted">Resultados: —</div>
+    <div id="areaBreadcrumb" class="breadcrumb">Ruta: —</div>
+  </div>
+  <div id="areaMeta" class="meta">Área seleccionada: <strong><span id="areaSelected">—</span></strong></div>
+    </div>
+
+    <div>
+      <label for="role">Rol / Título</label>
+      <select id="role" name="role"><option value="">(ninguno)</option></select>
+    </div>
+
+    <div>
+      <label for="position">Plaza / Posición (si aplica)</label>
+      <select id="position" name="position"><option value="">(ninguna)</option></select>
+      <div id="positionMeta" class="meta"></div>
+    </div>
+
+    <div>
+      <label for="start_date">Fecha inicio</label>
+      <input id="start_date" name="start_date" type="date" />
+    </div>
+
+    <div>
+      <label for="end_date">Fecha fin (opcional)</label>
+      <input id="end_date" name="end_date" type="date" />
+    </div>
+
+    <div>
+      <label><input id="is_primary" name="is_primary" type="checkbox" /> Titular principal</label>
+      <div class="help">Marcar si es la persona principal para el cargo en el área.</div>
+    </div>
+
+    <div class="full">
+      <label for="notes">Notas</label>
+      <textarea id="notes" name="notes" rows="3" placeholder="Comentarios, tipo de nombramiento, etc."></textarea>
+    </div>
+
+    <div class="full" style="display:flex;gap:8px;align-items:center;">
+      <button id="exampleBtn" type="button" class="small-btn">Ejemplo</button>
+      <button id="submitBtn" type="submit" class="btn" disabled>Guardar asignación</button>
+      <div id="formError" class="error" role="alert"></div>
+    </div>
+
+    <div class="full">
+      <div class="summary card" id="summaryCard">
+        <div class="avatar" id="summaryAvatar">A</div>
+        <div style="flex:1">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <div id="summaryName"><strong>Sin persona</strong></div>
+              <div class="muted" id="summaryEmail">—</div>
+            </div>
+            <div class="muted" id="summaryArea">Área: —</div>
+          </div>
+          <div class="info-grid" style="margin-top:8px;">
+            <div>Rol: <span id="summaryRole">—</span></div>
+            <div>Plaza: <span id="summaryPosition">—</span></div>
+            <div>Inicio: <span id="summaryStart">—</span></div>
+            <div>Fin: <span id="summaryEnd">—</span></div>
+          </div>
+          <div style="margin-top:8px;" class="muted">Notas: <span id="summaryNotes">—</span></div>
+        </div>
+      </div>
+    </div>
+  </form>
+
+  <script>
+    // Datos demo (reemplazar por llamadas reales a la API)
+    const PEOPLE = [
+      {id:1, first_name:"Ana", last_name:"Pérez", employee_number:"E001", email:"ana.perez@oax.gob"},
+      {id:2, first_name:"Luis", last_name:"García", employee_number:"E002", email:"luis.g@oax.gob"},
+      {id:3, first_name:"María", last_name:"Lopez", employee_number:"E003", email:"mlopez@oax.gob"}
+    ];
+
+    const AREAS = [
+      {id:1, name:"Secretaría", parent_id:null},
+      {id:2, name:"Subsecretaría de Planeación", parent_id:1},
+      {id:3, name:"Dirección de Planeación y Políticas", parent_id:2},
+      {id:4, name:"Dirección de Concesiones", parent_id:1},
+      {id:5, name:"Departamento de Concesiones", parent_id:4},
+      {id:6, name:"Subsecretaría de Regulación y Control del Transporte", parent_id:1},
+      // Departamentos añadidos
+      {id:7, name:"Departamento de Planeación Técnica", parent_id:3},
+      {id:8, name:"Departamento de Investigación y Estadística", parent_id:3},
+      {id:9, name:"Sección de Permisos y Licencias", parent_id:5},
+      {id:10, name:"Departamento de Fiscalización", parent_id:6}
+    ];
+
+    const ROLES = [
+      {id:1, name:"Director"},
+      {id:2, name:"Jefe de Departamento"},
+      {id:3, name:"Analista"}
+    ];
+
+    const POSITIONS = [
+      {id:10, area_id:3, role_id:1, title:"Director de Planeación", slots:1},
+      {id:11, area_id:5, role_id:2, title:"Jefe de Concesiones", slots:1},
+  {id:12, area_id:5, role_id:3, title:"Analista de Concesiones", slots:2},
+  // Posiciones para departamentos nuevos
+  {id:13, area_id:7, role_id:2, title:"Jefe de Departamento de Planeación Técnica", slots:1},
+  {id:14, area_id:8, role_id:3, title:"Analista de Investigación y Estadística", slots:2},
+  {id:15, area_id:9, role_id:3, title:"Técnico de Permisos", slots:2},
+  {id:16, area_id:10, role_id:2, title:"Jefe de Fiscalización", slots:1}
+    ];
+
+    // Estado seleccionado
+    let selectedPerson = null;
+    let selectedArea = null;
+    let selectedPosition = null;
+
+    // Rellenar roles
+    const roleSelect = document.getElementById('role');
+    ROLES.forEach(r=> roleSelect.insertAdjacentHTML('beforeend', `<option value="${r.id}">${r.name}</option>`));
+
+    // Autocomplete simple para personas
+    const personInput = document.getElementById('person');
+    const personList = document.getElementById('personList');
+    const personMeta = document.getElementById('personMeta');
+
+    personInput.addEventListener('input', () => {
+      // Cuando el usuario escribe, permitimos tanto seleccionar una persona existente
+      // como dejar un nombre libre para crear/usar más tarde.
+      const q = personInput.value.trim();
+      selectedPerson = null; // resetear selección si el usuario vuelve a teclear
+      personMeta.textContent = q ? `Nombre: ${q} (no seleccionado)` : '';
+      if(!q){ personList.style.display='none'; return; }
+      const qlow = q.toLowerCase();
+      const matches = PEOPLE.filter(p => `${p.first_name} ${p.last_name}`.toLowerCase().includes(qlow) ||
+                                         (p.employee_number||'').toLowerCase().includes(qlow) ||
+                                         (p.email||'').toLowerCase().includes(qlow));
+      if(matches.length===0){
+        // mostrar mensaje de no resultados pero permitir envio del nombre
+        personList.innerHTML = '<div class="no-results">No se encontraron resultados</div>';
+        personList.style.display = 'block';
+        return;
+      }
+      personList.innerHTML = matches.map(p => `<div data-id="${p.id}">${p.first_name} ${p.last_name} — <span class="meta">${p.email} • ${p.employee_number}</span></div>`).join('');
+      personList.style.display = 'block';
+    });
+
+    personList.addEventListener('click', (ev)=>{
+      const node = ev.target.closest('div[data-id]');
+      if(!node) return;
+      const id = Number(node.dataset.id);
+      selectedPerson = PEOPLE.find(p=>p.id===id);
+      personInput.value = `${selectedPerson.first_name} ${selectedPerson.last_name}`;
+      personList.style.display = 'none';
+      personMeta.textContent = `Empleado: ${selectedPerson.employee_number || '-'} • ${selectedPerson.email || '-'}`;
+    });
+
+    document.addEventListener('click', (ev)=>{
+      if(!ev.target.closest('.suggestions')) personList.style.display='none';
+    });
+
+    // Construir árbol de áreas
+    const areaTreeEl = document.getElementById('areaTree');
+    function buildTree(arr){
+      const map = new Map();
+      arr.forEach(a=> map.set(a.id, {...a, children:[]}));
+      const roots = [];
+      for(const a of map.values()){
+        if(a.parent_id) map.get(a.parent_id)?.children.push(a);
+        else roots.push(a);
+      }
+      return roots;
+    }
+    // Construir lista plana de áreas con ruta completa (ej: Secretaría > Subsecretaría > Dirección)
+    function buildPaths(arr){
+      const map = new Map();
+      arr.forEach(a=> map.set(a.id, {...a, children:[]}));
+      for(const a of map.values()) if(a.parent_id) map.get(a.parent_id)?.children.push(a);
+      const roots = Array.from(map.values()).filter(a => !a.parent_id);
+
+      const out = [];
+      function walk(node, path){
+        const full = path ? path + ' > ' + node.name : node.name;
+        out.push({id: node.id, name: node.name, path: full});
+        if(node.children) node.children.forEach(c => walk(c, full));
+      }
+      roots.forEach(r=> walk(r, ''));
+      return out;
+    }
+
+  const AREA_PATHS = buildPaths(AREAS); // lista de {id,name,path}
+  const areaSelect = document.getElementById('areaSelect');
+  const areaRoot = document.getElementById('areaRoot');
+
+  // Poblar roots (sectores principales)
+  const ROOTS = buildTree(AREAS).map(r=>({id:r.id, name:r.name}));
+  areaRoot.innerHTML = '<option value="">(todos los sectores)</option>' + ROOTS.map(r=>`<option value="${r.id}">${r.name}</option>`).join('');
+    function populateAreaSelect(list){
+      // Si no hay filtro y no hay root seleccionado, agrupamos por sector (optgroup)
+      const q = areaFilter.value.trim();
+      const rootId = Number(areaRoot.value) || null;
+      if(!q && !rootId){
+        // agrupar por primer segmento de path (root name)
+        const groups = {};
+        list.forEach(a=>{
+          const rootName = a.path.split(' > ')[0];
+          if(!groups[rootName]) groups[rootName]=[];
+          groups[rootName].push(a);
+        });
+        areaSelect.innerHTML = '<option value="">(seleccione un área)</option>' + Object.keys(groups).map(root=>{
+          const opts = groups[root].map(a=>`<option value="${a.id}">${a.path}</option>`).join('');
+          return `<optgroup label="${root}">${opts}</optgroup>`;
+        }).join('');
+      } else {
+        areaSelect.innerHTML = '<option value="">(seleccione un área)</option>' + list.map(a=>`<option value="${a.id}">${a.path}</option>`).join('');
+      }
+      document.getElementById('areaResults').textContent = `Resultados: ${list.length}`;
+    }
+    populateAreaSelect(AREA_PATHS);
+
+    // Filtrado del select por el campo areaFilter
+    const areaFilter = document.getElementById('areaFilter');
+    const clearAreaFilter = document.getElementById('clearAreaFilter');
+    function refreshAreaSelect(){
+      const rootId = Number(areaRoot.value) || null;
+      const q = areaFilter.value.trim().toLowerCase();
+      let list = AREA_PATHS.slice();
+      if(rootId){
+        const rootName = ROOTS.find(r=>r.id===rootId)?.name.toLowerCase();
+        list = list.filter(a => a.path.toLowerCase().startsWith(rootName));
+      }
+      if(q) list = list.filter(a => a.path.toLowerCase().includes(q));
+      populateAreaSelect(list);
+      // Actualizar breadcrumb si hay selección
+      const sel = Number(areaSelect.value) || null;
+      document.getElementById('areaBreadcrumb').textContent = sel ? AREA_PATHS.find(p=>p.id===sel).path : 'Ruta: —';
+    }
+    areaFilter.addEventListener('input', refreshAreaSelect);
+    areaRoot.addEventListener('change', refreshAreaSelect);
+    clearAreaFilter.addEventListener('click', ()=>{ areaFilter.value=''; areaRoot.value=''; populateAreaSelect(AREA_PATHS); areaFilter.focus(); });
+
+    areaSelect.addEventListener('change', ()=>{
+      const id = Number(areaSelect.value);
+      if(!id){ selectedArea = null; document.getElementById('areaSelected').textContent = '—'; document.getElementById('areaBreadcrumb').textContent='Ruta: —'; positionSelect.innerHTML = '<option value="">(ninguna)</option>'; updateSummary(); return; }
+      selectedArea = AREAS.find(a=>a.id===id);
+      const path = AREA_PATHS.find(p=>p.id===id).path;
+      document.getElementById('areaSelected').textContent = path;
+      document.getElementById('areaBreadcrumb').textContent = path;
+      loadPositionsForArea(id);
+      updateSummary();
+    });
+
+    document.getElementById('showAllAreas').addEventListener('click', ()=>{ areaFilter.value=''; areaRoot.value=''; populateAreaSelect(AREA_PATHS); areaFilter.focus(); });
+
+    // Cargar posiciones cuando se selecciona un área
+    const positionSelect = document.getElementById('position');
+    const positionMeta = document.getElementById('positionMeta');
+
+    function loadPositionsForArea(areaId){
+      positionSelect.innerHTML = '<option value="">(ninguna)</option>';
+      const poss = POSITIONS.filter(p=>p.area_id === areaId);
+      if(poss.length===0){ positionMeta.textContent = 'No hay plazas definidas para esta área.'; return; }
+      poss.forEach(p=>{
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = `${p.title} — slots: ${p.slots}`;
+        positionSelect.appendChild(opt);
+      });
+      positionMeta.textContent = `Seleccione una plaza; slots totales mostrados.`;
+    }
+
+    // --- Resumen dinámico ---
+    function updateSummary(){
+      const avatar = document.getElementById('summaryAvatar');
+      const nameEl = document.getElementById('summaryName');
+      const emailEl = document.getElementById('summaryEmail');
+      const areaEl = document.getElementById('summaryArea');
+      const roleEl = document.getElementById('summaryRole');
+      const posEl = document.getElementById('summaryPosition');
+      const startEl = document.getElementById('summaryStart');
+      const endEl = document.getElementById('summaryEnd');
+      const notesEl = document.getElementById('summaryNotes');
+
+      if(selectedPerson){
+        const initials = (selectedPerson.first_name[0]||'').toUpperCase() + (selectedPerson.last_name[0]||'').toUpperCase();
+        avatar.textContent = initials;
+        nameEl.innerHTML = `<strong>${selectedPerson.first_name} ${selectedPerson.last_name}</strong>`;
+        emailEl.textContent = selectedPerson.email || '-';
+      } else {
+        const typed = personInput.value.trim();
+        avatar.textContent = (typed ? typed[0].toUpperCase() : 'A');
+        nameEl.innerHTML = typed ? `<strong>${typed}</strong>` : '<strong>Sin persona</strong>';
+        emailEl.textContent = '-';
+      }
+
+      areaEl.textContent = 'Área: ' + (selectedArea ? AREA_PATHS.find(p=>p.id===selectedArea.id).path : '—');
+      const roleId = Number(document.getElementById('role').value) || null;
+      const role = ROLES.find(r=>r.id===roleId);
+      roleEl.textContent = role ? role.name : '—';
+      const posId = Number(positionSelect.value) || null;
+      const pos = POSITIONS.find(p=>p.id===posId);
+      posEl.textContent = pos ? pos.title : '—';
+      startEl.textContent = document.getElementById('start_date').value || '—';
+      endEl.textContent = document.getElementById('end_date').value || '—';
+      notesEl.textContent = document.getElementById('notes').value || '—';
+    }
+
+    // Listeners para refrescar resumen
+    personInput.addEventListener('input', updateSummary);
+    document.getElementById('role').addEventListener('change', updateSummary);
+    document.getElementById('position').addEventListener('change', updateSummary);
+    document.getElementById('start_date').addEventListener('change', updateSummary);
+    document.getElementById('end_date').addEventListener('change', updateSummary);
+    document.getElementById('notes').addEventListener('input', updateSummary);
+    updateSummary();
+
+    // Al seleccionar plaza, mostrar vacantes (demo: calcular ocupadas aleatoriamente)
+    positionSelect.addEventListener('change', ()=>{
+      const id = Number(positionSelect.value);
+      if(!id){ positionMeta.textContent = 'Sin plaza seleccionada.'; selectedPosition=null; return; }
+      selectedPosition = POSITIONS.find(p=>p.id===id);
+      // Demo: contar 'ocupadas' con número aleatorio pequeño
+      const ocupadas = Math.floor(Math.random() * (selectedPosition.slots + 1));
+      const disponibles = Math.max(0, selectedPosition.slots - ocupadas);
+      positionMeta.textContent = `Plaza: ${selectedPosition.title} • slots: ${selectedPosition.slots} • ocupadas: ${ocupadas} • disponibles: ${disponibles}`;
+      // almacenar disponible en el element dataset para validación
+      positionSelect.dataset.disponibles = String(disponibles);
+    });
+
+  // Form submit: validaciones y resumen
+  const form = document.getElementById('assignForm');
+  const formError = document.getElementById('formError');
+  const summaryMessage = document.getElementById('summaryMessage');
+  document.getElementById('start_date').valueAsDate = new Date();
+
+    form.addEventListener('submit', (ev)=>{
+      ev.preventDefault();
+      formError.textContent = '';
+      // Validar campos mínimos
+      const typedName = personInput.value.trim();
+      if(!selectedPerson && !typedName){ formError.textContent = 'Seleccione una persona válida o escriba el nombre.'; return; }
+      if(!selectedArea){ formError.textContent = 'Seleccione un área.'; return; }
+      const start = document.getElementById('start_date').value;
+      const end = document.getElementById('end_date').value;
+      if(!start){ formError.textContent = 'Ingrese fecha de inicio.'; return; }
+      if(end && end < start){ formError.textContent = 'La fecha fin no puede ser anterior a la fecha inicio.'; return; }
+      // Validar plazas disponibles si hay plaza seleccionada
+      const posVal = positionSelect.value;
+      if(posVal){
+        const disponibles = Number(positionSelect.dataset.disponibles || 0);
+        if(disponibles <= 0){ formError.textContent = 'No hay vacantes disponibles en la plaza seleccionada.'; return; }
+      }
+      // Construir payload
+      const payload = {
+        person_id: selectedPerson ? selectedPerson.id : null,
+        person_name: selectedPerson ? null : (personInput.value.trim() || null),
+        area_id: selectedArea.id,
+        role_id: (document.getElementById('role').value || null),
+        area_position_id: posVal ? Number(posVal) : null,
+        start_date: start,
+        end_date: end || null,
+        is_primary: document.getElementById('is_primary').checked,
+        notes: document.getElementById('notes').value || null
+      };
+      // Mostrar payload en el panel resumen (demo)
+      summaryMessage.innerHTML = `<strong>Payload (demo):</strong>
+        <pre>${JSON.stringify(payload, null, 2)}</pre>`;
+      // Aquí se enviaría con fetch('/api/assignments', {method:'POST', body:JSON.stringify(payload)})
+      // Simular respuesta 201
+      setTimeout(()=> {
+        summaryMessage.innerHTML += `<div style="color:green;margin-top:8px;">Asignación creada (demo).</div>`;
+        updateSummary();
+      }, 500);
+    });
+  </script>
+</body>
+</html>

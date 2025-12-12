@@ -1,0 +1,6100 @@
+/* ========================================
+   SISTEMA DE SOPORTE TÉCNICO institucional
+   Archivo CSS Unificado
+   Versión: 2.0
+   ======================================== */
+
+/* ===========================================
+   IMPORTS Y DEPENDENCIAS EXTERNAS
+   =========================================== */
+/* External Google Fonts import removed for offline/build stability.
+  If you want to enable Montserrat from Google Fonts, restore the line below
+  but ensure the build environment has network access.
+
+  @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap');
+*/
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ===========================================
+   VARIABLES CSS INSTITUCIONALES
+   =========================================== */
+:root {
+  /* === COLORES PRINCIPALES institucional === */
+  --institucional-primario: #621132; /* Pantone 7421 */
+  --institucional-primario-dark: #4D0E27;
+  --institucional-primario-light: #7E1642;
+
+  --institucional-secundario: #9D2449; /* Pantone 7420 */
+  --institucional-secundario-dark: #7E1C3A;
+  --institucional-secundario-light: #B82C55;
+  
+  --institucional-terciario: #B38E5D; /* Pantone 465 */
+  --institucional-terciario-dark: #8F724A;
+  --institucional-terciario-light: #C4A976;
+
+  --institucional-vino: #722F37;
+  --institucional-vino-dark: #5A252A;
+  --institucional-vino-light: #8F3C45;
+  
+
+  /* Colores de apoyo y neutros */
+  --institucional-neutro-oscuro: #4E232E; /* Pantone 504 */
+  --institucional-neutro-claro: #D4C19C; /* Pantone 468 */
+
+  /* Colores adicionales para detalles */
+  --institucional-adicional-1: #56242A; /* Pantone 490 */
+  
+  /* === COLORES GUBERNAMENTALES PARA ESTADÍSTICAS === */
+  --stats1: #9f3f8e;
+  --stats2: #fe851c;
+  --stats3: #5276ba;
+  --stats4: #00b023;
+  --stats5: #ff4c64;
+  --stats6: #fec152;
+  --stats7: #0797d4;
+  --stats8: #9d2648;
+  --stats9: #00afa5;
+  --stats10: #ffffff;
+  
+  /* === COLORES DE SISTEMA === */
+  --primary-blue: #3b82f6;
+  --primary-blue-hover: #2563eb;
+  --primary-blue-dark: #1e40af;
+  
+  /* === COLORES PARA BOTONES === */
+  /* Primary */
+  --btn-primary: var(--institucional-primario);
+  --btn-primary-hover: var(--institucional-primario-light);
+  --btn-primary-active: var(--institucional-primario-dark);
+  --btn-primary-text: #ffffff;
+  
+  /* Secondary */
+  --btn-secondary: var(--institucional-secundario);
+  --btn-secondary-hover: var(--institucional-secundario-light);
+  --btn-secondary-active: var(--institucional-secundario-dark);
+  --btn-secondary-text: #ffffff;
+  
+  /* Success */
+  --btn-success: var(--success);
+  --btn-success-hover: #059669;
+  --btn-success-active: #047857;
+  --btn-success-text: #ffffff;
+  
+  /* Warning */
+  --btn-warning: var(--warning);
+  --btn-warning-hover: #d97706;
+  --btn-warning-active: #b45309;
+  --btn-warning-text: #ffffff;
+  
+  /* Danger */
+  --btn-danger: var(--error);
+  --btn-danger-hover: #dc2626;
+  --btn-danger-active: #b91c1c;
+  --btn-danger-text: #ffffff;
+  
+  /* Info */
+  --btn-info: var(--info);
+  --btn-info-hover: #0891b2;
+  --btn-info-active: #0e7490;
+  --btn-info-text: #ffffff;
+  
+  /* Light */
+  --btn-light: var(--gray-100);
+  --btn-light-hover: var(--gray-200);
+  --btn-light-active: var(--gray-300);
+  --btn-light-text: var(--institucional-primario);
+  
+  /* Dark */
+  --btn-dark: var(--gray-800);
+  --btn-dark-hover: var(--gray-700);
+  --btn-dark-active: var(--gray-900);
+  --btn-dark-text: #ffffff;
+  
+  /* Link */
+  --btn-link: transparent;
+  --btn-link-hover: rgba(139, 21, 56, 0.05);
+  --btn-link-active: rgba(139, 21, 56, 0.1);
+  --btn-link-text: var(--institucional-primario);
+  
+  /* Ghost */
+  --btn-ghost: transparent;
+  --btn-ghost-hover: rgba(139, 21, 56, 0.05);
+  --btn-ghost-active: rgba(139, 21, 56, 0.1);
+  --btn-ghost-text: var(--institucional-primario);
+  --btn-ghost-border: var(--institucional-primario);
+  
+  /* Modal Close */
+  --btn-modal-close: rgba(255, 255, 255, 0.1);
+  --btn-modal-close-hover: rgba(255, 255, 255, 0.2);
+  --btn-modal-close-active: rgba(255, 255, 255, 0.3);
+  --btn-modal-close-text: #ffffff;
+  --btn-modal-close-border: rgba(255, 255, 255, 0.3);
+  
+  /* Disabled */
+  --btn-disabled: var(--gray-300);
+  --btn-disabled-text: var(--gray-500);
+  --btn-disabled-border: var(--gray-300);
+  
+  /* === GRISES PROFESIONALES === */
+  --gray-50: #f8fafc;
+  --gray-100: #f1f5f9;
+  --gray-200: #e2e8f0;
+  --gray-300: #cbd5e1;
+  --gray-400: #94a3b8;
+  --gray-500: #64748b;
+  --gray-600: #475569;
+  --gray-700: #334155;
+  --gray-800: #1e293b;
+  --gray-900: #0f172a;
+  
+  /* === COLORES DE ESTADO === */
+  --success: #10b981;
+  --warning: #f59e0b;
+  --error: #ef4444;
+  --info: #06b6d4;
+  
+  /* === SOMBRAS INSTITUCIONALES === */
+  --shadow-institucional: 0 4px 6px -1px rgba(139, 21, 56, 0.1), 0 2px 4px -1px rgba(139, 21, 56, 0.06);
+  --shadow-institucional-lg: 0 10px 15px -3px rgba(139, 21, 56, 0.1), 0 4px 6px -2px rgba(139, 21, 56, 0.05);
+  --shadow-rosa: 0 4px 6px -1px rgba(214, 51, 132, 0.1), 0 2px 4px -1px rgba(214, 51, 132, 0.06);
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  
+  /* === BORDES Y RADIOS === */
+  --border-radius: 0.375rem;
+  --border-radius-lg: 0.5rem;
+  --border-radius-xl: 0.75rem;
+  
+  /* === TRANSICIONES === */
+  --transition-fast: 150ms ease-out;
+  --transition-normal: 300ms ease-in-out;
+  --transition-slow: 500ms ease-in-out;
+  
+  /* === PATRONES ALTERNATIVOS A GRADIENTES === */
+  --pattern-dots: radial-gradient(circle at 1px 1px, rgba(139, 21, 56, 0.1) 1px, transparent 0);
+  --pattern-stripes: repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(139, 21, 56, 0.05) 2px, rgba(139, 21, 56, 0.05) 4px);
+  --header-solid: var(--institucional-primario);
+  --accent-solid: var(--institucional-secundario);
+
+  /* Los charts usan directamente las variables --stats-* definidas arriba.
+     Se eliminaron las variables intermedias --chart-color-* para evitar duplicidad. */
+}
+
+/* ===========================================
+   TIPOGRAFÍA GLOBAL - SOLO MONTSERRAT
+   =========================================== */
+@layer base {
+  html, body, * {
+    font-family: 'Montserrat' !important;
+  }
+  
+  /* Forzar Montserrat en todos los elementos posibles */
+  h1, h2, h3, h4, h5, h6, p, span, div, a, button, input, textarea, select, label {
+    font-family: 'Montserrat' !important;
+  }
+}
+
+/* === FORZAR MONTSERRAT GLOBALMENTE === */
+* {
+  font-family: 'Montserrat' !important;
+}
+
+/* === FORZAR EN PSEUDOELEMENTOS === */
+*::before, *::after {
+  font-family: 'Montserrat' !important;
+}
+
+/* === FORZAR EN ELEMENTOS DE FORMULARIO === */
+input[type="text"], input[type="email"], input[type="password"], 
+input[type="number"], input[type="tel"], input[type="url"], 
+textarea, select, option {
+  font-family: 'Montserrat' !important;
+}
+
+/* ===========================================
+   RESET Y CONFIGURACIÓN BASE
+   =========================================== */
+html {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  overflow-x: hidden;
+  font-family: 'Montserrat' !important;
+}
+
+/* === RESET PARA COMPONENTES ANGULAR === */
+app-root {
+  display: block;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* === FIX ESPECÍFICO PARA PADDING EXCESIVO === */
+[_ngcontent-ng-c3896620621] {
+  padding-left: 0 !important;
+}
+
+/* === RESET GENERAL PARA COMPONENTES CON IDS DINÁMICOS === */
+[class*="_ngcontent"] {
+  box-sizing: border-box;
+}
+
+/* ===========================================
+   LAYOUT Y SIDEBAR
+   =========================================== */
+/* === VARIABLES SIDEBAR === */
+body.sidebar-open {
+  --sidebar-width: 16rem; /* 256px */
+}
+
+body.sidebar-closed {
+  --sidebar-width: 0;
+}
+
+/* === TRANSICIONES SIDEBAR === */
+.sidebar-transition {
+  transition: transform var(--transition-normal);
+}
+
+.content-transition {
+  transition: margin-left var(--transition-normal), padding-left var(--transition-normal);
+}
+
+/* === LAYOUT WRAPPER === */
+.main-layout-wrapper {
+  padding-left: 0 !important;
+}
+
+/* === ESTADOS DINÁMICOS SIDEBAR === */
+body.sidebar-closed .main-layout-wrapper,
+body.sidebar-closed [class*="lg:pl-"] {
+  padding-left: 0 !important;
+}
+
+body.sidebar-open .main-layout-wrapper {
+  padding-left: 0 !important;
+}
+
+@media (min-width: 1024px) {
+  body.sidebar-open .main-layout-wrapper {
+    padding-left: 16rem !important;
+  }
+  
+  body.sidebar-closed .main-layout-wrapper {
+    padding-left: 0 !important;
+  }
+}
+
+/* === RESETEAR PADDING AUTOMÁTICO DE TAILWIND === */
+[class*="_ngcontent"] div[class*="lg:pl-64"] {
+  padding-left: 0 !important;
+}
+
+@media (min-width: 1024px) {
+  body.sidebar-open [class*="_ngcontent"] div[class*="lg:pl-64"] {
+    padding-left: 16rem !important;
+  }
+}
+
+/* === CONTENEDORES PRINCIPALES === */
+[class*="_ngcontent-ng-c2731332068"] {
+  width: 100% !important;
+  max-width: 100% !important;
+  flex: 1 !important;
+}
+
+.main-container {
+  width: 100vw !important;
+  max-width: 100vw !important;
+}
+
+.main-content {
+  width: 100% !important;
+  max-width: none !important;
+  flex: 1 !important;
+}
+
+.main-content > div {
+  width: 100% !important;
+  max-width: none !important;
+}
+
+router-outlet + * {
+  width: 100% !important;
+  max-width: none !important;
+}
+
+/* ===========================================
+   ANIMACIONES Y TRANSICIONES
+   =========================================== */
+@keyframes slideInLeft {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOutLeft {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes loading-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes pulse-glow {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1.1);
+    opacity: 0.4;
+  }
+}
+
+@keyframes float-up {
+  0% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-10px) scale(1.02);
+    opacity: 0.9;
+  }
+}
+
+/* === ANIMACIONES ESPECÍFICAS PARA FORMULARIOS === */
+@keyframes form-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes form-step-in {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes form-error-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-10px); }
+  75% { transform: translateX(10px); }
+}
+
+@keyframes form-success-pulse {
+  0% { 
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(34, 197, 94, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+  }
+}
+
+@keyframes modal-backdrop-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modal-content-in {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes progress-fill {
+  from { width: 0%; }
+  to { width: var(--progress-width, 100%); }
+}
+
+@keyframes button-ripple {
+  0% {
+    transform: scale(0);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+/* === CLASES DE ANIMACIÓN === */
+.animate-slide-in-left {
+  animation: slideInLeft var(--transition-normal);
+}
+
+.animate-slide-out-left {
+  animation: slideOutLeft var(--transition-normal);
+}
+
+.animate-fade-in {
+  animation: fadeIn var(--transition-fast);
+}
+
+.animate-fade-out {
+  animation: fadeOut var(--transition-fast);
+}
+
+.animate-scale-in {
+  animation: scaleIn var(--transition-fast);
+}
+
+.loading-skeleton {
+  background: linear-gradient(90deg, var(--gray-200) 25%, var(--gray-300) 50%, var(--gray-200) 75%);
+  background-size: 200% 100%;
+  animation: loading-shimmer 2s infinite;
+}
+
+/* === CLASES DE UTILIDAD PARA FORMULARIOS === */
+.animate-form-fade-in {
+  animation: form-fade-in 0.6s ease-out;
+}
+
+.animate-form-step-in {
+  animation: form-step-in 0.4s ease-out;
+}
+
+.animate-form-error {
+  animation: form-error-shake 0.5s ease-out;
+}
+
+.animate-form-success {
+  animation: form-success-pulse 2s infinite;
+}
+
+.animate-modal-backdrop {
+  animation: modal-backdrop-in 0.3s ease-out;
+}
+
+.animate-modal-content {
+  animation: modal-content-in 0.4s ease-out;
+}
+
+.animate-progress-fill {
+  animation: progress-fill 0.8s ease-out;
+}
+
+/* === TRANSICIONES PARA ELEMENTOS INTERACTIVOS === */
+.form-element-transition {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.form-input-transition {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.form-button-transition {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.form-button-transition::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.form-button-transition:active::after {
+  width: 300px;
+  height: 300px;
+}
+
+/* === MEJORAS DE ACCESIBILIDAD === */
+@media (prefers-reduced-motion: reduce) {
+  .animate-form-fade-in,
+  .animate-form-step-in,
+  .animate-modal-backdrop,
+  .animate-modal-content,
+  .animate-progress-fill {
+    animation: none;
+  }
+  
+  .form-element-transition,
+  .form-input-transition,
+  .form-button-transition {
+    transition: none;
+  }
+  .institucional-table-row,
+  .institucional-table-row::after {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+    box-shadow: none !important;
+  }
+}
+
+/* ===========================================
+   ESTILOS PARA MODALES INSTITUCIONALES
+   =========================================== */
+
+/* === CLASES BASE PARA MODALES INSTITUCIONALES === */
+.institutional-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  padding: 1rem;
+}
+
+.institutional-modal-container {
+  background: #fff;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  width: 100%;
+  max-width: 28rem;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.institutional-modal-header {
+  background-color: var(--institucional-primario);
+  color: #fff;
+  padding: 1.5rem;
+  position: relative;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.institutional-modal-header:hover {
+  background-color: var(--institucional-primario-light);
+}
+
+.institutional-modal-header:focus-within {
+  background-color: var(--institucional-primario-dark);
+}
+
+.institutional-modal-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.5;
+  margin: 0;
+  padding-right: 2.5rem;
+  color: #fff;
+}
+
+.institutional-modal-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 10;
+}
+
+.institutional-modal-body {
+  background: #fff;
+  padding: 1.25rem;
+  flex: 1;
+  overflow-y: auto;
+  color: var(--institucional-neutro-oscuro);
+}
+
+.institutional-modal-footer {
+  background: #fff;
+  padding: 1.25rem;
+  border-top: none;
+  box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.1);
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  align-items: center;
+  flex-direction: row !important; /* Forzar dirección horizontal siempre */
+  flex-wrap: nowrap !important; /* Evitar que los botones se envuelvan a nueva línea */
+  min-height: 60px; /* Asegurar altura mínima para botones */
+}
+
+/* Asegurar que los botones en el footer permanezcan horizontales en móviles */
+.institutional-modal-footer > * {
+  flex-shrink: 0; /* Evitar que los botones se contraigan */
+}
+
+/* Específicamente para pantallas pequeñas */
+@media (max-width: 640px) {
+  .institutional-modal-footer {
+    padding: 1rem 0.75rem;
+    gap: 0.5rem;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    justify-content: flex-end; /* Mantener alineación a la derecha */
+    overflow-x: auto; /* Permitir scroll horizontal si es necesario */
+  }
+  
+  /* Asegurar que los botones mantengan tamaño mínimo pero sean visibles */
+  .institutional-modal-footer > button,
+  .institutional-modal-footer > .btn {
+    min-width: 80px; /* Tamaño mínimo para legibilidad */
+    flex-shrink: 0; /* No permitir que se contraigan */
+    white-space: nowrap; /* Evitar que el texto se envuelva */
+  }
+  
+  /* Para botones específicos del modal como app-institutional-button */
+  .institutional-modal-footer app-institutional-button {
+    flex-shrink: 0;
+    min-width: 80px;
+    display: inline-flex !important; /* Hacer que el componente no tome todo el ancho */
+  }
+  
+  /* Sobrescribir full-width en el contexto del modal footer para móviles */
+  .institutional-modal-footer .institutional-btn-full-width {
+    width: auto !important;
+    min-width: 80px;
+    flex-shrink: 0;
+  }
+  
+  /* Asegurar que el contenedor del footer tenga scroll horizontal si es necesario */
+  .institutional-modal-footer {
+    -webkit-overflow-scrolling: touch; /* Smooth scrolling en iOS */
+  }
+}
+
+/* === VARIANTES DE TAMAÑO === */
+.institutional-modal-container.size-sm {
+  max-width: 20rem;
+}
+
+.institutional-modal-container.size-md {
+  max-width: 28rem;
+}
+
+.institutional-modal-container.size-lg {
+  max-width: 42rem;
+}
+
+.institutional-modal-container.size-xl {
+  max-width: 56rem;
+}
+
+.institutional-modal-container.size-full {
+  max-width: 95vw;
+  max-height: 95vh;
+}
+
+/* === ESTILOS PARA TEXTO SECUNDARIO === */
+.institutional-modal-secondary-text {
+  color: var(--institucional-neutro-claro);
+}
+
+.institutional-modal-wine-text {
+  color: var(--institucional-vino-light);
+}
+
+/* === ANIMACIONES PARA MODALES INSTITUCIONALES === */
+.institutional-modal-overlay.entering {
+  animation: institutional-modal-backdrop-in 0.3s ease-out;
+}
+
+.institutional-modal-container.entering {
+  animation: institutional-modal-content-in 0.4s ease-out;
+}
+
+@keyframes institutional-modal-backdrop-in {
+  from { 
+    opacity: 0; 
+  }
+  to { 
+    opacity: 1; 
+  }
+}
+
+@keyframes institutional-modal-content-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-1rem);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* === MEJORAS DE ACCESIBILIDAD PARA MODALES === */
+@media (prefers-reduced-motion: reduce) {
+  .institutional-modal-overlay.entering,
+  .institutional-modal-container.entering {
+    animation: none;
+  }
+}
+
+/* === RESPONSIVIDAD === */
+@media (max-width: 640px) {
+  .institutional-modal-overlay {
+    padding: 0.5rem;
+  }
+  
+  .institutional-modal-container {
+    max-width: 100%;
+    max-height: 95vh;
+  }
+  
+  .institutional-modal-header {
+    padding: 1rem;
+  }
+  
+  .institutional-modal-body {
+    padding: 1rem;
+  }
+  
+  .institutional-modal-footer {
+    padding: 1rem;
+    flex-direction: column;
+  }
+  
+  .institutional-modal-footer > * {
+    width: 100%;
+  }
+}
+
+/* === ANIMACIONES ESPECÍFICAS PARA STEPPER === */
+@keyframes step-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(255, 255, 255, 0);
+  }
+}
+
+@keyframes step-bounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-5px);
+  }
+  60% {
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes step-glow {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.8), 0 0 30px rgba(255, 255, 255, 0.6);
+  }
+}
+
+@keyframes progress-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Clases de utilidad para stepper */
+.animate-step-pulse {
+  animation: step-pulse 2s infinite;
+}
+
+.animate-step-bounce {
+  animation: step-bounce 1s ease-in-out;
+}
+
+.animate-step-glow {
+  animation: step-glow 2s ease-in-out infinite;
+}
+
+.animate-progress-shimmer {
+  background: linear-gradient(90deg, transparent 25%, rgba(255, 255, 255, 0.2) 50%, transparent 75%);
+  background-size: 200% 100%;
+  animation: progress-shimmer 2s infinite;
+}
+
+/* Transición suave para cambios de paso */
+.step-transition {
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Efectos hover mejorados para steps navegables */
+.step-hover-effect {
+  transition: all 0.3s ease;
+}
+
+.step-hover-effect:hover {
+  transform: translateY(-2px) scale(1.05);
+  filter: brightness(1.1);
+}
+
+/* ===========================================
+   COLORES INSTITUCIONALES institucional
+   =========================================== */
+/* === FONDOS === */
+.bg-institucional-primario { background-color: var(--institucional-primario); }
+.bg-institucional-primario-dark { background-color: var(--institucional-primario-dark); }
+.bg-institucional-primario-light { background-color: var(--institucional-primario-light); }
+.bg-institucional-secundario { background-color: var(--institucional-secundario); }
+.bg-institucional-secundario-dark { background-color: var(--institucional-secundario-dark); }
+.bg-institucional-secundario-light { background-color: var(--institucional-secundario-light); }
+.bg-institucional-secundario { background-color: var(--institucional-secundario); }
+.bg-institucional-secundario-dark { background-color: var(--institucional-secundario-dark); }
+.bg-institucional-secundario-light { background-color: var(--institucional-secundario-light); }
+
+/* === TEXTOS === */
+.text-institucional-primario { color: var(--institucional-primario); }
+.text-institucional-primario-dark { color: var(--institucional-primario-dark); }
+.text-institucional-primario-light { color: var(--institucional-primario-light); }
+.text-institucional-secundario { color: var(--institucional-secundario); }
+.text-institucional-secundario-dark { color: var(--institucional-secundario-dark); }
+.text-institucional-secundario-light { color: var(--institucional-secundario-light); }
+.text-institucional-secundario { color: var(--institucional-secundario); }
+.text-institucional-secundario-dark { color: var(--institucional-secundario-dark); }
+.text-institucional-secundario-light { color: var(--institucional-secundario-light); }
+
+/* === BORDES === */
+.border-institucional-primario { border-color: var(--institucional-primario); }
+.border-institucional-secundario { border-color: var(--institucional-secundario); }
+.border-institucional-secundario { border-color: var(--institucional-secundario); }
+
+/* === COLORES ESTADÍSTICAS === */
+.text-stats3 { color: var(--stats3); }
+.text-stats4{ color: var(--stats4); }
+.text-stats5 { color: var(--stats5); }
+.text-stats2 { color: var(--stats2); }
+.text-stats1 { color: var(--stats1); }
+.text-stats7{ color: var(--stats7); }
+.text-stats6 { color: var(--stats6); }
+.text-stats9{ color: var(--stats9); }
+
+/* === DEGRADADOS INSTITUCIONALES === */
+.bg-gradient-institucional-primario { background: linear-gradient(135deg, var(--institucional-primario) 0%, var(--institucional-primario-dark) 100%); }
+.bg-gradient-institucional-secundario { background: linear-gradient(135deg, var(--institucional-secundario) 0%, var(--institucional-secundario-dark) 100%); }
+.bg-gradient-institucional-vino { background: linear-gradient(135deg, var(--institucional-vino) 0%, var(--institucional-vino-dark) 100%); }
+.bg-gradient-institucional-header { background: linear-gradient(135deg, var(--institucional-primario) 0%, var(--institucional-secundario) 50%, var(--institucional-vino) 100%); }
+.bg-gradient-institucional-suave { background: linear-gradient(135deg, var(--institucional-primario-light) 0%, var(--institucional-secundario-light) 100%); }
+
+/* Degradados para estadísticas */
+.bg-gradient-stats3 { background: linear-gradient(135deg, var(--stats3) 0%, #3a5998 100%); }
+.bg-gradient-stats4 { background: linear-gradient(135deg, var(--stats4) 0%, #008a1c 100%); }
+.bg-gradient-stats7 { background: linear-gradient(135deg, var(--stats7) 0%, #0573a3 100%); }
+.bg-gradient-stats1 { background: linear-gradient(135deg, var(--stats1) 0%, #7c3aed 100%); }
+.bg-gradient-stats2 { background: linear-gradient(135deg, var(--stats2) 0%, #d97706 100%); }
+.bg-gradient-stats5 { background: linear-gradient(135deg, var(--stats5) 0%, #dc2626 100%); }
+
+/* ===========================================
+   SISTEMA DE BOTONES INSTITUCIONALES REUTILIZABLES
+   =========================================== */
+
+/* === BASE BUTTON STYLES === */
+.institutional-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 600;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  position: relative;
+  overflow: hidden;
+  text-decoration: none;
+  outline: none;
+  user-select: none;
+  white-space: nowrap;
+  line-height: 1.5;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transform: perspective(1000px) translateZ(0);
+  backface-visibility: hidden;
+  will-change: transform, box-shadow;
+}
+
+.institutional-btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(139, 21, 56, 0.3);
+}
+
+.institutional-btn:active {
+  transform: translateY(1px) scale(0.98);
+}
+
+/* === SHIMMER EFFECT === */
+.institutional-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg, 
+    transparent 25%, 
+    rgba(255, 255, 255, 0.3) 50%, 
+    transparent 75%
+  );
+  transition: left 0.6s ease;
+  z-index: 1;
+}
+
+.institutional-btn:hover::before {
+  left: 100%;
+}
+
+/* === BUTTON SIZES === */
+.institutional-btn-small {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.75rem;
+  min-height: 2rem;
+}
+
+.institutional-btn-medium {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  min-height: 2.5rem;
+}
+
+.institutional-btn-large {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  min-height: 3rem;
+}
+
+.institutional-btn-extra-large {
+  padding: 1rem 2rem;
+  font-size: 1.125rem;
+  min-height: 3.5rem;
+}
+
+/* === FULL WIDTH === */
+.institutional-btn-full-width {
+  width: 100%;
+}
+
+/* === ICON ONLY CONTAINER === */
+.institutional-btn-icon-only-container {
+  aspect-ratio: 1;
+  padding: 0;
+  border-radius: 50%;
+}
+
+.institutional-btn-icon-only-container.institutional-btn-small {
+  width: 2rem;
+  height: 2rem;
+}
+
+.institutional-btn-icon-only-container.institutional-btn-medium {
+  width: 2.5rem;
+  height: 2.5rem;
+}
+
+.institutional-btn-icon-only-container.institutional-btn-large {
+  width: 3rem;
+  height: 3rem;
+}
+
+.institutional-btn-icon-only-container.institutional-btn-extra-large {
+  width: 3.5rem;
+  height: 3.5rem;
+}
+
+/* === PRIMARY BUTTON === */
+.institutional-btn-primary {
+  background-color: var(--btn-primary);
+  color: var(--btn-primary-text);
+  border: 2px solid var(--btn-primary);
+}
+
+.institutional-btn-primary:hover {
+  background-color: var(--btn-primary-hover);
+  border-color: var(--btn-primary-hover);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 8px 25px rgba(139, 21, 56, 0.3);
+}
+
+.institutional-btn-primary:active {
+  background-color: var(--btn-primary-active);
+  border-color: var(--btn-primary-active);
+}
+
+/* === SECONDARY BUTTON === */
+.institutional-btn-secondary {
+  background-color: var(--btn-secondary);
+  color: var(--btn-secondary-text);
+  border: 2px solid var(--btn-secondary);
+}
+
+.institutional-btn-secondary:hover {
+  background-color: var(--btn-secondary-hover);
+  border-color: var(--btn-secondary-hover);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 8px 25px rgba(214, 51, 132, 0.3);
+}
+
+.institutional-btn-secondary:active {
+  background-color: var(--btn-secondary-active);
+  border-color: var(--btn-secondary-active);
+}
+
+/* === SUCCESS BUTTON === */
+.institutional-btn-success {
+  background-color: var(--btn-success);
+  color: var(--btn-success-text);
+  border: 2px solid var(--btn-success);
+}
+
+.institutional-btn-success:hover {
+  background-color: var(--btn-success-hover);
+  border-color: var(--btn-success-hover);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3);
+}
+
+.institutional-btn-success:active {
+  background-color: var(--btn-success-active);
+  border-color: var(--btn-success-active);
+}
+
+/* === WARNING BUTTON === */
+.institutional-btn-warning {
+  background-color: var(--btn-warning);
+  color: var(--btn-warning-text);
+  border: 2px solid var(--btn-warning);
+}
+
+.institutional-btn-warning:hover {
+  background-color: var(--btn-warning-hover);
+  border-color: var(--btn-warning-hover);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 8px 25px rgba(245, 158, 11, 0.3);
+}
+
+.institutional-btn-warning:active {
+  background-color: var(--btn-warning-active);
+  border-color: var(--btn-warning-active);
+}
+
+/* === DANGER BUTTON === */
+.institutional-btn-danger {
+  background-color: var(--btn-danger);
+  color: var(--btn-danger-text);
+  border: 2px solid var(--btn-danger);
+}
+
+.institutional-btn-danger:hover {
+  background-color: var(--btn-danger-hover);
+  border-color: var(--btn-danger-hover);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 8px 25px rgba(239, 68, 68, 0.3);
+}
+
+.institutional-btn-danger:active {
+  background-color: var(--btn-danger-active);
+  border-color: var(--btn-danger-active);
+}
+
+/* === INFO BUTTON === */
+.institutional-btn-info {
+  background-color: var(--btn-info);
+  color: var(--btn-info-text);
+  border: 2px solid var(--btn-info);
+}
+
+.institutional-btn-info:hover {
+  background-color: var(--btn-info-hover);
+  border-color: var(--btn-info-hover);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 8px 25px rgba(6, 182, 212, 0.3);
+}
+
+.institutional-btn-info:active {
+  background-color: var(--btn-info-active);
+  border-color: var(--btn-info-active);
+}
+
+/* === LIGHT BUTTON === */
+.institutional-btn-light {
+  background-color: var(--btn-light);
+  color: var(--btn-light-text);
+  border: 2px solid var(--btn-light);
+}
+
+.institutional-btn-light:hover {
+  background-color: var(--btn-light-hover);
+  border-color: var(--btn-light-hover);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 8px 25px rgba(241, 245, 249, 0.5);
+}
+
+.institutional-btn-light:active {
+  background-color: var(--btn-light-active);
+  border-color: var(--btn-light-active);
+}
+
+/* === DARK BUTTON === */
+.institutional-btn-dark {
+  background-color: var(--btn-dark);
+  color: var(--btn-dark-text);
+  border: 2px solid var(--btn-dark);
+}
+
+.institutional-btn-dark:hover {
+  background-color: var(--btn-dark-hover);
+  border-color: var(--btn-dark-hover);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 8px 25px rgba(30, 41, 59, 0.3);
+}
+
+.institutional-btn-dark:active {
+  background-color: var(--btn-dark-active);
+  border-color: var(--btn-dark-active);
+}
+
+/* === LINK BUTTON === */
+.institutional-btn-link {
+  background-color: var(--btn-link);
+  color: var(--btn-link-text);
+  border: 2px solid transparent;
+  box-shadow: none;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.institutional-btn-link:hover {
+  background-color: var(--btn-link-hover);
+  transform: none;
+  box-shadow: none;
+  text-decoration: underline;
+}
+
+.institutional-btn-link:active {
+  background-color: var(--btn-link-active);
+}
+
+/* === GHOST BUTTON === */
+.institutional-btn-ghost {
+  background-color: var(--btn-ghost);
+  color: var(--btn-ghost-text);
+  border: 2px solid var(--btn-ghost-border);
+}
+
+.institutional-btn-ghost:hover {
+  background-color: var(--btn-ghost-hover);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 8px 25px rgba(139, 21, 56, 0.15);
+}
+
+.institutional-btn-ghost:active {
+  background-color: var(--btn-ghost-active);
+}
+
+/* === MODAL CLOSE BUTTON === */
+.institutional-btn-modal-close {
+  background-color: var(--btn-modal-close);
+  color: var(--btn-modal-close-text);
+  border: 2px solid var(--btn-modal-close-border);
+  transition: all 0.2s ease;
+}
+
+.institutional-btn-modal-close:hover {
+  background-color: var(--btn-modal-close-hover);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.institutional-btn-modal-close:active {
+  background-color: var(--btn-modal-close-active);
+  transform: scale(0.95);
+}
+
+/* Estilos específicos para botones de cierre circulares */
+.institutional-btn-modal-close.institutional-btn-icon-only-container {
+  border-radius: 50%;
+  backdrop-filter: blur(4px);
+}
+
+/* === DISABLED STATE === */
+.institutional-btn-disabled,
+.institutional-btn:disabled {
+  background-color: var(--btn-disabled) !important;
+  color: var(--btn-disabled-text) !important;
+  border-color: var(--btn-disabled-border) !important;
+  cursor: not-allowed !important;
+  opacity: 0.6;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.institutional-btn-disabled::before,
+.institutional-btn:disabled::before {
+  display: none;
+}
+
+/* === LOADING STATE === */
+.institutional-btn-loading {
+  pointer-events: none;
+  opacity: 0.8;
+}
+
+/* === RESPONSIVE ADJUSTMENTS === */
+@media (max-width: 640px) {
+  .institutional-btn {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+  }
+  
+  .institutional-btn-large,
+  .institutional-btn-extra-large {
+    padding: 0.625rem 1rem;
+    font-size: 0.875rem;
+  }
+}
+
+/* === MOBILE ICON CENTERING FIXES === */
+@media (max-width: 768px) {
+  /* Mejorar centrado de iconos en botones de solo icono */
+  .institutional-btn-icon-only-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+  }
+  
+  /* Asegurar que los iconos Material Symbols se centren correctamente */
+  .institutional-btn-icon-only-container .material-symbols-outlined {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    vertical-align: middle;
+    margin: 0;
+    padding: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  /* Centrado específico para móviles - sin cambiar tamaños */
+  .institutional-btn-icon-only-container .material-symbols-outlined {
+    margin: 0;
+    padding: 0;
+    width: 1em;
+    height: 1em;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Centrado específico para móviles pequeños - sin cambiar tamaños */
+  .institutional-btn-icon-only-container .material-symbols-outlined {
+    line-height: 1;
+    margin: 0;
+    padding: 0;
+    transform: translate3d(0, 0, 0);
+  }
+  
+  /* Reducir gaps entre botones de acción en tabla */
+  .institucional-table-cell .flex.gap-2 {
+    gap: 0.25rem;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+/* === FIXES PARA TOUCH DEVICES === */
+@media (hover: none) and (pointer: coarse) {
+  /* Centrado perfecto en dispositivos táctiles - mantener tamaños originales */
+  .institutional-btn-icon-only-container .material-symbols-outlined {
+    transform: translate3d(0, 0, 0);
+    backface-visibility: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+/* ===========================================
+   BOTONES INSTITUCIONALES LEGACY (mantener compatibilidad)
+   =========================================== */
+/* === BOTONES institucional === */
+.btn-institucional-primary {
+  background-color: var(--institucional-primario);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(139, 21, 56, 0.2);
+  font-size: 0.875rem;
+}
+
+.btn-institucional-primary:hover {
+  background-color: var(--institucional-primario-light);
+  box-shadow: 0 2px 6px rgba(139, 21, 56, 0.3);
+}
+
+.btn-institucional-primary:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 2px rgba(139, 21, 56, 0.2);
+}
+
+/* Utilidades */
+.no-scrollbar {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari and Opera */
+}
+
+.btn-institucional-secondary {
+  background-color: var(--institucional-secundario);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(214, 51, 132, 0.2);
+  font-size: 0.875rem;
+}
+
+.btn-institucional-secondary:hover {
+  background-color: var(--institucional-secundario-light);
+  box-shadow: 0 2px 6px rgba(214, 51, 132, 0.3);
+}
+
+.btn-institucional-secondary:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 2px rgba(214, 51, 132, 0.2);
+}
+
+.btn-institucional-outline {
+  background-color: transparent;
+  color: var(--institucional-primario);
+  border: 2px solid var(--institucional-primario);
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(139, 21, 56, 0.15);
+  transform: perspective(1000px) rotateX(0deg) translateZ(0);
+  backface-visibility: hidden;
+  will-change: transform, box-shadow, filter;
+}
+
+.btn-institucional-outline:hover {
+  background-color: var(--institucional-primario);
+  color: white;
+  transform: perspective(1000px) translateY(-8px) translateZ(20px) scale(1.05);
+  box-shadow: 
+    0 20px 40px rgba(139, 21, 56, 0.4),
+    0 0 30px rgba(139, 21, 56, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  border-color: var(--institucional-primario-light);
+  filter: brightness(1.2) saturate(1.15) contrast(1.1);
+}
+
+.btn-institucional-outline:active {
+  transform: perspective(1000px) translateY(-2px) translateZ(10px) scale(0.98);
+  transition: all 0.1s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  box-shadow: 
+    0 8px 20px rgba(139, 21, 56, 0.25),
+    0 0 15px rgba(139, 21, 56, 0.2);
+}
+
+/* ===========================================
+   EFECTOS ADICIONALES PARA BOTONES INSTITUCIONALES
+   Micro-interacciones y feedback visual mejorado
+   =========================================== */
+
+/* Efecto de shimmer/brillo que pasa por el botón en hover - MEJORADO */
+.btn-institucional-primary::before,
+.btn-institucional-secondary::before,
+.btn-institucional-outline::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    110deg, 
+    transparent 25%, 
+    rgba(255, 255, 255, 0.4) 50%, 
+    transparent 75%
+  );
+  transition: left 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  z-index: 1;
+  transform: skewX(-20deg);
+}
+
+.btn-institucional-primary:hover::before,
+.btn-institucional-secondary:hover::before,
+.btn-institucional-outline:hover::before {
+  left: 100%;
+  transition: left 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* Outline buttons: same shimmer and glow but using institucional-guinda tones */
+.btn-institucional-outline::before {
+  /* softer guinda shimmer - override the default white shimmer */
+  background: linear-gradient(90deg, transparent, rgba(139,21,56,0.2), transparent) !important;
+}
+
+.btn-institucional-outline:hover::after {
+  /* internal glow using guinda tone - override the default white glow */
+  background: radial-gradient(circle, rgba(139,21,56,0.3) 0%, transparent 70%) !important;
+}
+
+/* Efecto de partículas o glow interno - MEJORADO */
+.btn-institucional-primary::after,
+.btn-institucional-secondary::after,
+.btn-institucional-outline::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: radial-gradient(
+    circle, 
+    rgba(255, 255, 255, 0.5) 0%, 
+    rgba(255, 255, 255, 0.3) 40%, 
+    transparent 70%
+  );
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.btn-institucional-primary:hover::after,
+.btn-institucional-secondary:hover::after,
+.btn-institucional-outline:hover::after {
+  width: 150px;
+  height: 150px;
+  opacity: 1;
+  animation: pulse-glow 2s infinite alternate;
+}
+
+/* Mejora en el texto para que aparezca sobre los efectos */
+.btn-institucional-primary > *,
+.btn-institucional-secondary > *,
+.btn-institucional-outline > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* Efecto de loading/spinner incorporado para estados de carga */
+.btn-institucional-primary.loading,
+.btn-institucional-secondary.loading,
+.btn-institucional-outline.loading {
+  position: relative;
+  color: transparent !important;
+  pointer-events: none;
+}
+
+.btn-institucional-primary.loading::before,
+.btn-institucional-secondary.loading::before,
+.btn-institucional-outline.loading::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  margin: -10px 0 0 -10px;
+  border: 2px solid transparent;
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: btn-spin 1s linear infinite;
+  z-index: 3;
+}
+
+@keyframes btn-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Efectos de éxito y error para feedback */
+.btn-institucional-primary.success,
+.btn-institucional-secondary.success {
+  background-color: var(--stats4) !important;
+  animation: btn-success 0.6s ease;
+}
+
+.btn-institucional-primary.error,
+.btn-institucional-secondary.error {
+  background-color: var(--stats5) !important;
+  animation: btn-error 0.6s ease;
+}
+
+@keyframes btn-success {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); background-color: var(--stats4); }
+  100% { transform: scale(1); }
+}
+
+@keyframes btn-error {
+  0% { transform: scale(1); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+  100% { transform: scale(1); }
+}
+
+/* === BOTONES TAILWIND PERSONALIZADOS === */
+.btn-primary {
+  @apply bg-gradient-to-r from-primary-700 to-primary-800 hover:from-primary-800 hover:to-primary-700 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-institucional;
+}
+
+.btn-secondary {
+  @apply bg-gradient-to-r from-secondary-500 to-secondary-600 hover:from-secondary-600 hover:to-secondary-500 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200 transform hover:scale-105;
+}
+
+/* ===========================================
+   FIX: Restaurar familias de fuente para iconos
+   Debido a que el proyecto fuerza Montserrat globalmente con !important,
+   los spans usados para Material Symbols quedan con Montserrat y se ven como texto.
+   Aquí forzamos las familias correctas para icon fonts con selectores más específicos
+   para que los pictogramas se rendericen.
+   =========================================== */
+.material-symbols-outlined,
+.material-symbols-rounded,
+.material-symbols-sharp {
+  font-family: 'Material Symbols Outlined' !important;
+  /* valores por defecto sugeridos; pueden ajustarse por componente */
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24 !important;
+  font-weight: normal !important;
+  font-style: normal !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+}
+
+.material-icons {
+  font-family: 'Material Icons' !important;
+  font-weight: normal !important;
+  font-style: normal !important;
+  -webkit-font-feature-settings: 'liga' !important;
+  -webkit-font-smoothing: antialiased !important;
+}
+
+/* MatIcon: cuando Angular Material usa <mat-icon> sin fontSet, puede necesitar
+   una regla explícita para evitar el override global */
+mat-icon, mat-icon * {
+  font-family: inherit !important;
+}
+
+/* Bootstrap icons: si se usan <i class="bi bi-..."> asegurar la familia correcta */
+i[class*="bi-"] {
+  font-family: 'Bootstrap Icons' !important;
+}
+
+.btn-success {
+  @apply bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-600 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200 transform hover:scale-105;
+}
+
+.btn-danger {
+  @apply bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-600 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200 transform hover:scale-105;
+}
+
+.btn-outline {
+  @apply border-2 border-primary-700 text-primary-700 hover:bg-primary-700 hover:text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200;
+}
+
+/* ===========================================
+   COMPONENTES INSTITUCIONALES
+   =========================================== */
+/* === CARDS institucional === */
+.card-institucional-header {
+  background: linear-gradient(135deg, var(--institucional-primario) 0%, var(--institucional-vino) 100%);
+  color: white;
+  padding: 1rem 1.5rem;
+  margin: -1.5rem -1.5rem 0 -1.5rem;
+  font-weight: 600;
+  border-radius: 0.75rem 0.75rem 0 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.card-institucional-header h3,
+.card-institucional-header h4 {
+  margin: 0;
+  color: white;
+  font-weight: 600;
+}
+
+.card-institucional-header .material-symbols-outlined {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* Variantes para headers compactos */
+.institutional-card-header-compact .card-institucional-header {
+  margin: -1rem -1rem 0 -1rem;
+  padding: 1rem;
+}
+
+/* === NAVEGACIÓN institucional === */
+.nav-institucional {
+  background-color: var(--institucional-secundario);
+  padding: 1rem;
+}
+
+.nav-item {
+  color: white;
+  padding: 0.5rem 1rem;
+  text-decoration: none;
+  transition: all 0.2s ease-in-out;
+  border-radius: 0.375rem;
+}
+
+.nav-item:hover,
+.nav-item.active {
+  background-color: var(--institucional-primario);
+  color: white;
+}
+
+/* === ALERTAS INSTITUCIONALES === */
+.alert-institucional-info {
+  background-color: rgba(82, 118, 186, 0.1);
+  border-left: 4px solid var(--stats3);
+  color: var(--stats3);
+  padding: 1rem;
+  border-radius: 0.375rem;
+  margin-bottom: 1rem;
+}
+
+.alert-institucional-success {
+  background-color: rgba(0, 176, 35, 0.1);
+  border-left: 4px solid var(--stats4);
+  color: var(--stats4);
+  padding: 1rem;
+  border-radius: 0.375rem;
+  margin-bottom: 1rem;
+}
+
+.alert-institucional-warning {
+  background-color: rgba(254, 193, 82, 0.1);
+  border-left: 4px solid var(--stats6);
+  color: #b45309;
+  padding: 1rem;
+  border-radius: 0.375rem;
+  margin-bottom: 1rem;
+}
+
+.alert-institucional-danger {
+  background-color: rgba(255, 76, 100, 0.1);
+  border-left: 4px solid var(--stats5);
+  color: var(--stats5);
+  padding: 1rem;
+  border-radius: 0.375rem;
+  margin-bottom: 1rem;
+}
+
+/* ===========================================
+   FORMULARIOS
+   =========================================== */
+.form-input {
+  @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-700 focus:border-primary-700 transition-all duration-200;
+}
+
+.form-label {
+  @apply block text-sm font-medium text-gray-700 mb-1;
+}
+
+/* ===========================================
+   CONTENEDORES DE MÉTRICAS Y ESTADÍSTICAS
+   =========================================== */
+/* === CONTENEDORES CON COLORES GUBERNAMENTALES === */
+.metric-container3 {
+  background: var(--stats3);
+  color: white;
+  padding: 24px;
+  box-shadow: 0 10px 25px rgba(82, 118, 186, 0.15);
+}
+
+.metric-container7 {
+  background: var(--stats7);
+  color: white;
+  padding: 24px;
+  box-shadow: 0 10px 25px rgba(7, 151, 212, 0.15);
+}
+
+.metric-container4{
+  background: var(--stats4);
+  color: white;
+  padding: 24px;
+  box-shadow: 0 10px 25px rgba(0, 176, 35, 0.15);
+}
+
+.metric-container5 {
+  background: var(--stats5);
+  color: white;
+  padding: 24px;
+  box-shadow: 0 10px 25px rgba(255, 76, 100, 0.15);
+}
+
+.metric-container2 {
+  background: var(--stats2);
+  color: white;
+  padding: 24px;
+  box-shadow: 0 10px 25px rgba(254, 133, 28, 0.15);
+}
+
+.metric-container1 {
+  background: var(--stats1);
+  color: white;
+  padding: 24px;
+  box-shadow: 0 10px 25px rgba(159, 63, 142, 0.15);
+}
+
+/* === BORDES PARA DESTACAR MÉTRICAS === */
+.metric-border1 { border-left: 4px solid var(--stats1); }
+.metric-border2 { border-left: 4px solid var(--stats2); }
+.metric-border3 { border-left: 4px solid var(--stats3); }
+.metric-border4 { border-left: 4px solid var(--stats4); }
+.metric-border5 { border-left: 4px solid var(--stats5); }
+.metric-border6 { border-left: 4px solid var(--stats6); }
+.metric-border7{ border-left: 4px solid var(--stats7); }
+.metric-border8 { border-left: 4px solid var(--stats8); }
+.metric-border9{ border-left: 4px solid var(--stats9); }
+
+/* ===========================================
+   ESTILOS DEL SIDEBAR COMPONENT
+   =========================================== */
+/* Variables sidebar (fallback si no están definidas globalmente) */
+.sidebar-component {
+  --text-on-guinda: #ffffff;
+}
+
+/* Estilo para item seleccionado (nivel principal) */
+.sidebar-selected-item {
+  background: rgba(139,21,56,0.98) !important;
+  color: var(--text-on-guinda) !important;
+  border-right: 4px solid var(--institucional-secundario);
+  box-shadow: 0 4px 12px rgba(139,21,56,0.15);
+  transition: all 0.18s ease-in-out;
+}
+
+.sidebar-selected-item svg { 
+  color: var(--text-on-guinda) !important; 
+}
+
+/* Estilo para subitem seleccionado (nivel secundario) */
+.sidebar-selected-subitem {
+  background: linear-gradient(90deg, rgba(214,51,132,0.12), rgba(139,21,56,0.08)) !important;
+  color: var(--institucional-secundario) !important;
+  border-right: 4px solid var(--institucional-vino);
+  box-shadow: 0 2px 8px rgba(214,51,132,0.08);
+  transition: all 0.18s ease-in-out;
+}
+
+.sidebar-selected-subitem svg { 
+  color: var(--institucional-secundario) !important; 
+}
+
+/* Hover suavizado para items del sidebar */
+.sidebar-item:hover { 
+  transform: translateX(0.5px); 
+}
+
+/* ===========================================
+   ALINEACIÓN DE TEXTO EN BOTONES DEL SIDEBAR
+   Los botones del sidebar deben tener el texto alineado a la izquierda
+   =========================================== */
+/* Sobrescribir la alineación centrada para botones del sidebar */
+.sidebar-nav button,
+.sidebar-nav .button,
+.sidebar-nav [role="button"],
+.sidebar-nav a[class*="flex"],
+.sidebar-nav .menu-item,
+button[class*="sidebar"],
+.sidebar-item button,
+.sidebar-item .button,
+.sidebar-item [role="button"] {
+  justify-content: flex-start !important;
+  text-align: left !important;
+}
+
+/* Asegurar que el texto dentro de los botones del sidebar esté alineado a la izquierda */
+.sidebar-nav button span,
+.sidebar-nav .button span,
+.sidebar-nav [role="button"] span,
+.sidebar-nav a span,
+.sidebar-item button span,
+.sidebar-item .button span,
+.sidebar-item [role="button"] span {
+  text-align: left !important;
+  flex: 1;
+}
+
+/* Los iconos del sidebar deben mantenerse del lado izquierdo */
+.sidebar-nav button app-universal-icon,
+.sidebar-nav button .material-symbols-outlined,
+.sidebar-nav button .material-icons,
+.sidebar-nav button i[class*="bi-"],
+.sidebar-item button app-universal-icon,
+.sidebar-item button .material-symbols-outlined,
+.sidebar-item button .material-icons,
+.sidebar-item button i[class*="bi-"] {
+  /* Removed margin-right to avoid automatic spacing; use layout markup to add explicit spacing when needed */
+  flex-shrink: 0;
+}
+
+/* Scrollbar sutil para navegación del sidebar */
+.sidebar-nav::-webkit-scrollbar { 
+  width: 8px; 
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb { 
+  background: rgba(139,21,56,0.06); 
+  border-radius: 8px; 
+}
+
+.sidebar-nav::-webkit-scrollbar-track { 
+  background: transparent; 
+}
+/* ===========================================
+   MEJORA DE JERARQUÍA PARA EL SIDEBAR
+   - Agrupaciones con título
+   - Separadores visuales
+   - Indentación para subitems
+   - Tipografía y contraste mejorados
+   =========================================== */
+
+/* Contenedor de sección (grupo) dentro del sidebar */
+.sidebar-section {
+  padding: 0.25rem 0.5rem 0.75rem 0.5rem;
+  margin: 0.5rem 0.5rem 0 0.5rem;
+  border-radius: 0.5rem;
+}
+
+/* Título de grupo / encabezado de sección */
+.sidebar-group-title {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: rgba(17,24,39,0.65); /* gris oscuro semi-transparente */
+  padding: 0.5rem 0.75rem;
+  text-transform: uppercase;
+}
+
+/* Separador sutil entre grupos */
+.sidebar-divider {
+  height: 1px;
+  background: linear-gradient(90deg, rgba(17,24,39,0.04), rgba(139,21,56,0.04));
+  margin: 0.25rem 0.5rem 0.5rem 0.5rem;
+  border-radius: 2px;
+}
+
+/* Estilos base para items: deja espacio, alinea texto a la izquierda y añade contraste en hover */
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 0.75rem;
+  margin: 0.125rem 0.25rem;
+  border-radius: 0.5rem;
+  color: rgba(17,24,39,0.9);
+  transition: background 0.18s ease, transform 0.12s ease, box-shadow 0.18s ease;
+}
+
+.sidebar-item .item-text {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: inherit;
+}
+
+/* Subitems: ligera sangría e icono reducido */
+.sidebar-subitem {
+  padding-left: 2.5rem; /* sangría para diferenciar */
+  padding-top: 0.375rem;
+  padding-bottom: 0.375rem;
+}
+
+.sidebar-subitem .item-text {
+  font-size: 0.825rem;
+  font-weight: 500;
+  color: rgba(17,24,39,0.78);
+}
+
+/* Hover y foco más evidente en items */
+.sidebar-item:hover, .sidebar-subitem:hover {
+  background: rgba(139,21,56,0.04);
+  transform: translateX(2px);
+  box-shadow: 0 4px 10px rgba(11,15,17,0.03);
+}
+
+/* Estado seleccionado más legible (respetar variable existente) */
+.sidebar-item.sidebar-selected-item, .sidebar-subitem.sidebar-selected-subitem {
+  background: rgba(139,21,56,0.98) !important;
+  color: var(--text-on-guinda) !important;
+  border-right: 4px solid var(--institucional-secundario);
+}
+
+/* Badge o contador a la derecha */
+.sidebar-item .item-badge {
+  margin-left: auto;
+  font-size: 0.75rem;
+  background: rgba(0,0,0,0.04);
+  color: rgba(17,24,39,0.7);
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+}
+
+/* Compact mode: si el sidebar se colapsa, esconder textos y centrar iconos */
+body.sidebar-collapsed .sidebar-item .item-text,
+body.sidebar-collapsed .sidebar-group-title {
+  display: none !important;
+}
+
+body.sidebar-collapsed .sidebar-item {
+  justify-content: center !important;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+
+/* Asegurar que los iconos mantengan tamaño uniforme */
+.sidebar-item app-universal-icon, .sidebar-item .material-symbols-outlined, .sidebar-item .material-icons, .sidebar-item i[class*="bi-"] {
+  width: 1.25rem;
+  height: 1.25rem;
+  min-width: 1.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Mejora de accesibilidad: foco claro en items */
+.sidebar-item:focus-visible, .sidebar-subitem:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(139,21,56,0.12);
+}
+
+/* ===========================================
+   ESTADOS DE TICKETS
+   =========================================== */
+.status-badge {
+  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+}
+
+/* === ESTADOS CON COLORES GUBERNAMENTALES (BADGES SUTILES) === */
+.status-nuevo { 
+  background-color: rgba(7, 151, 212, 0.1); 
+  color: #0797d4; 
+  border: 1px solid rgba(7, 151, 212, 0.2);
+}
+
+.status-abierto { 
+  background-color: rgba(82, 118, 186, 0.1); 
+  color: #5276ba; 
+  border: 1px solid rgba(82, 118, 186, 0.2);
+}
+
+.status-asignado { 
+  background-color: rgba(7, 151, 212, 0.1); 
+  color: #0797d4; 
+  border: 1px solid rgba(7, 151, 212, 0.2);
+}
+
+.status-en-proceso { 
+  background-color: rgba(254, 133, 28, 0.1); 
+  color: #fe851c; 
+  border: 1px solid rgba(254, 133, 28, 0.2);
+}
+
+.status-pendiente { 
+  background-color: rgba(254, 193, 82, 0.1); 
+  color: #fec152; 
+  border: 1px solid rgba(254, 193, 82, 0.2);
+}
+
+.status-resuelto { 
+  background-color: rgba(0, 176, 35, 0.1); 
+  color: #00b023; 
+  border: 1px solid rgba(0, 176, 35, 0.2);
+}
+
+.status-cerrado { 
+  background-color: rgba(159, 63, 142, 0.1); 
+  color: #9f3f8e; 
+  border: 1px solid rgba(159, 63, 142, 0.2);
+}
+
+.status-vencido { 
+  background-color: rgba(255, 76, 100, 0.1); 
+  color: #ff4c64; 
+  border: 1px solid rgba(255, 76, 100, 0.2);
+}
+
+.status-escalado { 
+  background-color: rgba(114, 47, 55, 0.1); 
+  color: #722F37; 
+  border: 1px solid rgba(114, 47, 55, 0.2);
+}
+
+.status-critico { 
+  background-color: var(--stats5); 
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+/* === ESTADOS CON FONDOS SÓLIDOS (PARA BADGES DESTACADOS) === */
+.status-nuevo-solid { 
+  background-color: var(--stats3); 
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.status-asignado-solid { 
+  background-color: var(--stats7); 
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.status-en-proceso-solid { 
+  background-color: var(--stats2); 
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.status-pendiente-solid { 
+  background-color: var(--stats6); 
+  color: #1a1a1a;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.status-resuelto-solid { 
+  background-color: var(--stats4); 
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.status-cerrado-solid { 
+  background-color: var(--stats1); 
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+/* ===========================================
+   PRIORIDADES
+   =========================================== */
+/* === PRIORIDADES SUTILES === */
+.priority-baja { 
+  background-color: rgba(0, 176, 35, 0.1); 
+  color: #00b023; 
+  border: 1px solid rgba(0, 176, 35, 0.2);
+}
+
+.priority-media { 
+  background-color: rgba(254, 193, 82, 0.1); 
+  color: #fec152; 
+  border: 1px solid rgba(254, 193, 82, 0.2);
+}
+
+.priority-alta { 
+  background-color: rgba(254, 133, 28, 0.1); 
+  color: #fe851c; 
+  border: 1px solid rgba(254, 133, 28, 0.2);
+}
+
+.priority-urgente { 
+  background-color: rgba(255, 76, 100, 0.1); 
+  color: #ff4c64; 
+  border: 1px solid rgba(255, 76, 100, 0.2);
+}
+
+.priority-critica { 
+  background-color: rgba(114, 47, 55, 0.1); 
+  color: #722F37; 
+  border: 1px solid rgba(114, 47, 55, 0.2);
+}
+
+/* === PRIORIDADES CON FONDOS SÓLIDOS === */
+.priority-baja-solid { 
+  background-color: var(--stats4); 
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.priority-media-solid { 
+  background-color: var(--stats6); 
+  color: #1a1a1a;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.priority-alta-solid { 
+  background-color: var(--stats2); 
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.priority-critica-solid { 
+  background-color: var(--stats5); 
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+/* ===========================================
+   BADGES INSTITUCIONALES REUTILIZABLES
+   =========================================== */
+
+/* === BADGES BASE === */
+.institutional-badge {
+  display: inline-flex;
+  align-items: center;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 500;
+  border-radius: var(--border-radius);
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+  text-decoration: none;
+  border: 1px solid transparent;
+  position: relative;
+  overflow: hidden;
+  line-height: 1.2;
+}
+
+/* === TAMAÑOS === */
+.institutional-badge-small {
+  padding: 0.125rem 0.375rem;
+  font-size: 0.75rem;
+  gap: 0.125rem;
+}
+
+.institutional-badge-medium {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+  gap: 0.25rem;
+}
+
+.institutional-badge-large {
+  padding: 0.375rem 0.75rem;
+  font-size: 1rem;
+  gap: 0.375rem;
+}
+
+/* === VARIANTES - PRIMARY === */
+.institutional-badge-primary {
+  background-color: var(--institucional-primario);
+  color: white;
+  border-color: var(--institucional-primario);
+}
+
+.institutional-badge-primary:hover {
+  background-color: var(--institucional-primario-light);
+  border-color: var(--institucional-primario-light);
+}
+
+/* === VARIANTES - SECONDARY === */
+.institutional-badge-secondary {
+  background-color: var(--institucional-secundario);
+  color: white;
+  border-color: var(--institucional-secundario);
+}
+
+.institutional-badge-secondary:hover {
+  background-color: var(--institucional-secundario-light);
+  border-color: var(--institucional-secundario-light);
+}
+
+/* === VARIANTES - SUCCESS === */
+.institutional-badge-success {
+  background-color: var(--success);
+  color: white;
+  border-color: var(--success);
+}
+
+.institutional-badge-success:hover {
+  background-color: #059669;
+  border-color: #059669;
+}
+
+/* === VARIANTES - WARNING === */
+.institutional-badge-warning {
+  background-color: var(--warning);
+  color: white;
+  border-color: var(--warning);
+}
+
+.institutional-badge-warning:hover {
+  background-color: #d97706;
+  border-color: #d97706;
+}
+
+/* === VARIANTES - DANGER === */
+.institutional-badge-danger {
+  background-color: var(--error);
+  color: white;
+  border-color: var(--error);
+}
+
+.institutional-badge-danger:hover {
+  background-color: #dc2626;
+  border-color: #dc2626;
+}
+
+/* === VARIANTES - INFO === */
+.institutional-badge-info {
+  background-color: var(--info);
+  color: white;
+  border-color: var(--info);
+}
+
+.institutional-badge-info:hover {
+  background-color: #0891b2;
+  border-color: #0891b2;
+}
+
+/* === VARIANTES - LIGHT === */
+.institutional-badge-light {
+  background-color: var(--gray-100);
+  color: var(--gray-800);
+  border-color: var(--gray-200);
+}
+
+.institutional-badge-light:hover {
+  background-color: var(--gray-200);
+  border-color: var(--gray-300);
+}
+
+/* === VARIANTES - DARK === */
+.institutional-badge-dark {
+  background-color: var(--gray-800);
+  color: white;
+  border-color: var(--gray-800);
+}
+
+.institutional-badge-dark:hover {
+  background-color: var(--gray-700);
+  border-color: var(--gray-700);
+}
+
+/* === VARIANTES - GHOST === */
+.institutional-badge-ghost {
+  background-color: transparent;
+  color: var(--institucional-primario);
+  border-color: var(--institucional-primario);
+}
+
+.institutional-badge-ghost:hover {
+  background-color: rgba(98, 17, 50, 0.1);
+  color: var(--institucional-primario-light);
+  border-color: var(--institucional-primario-light);
+}
+
+/* === VARIANTES - OUTLINE === */
+.institutional-badge-outline {
+  background-color: transparent;
+  border-width: 1px;
+  border-style: solid;
+}
+
+.institutional-badge-outline.institutional-badge-primary {
+  color: var(--institucional-primario);
+  border-color: var(--institucional-primario);
+  background-color: transparent;
+}
+
+.institutional-badge-outline.institutional-badge-primary:hover {
+  background-color: var(--institucional-primario);
+  color: white;
+}
+
+.institutional-badge-outline.institutional-badge-secondary {
+  color: var(--institucional-secundario);
+  border-color: var(--institucional-secundario);
+  background-color: transparent;
+}
+
+.institutional-badge-outline.institutional-badge-secondary:hover {
+  background-color: var(--institucional-secundario);
+  color: white;
+}
+
+.institutional-badge-outline.institutional-badge-success {
+  color: var(--success);
+  border-color: var(--success);
+  background-color: transparent;
+}
+
+.institutional-badge-outline.institutional-badge-success:hover {
+  background-color: var(--success);
+  color: white;
+}
+
+.institutional-badge-outline.institutional-badge-warning {
+  color: var(--warning);
+  border-color: var(--warning);
+  background-color: transparent;
+}
+
+.institutional-badge-outline.institutional-badge-warning:hover {
+  background-color: var(--warning);
+  color: white;
+}
+
+.institutional-badge-outline.institutional-badge-danger {
+  color: var(--error);
+  border-color: var(--error);
+  background-color: transparent;
+}
+
+.institutional-badge-outline.institutional-badge-danger:hover {
+  background-color: var(--error);
+  color: white;
+}
+
+.institutional-badge-outline.institutional-badge-info {
+  color: var(--info);
+  border-color: var(--info);
+  background-color: transparent;
+}
+
+.institutional-badge-outline.institutional-badge-info:hover {
+  background-color: var(--info);
+  color: white;
+}
+
+/* === ESTADOS === */
+.institutional-badge-clickable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.institutional-badge-clickable:hover:not(.institutional-badge-disabled) {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.institutional-badge-clickable:focus:not(.institutional-badge-disabled) {
+  outline: 2px solid var(--institucional-primario);
+  outline-offset: 2px;
+}
+
+.institutional-badge-clickable:active:not(.institutional-badge-disabled) {
+  transform: translateY(0);
+  box-shadow: var(--shadow-sm);
+}
+
+.institutional-badge-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* === ICONOS === */
+.institutional-badge .material-symbols-outlined {
+  font-size: 1em;
+  line-height: 1;
+}
+
+.institutional-badge-icon-left {
+  margin-right: 0.25rem;
+}
+
+.institutional-badge-icon-right {
+  margin-left: 0.25rem;
+}
+
+/* === BOTÓN DE CIERRE === */
+.institutional-badge-close {
+  background: none;
+  border: none;
+  padding: 0;
+  margin-left: 0.25rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: inherit;
+  opacity: 0.7;
+  transition: opacity var(--transition-fast);
+  border-radius: 2px;
+}
+
+.institutional-badge-close:hover {
+  opacity: 1;
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.institutional-badge-close:focus {
+  outline: 1px solid currentColor;
+  outline-offset: 1px;
+  opacity: 1;
+}
+
+.institutional-badge-close .material-symbols-outlined {
+  font-size: 0.875em;
+}
+
+/* === ANIMACIONES === */
+@keyframes badgeSlideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes badgeSlideOut {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+}
+
+.institutional-badge {
+  animation: badgeSlideIn 0.2s ease-out;
+}
+
+.institutional-badge-exit {
+  animation: badgeSlideOut 0.15s ease-in forwards;
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 640px) {
+  .institutional-badge-large {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+  }
+  
+  .institutional-badge-medium {
+    padding: 0.1875rem 0.375rem;
+    font-size: 0.75rem;
+  }
+  
+  .institutional-badge-small {
+    padding: 0.125rem 0.25rem;
+    font-size: 0.6875rem;
+  }
+}
+
+/* ===========================================
+   SOMBRAS INSTITUCIONALES
+   =========================================== */
+.shadow-institucional {
+  box-shadow: var(--shadow-institucional);
+}
+
+.shadow-institucional-lg {
+  box-shadow: var(--shadow-institucional-lg);
+}
+
+.shadow-rosa {
+  box-shadow: var(--shadow-rosa);
+}
+
+.shadow-professional {
+  box-shadow: var(--shadow-lg);
+}
+
+/* ===========================================
+   UTILIDADES PROFESIONALES
+   =========================================== */
+.border-professional {
+  border: 1px solid var(--gray-200);
+}
+
+.bg-professional {
+  background: linear-gradient(135deg, var(--gray-50) 0%, white 100%);
+}
+
+.text-professional {
+  color: var(--gray-700);
+}
+
+.hover-lift {
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+/* ===========================================
+   SCROLLBARS PERSONALIZADOS
+   =========================================== */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--gray-400) var(--gray-100);
+}
+
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+  background: var(--gray-100);
+  border-radius: var(--border-radius);
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--gray-400);
+  border-radius: var(--border-radius);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--gray-500);
+}
+
+/* ===========================================
+   ACCESIBILIDAD Y PREFERENCIAS DEL USUARIO
+   =========================================== */
+/* === MOTION REDUCIDO === */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* === FOCUS VISIBLE MEJORADO === */
+*:focus-visible {
+  outline: 2px solid var(--primary-blue) !important;
+  outline-offset: 2px !important;
+  border-radius: var(--border-radius) !important;
+}
+
+/* === ALTO CONTRASTE === */
+@media (prefers-contrast: high) {
+  :root {
+    --primary-blue: #0066cc;
+    --gray-700: #000000;
+    --gray-300: #666666;
+  }
+}
+
+/* === MODO OSCURO (PREPARACIÓN) === */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-primary: #1f2937;
+    --bg-secondary: #374151;
+    --text-primary: #f9fafb;
+    --text-secondary: #d1d5db;
+  }
+}
+
+/* ===========================================
+   RESPONSIVE DESIGN
+   =========================================== */
+/* === RESPONSIVE UTILITIES === */
+@media (max-width: 640px) {
+  .responsive-text {
+    font-size: 0.875rem;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  .responsive-text {
+    font-size: 1rem;
+  }
+}
+
+@media (min-width: 1025px) {
+  .responsive-text {
+    font-size: 1.125rem;
+  }
+}
+
+/* ===========================================
+   ESTILOS DE IMPRESIÓN
+   =========================================== */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  * {
+    color: black !important;
+    background: white !important;
+    box-shadow: none !important;
+  }
+  
+  .sidebar-container {
+    display: none !important;
+  }
+  
+  .main-content {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+}
+
+/* ===========================================
+   APLICAR ESTILOS DE FONDO AL BODY
+   =========================================== */
+body {
+  @apply bg-white text-gray-900;
+}
+
+/* ===========================================
+   COMPONENTE PRINCIPAL (APP-ROOT)
+   =========================================== */
+app-root {
+  font-family: 'Montserrat' !important;
+  height: 100vh;
+  width: 100vw;
+  display: block;
+}
+
+app-root *, 
+app-root *::before, 
+app-root *::after {
+  font-family: 'Montserrat' !important;
+}
+
+/* ===========================================
+   ESTILOS DE COMPONENTES ESPECÍFICOS
+   =========================================== */
+
+/* Regla global para app-institutional-button: que tome solo el ancho necesario */
+app-institutional-button {
+  display: inline-flex !important;
+  width: auto !important;
+}
+
+/* Estilos para componentes Angular con :host */
+:host {
+  font-family: 'Montserrat', sans-serif !important;
+}
+
+:host *, 
+:host *::before, 
+:host *::after {
+  font-family: 'Montserrat', sans-serif !important;
+}
+
+/* Contenedores de métricas con colores sólidos gubernamentales */
+.metric-container3 {
+  background: var(--stats3);
+  color: white;
+  padding: 24px;
+  box-shadow: 0 10px 25px rgba(82, 118, 186, 0.15);
+}
+
+.metric-container7 {
+  background: var(--stats7);
+  color: white;
+  padding: 24px;
+  box-shadow: 0 10px 25px rgba(7, 151, 212, 0.15);
+}
+
+.metric-container4{
+  background: var(--stats4);
+  color: white;
+  padding: 24px;
+  box-shadow: 0 10px 25px rgba(0, 176, 35, 0.15);
+}
+
+.metric-container5 {
+  background: var(--stats5);
+  color: white;
+  padding: 24px;
+  box-shadow: 0 10px 25px rgba(255, 76, 100, 0.15);
+}
+
+.metric-container2 {
+  background: var(--stats2);
+  color: white;
+  padding: 24px;
+  box-shadow: 0 10px 25px rgba(254, 133, 28, 0.15);
+}
+
+.metric-container1 {
+  background: var(--stats1);
+  color: white;
+  padding: 24px;
+  box-shadow: 0 10px 25px rgba(159, 63, 142, 0.15);
+}
+
+/* Animaciones mejoradas */
+.transition-all {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Hover effects para las tarjetas con colores sólidos */
+.metric-container3:hover,
+.metric-container7:hover,
+.metric-container-verde:hover,
+.metric-container5:hover,
+.metric-container2:hover,
+.metric-container1:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+}
+
+/* Animación de loading mejorada */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Animaciones de barras de progreso */
+@keyframes progressBar {
+  from {
+    width: 0%;
+  }
+}
+
+.h-3 {
+  animation: progressBar 1s ease-out;
+}
+
+/* Estilos para tablas con colores sólidos */
+table {
+  border-collapse: collapse; /* usar collapse para evitar offsets entre th/td */
+  border-spacing: 0;
+  width: 100%; /* asegurar que la tabla use el 100% del contenedor */
+  table-layout: auto; /* dejar comportamiento por defecto; cambiar a 'fixed' si se requiere alineado rígido */
+  box-sizing: border-box;
+}
+
+table thead tr {
+  background: linear-gradient(135deg, var(--institucional-primario) 0%, var(--institucional-secundario) 50%, rgba(139, 21, 56, 0.95) 100%);
+}
+
+table tbody tr:hover {
+  background-color: rgba(139, 21, 56, 0.02);
+}
+
+/* Asegurar que thead/tbody mantengan comportamiento de tabla (importante si hay sticky headers) */
+.institucional-table thead {
+  display: table-header-group;
+}
+
+.institucional-table tbody {
+  display: table-row-group;
+}
+
+/* Unificar comportamiento de celdas para evitar desalineación */
+.institucional-table th,
+.institucional-table td {
+  box-sizing: border-box;
+  padding: 0.75rem 1rem;
+  vertical-align: middle;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Botones con animaciones - SIN gradientes */
+.btn-institucional-primary,
+.btn-institucional-secondary,
+.btn-institucional-outline {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-institucional-primary::before,
+.btn-institucional-secondary::before,
+.btn-institucional-outline::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: rgba(255,255,255,0.2);
+  transition: left 0.5s;
+}
+
+.btn-institucional-primary:hover::before,
+.btn-institucional-secondary:hover::before,
+.btn-institucional-outline:hover::before {
+  left: 100%;
+}
+
+/* Responsividad mejorada */
+@media (max-width: 768px) {
+  .grid-cols-1.md\\:grid-cols-2.lg\\:grid-cols-4 {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+  }
+  
+  .metric-container3,
+  .metric-container7,
+  .metric-container-verde,
+  .metric-container5,
+  .metric-container2,
+  .metric-container1 {
+    padding: 16px;
+  }
+  
+  .text-3xl {
+    font-size: 1.875rem;
+  }
+}
+
+/* Iconos animados */
+.group:hover svg {
+  transform: scale(1.1);
+  transition: transform 0.2s ease-in-out;
+}
+
+/* Estados de carga mejorados - SIN gradientes */
+.loading-shimmer {
+  background: #f0f0f0;
+  background-size: 200% 100%;
+  animation: loading-shimmer 1.5s infinite;
+}
+
+/* ===========================================
+   ESTILOS DE COMPONENTES ESPECÍFICOS
+   =========================================== */
+
+/* ===========================================
+   COMPONENTE PRINCIPAL (APP-ROOT)
+   =========================================== */
+app-root {
+  font-family: 'Montserrat' !important;
+  height: 100vh;
+  width: 100vw;
+  display: block;
+}
+
+app-root *, 
+app-root *::before, 
+app-root *::after {
+  font-family: 'Montserrat' !important;
+}
+
+/* Layout Wrapper Component */
+.layout-wrapper {
+  display: block;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Smooth transitions for sidebar */
+.sidebar-transition {
+  transition: transform 0.3s ease-in-out;
+}
+
+/* Custom scrollbar for main content */
+main::-webkit-scrollbar {
+  width: 6px;
+}
+
+main::-webkit-scrollbar-track {
+  background: #f8fafc;
+}
+
+main::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+main::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Sidebar Component Styles */
+.sidebar-nav {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 #f8fafc;
+}
+
+.sidebar-nav::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sidebar-nav::-webkit-scrollbar-track {
+  background: #f8fafc;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 2px;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Asegurar que el sidebar ocupe toda la altura */
+.sidebar-container {
+  min-height: 100vh;
+  height: 100vh;
+}
+
+/* Smooth expand/collapse para submenús */
+.submenu-collapsed {
+  max-height: 0;
+  opacity: 0;
+}
+
+.submenu-expanded {
+  max-height: 24rem;
+  opacity: 1;
+}
+
+/* Notification Panel Styles */
+.notification-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.notification-scroll::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+.notification-scroll::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.notification-scroll::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Limitar líneas de texto */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Header Component Styles */
+.header-button:hover {
+  transform: translateY(-1px);
+}
+
+.header-button:active {
+  transform: translateY(0);
+}
+
+/* ===========================================
+   EFECTOS HOVER MEJORADOS PARA TODOS LOS BOTONES
+   Añade brillo, glow y transiciones más suaves para mejorar la experiencia de usuario
+   =========================================== */
+
+/* Estilos base para botones - garantiza que los iconos se centren verticalmente */
+button, .btn, .button, [role="button"] {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.5rem;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* Efecto hover universal para botones */
+button:not(.no-hover):hover, 
+.btn:hover,
+.button:hover,
+[role="button"]:hover {
+  filter: brightness(1.1) contrast(1.05) saturate(1.1);
+  transform: translateY(-1px) scale(1.01);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Efecto activo universal */
+button:not(.no-hover):active, 
+.btn:active,
+.button:active,
+[role="button"]:active {
+  transform: translateY(0) scale(0.98);
+  filter: brightness(0.95);
+  transition: all 0.1s ease;
+}
+
+/* Efecto de pulso sutil en focus para accesibilidad */
+button:focus-visible, 
+.btn:focus-visible,
+.button:focus-visible,
+[role="button"]:focus-visible {
+  outline: none;
+  animation: button-pulse 0.6s ease-in-out;
+  box-shadow: 0 0 0 3px rgba(139, 21, 56, 0.3);
+}
+
+@keyframes button-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(139, 21, 56, 0.4); }
+  70% { box-shadow: 0 0 0 6px rgba(139, 21, 56, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(139, 21, 56, 0); }
+}
+
+/* Mejora para iconos dentro de botones */
+button app-universal-icon,
+button .material-symbols-outlined,
+button .material-icons,
+button i[class*="bi-"],
+.btn app-universal-icon,
+.btn .material-symbols-outlined,
+.btn .material-icons,
+.btn i[class*="bi-"] {
+  opacity: 0.9;
+  transition: all 0.3s ease;
+  display: inline-flex !important;
+  align-items: center !important;
+  height: 100% !important;
+}
+
+button:hover app-universal-icon,
+button:hover .material-symbols-outlined,
+button:hover .material-icons,
+button:hover i[class*="bi-"],
+.btn:hover app-universal-icon,
+.btn:hover .material-symbols-outlined,
+.btn:hover .material-icons,
+.btn:hover i[class*="bi-"] {
+  opacity: 1;
+  filter: brightness(1.2);
+}
+
+/* Efecto de ondas (ripple effect) para botones principales */
+button.btn-primary::before,
+.btn-institucional-primary::before,
+.btn-institucional-secondary::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+button.btn-primary:active::before,
+.btn-institucional-primary:active::before,
+.btn-institucional-secondary:active::before {
+  width: 300px;
+  height: 300px;
+}
+
+/* Ticket Detail Component Styles */
+.prose {
+  max-width: none;
+}
+
+.prose p {
+  margin-bottom: 0.75rem;
+  line-height: 1.625;
+}
+
+/* Estados de focus mejorados */
+.focus-enhanced:focus {
+  outline: 2px solid rgb(59 130 246 / 0.5);
+  outline-offset: 2px;
+}
+
+/* Login Component Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideInUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.animate-slideInUp {
+  animation: slideInUp 0.6s ease-out;
+}
+
+.animate-pulse-slow {
+  animation: pulse 3s ease-in-out infinite;
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.glass-effect {
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.input-focus-effect:focus {
+  box-shadow: 0 0 0 3px rgba(139, 69, 19, 0.1), 0 10px 25px -5px rgba(139, 69, 19, 0.1);
+}
+
+/* Loader institucional institucional ya existe */
+/* ===========================================
+   DASHBOARD MEJORADO - COMPONENTES VISUALES
+   =========================================== */
+
+/* Loader Mejorado con Tema institucional */
+.loader-institucional {
+  width: 80px;
+  height: 80px;
+  border: 6px solid #f3f4f6;
+  border-top: 6px solid var(--institucional-primario);
+  border-radius: 50%;
+  animation: spin-institucional 1.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
+  position: relative;
+}
+
+.loader-institucional::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  background: var(--institucional-secundario);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  animation: pulse-institucional 1.5s ease-in-out infinite;
+}
+
+@keyframes spin-institucional {
+  0% { transform: rotate(0deg); }
+  50% { transform: rotate(180deg) scale(1.1); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes pulse-institucional {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); }
+  50% { transform: translate(-50%, -50%) scale(1.3); }
+}
+
+/* Tarjetas de Métricas Mejoradas */
+.metric-card {
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  backdrop-filter: blur(10px);
+  position: relative;
+  overflow: hidden;
+}
+
+.metric-card:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.metric-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%);
+  transform: translateX(-100%);
+  transition: transform 0.6s;
+}
+
+.metric-card:hover::before {
+  transform: translateX(100%);
+}
+
+/* Contenedores de Métricas con Gradientes institucional */
+.metric-container3 {
+  background: linear-gradient(135deg, var(--stats3) 0%, #3a5998 100%);
+  color: white;
+  box-shadow: 0 20px 40px rgba(82, 118, 186, 0.3);
+}
+
+.metric-container7 {
+  background: linear-gradient(135deg, var(--stats7) 0%, #0573a3 100%);
+  color: white;
+  box-shadow: 0 20px 40px rgba(7, 151, 212, 0.3);
+}
+
+.metric-container4{
+  background: linear-gradient(135deg, var(--stats4) 0%, #008a1c 100%);
+  color: white;
+  box-shadow: 0 20px 40px rgba(0, 176, 35, 0.3);
+}
+
+.metric-container1 {
+  background: linear-gradient(135deg, var(--stats1) 0%, #7c3aed 100%);
+  color: white;
+  box-shadow: 0 20px 40px rgba(139, 92, 246, 0.3);
+}
+
+/* Patrón de Puntos para el Header */
+.bg-pattern-dots {
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.15) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* Animaciones de Entrada */
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Aplicar animaciones a elementos del dashboard */
+.metric-card {
+  animation: slideInUp 0.6s ease-out backwards;
+}
+
+.metric-card:nth-child(1) { animation-delay: 0.1s; }
+.metric-card:nth-child(2) { animation-delay: 0.2s; }
+.metric-card:nth-child(3) { animation-delay: 0.3s; }
+.metric-card:nth-child(4) { animation-delay: 0.4s; }
+
+/* Barras de Progreso Mejoradas */
+.progress-bar-animated {
+  position: relative;
+  overflow: hidden;
+}
+
+.progress-bar-animated::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.18), transparent);
+  animation: shimmer 1.2s infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* Botones de Acción Mejorados */
+.btn-dashboard {
+  background: linear-gradient(135deg, var(--institucional-primario) 0%, var(--institucional-secundario) 100%);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-weight: 600;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  border: none;
+  cursor: pointer;
+}
+
+/* Animación de levitación para filas */
+@keyframes institucionalRowLift {
+  0% {
+    transform: translateY(0) scaleY(1);
+    box-shadow: 0 3px 8px rgba(139, 21, 56, 0.06);
+  }
+  40% {
+    transform: translateY(-4px) scaleY(1.003);
+    box-shadow: 0 8px 18px rgba(139, 21, 56, 0.10);
+  }
+  100% {
+    transform: translateY(0) scaleY(1);
+    box-shadow: 0 6px 14px rgba(139, 21, 56, 0.08);
+  }
+}
+
+.btn-dashboard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+  background: linear-gradient(135deg, var(--institucional-secundario) 0%, var(--institucional-primario) 100%);
+}
+
+/* Tarjetas de Alerta Crítica */
+.alert-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.alert-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  animation: alert-sweep 3s infinite;
+}
+
+@keyframes alert-sweep {
+  0% { left: -100%; }
+  50% { left: 100%; }
+  100% { left: 100%; }
+}
+
+/* Efectos de Hover Avanzados */
+.card-hover-effect {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.card-hover-effect:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+}
+
+.card-hover-effect::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.05) 50%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.card-hover-effect:hover::after {
+  opacity: 1;
+}
+
+/* Indicadores de Estado */
+.status-indicator {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 8px;
+}
+
+.status-success { background-color: #10b981; }
+.status-warning { background-color: #f59e0b; }
+.status-error { background-color: #ef4444; }
+.status-info { background-color: #3b82f6; }
+
+/* Animación de Números (CountUp Effect) */
+.counter-number {
+  font-feature-settings: 'tnum';
+  font-variant-numeric: tabular-nums;
+}
+
+/* ===========================================
+   CLASES ESPECÍFICAS PARA TICKET DETAIL
+   =========================================== */
+
+/* Clases de utilidad para colores institucionales institucional */
+.text-guinda-50 { color: rgba(139, 21, 56, 0.05); }
+.text-guinda-100 { color: rgba(139, 21, 56, 0.1); }
+.text-guinda-200 { color: rgba(139, 21, 56, 0.2); }
+.text-guinda-300 { color: rgba(139, 21, 56, 0.3); }
+.text-guinda-400 { color: rgba(139, 21, 56, 0.4); }
+.text-guinda-500 { color: var(--institucional-primario); }
+.text-guinda-600 { color: var(--institucional-primario-dark); }
+.text-guinda-700 { color: rgba(107, 16, 40, 0.9); }
+.text-guinda-800 { color: rgba(107, 16, 40, 0.95); }
+.text-guinda-900 { color: rgba(107, 16, 40, 1); }
+
+.bg-guinda-50 { background-color: rgba(139, 21, 56, 0.05); }
+.bg-guinda-100 { background-color: rgba(139, 21, 56, 0.1); }
+.bg-guinda-500 { background-color: var(--institucional-primario); }
+.bg-guinda-600 { background-color: var(--institucional-primario-dark); }
+
+.text-rosa-500 { color: var(--institucional-secundario); }
+.text-rosa-600 { color: var(--institucional-secundario-dark); }
+.bg-rosa-500 { background-color: var(--institucional-secundario); }
+.bg-rosa-600 { background-color: var(--institucional-secundario-dark); }
+
+.border-guinda-300 { border-color: rgba(139, 21, 56, 0.3); }
+.hover\:border-guinda-300:hover { border-color: rgba(139, 21, 56, 0.3); }
+
+/* Gradientes institucionales para botones y headers */
+.from-guinda-500 { --tw-gradient-from: var(--institucional-primario); }
+.to-rosa-500 { --tw-gradient-to: var(--institucional-secundario); }
+.from-guinda-600 { --tw-gradient-from: var(--institucional-primario-dark); }
+.to-rosa-600 { --tw-gradient-to: var(--institucional-secundario-dark); }
+.via-guinda-700 { --tw-gradient-via: rgba(107, 16, 40, 0.9); }
+
+/* Efectos de hover para botones institucionales */
+.hover\:from-guinda-600:hover { --tw-gradient-from: var(--institucional-primario-dark); }
+.hover\:to-rosa-600:hover { --tw-gradient-to: var(--institucional-secundario-dark); }
+
+/* Sombras institucionales mejoradas */
+.shadow-institucional-lg { box-shadow: var(--shadow-institucional-lg); }
+.hover\:shadow-institucional-lg:hover { box-shadow: var(--shadow-institucional-lg); }
+
+/* Estados específicos para badges */
+.bg-blue-100 { background-color: rgb(219 234 254); }
+.text-blue-800 { color: rgb(30 64 175); }
+.bg-indigo-100 { background-color: rgb(224 231 255); }
+.text-indigo-800 { color: rgb(55 48 163); }
+.bg-amber-100 { background-color: rgb(254 243 199); }
+.text-amber-800 { color: rgb(146 64 14); }
+
+/* Efectos especiales para el componente ticket-detail */
+.hover\:scale-105:hover {
+  transform: scale(1.05);
+}
+
+.backdrop-blur-sm {
+  backdrop-filter: blur(4px);
+}
+
+/* Transiciones suaves para elementos interactivos */
+.transition-all {
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 300ms;
+}
+
+/* Gradientes de fondo para secciones */
+.bg-gradient-to-r {
+  background-image: linear-gradient(to right, var(--tw-gradient-stops));
+}
+
+.bg-gradient-to-br {
+  background-image: linear-gradient(to bottom right, var(--tw-gradient-stops));
+}
+
+/* ===========================================
+   ESTILOS ESPECÍFICOS PARA COMENTARIOS
+   =========================================== */
+
+/* Animaciones para comentarios */
+.comment-fade-in {
+  animation: fadeInUp 0.4s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Textarea con auto-resize mejorado */
+.comment-textarea {
+  resize: none;
+  overflow: hidden;
+  min-height: 80px;
+  max-height: 200px;
+  transition: all 0.2s ease;
+}
+
+.comment-textarea:focus {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-institucional-lg);
+  border-color: var(--institucional-secundario);
+}
+
+/* Botones de comentarios */
+.comment-button {
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+.comment-button:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-institucional);
+}
+
+.comment-button:active {
+  transform: translateY(0);
+}
+
+/* Badges institucionales */
+.badge-institucional {
+  background: linear-gradient(135deg, var(--institucional-primario), var(--institucional-secundario));
+  color: white;
+  border: none;
+}
+
+.badge-internal {
+  background: linear-gradient(135deg, var(--institucional-secundario), var(--institucional-secundario-dark));
+  color: white;
+  border: none;
+}
+
+/* Iconos con animación */
+.icon-animate {
+  transition: transform 0.2s ease;
+}
+
+.icon-animate:hover {
+  transform: scale(1.1);
+}
+
+/* Bordes institucional */
+.border-institucional {
+  border-color: var(--institucional-primario);
+}
+
+.border-institucional-secundario {
+  border-color: var(--institucional-secundario);
+}
+
+/* Texto institucional */
+.text-institucional-primario {
+  color: var(--institucional-primario);
+}
+
+.text-institucional-secundario {
+  color: var(--institucional-secundario);
+}
+
+.text-institucional-secundario {
+  color: var(--institucional-secundario);
+}
+
+/* Fondos institucional */
+.bg-institucional-primario {
+  background-color: var(--institucional-primario);
+}
+
+.bg-institucional-secundario {
+  background-color: var(--institucional-secundario);
+}
+
+.bg-institucional-secundario {
+  background-color: var(--institucional-secundario);
+}
+
+/* Fondos con opacidad */
+.bg-institucional-primario\/10 {
+  background-color: rgba(139, 21, 56, 0.1);
+}
+
+.bg-institucional-secundario\/10 {
+  background-color: rgba(214, 51, 132, 0.1);
+}
+
+/* Estados hover para fondos institucional */
+.hover\:bg-institucional-primario-dark:hover {
+  background-color: var(--institucional-primario-dark);
+}
+
+.hover\:bg-institucional-secundario-dark:hover {
+  background-color: var(--institucional-secundario-dark);
+}
+
+/* ===========================================
+   ESTILOS ESPECÍFICOS PARA SIDEBAR COLAPSADO
+   =========================================== */
+.sidebar-component {
+  transition: width 0.3s ease-in-out, transform 0.3s ease-in-out;
+  will-change: width, transform;
+}
+
+/* Forzar width específicos para evitar conflictos */
+.sidebar-component.w-64 {
+  width: 16rem !important;
+}
+
+.sidebar-component.w-16 {
+  width: 4rem !important;
+}
+
+.sidebar-component.w-0 {
+  width: 0 !important;
+  min-width: 0 !important;
+}
+
+/* Efectos de hover para items en sidebar colapsado */
+.sidebar-component .sidebar-item {
+  position: relative;
+}
+
+/* Tooltip para sidebar colapsado */
+.sidebar-component .sidebar-item[title]:hover::after {
+  content: attr(title);
+  position: fixed;
+  left: calc(4rem + 0.5rem); /* 4rem es el ancho del sidebar colapsado + margen */
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--institucional-primario);
+  color: white;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.375rem;
+  white-space: nowrap;
+  z-index: 9999;
+  font-size: 0.875rem;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+  opacity: 0;
+  animation: tooltipFadeIn 0.2s ease-out forwards;
+  pointer-events: none;
+}
+
+/* Flecha del tooltip */
+.sidebar-component .sidebar-item[title]:hover::before {
+  content: '';
+  position: fixed;
+  left: calc(4rem + 0.25rem); /* Posición de la flecha */
+  top: 50%;
+  transform: translateY(-50%);
+  border: 0.25rem solid transparent;
+  border-right-color: var(--institucional-primario);
+  z-index: 9999;
+  opacity: 0;
+  animation: tooltipFadeIn 0.2s ease-out forwards;
+  pointer-events: none;
+}
+
+/* Animación del tooltip */
+@keyframes tooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-50%) translateX(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
+  }
+}
+
+/* Ocultar tooltips en móvil */
+@media (max-width: 1024px) {
+  .sidebar-component .sidebar-item[title]:hover::after,
+  .sidebar-component .sidebar-item[title]:hover::before {
+    display: none !important;
+  }
+}
+
+/* Asegurar que el sidebar no interfiera con el layout */
+.sidebar-component {
+  flex-shrink: 0;
+  overflow: visible; /* Permitir que los tooltips se muestren fuera del contenedor */
+}
+
+/* Específicamente para tooltips del sidebar colapsado */
+.sidebar-component.w-16 {
+  overflow: visible !important;
+}
+
+/* Mejoras para las transiciones del sidebar */
+.sidebar-component {
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: width, transform;
+}
+
+/* Estados del sidebar con anchos forzados */
+.sidebar-component.w-64 {
+  width: 16rem !important;
+  min-width: 16rem !important;
+}
+
+.sidebar-component.w-16 {
+  width: 4rem !important;
+  min-width: 4rem !important;
+}
+
+.sidebar-component.w-0 {
+  width: 0 !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+}
+
+/* Comportamiento específico para móvil */
+@media (max-width: 1023px) {
+  .sidebar-component {
+    width: 16rem !important; /* Forzar ancho completo en móvil cuando está abierto */
+    overflow-y: auto !important; /* Permitir scroll en móvil */
+    overflow-x: hidden !important;
+    background-color: white !important; /* Forzar fondo blanco */
+  }
+  
+  /* Asegurar que el sidebar se muestre correctamente en móvil */
+  .sidebar-component.fixed {
+    height: 100vh !important;
+    height: 100dvh !important; /* Para soporte de viewport dinámico */
+  }
+  
+  /* Ocultar completamente cuando está cerrado en móvil */
+  .sidebar-component.-translate-x-full {
+    transform: translateX(-100%) !important;
+  }
+  
+  /* Remover cualquier outline o ring focus en móvil para el sidebar */
+  .sidebar-component,
+  .sidebar-component *,
+  .sidebar-component *:focus,
+  .sidebar-component *:active {
+    outline: none !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+  
+  /* Asegurar que los enlaces sean clickeables en móvil (pero no sobrescribir los seleccionados) */
+  .sidebar-component .sidebar-item:not(.sidebar-selected-item) {
+    position: relative !important;
+    z-index: 10 !important;
+    pointer-events: auto !important;
+    background-color: transparent !important;
+  }
+  
+  .sidebar-component .sidebar-item:focus,
+  .sidebar-component .sidebar-item:active {
+    outline: none !important;
+    box-shadow: none !important;
+  }
+  
+  /* Asegurar que no hay overlays o pseudo-elementos interfiriendo */
+  .sidebar-component .sidebar-item:before,
+  .sidebar-component .sidebar-item:after {
+    display: none !important;
+  }
+}
+
+/* Mejorar la transición del contenido del sidebar */
+.sidebar-component .transition-all {
+  transition-property: opacity, width, margin, padding;
+  transition-duration: 0.3s;
+  transition-timing-function: ease-in-out;
+}
+
+/* Animaciones específicas del sidebar */
+.sidebar-component {
+  transition: width 0.3s ease-in-out, transform 0.3s ease-in-out !important;
+}
+
+.sidebar-component .sidebar-item {
+  transition: all 0.2s ease-in-out;
+}
+
+.sidebar-component .sidebar-item span {
+  transition: opacity 0.3s ease-in-out, width 0.3s ease-in-out;
+}
+
+/* Asegurar que las transiciones de width funcionen correctamente */
+.sidebar-component.w-64 {
+  width: 16rem;
+}
+
+.sidebar-component.w-16 {
+  width: 4rem;
+}
+
+.sidebar-component.w-0 {
+  width: 0rem;
+}
+
+/* Mejoras para tooltips en posición fija */
+@media (min-width: 1024px) {
+  .sidebar-component .sidebar-item[title]:hover::after {
+    left: calc(4rem + 0.5rem) !important; /* Para sidebar colapsado */
+  }
+  
+  .sidebar-component .sidebar-item[title]:hover::before {
+    left: calc(4rem + 0.25rem) !important; /* Para flecha del tooltip */
+  }
+}
+
+/* Asegurar que tooltips no aparezcan en móvil o cuando no está colapsado */
+@media (max-width: 1023px) {
+  .sidebar-component .sidebar-item[title]:hover::after,
+  .sidebar-component .sidebar-item[title]:hover::before {
+    display: none !important;
+  }
+}
+
+/* Cuando el sidebar no está colapsado, no mostrar tooltips */
+.sidebar-component:not(.w-16) .sidebar-item[title]:hover::after,
+.sidebar-component:not(.w-16) .sidebar-item[title]:hover::before {
+  display: none !important;
+}
+
+/* Mejorar el scroll en móvil */
+@media (max-width: 1023px) {
+  .sidebar-component .sidebar-nav {
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+}
+
+/* Overlay reutilizable para sidebars (móvil/modal) */
+.sidebar-overlay {
+  background-color: rgba(0,0,0,0.7); /* valor por defecto, controlable aquí */
+  backdrop-filter: none; /* no difuminar por defecto */
+  -webkit-tap-highlight-color: transparent; /* evitar highlight azul en móvil */
+}
+
+/* Si se desea overlay más sutil, usar .sidebar-overlay--soft */
+.sidebar-overlay--soft {
+  background-color: rgba(0,0,0,0.45);
+}
+
+
+
+
+/* ===========================================
+   TABLAS INSTITUCIONALES - CLASES CSS GLOBALES
+   =========================================== */
+
+/* === CLASES BASE PARA TABLAS INSTITUCIONALES === */
+.institucional-table {
+  width: 100%;
+  border-collapse: collapse;
+  border-spacing: 0;
+  font-family: 'Montserrat', sans-serif !important;
+  border-radius: var(--border-radius-lg);
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(139, 21, 56, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
+  background: #ffffff; /* Fondo sólido blanco en lugar de gradiente */
+  border: 1px solid rgba(139, 21, 56, 0.08);
+  position: relative;
+  table-layout: auto; /* Distribución automática basada en contenido */
+}
+
+.institucional-table::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--institucional-primario) 0%, var(--institucional-secundario) 50%, var(--institucional-secundario) 100%);
+  border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0;
+  z-index: 1; /* mantenerlo por debajo de los headers sticky */
+  pointer-events: none; /* decoración, no debe captar eventos */
+  will-change: transform; /* optimización ligera */
+}
+
+.institucional-table-header {
+  padding: 0.625rem 0.75rem;
+  box-sizing: border-box;
+  text-align: left;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: white;
+  border-bottom: 3px solid var(--institucional-secundario);
+  position: sticky;
+  width: auto; /* Permitir ancho automático basado en contenido */
+  top: 0;
+
+  background-clip: padding-box; /* evitar que el fondo sobresalga sobre el borde */
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.institucional-table-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, transparent 0%, rgba(255, 255, 255, 0.05) 50%, transparent 100%);
+  pointer-events: none;
+}
+
+/* Contenedor del contenido del header para text wrapping */
+.header-content {
+  white-space: normal;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+  word-break: break-word;
+  line-height: 1.3;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.column-title {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.institucional-table-header:first-child {
+  border-top-left-radius: var(--border-radius-lg);
+}
+
+.institucional-table-header:last-child {
+  border-top-right-radius: var(--border-radius-lg);
+}
+
+.institucional-table-row {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  border-bottom: 1px solid rgba(139, 21, 56, 0.08);
+  position: relative;
+  background: #ffffff; /* Fondo sólido blanco para todas las filas */
+  will-change: transform, box-shadow; /* hint para mejorar rendimiento en animaciones */
+}
+
+.institucional-table-row::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px; /* un poco más visible */
+  background: linear-gradient(90deg, var(--institucional-secundario), var(--institucional-primario), var(--institucional-secundario));
+  transform-origin: center center; /* expandir desde el centro */
+  transform: scaleX(0); /* arrancamos colapsada */
+  z-index: 3; /* Por encima de las celdas */
+  pointer-events: none;
+  transition: transform 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  border-radius: 2px; /* redondeo simétrico */
+}
+
+.institucional-table-row:hover {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e3f2fd 100%); /* Gradiente unificado en la fila completa */
+  border-color: rgba(139, 21, 56, 0.15);
+  /* Levitar con animación: sube y vuelve */
+  animation: institucionalRowLift 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
+
+.institucional-table-row:hover::before {
+  width: 4px;
+}
+
+/* Activar línea decorativa unificada en hover: usar scaleX para ocupar todo el ancho */
+.institucional-table-row:hover::after {
+  transform: scaleX(1); /* llena el ancho del padre */
+}
+
+.institucional-table-row:hover .institucional-table-cell {
+  color: var(--gray-800) !important;
+  /* Solo cambio de color - sin background ni otros efectos */
+}
+
+.institucional-table-row:last-child {
+  border-bottom: none;
+}
+
+
+.institucional-table-cell {
+  padding: 0.375rem 0.5rem;
+  box-sizing: border-box;
+  font-size: 0.875rem;
+  color: var(--gray-700);
+  vertical-align: top; /* Cambiado a top para mejor alineación con texto multilínea */
+  position: relative;
+  background: transparent !important;
+  white-space: normal; /* Permitir saltos de línea */
+  word-wrap: break-word; /* Partir palabras largas si es necesario */
+  word-break: break-word; /* Compatibilidad adicional */
+  width: auto;
+  margin: 0;
+  z-index: 2;
+  border-bottom: 1px solid rgba(139, 21, 56, 0.05);
+  line-height: 1.4; /* Mejor espaciado entre líneas */
+}
+
+/* === RESPONSIVE TABLE CELLS === */
+@media (max-width: 768px) {
+  .institucional-table-cell {
+    padding: 0.25rem 0.375rem;
+    font-size: 0.8rem;
+    line-height: 1.3;
+  }
+}
+
+@media (max-width: 480px) {
+  .institucional-table-cell {
+    padding: 0.2rem 0.25rem;
+    font-size: 0.75rem;
+    line-height: 1.2;
+  }
+}
+
+/* Contenedor interno para el contenido de las celdas */
+.institucional-table-cell .cell-content {
+  width: 100%;
+  white-space: normal;
+  word-wrap: break-word;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto; /* Activar división silábica automática */
+}
+
+/* Asegurar que todos los elementos dentro de las celdas se ajusten al ancho */
+.institucional-table-cell * {
+  max-width: 100%;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Especial para divs y spans dentro de celdas */
+.institucional-table-cell div,
+.institucional-table-cell span {
+  white-space: normal;
+  word-break: break-word;
+}
+
+/* Mantener flexbox pero con wrap para elementos que lo usen */
+.institucional-table-cell .flex {
+  flex-wrap: wrap;
+}
+
+/* Deshabilitar cualquier hover directo en celdas */
+.institucional-table-cell:hover {
+  background: transparent !important;
+  transition: none !important;
+}
+
+.institucional-table-cell:first-child {
+  font-weight: 600;
+  color: var(--gray-800);
+}
+
+/* Pseudo-elementos ::after de celdas removidos - la animación la maneja solo la fila */
+
+/* === VARIANTES DE TABLA === */
+/* Tabla compacta */
+.institucional-table-compact .institucional-table-header,
+.institucional-table-compact .institucional-table-cell {
+  padding: 0.25rem 0.5rem;
+}
+
+/* Tabla densa */
+.institucional-table-dense .institucional-table-header,
+.institucional-table-dense .institucional-table-cell {
+  padding: 0.125rem 0.375rem;
+  font-size: 0.75rem;
+}
+
+/* Tabla amplia */
+.institucional-table-spacious .institucional-table-header,
+.institucional-table-spacious .institucional-table-cell {
+  padding: 0.375rem 0.5rem;
+}
+
+/* === ESTADOS DE FILA === */
+.institucional-table-row-selected {
+  background: #fdf2f8 !important; /* Fondo sólido rosa muy claro en lugar de gradiente transparente */
+  border-left: 4px solid var(--institucional-secundario);
+  box-shadow: inset 2px 0 0 rgba(139, 21, 56, 0.1), 0 2px 8px rgba(139, 21, 56, 0.1);
+  /* transform: translateX(2px); ✂️ ELIMINADO - causaba desplazamiento */
+  position: relative;
+}
+
+.institucional-table-row-selected::before {
+  width: 5px !important;
+  background: linear-gradient(180deg, var(--institucional-secundario), var(--institucional-primario));
+}
+
+.institucional-table-row-selected .institucional-table-cell {
+  color: var(--gray-800);
+  font-weight: 500;
+}
+
+.institucional-table-row-disabled {
+  opacity: 0.4;
+  pointer-events: none;
+  filter: grayscale(0.3);
+}
+
+.institucional-table-row-striped:nth-child(even) {
+  background: #f9fafb; /* Fondo sólido gris muy claro en lugar de gradiente transparente */
+}
+
+/* === TABLA RESPONSIVA === */
+.institucional-table-responsive {
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--institucional-secundario) var(--gray-100);
+  /* scrollbar-gutter: stable both-edges; reservar espacio para scrollbar y evitar que el body cambie el ancho disponible */
+  -webkit-overflow-scrolling: touch;
+}
+
+/* === STICKY HEADER (aplicar añadiendo la clase al <table>) === */
+/* Uso: <table class="institucional-table institucional-table-sticky"> ... */
+.institucional-table-sticky {
+  display: block; /* permitir que tbody sea scrollable */
+  width: 100%;
+}
+
+.institucional-table-sticky thead,
+.institucional-table-sticky tbody {
+  display: block;
+}
+
+.institucional-table-sticky thead tr {
+  display: table;
+  width: 100%;
+  table-layout: fixed; /* conservar anchos de columnas */
+}
+
+.institucional-table-sticky tbody tr {
+  display: table;
+  width: 100%;
+  table-layout: fixed;
+}
+
+/* El tbody se vuelve scrollable solo si su altura excede la ventana */
+.institucional-table-sticky tbody {
+  max-height: calc(100vh - 160px); /* ajustar si el layout tiene header/filtros */
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Hacer el thead "pegajoso" y asegurarlo sobre el contenido del tbody */
+.institucional-table-sticky thead th {
+  position: sticky;
+  top: 0;
+  z-index: 20; /* encima de las filas */
+
+  color: white;
+}
+
+/* Asegurar que las celdas del tbody no muestren fondo que interrumpa el header al pasar por debajo */
+.institucional-table-sticky tbody .institucional-table-cell {
+  background: transparent;
+}
+
+/* Si el contenido no supera la ventana, no aparece scroll y el layout se mantiene natural */
+.institucional-table-sticky tbody:only-child,
+.institucional-table-sticky tbody:empty {
+  max-height: none;
+  overflow: visible;
+}
+
+/* Respeto a usuarios que prefieren menos movimiento */
+@media (prefers-reduced-motion: reduce) {
+  .institucional-table-sticky tbody {
+    max-height: none;
+    overflow: visible;
+  }
+}
+
+.institucional-table-responsive::-webkit-scrollbar {
+  height: 6px;
+}
+
+.institucional-table-responsive::-webkit-scrollbar-track {
+  background: var(--gray-100);
+}
+
+.institucional-table-responsive::-webkit-scrollbar-thumb {
+  background: var(--institucional-secundario);
+  border-radius: 3px;
+}
+
+/* === TABLA CON HEADER FIJO === */
+.institucional-table-fixed-header {
+  max-height: 60vh;
+  overflow-y: auto;
+  scrollbar-gutter: stable; /* evitar que aparezca scrollbar y desplace el contenido del body respecto al header */
+}
+
+.institucional-table-fixed-header .institucional-table-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+/* === ACCIONES EN TABLA === */
+.institucional-table-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  opacity: 0.7;
+  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.institucional-table-row:hover .institucional-table-actions {
+  opacity: 1;
+}
+
+/* === COLUMNAS 'PINNED' (sticky durante scroll horizontal) === */
+.institucional-table-column-sticky-left,
+.institucional-table-column-sticky-right {
+  position: sticky;
+  z-index: 25; /* encima de filas y celdas normales */
+  background: #ffffff; /* fondo sólido para que no se vea el contenido scrollable detrás */
+}
+
+.institucional-table-column-sticky-left {
+  left: 0; /* será sobrescrito por inline style left.px calculado por el componente */
+  box-shadow: 2px 0 6px rgba(0,0,0,0.04);
+}
+
+.institucional-table-column-sticky-right {
+  right: 0; /* será sobrescrito por inline style right.px calculado por el componente */
+  box-shadow: -2px 0 6px rgba(0,0,0,0.04);
+}
+
+/* Asegurar que las tablas con columnas fijas tengan ancho mínimo adecuado */
+.institucional-table-responsive .institucional-table {
+  min-width: max-content; /* Permite que la tabla se expanda según el contenido */
+  width: 100%;
+}
+
+.institucional-table-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.5rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1.5px solid var(--gray-300);
+  background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+  color: var(--gray-600);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* === RESPONSIVE ACTION BUTTONS === */
+@media (max-width: 768px) {
+  .institucional-table-action-btn {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 0.375rem;
+  }
+  
+  .institucional-table-action-btn .material-symbols-outlined {
+    font-size: 1.125rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .institucional-table-action-btn {
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 0.25rem;
+    border-width: 1px;
+  }
+  
+  .institucional-table-action-btn .material-symbols-outlined {
+    font-size: 1rem;
+  }
+  
+  /* Reduce hover effects on mobile for better performance */
+  .institucional-table-action-btn:hover {
+    transform: translateY(-1px) scale(1.02);
+  }
+}
+
+/* === ACTION BUTTON CONTAINER RESPONSIVE === */
+@media (max-width: 640px) {
+  .institucional-table-cell .flex.gap-2 {
+    gap: 0.25rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .institucional-table-cell .flex.gap-2 {
+    gap: 0.125rem;
+    flex-wrap: wrap;
+  }
+}
+
+.institucional-table-action-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.3) 50%, transparent 70%);
+  transform: translateX(-100%);
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.institucional-table-action-btn:hover::before {
+  transform: translateX(100%);
+}
+
+.institucional-table-action-btn:hover {
+  background: linear-gradient(145deg, var(--institucional-primario) 0%, var(--institucional-secundario) 100%);
+  color: white;
+  border-color: var(--institucional-primario);
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 8px 25px rgba(139, 21, 56, 0.25), 0 4px 12px rgba(139, 21, 56, 0.15);
+}
+
+.institucional-table-action-btn:active {
+  transform: translateY(0) scale(0.98);
+  transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.institucional-table-action-btn-primary {
+  background: linear-gradient(145deg, var(--institucional-primario) 0%, var(--institucional-secundario) 100%);
+  color: white;
+  border-color: var(--institucional-primario);
+  box-shadow: 0 4px 12px rgba(139, 21, 56, 0.2);
+}
+
+.institucional-table-action-btn-primary:hover {
+  background: linear-gradient(145deg, var(--institucional-secundario) 0%, var(--institucional-primario) 100%);
+  box-shadow: 0 8px 25px rgba(139, 21, 56, 0.35);
+  transform: translateY(-3px) scale(1.08);
+}
+
+.institucional-table-action-btn-secondary {
+  background: linear-gradient(145deg, var(--institucional-secundario) 0%, #e91e63 100%);
+  color: white;
+  border-color: var(--institucional-secundario);
+  box-shadow: 0 4px 12px rgba(214, 51, 132, 0.2);
+}
+
+.institucional-table-action-btn-secondary:hover {
+  background: linear-gradient(145deg, #e91e63 0%, var(--institucional-secundario) 100%);
+  box-shadow: 0 8px 25px rgba(214, 51, 132, 0.35);
+  transform: translateY(-3px) scale(1.08);
+}
+
+.institucional-table-action-btn-danger {
+  background: linear-gradient(145deg, var(--stats5) 0%, #dc2626 100%);
+  color: white;
+  border-color: var(--stats5);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+}
+
+.institucional-table-action-btn-danger:hover {
+  background: linear-gradient(145deg, #dc2626 0%, var(--stats5) 100%);
+  box-shadow: 0 8px 25px rgba(239, 68, 68, 0.35);
+  transform: translateY(-3px) scale(1.08);
+}
+
+.institucional-table-action-btn-success {
+  background: linear-gradient(145deg, var(--stats4) 0%, #16a34a 100%);
+  color: white;
+  border-color: var(--stats4);
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.2);
+}
+
+.institucional-table-action-btn-success:hover {
+  background: linear-gradient(145deg, #16a34a 0%, var(--stats4) 100%);
+  box-shadow: 0 8px 25px rgba(34, 197, 94, 0.35);
+  transform: translateY(-3px) scale(1.08);
+}
+
+/* === TOUCH DEVICE IMPROVEMENTS === */
+@media (hover: none) and (pointer: coarse) {
+  /* Touch devices: reduce hover effects and improve tap targets */
+  .institucional-table-action-btn:hover {
+    transform: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  }
+  
+  .institucional-table-action-btn-primary:hover,
+  .institucional-table-action-btn-secondary:hover,
+  .institucional-table-action-btn-danger:hover,
+  .institucional-table-action-btn-success:hover {
+    transform: none;
+    box-shadow: 0 4px 12px rgba(139, 21, 56, 0.2);
+  }
+  
+  /* Improve tap targets */
+  .institucional-table-action-btn {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  
+  .institucional-table-pagination-btn {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+/* === RESPONSIVE TABLE OVERFLOW IMPROVEMENTS === */
+@media (max-width: 768px) {
+  .institucional-table-responsive {
+    margin: 0 -0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .institucional-table-responsive {
+    margin: 0 -0.25rem;
+  }
+  
+  .institucional-table {
+    font-size: 0.75rem;
+  }
+}
+
+/* === CHECKBOX PARA SELECCIÓN MÚLTIPLE === */
+.institucional-table-checkbox {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  width: 16px;
+  max-width: 16px;
+  height: 16px;
+  border-radius: 0.25rem;
+  border: 1px solid #d1d5db;
+  transition: all 0.14s ease;
+  cursor: pointer;
+  position: relative;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  display: inline-block;
+  vertical-align: middle;
+}
+
+/* Asegurar que la celda del checkbox tenga ancho fijo */
+.institucional-table-header:has(.institucional-table-checkbox),
+.institucional-table-cell:has(.institucional-table-checkbox) {
+  width: 40px;
+  max-width: 40px;
+  min-width: 40px;
+  padding: 0.25rem 0.25rem;
+  white-space: nowrap; /* Solo el checkbox mantiene nowrap */
+  text-align: center;
+}
+
+/* Marca en V usando ::after cuando está checked */
+.institucional-table-checkbox::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 5px;
+  height: 8px;
+  border: solid transparent;
+  border-width: 0 2px 2px 0;
+  transform: translate(-50%, -60%) rotate(45deg) scale(0);
+  transform-origin: center;
+  transition: transform 0.12s ease;
+}
+
+.institucional-table-checkbox:checked {
+  background: var(--institucional-primario);
+  border-color: var(--institucional-primario);
+  box-shadow: 0 1px 3px rgba(139, 21, 56, 0.22);
+}
+
+.institucional-table-checkbox:checked::after {
+  border-color: #fff;
+  transform: translate(-50%, -60%) rotate(45deg) scale(1);
+}
+
+/* Estado indeterminado: barra horizontal centrada */
+.institucional-table-checkbox:indeterminate::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 8px;
+  height: 2px;
+  background: #fff;
+  transform: translate(-50%, -50%);
+}
+
+.institucional-table-checkbox:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(139, 21, 56, 0.1);
+  border-color: var(--institucional-primario);
+}
+
+.institucional-table-checkbox:hover {
+  border-color: #9ca3af;
+}
+
+/* === ORDENAMIENTO DE COLUMNAS === */
+.institucional-table-sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.institucional-table-sortable::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, transparent 0%, rgba(255, 255, 255, 0.1) 50%, transparent 100%);
+  opacity: 0;
+  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.institucional-table-sortable:hover::before {
+  opacity: 1;
+}
+
+.institucional-table-sortable:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
+}
+
+.institucional-table-sort-icon {
+  display: inline-block;
+  margin-left: 0;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+  flex-shrink: 0; /* Evitar que el ícono se encoja */
+  margin-left: auto; /* Empujar el icono al extremo derecho */
+}
+
+.institucional-table-sort-asc .institucional-table-sort-icon {
+  transform: rotate(0deg) scale(1.1);
+  color: var(--institucional-secundario);
+}
+
+.institucional-table-sort-desc .institucional-table-sort-icon {
+  transform: rotate(180deg) scale(1.1);
+  color: var(--institucional-secundario);
+}
+
+/* === FILAS EXPANDIBLES === */
+.institucional-table-expandable-row {
+  cursor: pointer;
+  position: relative;
+}
+
+.institucional-table-expandable-row::after {
+  content: '';
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 8px solid var(--institucional-secundario);
+  transform: translateY(-50%);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: 0.7;
+}
+
+.institucional-table-expandable-row.expanded::after {
+  transform: translateY(-50%) rotate(180deg);
+  border-top-color: var(--institucional-primario);
+  opacity: 1;
+}
+
+.institucional-table-expanded-content {
+  padding: 2rem 1.5rem;
+  background: linear-gradient(145deg, rgba(139, 21, 56, 0.02) 0%, rgba(248, 250, 252, 0.8) 100%);
+  border-left: 4px solid var(--institucional-secundario);
+  animation: expandContent 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(10px);
+  position: relative;
+  overflow: hidden;
+}
+
+.institucional-table-expanded-content::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, transparent 0%, rgba(139, 21, 56, 0.02) 50%, transparent 100%);
+  pointer-events: none;
+}
+
+@keyframes expandContent {
+  from {
+    opacity: 0;
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    max-height: 300px;
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+    transform: translateY(0);
+  }
+}
+
+/* === FILTROS Y BÚSQUEDA === */
+.institucional-table-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  background: #ffffff; /* Fondo sólido blanco en lugar de gradiente transparente */
+  border-bottom: 1px solid rgba(139, 21, 56, 0.1);
+  position: relative;
+}
+
+.institucional-table-filters::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--institucional-primario) 0%, var(--institucional-secundario) 50%, var(--institucional-secundario) 100%);
+}
+
+/* === ELEMENTOS DE FILTRO === */
+.institucional-table-filter-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.institucional-table-filter-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  white-space: nowrap;
+}
+
+.institucional-table-filter-select {
+  min-width: 120px;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  background: #ffffff;
+  color: #374151;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.institucional-table-filter-select:focus {
+  outline: none;
+  border-color: var(--institucional-primario);
+  box-shadow: 0 0 0 2px rgba(139, 21, 56, 0.1);
+}
+
+.institucional-table-filter-select:hover {
+  border-color: #d1d5db;
+}
+
+.institucional-table-filter-button {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  background: #ffffff;
+  color: #374151;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  font-weight: 500;
+}
+
+.institucional-table-filter-button:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+}
+
+.institucional-table-filter-button.active {
+  background: var(--institucional-primario);
+  color: white;
+  border-color: var(--institucional-primario);
+}
+
+.institucional-table-search {
+  flex: 1;
+  min-width: 18rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.875rem;
+  color: #374151;
+}
+
+.institucional-table-search::placeholder {
+  color: #9ca3af;
+  font-style: normal;
+}
+
+.institucional-table-search:focus {
+  outline: none;
+  border-color: var(--institucional-primario);
+  box-shadow: 0 0 0 3px rgba(139, 21, 56, 0.1);
+  background: #ffffff;
+}
+
+.institucional-table-search:hover {
+  border-color: #d1d5db;
+}
+
+/* === PAGINACIÓN === */
+.institucional-table-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem 2rem;
+  background: #ffffff; /* Fondo sólido blanco en lugar de gradiente transparente */
+  border-top: 1px solid rgba(139, 21, 56, 0.08);
+  /* backdrop-filter: blur(10px); ✂️ ELIMINADO - no necesario con fondo sólido */
+  position: relative;
+  border-bottom-left-radius: var(--border-radius-lg);
+  border-bottom-right-radius: var(--border-radius-lg);
+  border-top: 1px solid transparent; /* grosor del borde */
+  border-image: linear-gradient(
+    90deg,
+    var(--institucional-primario) 20%,
+    var(--institucional-secundario) 50%,
+    var(--institucional-secundario) 100%
+  ) 1;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+/* === PAGE SIZE SELECTOR INTEGRATION === */
+/* Cuando el selector está arriba de la tabla, modificar el redondeo */
+.institucional-table-page-size-selector + app-institutional-table .institucional-table {
+  border-top-left-radius: 0 !important;
+  border-top-right-radius: 0 !important;
+}
+
+/* Cuando la paginación está debajo de la tabla, modificar el redondeo */
+app-institutional-table + app-table-pagination .institucional-table-pagination {
+  border-top-left-radius: 0 !important;
+  border-top-right-radius: 0 !important;
+}
+
+/* El selector de página arriba debe conectar visualmente con la tabla */
+.institucional-table-page-size-selector {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  margin-bottom: 0;
+  border-bottom: 1px solid rgba(139, 21, 56, 0.08);
+}
+
+/* Integración visual mejorada */
+.institucional-table-page-size-selector + app-institutional-table {
+  margin-top: 0;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+}
+
+app-institutional-table + app-table-pagination {
+  margin-top: 0;
+}
+
+/* === RESPONSIVE PAGINATION === */
+@media (max-width: 640px) {
+  .institucional-table-pagination {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 1rem;
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .institucional-table-pagination {
+    padding: 0.75rem;
+  }
+}
+
+.institucional-table-pagination-info {
+  font-size: 0.875rem;
+  color: var(--gray-600);
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+@media (max-width: 640px) {
+  .institucional-table-pagination-info {
+    text-align: center;
+    order: 2;
+  }
+}
+
+.institucional-table-pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+@media (max-width: 640px) {
+  .institucional-table-pagination-controls {
+    justify-content: center;
+    order: 1;
+  }
+}
+
+/* === DEMO DE TABLAS === */
+.demo-tablas-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem;
+  background: linear-gradient(135deg, rgba(248, 250, 252, 0.5) 0%, rgba(255, 255, 255, 0.8) 100%);
+  min-height: 100vh;
+}
+
+.demo-header {
+  text-align: center;
+  margin-bottom: 3rem;
+  padding: 3rem 0;
+  background: linear-gradient(135deg, rgba(139, 21, 56, 0.05) 0%, rgba(214, 51, 132, 0.03) 100%);
+  border-radius: 1rem;
+  border: 2px solid rgba(139, 21, 56, 0.08);
+}
+
+.demo-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--institucional-secundario);
+  margin: 0 0 1rem 0;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.demo-title .material-symbols-outlined {
+  font-size: 2.5rem;
+  color: var(--institucional-secundario);
+}
+
+.demo-description {
+  font-size: 1.125rem;
+  color: var(--gray-600);
+  max-width: 800px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+.demo-navigation {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 3rem;
+  padding: 1.5rem;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 1rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.demo-nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border: 2px solid rgba(139, 21, 56, 0.2);
+  border-radius: 0.5rem;
+  background: white;
+  color: var(--institucional-secundario);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.demo-nav-btn:hover {
+  background: linear-gradient(145deg, var(--institucional-secundario) 0%, var(--institucional-primario) 100%);
+  color: white;
+  border-color: var(--institucional-secundario);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(214, 51, 132, 0.3);
+}
+
+.demo-nav-btn-active {
+  background: linear-gradient(145deg, var(--institucional-primario) 0%, var(--institucional-secundario) 100%) !important;
+  color: white !important;
+  border-color: var(--institucional-primario) !important;
+  box-shadow: 0 4px 12px rgba(139, 21, 56, 0.3) !important;
+}
+
+.demo-section {
+  margin-bottom: 4rem;
+}
+
+.demo-section-header {
+  margin-bottom: 2rem;
+  padding: 2rem;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.7) 100%);
+  border-radius: 1rem;
+  border-left: 5px solid var(--institucional-secundario);
+}
+
+.demo-section-header h2 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--institucional-secundario);
+  margin: 0 0 0.75rem 0;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.demo-section-header p {
+  font-size: 1rem;
+  color: var(--gray-600);
+  margin: 0;
+  line-height: 1.6;
+}
+
+.demo-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 0.75rem;
+  border: 1px solid rgba(139, 21, 56, 0.1);
+}
+
+.demo-control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.demo-control-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--institucional-secundario);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.institucional-table-pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+@media (max-width: 640px) {
+  .institucional-table-pagination-controls {
+    justify-content: center;
+    order: 1;
+  }
+}
+
+.institucional-table-pagination-btn {
+  padding: 0.75rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  /*border: 1px solid rgba(139, 21, 56, 0.2);*/
+  border-radius: 0.375rem;
+  transition: all 0.2s ease-in-out;
+  background: #ffffff;
+  color: var(--institucional-secundario);
+  cursor: pointer;
+  position: relative;
+  min-width: 2.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* === RESPONSIVE BUTTON SIZES === */
+@media (max-width: 640px) {
+  .institucional-table-pagination-btn {
+    padding: 0.5rem 0.75rem;
+    min-width: 2.5rem;
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .institucional-table-pagination-btn {
+    padding: 0.5rem;
+    min-width: 2.25rem;
+    font-size: 0.75rem;
+  }
+  
+  .institucional-table-pagination-btn .material-symbols-outlined {
+    font-size: 1.125rem;
+  }
+}
+
+.institucional-table-with-pagination {
+  background: #ffffff;
+  border: 1px solid rgba(0,0,0,0.06);
+  border-radius: 0.5rem;
+  overflow: hidden; /* evita doble redondeo y asegura continuidad */
+  box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+}
+
+/* Cuando la paginación está dentro del contenedor compartido, quitar el redondeo inferior de la tabla */
+.institucional-table-with-pagination app-institutional-table .institucional-table {
+  border-bottom-left-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+
+/* Asegurar que la paginación use el mismo ancho y sin separación visual */
+.institucional-table-with-pagination app-table-pagination {
+  display: block;
+  border-top: 1px solid rgba(0,0,0,0.06);
+  border-bottom-left-radius: 0.5rem;
+  border-bottom-right-radius: 0.5rem;
+}
+
+/* Ajuste: cuando la tabla no tiene borde propio, forzar que las celdas estén alineadas con el contenedor */
+.institucional-table-with-pagination .institucional-table-container,
+.institucional-table-with-pagination .institucional-table {
+  background: transparent;
+}
+
+/* === CONTENEDOR FILTROS + TABLA INTEGRADO === */
+.institucional-table-with-filters {
+  background: #ffffff;
+  border: 1px solid rgba(0,0,0,0.06);
+  border-radius: 0.5rem;
+  overflow: hidden;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+  position: relative;
+}
+
+/* Gradiente decorativo en la parte superior del contenedor integrado */
+.institucional-table-with-filters::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--institucional-primario) 0%, var(--institucional-secundario) 50%, var(--institucional-secundario) 100%);
+  z-index: 1;
+}
+
+/* Los filtros dentro del contenedor integrado pierden su redondeo inferior */
+.institucional-table-with-filters app-table-filters .institucional-table-filters {
+  border-bottom-left-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+  margin-bottom: 0;
+}
+
+/* La tabla dentro del contenedor integrado pierde su redondeo superior */
+.institucional-table-with-filters .institucional-table-with-pagination {
+  border-top-left-radius: 0 !important;
+  border-top-right-radius: 0 !important;
+  border-top: none;
+  box-shadow: none; /* evitar doble sombra */
+  border: none; /* evitar doble borde */
+}
+
+/* Asegurar continuidad visual completa entre filtros y tabla */
+.institucional-table-with-filters app-table-filters,
+.institucional-table-with-filters .institucional-table-with-pagination {
+  display: block;
+  width: 100%;
+}
+
+
+.institucional-table-pagination-btn:hover:not(:disabled) {
+  background: var(--institucional-primario);
+  color: white;
+  border-color: var(--institucional-primario);
+  box-shadow: 0 2px 8px rgba(139, 21, 56, 0.3);
+}
+
+.institucional-table-pagination-btn:disabled {
+  background: #f3f4f6 !important;
+  color: #9ca3af !important;
+  border-color: #e5e7eb !important;
+  opacity: 1 !important;
+  cursor: not-allowed;
+  box-shadow: none !important;
+}
+
+.institucional-table-pagination-btn-active {
+  background: var(--institucional-primario) !important;
+  color: white !important;
+  border-color: var(--institucional-primario) !important;
+  box-shadow: 0 2px 8px rgba(139, 21, 56, 0.4) !important;
+  font-weight: 700;
+}
+
+/* === LOADING STATE === */
+.institucional-table-loading {
+  position: relative;
+}
+
+.institucional-table-loading::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+
+/* === LOADING SPINNER MEJORADO === */
+.institucional-table-loading-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.institucional-table-loading-spinner-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.institucional-table-loading-spinner-modern {
+  position: relative;
+  width: 60px;
+  height: 60px;
+}
+
+.spinner-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  animation: modernSpin 2s linear infinite;
+}
+
+.spinner-ring-1 {
+  width: 60px;
+  height: 60px;
+  border-top-color: var(--institucional-primario);
+  border-right-color: var(--institucional-primario);
+  animation-duration: 1.5s;
+}
+
+.spinner-ring-2 {
+  width: 45px;
+  height: 45px;
+  top: 7.5px;
+  left: 7.5px;
+  border-top-color: var(--institucional-secundario);
+  border-left-color: var(--institucional-secundario);
+  animation-duration: 2s;
+  animation-direction: reverse;
+}
+
+.spinner-ring-3 {
+  width: 30px;
+  height: 30px;
+  top: 15px;
+  left: 15px;
+  border-top-color: var(--institucional-dorado);
+  border-bottom-color: var(--institucional-dorado);
+  animation-duration: 1s;
+}
+
+@keyframes modernSpin {
+  0% {
+    transform: rotate(0deg);
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+  100% {
+    transform: rotate(360deg);
+    opacity: 1;
+  }
+}
+
+.institucional-table-loading-dots {
+  display: flex;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.loading-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--institucional-primario);
+  animation: dotPulse 1.4s ease-in-out infinite both;
+}
+
+.loading-dot.dot-1 {
+  animation-delay: -0.32s;
+}
+
+.loading-dot.dot-2 {
+  animation-delay: -0.16s;
+}
+
+.loading-dot.dot-3 {
+  animation-delay: 0s;
+}
+
+@keyframes dotPulse {
+  0%, 80%, 100% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+}
+
+.institucional-table-loading-text {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.loading-message {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--gray-700);
+  animation: textFade 2s ease-in-out infinite;
+}
+
+@keyframes textFade {
+  0%, 100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.loading-progress-bar {
+  width: 120px;
+  height: 3px;
+  background: var(--gray-200);
+  border-radius: 1.5px;
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, 
+    var(--institucional-primario) 0%, 
+    var(--institucional-secundario) 50%, 
+    var(--institucional-dorado) 100%);
+  border-radius: 1.5px;
+  animation: progressSlide 2s ease-in-out infinite;
+}
+
+@keyframes progressSlide {
+  0% {
+    width: 0%;
+    transform: translateX(-100%);
+  }
+  50% {
+    width: 60%;
+    transform: translateX(0%);
+  }
+  100% {
+    width: 100%;
+    transform: translateX(100%);
+  }
+}
+
+/* === LEGACY SPINNER (para compatibilidad) === */
+.institucional-table-loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid var(--gray-200);
+  border-top-color: var(--institucional-primario);
+  border-radius: 50%;
+  animation: tableSpinner 1s linear infinite;
+}
+
+@keyframes tableSpinner {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* === EMPTY STATE === */
+.institucional-table-empty {
+  text-align: center;
+  padding: 3rem 0;
+}
+
+.institucional-table-empty-icon {
+  width: 4rem;
+  height: 4rem;
+  margin: 0 auto 1rem;
+  color: var(--gray-400);
+}
+
+.institucional-table-empty-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--gray-600);
+  margin-bottom: 0.5rem;
+}
+
+.institucional-table-empty-description {
+  color: var(--gray-500);
+  margin-bottom: 1rem;
+}
+
+/* === EXPORTACIÓN === */
+.institucional-table-export {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem 2rem;
+  background: linear-gradient(135deg, rgba(139, 21, 56, 0.02) 0%, rgba(248, 250, 252, 0.95) 50%, rgba(214, 51, 132, 0.02) 100%);
+  border-bottom: 1px solid rgba(139, 21, 56, 0.08);
+  position: relative;
+  backdrop-filter: blur(8px);
+}
+
+.institucional-table-export::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent 0%, var(--institucional-secundario) 20%, var(--institucional-primario) 50%, var(--institucional-secundario) 80%, transparent 100%);
+  opacity: 0.6;
+}
+
+.institucional-table-export-label {
+  font-weight: 600;
+  color: var(--institucional-secundario);
+  font-size: 0.875rem;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.institucional-table-export-btn {
+  padding: 0.75rem 1.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border: 2px solid transparent;
+  border-radius: 0.5rem;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  background: linear-gradient(145deg, var(--institucional-secundario) 0%, var(--institucional-primario) 100%);
+  color: white;
+}
+
+.institucional-table-export-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.3) 0%, transparent 50%, rgba(255, 255, 255, 0.3) 100%);
+  transform: translateX(-100%) skewX(-15deg);
+  transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.institucional-table-export-btn:hover::before {
+  transform: translateX(100%) skewX(-15deg);
+}
+
+.institucional-table-export-btn:hover {
+  background: linear-gradient(145deg, var(--institucional-secundario) 0%, var(--institucional-secundario) 100%);
+  border-color: var(--institucional-secundario);
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 12px 24px rgba(214, 51, 132, 0.3);
+}
+
+/* === BULK ACTIONS === */
+.institucional-table-bulk-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem 2rem;
+  background: linear-gradient(135deg, rgba(139, 21, 56, 0.03) 0%, rgba(248, 250, 252, 0.9) 50%, rgba(214, 51, 132, 0.03) 100%);
+  border-bottom: 1px solid rgba(139, 21, 56, 0.1);
+  backdrop-filter: blur(6px);
+  position: relative;
+}
+
+.institucional-table-bulk-actions::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--institucional-primario) 0%, var(--institucional-secundario) 50%, var(--institucional-secundario) 100%);
+  opacity: 0.7;
+}
+
+.institucional-table-bulk-info {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--institucional-secundario);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.institucional-table-bulk-btn {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border-radius: 0.5rem;
+  border: 2px solid var(--institucional-primario);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: linear-gradient(145deg, white 0%, #f8fafc 100%);
+  color: var(--institucional-primario);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 6px rgba(139, 21, 56, 0.15);
+}
+
+.institucional-table-bulk-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.4) 50%, transparent 70%);
+  transform: translateX(-100%);
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.institucional-table-bulk-btn:hover::before {
+  transform: translateX(100%);
+}
+
+.institucional-table-bulk-btn:hover {
+  background: linear-gradient(145deg, var(--institucional-primario) 0%, var(--institucional-secundario) 100%);
+  color: white;
+  border-color: var(--institucional-secundario);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 8px 20px rgba(139, 21, 56, 0.25);
+}
+
+.institucional-table-bulk-btn-danger {
+  border-color: #dc2626;
+  color: #dc2626;
+}
+
+.institucional-table-bulk-btn-danger:hover {
+  background: linear-gradient(145deg, #dc2626 0%, #b91c1c 100%);
+  border-color: #b91c1c;
+  color: white;
+  box-shadow: 0 8px 20px rgba(220, 38, 38, 0.25);
+}
+
+/* === INDICADORES VISUALES === */
+.institucional-table-status-indicator {
+  display: inline-block;
+  width: 0.875rem;
+  height: 0.875rem;
+  border-radius: 50%;
+  margin-right: 0.75rem;
+  position: relative;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.9);
+}
+
+.institucional-table-status-indicator::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  border-radius: 50%;
+  animation: pulse-indicator 2s infinite;
+  opacity: 0.3;
+}
+
+@keyframes pulse-indicator {
+  0% { transform: scale(1); opacity: 0.3; }
+  50% { transform: scale(1.2); opacity: 0.1; }
+  100% { transform: scale(1); opacity: 0.3; }
+}
+
+.institucional-table-priority-high {
+  background: linear-gradient(145deg, var(--stats5) 0%, #dc2626 100%);
+}
+
+.institucional-table-priority-high::before {
+  background: var(--stats5);
+}
+
+.institucional-table-priority-medium {
+  background: linear-gradient(145deg, var(--stats2) 0%, #f59e0b 100%);
+}
+
+.institucional-table-priority-medium::before {
+  background: var(--stats2);
+}
+
+.institucional-table-priority-low {
+  background: linear-gradient(145deg, var(--stats4) 0%, #10b981 100%);
+}
+
+.institucional-table-priority-low::before {
+  background: var(--stats4);
+}
+
+/* === TABLAS JERÁRQUICAS/ANIDADAS === */
+.institucional-table-tree-indent {
+  padding-left: calc(var(--level, 0) * 2rem);
+  position: relative;
+}
+
+.institucional-table-tree-indent::before {
+  content: '';
+  position: absolute;
+  left: calc(var(--level, 0) * 2rem - 1rem);
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(180deg, var(--institucional-secundario) 0%, transparent 100%);
+  opacity: 0.3;
+}
+
+.institucional-table-tree-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  margin-right: 0.75rem;
+  color: var(--institucional-primario);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 0.375rem;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.9) 100%);
+  border: 1px solid rgba(139, 21, 56, 0.15);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  position: relative;
+  overflow: hidden;
+}
+
+.institucional-table-tree-toggle::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.3) 50%, transparent 70%);
+  transform: translateX(-100%);
+  transition: transform 0.5s ease;
+}
+
+.institucional-table-tree-toggle:hover::before {
+  transform: translateX(100%);
+}
+
+.institucional-table-tree-toggle:hover {
+  color: white;
+  background: linear-gradient(145deg, var(--institucional-primario) 0%, var(--institucional-secundario) 100%);
+  border-color: var(--institucional-primario);
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(139, 21, 56, 0.25);
+}
+
+.institucional-table-tree-expanded .institucional-table-tree-toggle {
+  transform: rotate(90deg) scale(1.05);
+  background: linear-gradient(145deg, var(--institucional-secundario) 0%, var(--institucional-primario) 100%);
+  color: white;
+  border-color: var(--institucional-secundario);
+}
+
+.institucional-table-tree-expanded .institucional-table-tree-toggle:hover {
+  transform: rotate(90deg) scale(1.15);
+}
+
+/* === CARDS PARA MOBILE === */
+@media (max-width: 768px) {
+  .institucional-table-mobile-card {
+    display: block;
+    border: 2px solid rgba(139, 21, 56, 0.1);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.9) 100%);
+    box-shadow: 0 8px 24px rgba(139, 21, 56, 0.08);
+    backdrop-filter: blur(8px);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .institucional-table-mobile-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--institucional-primario) 0%, var(--institucional-secundario) 50%, var(--institucional-secundario) 100%);
+  }
+  
+  .institucional-table-mobile-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid rgba(139, 21, 56, 0.1);
+    position: relative;
+  }
+
+  .institucional-table-mobile-card-header::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 40%;
+    height: 2px;
+    background: var(--institucional-secundario);
+    border-radius: 1px;
+  }
+  
+  .institucional-table-mobile-card-title {
+    font-weight: 700;
+    color: var(--institucional-secundario);
+    font-size: 1.1rem;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  }
+  
+  .institucional-table-mobile-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .institucional-table-mobile-field {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.875rem;
+  }
+  
+  .institucional-table-mobile-label {
+    font-weight: 500;
+    color: var(--gray-600);
+  }
+  
+  .institucional-table-mobile-value {
+    color: var(--gray-800);
+  }
+}
+
+/* === CONTENEDORES DE TABLAS === */
+.institucional-card {
+  background: #ffffff; /* Fondo sólido blanco en lugar de gradiente transparente */
+  border: 2px solid rgba(139, 21, 56, 0.08);
+  border-radius: 1rem;
+  box-shadow: 0 8px 32px rgba(139, 21, 56, 0.08);
+  overflow: hidden;
+  margin-bottom: 2.5rem;
+  /* backdrop-filter: blur(8px); ✂️ ELIMINADO - no necesario con fondo sólido */
+  position: relative;
+}
+
+.institucional-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--institucional-primario) 0%, var(--institucional-secundario) 50%, var(--institucional-secundario) 100%);
+}
+
+.institucional-card-header {
+  padding: 2rem 2rem 2rem 2rem;
+  background: #ffffff; /* Fondo sólido blanco en lugar de gradiente transparente */
+  border-bottom: 4px solid rgba(139, 21, 56, 0.15);
+  position: relative;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 12px rgba(139, 21, 56, 0.05);
+}
+
+.institucional-card-header::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 2rem;
+  width: 100px;
+  height: 4px;
+  background: linear-gradient(90deg, var(--institucional-secundario) 0%, var(--institucional-primario) 100%);
+  border-radius: 2px;
+}
+
+.institucional-card-title {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--institucional-secundario);
+  margin: 0 0 1rem 0;
+  text-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+  font-family: 'Montserrat', sans-serif !important;
+  letter-spacing: 0.5px;
+  line-height: 1.2;
+  text-transform: uppercase;
+  position: relative;
+}
+
+.institucional-card-title::before {
+  content: '';
+  position: absolute;
+  left: -1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 6px;
+  height: 100%;
+  background: linear-gradient(180deg, var(--institucional-secundario) 0%, var(--institucional-primario) 100%);
+  border-radius: 3px;
+}
+
+.institucional-card-subtitle {
+  font-size: 1.1rem;
+  color: var(--gray-600);
+  margin: 0;
+  font-weight: 500;
+  line-height: 1.5;
+  padding-left: 0.5rem;
+  border-left: 3px solid rgba(139, 21, 56, 0.2);
+  font-style: italic;
+}
+
+.institucional-card-body {
+  padding: 2rem 0 0 0;
+  background: #ffffff; /* Fondo sólido blanco en lugar de transparente */
+  position: relative;
+}
+
+.institucional-card-body::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 2rem;
+  right: 2rem;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, rgba(139, 21, 56, 0.3) 20%, rgba(139, 21, 56, 0.3) 80%, transparent 100%);
+}
+
+.institucional-card-body .institucional-table {
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  margin: 2rem 0 0 0;
+}
+
+/* === SEPARACIÓN ESPECIAL PARA TÍTULOS VS COLUMNAS === */
+.institucional-card .demo-table-separator {
+  height: 3rem;
+  background: linear-gradient(135deg, rgba(248, 250, 252, 0.8) 0%, rgba(255, 255, 255, 0.9) 100%);
+  border-top: 1px solid rgba(139, 21, 56, 0.1);
+  border-bottom: 2px solid rgba(139, 21, 56, 0.2);
+  position: relative;
+  margin: 0 2rem;
+}
+
+.institucional-card .demo-table-separator::before {
+  content: 'DATOS DE LA TABLA';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgba(139, 21, 56, 0.6);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  background: white;
+  padding: 0.25rem 1rem;
+  border: 1px solid rgba(139, 21, 56, 0.2);
+  border-radius: 1rem;
+}
+
+.institucional-card-body .institucional-table-header th {
+  
+  color: white !important;
+  font-weight: 600 !important;
+  text-transform: lowercase !important;
+  letter-spacing: 0.5px !important;
+  font-size: 0.875rem !important;
+  padding: 1.25rem 1.5rem !important;
+  border-bottom: 3px solid rgba(255, 255, 255, 0.2) !important;
+  position: relative !important;
+}
+
+.institucional-card-body .institucional-table-header th::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.5) 50%, transparent 100%);
+}
+
+.card-header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 2rem;
+}
+
+.card-header-content > div {
+  flex: 1;
+}
+
+/* === FORMULARIOS RELACIONADOS CON TABLAS === */
+.institucional-form-group {
+  margin-bottom: 1rem;
+}
+
+.institucional-form-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--gray-700);
+  margin-bottom: 0.25rem;
+}
+
+.institucional-form-select {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  background: #ffffff;
+  color: #374151;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.institucional-form-select:focus {
+  outline: none;
+  border-color: var(--institucional-primario);
+  box-shadow: 0 0 0 3px rgba(139, 21, 56, 0.1);
+}
+
+.institucional-form-select:hover {
+  border-color: #d1d5db;
+}
+
+/* === BOTONES ICON SECUNDARIOS === */
+.btn-institucional-icon-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.375rem;
+  border: 1px solid var(--gray-300);
+  background: white;
+  color: var(--gray-600);
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.btn-institucional-icon-secondary:hover {
+  background: var(--institucional-secundario);
+  color: white;
+  border-color: var(--institucional-secundario);
+  transform: scale(1.05);
+}
+
+/* ===========================================
+   BOTONES CIRCULARES PARA ACCIONES DE TABLA
+   =========================================== */
+
+.institucional-table-action-btn-circular {
+  border-radius: 50% !important;
+  width: 2.25rem !important;
+  height: 2.25rem !important;
+  min-width: 2.25rem !important;
+  padding: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.institucional-table-action-btn-circular .material-symbols-outlined {
+  margin: 0 !important;
+  font-size: 1.125rem !important;
+}
+
+/* ===========================================
+   FIN DEL ARCHIVO CSS UNIFICADO
+   =========================================== */

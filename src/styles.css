@@ -1,0 +1,8 @@
+/* ========================================
+   SISTEMA DE SOPORTE TÉCNICO institucional
+   Archivo CSS Principal - Redirige al archivo unificado
+   ======================================== */
+
+/* Import del archivo CSS unificado desde assets */
+@import './assets/css/styles.css';
+@import 'material-design-icons/iconfont/material-icons.css';
