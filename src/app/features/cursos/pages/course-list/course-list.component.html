@@ -1,0 +1,56 @@
+<div class="p-6 bg-gray-50 min-h-screen">
+
+    <div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 min-h-[600px] relative">
+
+        <!-- Header -->
+        <div class="mb-8">
+            <h2 class="text-2xl font-bold text-gray-800">Lista de Cursos</h2>
+        </div>
+
+        <!-- Toolbar -->
+        <div class="flex justify-end mb-6">
+            <button (click)="openForm()"
+                class="bg-[#8B1538] hover:bg-[#6B1028] text-white px-6 py-2.5 rounded-lg flex items-center font-medium transition-colors shadow-sm">
+                <app-universal-icon name="plus-lg" type="bootstrap" [size]="18" class="mr-2"></app-universal-icon>
+                Nuevo Curso
+            </button>
+        </div>
+
+        <!-- Institutional Table -->
+        <app-institutional-table [data]="courses" [columns]="tableColumns" [config]="tableConfig">
+        </app-institutional-table>
+
+        <!-- Pagination -->
+        <app-table-pagination [config]="paginationConfig" (pageChange)="onPageChange($event)">
+        </app-table-pagination>
+
+    </div>
+</div>
+
+<app-course-form [isOpen]="showForm" (close)="closeForm()" (saved)="onFormSaved()">
+</app-course-form>
+
+<app-course-edit-form [isOpen]="showEditForm" [course]="selectedCourseToEdit" (close)="closeEditForm()"
+    (saved)="onEditSaved()">
+</app-course-edit-form>
+
+<!-- Template para Acciones -->
+<ng-template #actionsTemplate let-item>
+    <div class="flex items-center justify-center space-x-3">
+        <button
+            class="flex items-center justify-center w-8 h-8 rounded-full border border-cyan-400 text-cyan-500 hover:bg-cyan-50 transition-colors"
+            title="Ver detalles">
+            <app-universal-icon name="eye" type="bootstrap" [size]="14"></app-universal-icon>
+        </button>
+        <button
+            class="flex items-center justify-center w-8 h-8 rounded-full border border-orange-400 text-orange-500 hover:bg-orange-50 transition-colors"
+            title="Editar" (click)="openEditForm(item)">
+            <app-universal-icon name="pencil" type="bootstrap" [size]="14"></app-universal-icon>
+        </button>
+        <button
+            class="flex items-center justify-center w-8 h-8 rounded-full border border-red-400 text-red-500 hover:bg-red-50 transition-colors"
+            title="Eliminar" (click)="deleteCourse(item.id)">
+            <app-universal-icon name="trash" type="bootstrap" [size]="14"></app-universal-icon>
+        </button>
+    </div>
+</ng-template>

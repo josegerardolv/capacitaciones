@@ -23,8 +23,13 @@ export const routes: Routes = [
       {
         path: 'dashboard',
         loadComponent: () => import('./features/dashboard/dashboard.component').then(m => m.DashboardComponent)
+      },
+      {
+        path: 'cursos',
+        loadChildren: () => import('./features/cursos/cursos.routes').then(m => m.CURSOS_ROUTES)
       }
-      // Aquí agregaremos 'cursos', 'busqueda', etc.
+
+
     ]
   },
 
