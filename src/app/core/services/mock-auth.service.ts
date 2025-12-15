@@ -111,4 +111,74 @@ export class MockAuthService {
         localStorage.removeItem('mock_session');
         return of({ success: true }).pipe(delay(400));
     }
+    // ==================== MOCK API HANDLER ====================
+
+    /**
+     * Intercepts requests and returns mock data based on URL
+     * This mimics the real AuthService.requestWithAuth signature
+     */
+    requestWithAuth<T>(
+        method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
+        url: string,
+        options: {
+            body?: any;
+            params?: { [key: string]: any };
+            headers?: { [key: string]: string };
+            retryCount?: number;
+        } = {}
+    ): Observable<T> {
+        console.log(`[MockAuth] ${method} ${url}`, options);
+
+        // Simulate network delay
+        const delayMs = 500;
+
+        // 1. Mock para /users (UsuariosService)
+        if (url.includes('/users')) {
+             if (method === 'GET') {
+                 // Return list of mock users
+                 return of(this.getMockUsers() as unknown as T).pipe(delay(delayMs));
+             }
+        }
+
+        // 2. Mock Default para cualquier otra cosa (evita errores)
+        console.warn(`[MockAuth] No specific mock found for ${url}, returning empty object/array`);
+        return of([] as unknown as T).pipe(delay(delayMs));
+    }
+
+    // --- Helper Data Generators ---
+
+    private getMockUsers() {
+        return [
+            {
+                id: 1,
+                email: 'admin@semovi.gob.mx',
+                rol: 'admin',
+                activo: true,
+                person: {
+                    id: 1,
+                    first_name: 'Admin',
+                    last_name: 'Sistema',
+                    area: { id: 1, name: 'Dirección TIC' },
+                    facilities: { id: 1, name: 'Edificio Central' }
+                },
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            },
+            {
+                id: 2,
+                email: 'operador@semovi.gob.mx',
+                rol: 'operador',
+                activo: true,
+                person: {
+                    id: 2,
+                    first_name: 'Juan',
+                    last_name: 'Pérez',
+                    area: { id: 2, name: 'Licencias' },
+                    facilities: { id: 2, name: 'Módulo Reforma' }
+                },
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            }
+        ];
+    }
 }
