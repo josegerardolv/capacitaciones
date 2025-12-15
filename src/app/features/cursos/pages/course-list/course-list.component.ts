@@ -1,6 +1,6 @@
 import { Component, OnInit, ViewChild, TemplateRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { Course } from '../../../../core/models/course.model';
 import { CoursesService } from '../../services/courses.service';
 import { UniversalIconComponent } from '../../../../shared/components/universal-icon/universal-icon.component';
@@ -44,7 +44,10 @@ export class CourseListComponent implements OnInit {
         showInfo: true
     };
 
-    constructor(private coursesService: CoursesService) { }
+    constructor(
+        private coursesService: CoursesService,
+        private router: Router
+    ) { }
 
     ngOnInit(): void {
         this.initColumns();
@@ -91,6 +94,11 @@ export class CourseListComponent implements OnInit {
                 this.loadCourses();
             });
         }
+    }
+
+    viewGroups(course: Course) {
+        // En el futuro, podríamos pasar el ID course.id como query param para filtrar
+        this.router.navigate(['/cursos/grupos']);
     }
 
     // New Course Modal Handlers
