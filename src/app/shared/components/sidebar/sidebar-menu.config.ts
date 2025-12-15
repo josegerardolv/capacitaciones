@@ -21,108 +21,95 @@ export interface MenuItem {
  * Organizada por secciones y con control de permisos por roles
  */
 export const SIDEBAR_MENU_CONFIG: MenuItem[] = [
-  // Rutas públicas / cliente
-  {
-    id: 'agendar-cita',
-    label: 'Agendar cita',
-    icon: 'calendar_plus',
-    iconType: 'bootstrap',
-    route: '/agendar-cita'
-  },
-  {
-    id: 'validar-cita',
-    label: 'Validar cita',
-    icon: 'check_circle',
-    iconType: 'material',
-    route: '/validar-cita'
-  },
   {
     id: 'dashboard',
     label: 'Dashboard',
-    icon: 'dashboard',
-    iconType: 'material',
-    route: '/admin/dashboard',
-    roles: ['admin', 'operador', 'consulta']
-  },
-  {
-    id: 'tipos-servicio',
-    label: 'Tipos de servicio',
-    icon: 'list',
+    icon: 'house',
     iconType: 'bootstrap',
-    route: '/admin/tipos-servicio',
-    roles: ['admin', 'operador']
+    route: '/dashboard',
+    roles: ['ADMINISTRADOR', 'SUPER_ADMINISTRADOR', 'CAPTURISTA', 'CONSULTA', 'SUPERVISOR']
   },
   {
-    id: 'tramites',
-    label: 'Trámites',
-    icon: 'description',
-    iconType: 'material',
-    route: '/admin/tramites',
-    roles: ['admin', 'operador']
-  },
-  {
-    id: 'modulos',
-    label: 'Módulos',
-    icon: 'widgets',
+    id: 'cursos',
+    label: 'Cursos',
+    icon: 'people',
     iconType: 'bootstrap',
-    route: '/admin/modulos',
-    roles: ['admin', 'operador']
+    route: '/cursos',
+    roles: ['ADMINISTRADOR', 'SUPER_ADMINISTRADOR', 'CAPTURISTA', 'SUPERVISOR']
+  },
+  {
+    id: 'busqueda',
+    label: 'Busqueda',
+    icon: 'search',
+    iconType: 'bootstrap',
+    route: '/busqueda',
+    roles: ['ADMINISTRADOR', 'SUPER_ADMINISTRADOR', 'CAPTURISTA', 'CONSULTA', 'SUPERVISOR']
+  },
+  {
+    id: 'documentos',
+    label: 'Documentos',
+    icon: 'file-text', // Similar icons: file-earmark-text
+    iconType: 'bootstrap',
+    roles: ['ADMINISTRADOR', 'SUPER_ADMINISTRADOR', 'SUPERVISOR'],
+    children: [
+      {
+        id: 'certificados',
+        label: 'Certificados',
+        icon: 'award',
+        iconType: 'bootstrap',
+        route: '/documentos/certificados',
+        roles: ['ADMINISTRADOR', 'SUPER_ADMINISTRADOR', 'SUPERVISOR']
+      },
+      {
+        id: 'tarjetones',
+        label: 'Tarjetones',
+        icon: 'card-heading',
+        iconType: 'bootstrap',
+        route: '/documentos/tarjetones',
+        roles: ['ADMINISTRADOR', 'SUPER_ADMINISTRADOR', 'SUPERVISOR']
+      }
+    ]
   },
   {
     id: 'configuracion',
     label: 'Configuración',
-    icon: 'settings',
+    icon: 'gear',
     iconType: 'bootstrap',
-    route: '/admin/configuracion',
-    roles: ['admin', 'operador']
-  },
-  {
-    id: 'citas',
-    label: 'Citas',
-    icon: 'event_available',
-    iconType: 'material',
-    route: '/admin/citas',
-    roles: ['admin', 'operador']
-  },
-  {
-    id: 'reportes',
-    label: 'Reportes',
-    icon: 'bar_chart',
-    iconType: 'bootstrap',
-    route: '/admin/reportes',
-    roles: ['admin', 'operador', 'consulta']
-  },
-  {
-    id: 'usuarios',
-    label: 'Usuarios',
-    icon: 'group',
-    iconType: 'material',
-    route: '/admin/usuarios',
-    roles: ['admin']
-
-  },
-
-  // Otras rutas útiles
-  {
-    id: 'login',
-    label: 'Iniciar sesión',
-    icon: 'login',
-    iconType: 'material',
-    route: '/login'
-  },
-  {
-    id: 'unauthorized',
-    label: 'Acceso denegado',
-    icon: 'block',
-    iconType: 'material',
-    route: '/unauthorized'
-  },
-  {
-    id: 'not-found',
-    label: 'No encontrado',
-    icon: 'error',
-    iconType: 'material',
-    route: '/404'
+    roles: ['ADMINISTRADOR', 'SUPER_ADMINISTRADOR'],
+    children: [
+      {
+        id: 'encuesta',
+        label: 'Encuesta',
+        icon: 'clipboard-data',
+        iconType: 'bootstrap',
+        route: '/config/encuesta',
+        roles: ['ADMINISTRADOR', 'SUPER_ADMINISTRADOR']
+      },
+      {
+        id: 'contrasena',
+        label: 'Contraseña',
+        icon: 'key',
+        iconType: 'bootstrap',
+        route: '/config/contrasena',
+        roles: ['ADMINISTRADOR', 'SUPER_ADMINISTRADOR']
+      },
+      {
+        id: 'notificaciones',
+        label: 'Notificaciones',
+        icon: 'bell',
+        iconType: 'bootstrap',
+        route: '/config/notificaciones',
+        roles: ['ADMINISTRADOR', 'SUPER_ADMINISTRADOR']
+      },
+      {
+        id: 'usuarios',
+        label: 'Gestión de usuarios',
+        icon: 'person-gear',
+        iconType: 'bootstrap',
+        route: '/config/usuarios',
+        roles: ['SUPER_ADMINISTRADOR']
+      }
+    ]
   }
 ];
 
@@ -142,7 +129,7 @@ export function getMenuItemById(id: string): MenuItem | undefined {
     }
     return undefined;
   }
-  
+
   return findInMenu(SIDEBAR_MENU_CONFIG, id);
 }
 
@@ -152,7 +139,7 @@ export function getMenuItemById(id: string): MenuItem | undefined {
 export function expandMenuForRoute(route: string): void {
   // Limpiar la ruta eliminando query params y fragments
   const cleanRoute = route.split('?')[0].split('#')[0];
-  
+
   // Función recursiva para encontrar y expandir el menú padre
   function findAndExpandParent(items: MenuItem[], targetRoute: string): boolean {
     for (const item of items) {
@@ -165,19 +152,19 @@ export function expandMenuForRoute(route: string): void {
           }
           return false;
         });
-        
+
         if (hasMatchingChild) {
           item.expanded = true;
           return true;
         }
-        
+
         // Verificar recursivamente en subniveles
         if (findAndExpandParent(item.children, targetRoute)) {
           item.expanded = true;
           return true;
         }
       }
-      
+
       // Si es un item simple, verificar si coincide
       if (item.route && (targetRoute === item.route || targetRoute.startsWith(item.route + '/'))) {
         return true;
@@ -185,7 +172,7 @@ export function expandMenuForRoute(route: string): void {
     }
     return false;
   }
-  
+
   // Primero, colapsar todos los menús
   function collapseAll(items: MenuItem[]) {
     items.forEach(item => {
@@ -195,7 +182,7 @@ export function expandMenuForRoute(route: string): void {
       }
     });
   }
-  
+
   // Colapsar todos y luego expandir el relevante
   collapseAll(SIDEBAR_MENU_CONFIG);
   findAndExpandParent(SIDEBAR_MENU_CONFIG, cleanRoute);
@@ -206,7 +193,7 @@ export function expandMenuForRoute(route: string): void {
  */
 export function getParentItemForRoute(route: string): MenuItem | null {
   const cleanRoute = route.split('?')[0].split('#')[0];
-  
+
   function findParent(items: MenuItem[]): MenuItem | null {
     for (const item of items) {
       if (item.children && item.children.length > 0) {
@@ -216,11 +203,11 @@ export function getParentItemForRoute(route: string): MenuItem | null {
           }
           return false;
         });
-        
+
         if (hasMatchingChild) {
           return item;
         }
-        
+
         // Buscar recursivamente
         const parent = findParent(item.children);
         if (parent) return parent;
@@ -228,6 +215,6 @@ export function getParentItemForRoute(route: string): MenuItem | null {
     }
     return null;
   }
-  
+
   return findParent(SIDEBAR_MENU_CONFIG);
 }
