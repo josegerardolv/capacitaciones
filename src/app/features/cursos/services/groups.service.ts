@@ -28,7 +28,7 @@ export class GroupsService {
             dateTime: '12/07/2026, 14:30',
             quantity: 40,
             autoRegisterLimit: 's',
-            url: 'https://example.com',
+            url: '',
             requests: 0,
             status: 'Inactivo'
         },

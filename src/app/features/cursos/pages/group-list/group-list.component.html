@@ -4,7 +4,11 @@
 
         <!-- Breadcrumb & Header -->
         <div class="mb-8">
-            <div class="text-sm text-gray-500 mb-1">Cursos &gt; Grupos</div>
+            <div class="text-sm text-gray-500 mb-1 flex items-center gap-1">
+                <a [routerLink]="['/cursos']" class="hover:text-[#8B1538] transition-colors cursor-pointer">Cursos</a>
+                <span>&gt;</span>
+                <span class="text-[#8B1538] font-bold">Grupos</span>
+            </div>
             <h2 class="text-2xl font-bold text-gray-800">Lista de Grupos</h2>
         </div>
 
@@ -22,19 +26,26 @@
             <!-- Action Buttons (Right) -->
             <div class="flex items-center gap-3">
 
-                <app-institutional-button
-                    [config]="{ variant: 'primary', icon: 'file_download', customClass: '!bg-[#8B1538]' }"
-                    (clicked)="exportData()">
+                <app-institutional-button [config]="{ 
+                        variant: 'primary', 
+                        icon: 'file_download', 
+                        customClass: '!bg-[#8B1538]',
+                        disabled: selectedGroups.length === 0 
+                    }" (buttonClick)="exportData()">
                     Exportar
                 </app-institutional-button>
 
-                <app-institutional-button [config]="{ variant: 'primary', icon: 'link', customClass: '!bg-[#8B1538]' }"
-                    (clicked)="generateUrl()">
+                <app-institutional-button [config]="{ 
+                        variant: 'primary', 
+                        icon: 'link', 
+                        customClass: '!bg-[#8B1538]',
+                        disabled: selectedGroups.length !== 1
+                    }" (buttonClick)="generateUrl()">
                     Generar URL
                 </app-institutional-button>
 
                 <app-institutional-button [config]="{ variant: 'primary', icon: 'add', customClass: '!bg-[#8B1538]' }"
-                    (clicked)="openNewGroupForm()">
+                    (buttonClick)="openNewGroupForm()">
                     Nuevo Grupo
                 </app-institutional-button>
 
@@ -42,7 +53,8 @@
         </div>
 
         <!-- Institutional Table -->
-        <app-institutional-table [data]="groups" [columns]="tableColumns" [config]="tableConfig">
+        <app-institutional-table [data]="groups" [columns]="tableColumns" [config]="tableConfig"
+            [selectedItems]="selectedGroups" (selectionChange)="onSelectionChange($event)">
         </app-institutional-table>
 
         <!-- Pagination -->
@@ -54,12 +66,18 @@
 
 <!-- Templates -->
 
-<!-- URL Template -->
+<!-- Link Template (Copy URL) -->
 <ng-template #urlTemplate let-item>
-    <a [href]="item.url" target="_blank" class="text-blue-600 hover:underline truncate block max-w-[150px]"
-        (click)="$event.stopPropagation()">
-        {{ item.url }}
-    </a>
+    <div class="flex justify-center" *ngIf="item.url">
+        <button
+            class="flex items-center justify-center w-8 h-8 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-200 hover:bg-[#8B1538] hover:text-white hover:border-[#8B1538] transition-colors shadow-sm"
+            title="Copiar Enlace" (click)="copyUrl(item.url); $event.stopPropagation()">
+            <app-universal-icon name="copy" type="bootstrap" [size]="14"></app-universal-icon>
+        </button>
+    </div>
+    <div *ngIf="!item.url" class="text-gray-400 text-xs italic text-center">
+        Sin enlace
+    </div>
 </ng-template>
 
 <!-- Status Template -->
@@ -77,33 +95,41 @@
     </div>
 </ng-template>
 
-<!-- Requests Template -->
-<ng-template #requestsTemplate let-item>
-    <div class="flex justify-center">
+<!-- Actions Template -->
+<ng-template #actionsTemplate let-item>
+    <div class="flex items-center justify-center space-x-2">
+        <!-- Requests Button (Moved here) -->
         <button
-            class="bg-[#00C895] text-white text-xs px-3 py-1 rounded shadow-sm hover:bg-[#00A67C] transition-colors">
-            Solicitudes
+            class="hidden md:flex items-center justify-center px-2 py-1 rounded border border-[#00C895] text-[#00C895] hover:bg-green-50 transition-colors text-xs gap-1"
+            title="Gestionar Solicitudes" (click)="$event.stopPropagation()">
+            <span class="font-bold">{{ item.requests || 0 }}</span>
+            <app-universal-icon name="person-check" type="bootstrap" [size]="14"></app-universal-icon>
+        </button>
+
+        <!-- View Details -->
+        <button
+            class="flex items-center justify-center w-8 h-8 rounded-full border border-cyan-400 text-cyan-500 hover:bg-cyan-50 transition-colors"
+            title="Ver detalles">
+            <app-universal-icon name="eye" type="bootstrap" [size]="14"></app-universal-icon>
+        </button>
+
+        <!-- Edit -->
+        <button
+            class="flex items-center justify-center w-8 h-8 rounded-full border border-orange-400 text-orange-500 hover:bg-orange-50 transition-colors"
+            title="Editar" (click)="openEditGroupForm(item)">
+            <app-universal-icon name="pencil" type="bootstrap" [size]="14"></app-universal-icon>
+        </button>
+
+        <!-- Delete -->
+        <button
+            class="flex items-center justify-center w-8 h-8 rounded-full border border-red-400 text-red-500 hover:bg-red-50 transition-colors"
+            title="Eliminar" (click)="deleteGroup(item.id)">
+            <app-universal-icon name="trash" type="bootstrap" [size]="14"></app-universal-icon>
         </button>
     </div>
 </ng-template>
 
-<!-- Actions Template -->
-<ng-template #actionsTemplate let-item>
-    <div class="flex items-center justify-center space-x-2">
-        <button
-            class="flex items-center justify-center w-7 h-7 rounded-full border border-cyan-400 text-cyan-500 hover:bg-cyan-50 transition-colors"
-            title="Ver detalles">
-            <app-universal-icon name="eye" type="bootstrap" [size]="12"></app-universal-icon>
-        </button>
-        <button
-            class="flex items-center justify-center w-7 h-7 rounded-full border border-red-400 text-red-500 hover:bg-red-50 transition-colors"
-            title="Eliminar" (click)="deleteGroup(item.id)">
-            <span class="material-symbols-outlined text-[14px]">cancel</span>
-        </button>
-        <button
-            class="flex items-center justify-center w-7 h-7 rounded-full border border-orange-400 text-orange-500 hover:bg-orange-50 transition-colors"
-            title="Editar" (click)="openEditGroupForm(item)">
-            <app-universal-icon name="pencil" type="bootstrap" [size]="12"></app-universal-icon>
-        </button>
-    </div>
-</ng-template>
+<!-- Modals -->
+<app-group-form [isOpen]="isNewGroupModalOpen" [group]="editingGroup" (close)="isNewGroupModalOpen = false"
+    (saved)="onGroupSaved()">
+</app-group-form>

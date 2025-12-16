@@ -1,10 +1,11 @@
 import { Component, OnInit, ViewChild, TemplateRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router'; // Added Router import
 import { UniversalIconComponent } from '../../../../shared/components/universal-icon/universal-icon.component';
-import { InstitutionalTableComponent, TableColumn, TableConfig } from '../../../../shared/components/institutional-table/institutional-table.component';
+import { InstitutionalTableComponent, TableColumn, TableConfig, SelectionEvent } from '../../../../shared/components/institutional-table/institutional-table.component';
 import { TablePaginationComponent, PaginationConfig, PageChangeEvent } from '../../../../shared/components/table-pagination/table-pagination.component';
 import { InstitutionalButtonComponent } from '../../../../shared/components/buttons/institutional-button.component'; // Import button
+import { GroupFormComponent } from '../../components/group-form/group-form.component';
 import { Group } from '../../../../core/models/group.model';
 import { GroupsService } from '../../services/groups.service';
 
@@ -17,7 +18,8 @@ import { GroupsService } from '../../services/groups.service';
         UniversalIconComponent,
         InstitutionalTableComponent,
         TablePaginationComponent,
-        InstitutionalButtonComponent
+        InstitutionalButtonComponent,
+        GroupFormComponent
     ],
     templateUrl: './group-list.component.html'
 })
@@ -29,12 +31,18 @@ export class GroupListComponent implements OnInit {
     @ViewChild('selectTemplate', { static: true }) selectTemplate!: TemplateRef<any>;
 
     groups: Group[] = [];
+    selectedGroups: Group[] = []; // Track selected items
+
+    // Modals
+    isNewGroupModalOpen = false;
+    editingGroup: Group | null = null;
 
     tableConfig: TableConfig = {
         loading: true,
         striped: false,
         hoverable: true,
-        localSort: true
+        localSort: true,
+        selectable: true // Enable checkboxes
     };
 
     tableColumns: TableColumn[] = [];
@@ -47,10 +55,10 @@ export class GroupListComponent implements OnInit {
         showInfo: true
     };
 
-    // Selection state
-    allSelected = false;
-
-    constructor(private groupsService: GroupsService) { }
+    constructor(
+        private groupsService: GroupsService,
+        private router: Router
+    ) { }
 
     ngOnInit(): void {
         this.initColumns();
@@ -59,30 +67,18 @@ export class GroupListComponent implements OnInit {
 
     initColumns() {
         this.tableColumns = [
-            //   { 
-            //     key: 'select', 
-            //     label: '', 
-            //     sortable: false, 
-            //     width: '40px',
-            //     template: this.selectTemplate 
-            //   },
-            { key: 'name', label: 'Nombre', sortable: true, minWidth: '80px' },
+            { key: 'name', label: 'Nombre', sortable: true, minWidth: '120px' },
             { key: 'description', label: 'Descripción', sortable: true, minWidth: '200px' },
             { key: 'location', label: 'Ubicación', sortable: true, minWidth: '150px' },
             { key: 'dateTime', label: 'Fecha y hora', sortable: true, minWidth: '150px' },
             { key: 'quantity', label: 'Cantidad', sortable: true, minWidth: '100px', align: 'center' },
-            // { key: 'autoRegisterLimit', label: 'Limite de autoregistro', sortable: true, minWidth: '100px', align: 'center' }, // Shortened for UI fit
             {
-                key: 'url', label: 'URL', sortable: false, minWidth: '150px',
-                template: this.urlTemplate
-            },
-            {
-                key: 'requests',
-                label: 'Solicitudes',
+                key: 'url',
+                label: 'Enlace',
                 sortable: false,
+                minWidth: '100px',
                 align: 'center',
-                minWidth: '120px',
-                template: this.requestsTemplate
+                template: this.urlTemplate
             },
             {
                 key: 'status',
@@ -96,7 +92,7 @@ export class GroupListComponent implements OnInit {
                 key: 'actions',
                 label: 'Acciones',
                 align: 'center',
-                minWidth: '140px',
+                minWidth: '180px', // Aumentado para caber más botones
                 template: this.actionsTemplate
             }
         ];
@@ -127,14 +123,58 @@ export class GroupListComponent implements OnInit {
         }
     }
 
-    // Placeholder actions
-    exportData() { console.log('Exporting data...'); }
-    generateUrl() { console.log('Generating URL...'); }
-    openNewGroupForm() { console.log('Open New Group Form'); }
-    openEditGroupForm(group: Group) { console.log('Edit Group', group); }
+    onSelectionChange(event: SelectionEvent) {
+        this.selectedGroups = event.selectedItems;
+        console.log('Selection:', this.selectedGroups);
+    }
 
-    toggleSelectAll() {
-        this.allSelected = !this.allSelected;
-        this.groups.forEach(g => g.selected = this.allSelected);
+    // Placeholder actions
+    exportData() {
+        if (this.selectedGroups.length === 0) return;
+        console.log('Exporting', this.selectedGroups.length, 'items');
+        alert(`Exportando ${this.selectedGroups.length} grupos.`);
+    }
+
+    generateUrl() {
+        if (this.selectedGroups.length !== 1) return;
+
+        const group = this.selectedGroups[0];
+        // Logging for now as previously reverted
+        console.log('Generating URL for', group.name);
+
+        // Mock generation
+        const randomToken = Math.random().toString(36).substring(7);
+        const newUrl = `https://semovi.oaxaca.gob.mx/registro/${group.name}-${randomToken}`;
+        group.url = newUrl;
+
+        // Refresh
+        this.groups = [...this.groups];
+    }
+
+    copyUrl(url: string) {
+        if (!url) return;
+        navigator.clipboard.writeText(url).then(() => {
+            alert('URL copiada al portapapeles');
+        }).catch(err => {
+            console.error('Error al copiar URL', err);
+        });
+    }
+
+    openNewGroupForm() {
+        this.editingGroup = null;
+        this.isNewGroupModalOpen = true;
+    }
+
+    onGroupSaved() {
+        this.loadGroups();
+        alert(this.editingGroup ? 'Grupo actualizado correctamente' : 'Grupo creado exitosamente');
+        this.isNewGroupModalOpen = false;
+        this.editingGroup = null;
+    }
+
+    openEditGroupForm(group: Group) {
+        console.log('Edit Group', group);
+        this.editingGroup = group;
+        this.isNewGroupModalOpen = true;
     }
 }
