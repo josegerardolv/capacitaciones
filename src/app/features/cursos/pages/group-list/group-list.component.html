@@ -109,7 +109,7 @@
         <!-- View Details -->
         <button
             class="flex items-center justify-center w-8 h-8 rounded-full border border-cyan-400 text-cyan-500 hover:bg-cyan-50 transition-colors"
-            title="Ver detalles">
+            title="Ver conductores" (click)="viewDrivers(item); $event.stopPropagation()">
             <app-universal-icon name="eye" type="bootstrap" [size]="14"></app-universal-icon>
         </button>
 
