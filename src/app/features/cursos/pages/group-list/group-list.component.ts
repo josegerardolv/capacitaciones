@@ -187,4 +187,9 @@ export class GroupListComponent implements OnInit {
         this.selectedRequestGroup = group;
         this.isRequestsModalOpen = true;
     }
+
+    viewDrivers(group: Group) {
+        // Navegamos a la vista completa de conductores del grupo
+        this.router.navigate(['/cursos/grupos', group.id, 'conductores']);
+    }
 }

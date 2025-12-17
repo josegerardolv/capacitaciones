@@ -1,0 +1,105 @@
+<div class="p-8 animate-fade-in">
+    <!-- Breadcrumbs -->
+    <div class="text-sm text-gray-500 mb-6 font-montserrat">
+        <span class="hover:text-[#8B1538] cursor-pointer" [routerLink]="['/cursos']">Cursos</span>
+        <span class="mx-2">></span>
+        <span class="hover:text-[#8B1538] cursor-pointer" [routerLink]="['/cursos/grupos']">Grupos</span>
+        <span class="mx-2">></span>
+        <span class="font-bold text-[#8B1538]">Conductores</span>
+    </div>
+
+    <!-- Header & Actions -->
+    <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+        <h2 class="text-3xl font-bold text-gray-800 font-montserrat">Lista de Conductores</h2>
+
+        <div class="flex gap-3">
+            <!-- Botón Nuevo Conductor (Vino) -->
+            <app-institutional-button [config]="{variant: 'primary', icon: 'add'}" (buttonClick)="openNewDriverForm()">
+                Nuevo Conductor
+            </app-institutional-button>
+        </div>
+    </div>
+
+    <!-- Contenedor Tabla (Estilo Card) -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+
+        <!-- Tabla Institucional -->
+        <app-institutional-table [data]="drivers" [columns]="tableColumns" [config]="tableConfig">
+        </app-institutional-table>
+
+    </div>
+
+    <!-- Templates -->
+
+    <!-- Estatus: Badge Aprobado/No Aprobado o Botones de Calificación -->
+    <ng-template #statusTemplate let-item>
+        <!-- Caso 1: Ya calificado (Mostrar Badge) -->
+        <span *ngIf="item.status !== 'Pendiente'"
+            class="px-3 py-1 rounded-full text-xs font-bold text-white shadow-sm inline-block min-w-[90px] text-center"
+            [ngClass]="{
+                'bg-emerald-500': item.status === 'Aprobado',
+                'bg-red-500': item.status === 'No Aprobado'
+              }">
+            {{ item.status }}
+        </span>
+
+        <!-- Caso 2: Pendiente (Mostrar Acciones de Calificación) -->
+        <div *ngIf="item.status === 'Pendiente'" class="flex items-center justify-center gap-2">
+            <!-- Aprobar (Check Verde) -->
+            <button (click)="setExamResult(item, 'Aprobado')"
+                class="w-7 h-7 rounded-full bg-emerald-500 text-white flex items-center justify-center hover:bg-emerald-600 transition-colors shadow-sm"
+                title="Aprobar Examen">
+                <span class="material-symbols-outlined text-lg">check</span>
+            </button>
+
+            <!-- Reprobar (Cruz Roja) -->
+            <button (click)="setExamResult(item, 'No Aprobado')"
+                class="w-7 h-7 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition-colors shadow-sm"
+                title="Reprobar Examen">
+                <span class="material-symbols-outlined text-lg">close</span>
+            </button>
+        </div>
+    </ng-template>
+
+    <!-- Acciones: Botones circulares de colores -->
+    <ng-template #actionsTemplate let-item>
+        <div class="flex items-center justify-center gap-2">
+            <!-- Orden de Pago (Amarillo) - Solo si Aprobado -->
+            <button (click)="item.status === 'Aprobado' && printPaymentOrder(item)"
+                [disabled]="item.status !== 'Aprobado'" [class.opacity-50]="item.status !== 'Aprobado'"
+                [class.cursor-not-allowed]="item.status !== 'Aprobado'"
+                [class.hover:bg-yellow-500]="item.status === 'Aprobado'"
+                class="w-8 h-8 rounded-full bg-yellow-400 text-white flex items-center justify-center transition-colors shadow-sm"
+                title="Orden de Pago (Solo Aprobados)">
+                <span class="material-symbols-outlined text-lg">print</span>
+            </button>
+
+            <!-- Constancia (Verde) - Solo si Aprobado -->
+            <button (click)="item.status === 'Aprobado' && viewCertificate(item)"
+                [disabled]="item.status !== 'Aprobado'" [class.opacity-50]="item.status !== 'Aprobado'"
+                [class.cursor-not-allowed]="item.status !== 'Aprobado'"
+                [class.hover:bg-green-600]="item.status === 'Aprobado'"
+                class="w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center transition-colors shadow-sm"
+                title="Constancia (Solo Aprobados)">
+                <span class="material-symbols-outlined text-lg">description</span>
+            </button>
+
+            <!-- Tarjetón (Azul) - Solo si Aprobado -->
+            <button (click)="item.status === 'Aprobado' && requestTarjeton(item)"
+                [disabled]="item.status !== 'Aprobado'" [class.opacity-50]="item.status !== 'Aprobado'"
+                [class.cursor-not-allowed]="item.status !== 'Aprobado'"
+                [class.hover:bg-blue-600]="item.status === 'Aprobado'"
+                class="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center transition-colors shadow-sm"
+                title="Solicitar Tarjetón (Solo Aprobados)">
+                <span class="material-symbols-outlined text-lg">badge</span>
+            </button>
+
+            <!-- Eliminar (Rojo) - Siempre activo -->
+            <button (click)="deleteDriver(item)"
+                class="w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition-colors shadow-sm"
+                title="Eliminar">
+                <span class="material-symbols-outlined text-lg">delete</span>
+            </button>
+        </div>
+    </ng-template>
+</div>
