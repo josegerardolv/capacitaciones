@@ -37,27 +37,28 @@ export class GroupFormComponent implements OnChanges {
 
     ngOnChanges(changes: SimpleChanges) {
         if (changes['group'] && this.group) {
-            // Edit Mode: Patch values
+            // Modo Edición: Llenamos el formulario con los datos existentes
+            // Es necesario convertir la fecha para que el input type="datetime-local" la reconozca
             this.groupForm.patchValue({
                 ...this.group,
                 dateTime: this.formatDateForInput(this.group.dateTime)
             });
         } else if (changes['isOpen'] && this.isOpen && !this.group) {
-            // Create Mode: Reset form
+            // Modo Creación: Limpiamos el formulario para asegurar que esté vacío
             this.groupForm.reset();
         }
     }
 
     private formatDateForInput(dateStr: string): string {
-        // Mock data format: "12/07/2026, 14:30"
-        // Target format: "2026-07-12T14:30"
+        // Transformamos el formato de visualización "dd/mm/yyyy, HH:mm"
+        // al formato requerido por el input nativo: "yyyy-MM-ddTHH:mm"
         if (!dateStr) return '';
         try {
             const [datePart, timePart] = dateStr.split(', ');
             const [day, month, year] = datePart.split('/');
             return `${year}-${month}-${day}T${timePart}`;
         } catch (e) {
-            console.error('Error parsing date:', dateStr);
+            console.error('Error al procesar la fecha:', dateStr);
             return '';
         }
     }
@@ -88,13 +89,13 @@ export class GroupFormComponent implements OnChanges {
 
         console.log('Saving Group:', formValue);
 
-        // Simulate API delay
+        // Simulamos un delay de red para efecto visual
         setTimeout(() => {
             this.isLoading = false;
-            // Here we would call the service to save
+            // Emitimos el evento de guardado para que la lista se actualice
             this.saved.emit();
             this.closeModal();
-            // TODO: In real implementation, pass data to service
+            // TODO: Reemplazar con llamada real al servicio:
             // this.groupsService.createGroup(formValue).subscribe(...)
         }, 1000);
     }

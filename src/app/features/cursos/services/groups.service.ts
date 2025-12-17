@@ -7,6 +7,7 @@ import { Group } from '../../../core/models/group.model';
 })
 export class GroupsService {
 
+    // Datos simulados: En producción esto vendrá de la API
     private mockGroups: Group[] = [
         {
             id: 1,

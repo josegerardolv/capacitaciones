@@ -1,0 +1,61 @@
+<div *ngIf="isOpen"
+    class="institutional-modal-overlay fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 transition-opacity animate-fade-in"
+    (click)="onOverlayClick($event)">
+
+    <!-- Modal Container (Wide) -->
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-5xl mx-4 overflow-hidden transform transition-all animate-modal-content"
+        role="dialog" aria-modal="true">
+
+        <!-- Header Personalizado (Color Vino) -->
+        <div class="bg-[#591223] px-6 py-4 flex justify-between items-center">
+            <h3 class="text-white text-xl font-bold font-montserrat">Solicitudes</h3>
+            <button (click)="closeModal()" class="text-white hover:text-gray-200 transition-colors focus:outline-none">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+
+        <!-- Body -->
+        <div class="p-8">
+            <h4 class="text-[#8B1538] text-xl font-bold mb-6 font-montserrat">Solicitudes Pendientes</h4>
+
+            <!-- Toolbar (Bulk Actions) - Only show when items selected -->
+            <div class="flex justify-between items-center mb-4 min-h-[40px]">
+                <div *ngIf="showBulkActions" class="flex gap-2 animate-fade-in">
+                    <app-institutional-button [config]="{variant: 'success', size: 'small', icon: 'check'}"
+                        (buttonClick)="processSelected('accept')">
+                        Aceptar ({{selectedRequests.length}})
+                    </app-institutional-button>
+
+                    <app-institutional-button [config]="{variant: 'danger', size: 'small', icon: 'close'}"
+                        (buttonClick)="processSelected('reject')">
+                        Rechazar ({{selectedRequests.length}})
+                    </app-institutional-button>
+                </div>
+                <div *ngIf="!showBulkActions" class="text-sm text-gray-500 italic">
+                    Seleccione solicitudes para acciones masivas
+                </div>
+            </div>
+
+            <!-- Standard Institutional Table -->
+            <app-institutional-table [data]="requests" [columns]="tableColumns" [config]="tableConfig"
+                [selectedItems]="selectedRequests" (selectionChange)="onSelectionChange($event)">
+            </app-institutional-table>
+
+        </div>
+    </div>
+</div>
+
+<!-- Actions Template (Moved outside *ngIf to ensure availability) -->
+<ng-template #actionsTemplate let-item>
+    <div class="flex items-center justify-center gap-2">
+        <app-institutional-button
+            [config]="{variant: 'success', size: 'small', icon: 'check', title: 'Aceptar', customClass: 'rounded-full w-8 h-8 flex items-center justify-center !p-0'}"
+            (buttonClick)="acceptRequest(item.id)">
+        </app-institutional-button>
+
+        <app-institutional-button
+            [config]="{variant: 'danger', size: 'small', icon: 'close', title: 'Rechazar', customClass: 'rounded-full w-8 h-8 flex items-center justify-center !p-0'}"
+            (buttonClick)="rejectRequest(item.id)">
+        </app-institutional-button>
+    </div>
+</ng-template>

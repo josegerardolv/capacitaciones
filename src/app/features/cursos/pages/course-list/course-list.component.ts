@@ -21,9 +21,9 @@ export class CourseListComponent implements OnInit {
 
     courses: Course[] = [];
 
-    // Modals State
-    showForm = false; // New Course
-    showEditForm = false; // Edit Course
+    // Estado de los Modales
+    showForm = false; // Nuevo Curso
+    showEditForm = false; // Editar Curso
     selectedCourseToEdit: Course | null = null;
 
     // ... existing config ...
@@ -101,7 +101,7 @@ export class CourseListComponent implements OnInit {
         this.router.navigate(['/cursos/grupos']);
     }
 
-    // New Course Modal Handlers
+    // Manejo del Modal de Nuevo Curso
     openForm() {
         this.showForm = true;
     }
@@ -115,7 +115,7 @@ export class CourseListComponent implements OnInit {
         this.loadCourses();
     }
 
-    // Edit Course Modal Handlers
+    // Manejo del Modal de Edición
     openEditForm(course: Course) {
         this.selectedCourseToEdit = course;
         this.showEditForm = true;

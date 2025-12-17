@@ -8,6 +8,7 @@ import { Course } from '../../../core/models/course.model';
 })
 export class CoursesService {
 
+    // Listado de cursos para pruebas locales
     private courses: Course[] = [
         {
             id: 1,

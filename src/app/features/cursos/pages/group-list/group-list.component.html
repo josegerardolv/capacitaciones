@@ -101,7 +101,7 @@
         <!-- Requests Button (Moved here) -->
         <button
             class="hidden md:flex items-center justify-center px-2 py-1 rounded border border-[#00C895] text-[#00C895] hover:bg-green-50 transition-colors text-xs gap-1"
-            title="Gestionar Solicitudes" (click)="$event.stopPropagation()">
+            title="Gestionar Solicitudes" (click)="openRequests(item); $event.stopPropagation()">
             <span class="font-bold">{{ item.requests || 0 }}</span>
             <app-universal-icon name="person-check" type="bootstrap" [size]="14"></app-universal-icon>
         </button>
@@ -133,3 +133,6 @@
 <app-group-form [isOpen]="isNewGroupModalOpen" [group]="editingGroup" (close)="isNewGroupModalOpen = false"
     (saved)="onGroupSaved()">
 </app-group-form>
+
+<app-group-requests [isOpen]="isRequestsModalOpen" [group]="selectedRequestGroup" (close)="isRequestsModalOpen = false">
+</app-group-requests>

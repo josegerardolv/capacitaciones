@@ -6,6 +6,7 @@ import { InstitutionalTableComponent, TableColumn, TableConfig, SelectionEvent }
 import { TablePaginationComponent, PaginationConfig, PageChangeEvent } from '../../../../shared/components/table-pagination/table-pagination.component';
 import { InstitutionalButtonComponent } from '../../../../shared/components/buttons/institutional-button.component'; // Import button
 import { GroupFormComponent } from '../../components/group-form/group-form.component';
+import { GroupRequestsComponent } from '../../components/group-requests/group-requests.component';
 import { Group } from '../../../../core/models/group.model';
 import { GroupsService } from '../../services/groups.service';
 
@@ -19,7 +20,8 @@ import { GroupsService } from '../../services/groups.service';
         InstitutionalTableComponent,
         TablePaginationComponent,
         InstitutionalButtonComponent,
-        GroupFormComponent
+        GroupFormComponent,
+        GroupRequestsComponent
     ],
     templateUrl: './group-list.component.html'
 })
@@ -33,9 +35,11 @@ export class GroupListComponent implements OnInit {
     groups: Group[] = [];
     selectedGroups: Group[] = []; // Track selected items
 
-    // Modals
+    // Estado de los modales
     isNewGroupModalOpen = false;
+    isRequestsModalOpen = false;
     editingGroup: Group | null = null;
+    selectedRequestGroup: Group | null = null;
 
     tableConfig: TableConfig = {
         loading: true,
@@ -128,9 +132,10 @@ export class GroupListComponent implements OnInit {
         console.log('Selection:', this.selectedGroups);
     }
 
-    // Placeholder actions
+    // Acciones temporales para demostración
     exportData() {
         if (this.selectedGroups.length === 0) return;
+        // TODO: Implementar lógica real de exportación con el servicio
         console.log('Exporting', this.selectedGroups.length, 'items');
         alert(`Exportando ${this.selectedGroups.length} grupos.`);
     }
@@ -176,5 +181,10 @@ export class GroupListComponent implements OnInit {
         console.log('Edit Group', group);
         this.editingGroup = group;
         this.isNewGroupModalOpen = true;
+    }
+
+    openRequests(group: Group) {
+        this.selectedRequestGroup = group;
+        this.isRequestsModalOpen = true;
     }
 }
