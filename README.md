@@ -65,4 +65,4 @@ Nos hemos movido a una arquitectura modular basada en **Features**:
 
 ---
 
-> **Nota para Devs:** Mantenemos este repo sincronizado tanto en GitHub como en GitLab (Laboratorio). Antes de hacer push, asegura que tu rama esté limpia.
+> **Nota:** Este proyecto utiliza componentes Standalone, por lo que no depende de AppModule tradicional. Las importaciones se gestionan directamente en cada componente.
