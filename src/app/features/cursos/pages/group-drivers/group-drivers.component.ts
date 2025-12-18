@@ -14,10 +14,12 @@ interface Driver {
     status: 'Aprobado' | 'No Aprobado' | 'Pendiente';
 }
 
+import { DriverFormComponent } from '../../components/driver-form/driver-form.component';
+
 @Component({
     selector: 'app-group-drivers',
     standalone: true,
-    imports: [CommonModule, RouterModule, InstitutionalTableComponent, InstitutionalButtonComponent],
+    imports: [CommonModule, RouterModule, InstitutionalTableComponent, InstitutionalButtonComponent, DriverFormComponent],
     templateUrl: './group-drivers.component.html'
 })
 export class GroupDriversComponent implements OnInit {
@@ -26,6 +28,7 @@ export class GroupDriversComponent implements OnInit {
 
     groupId: string | null = null;
     drivers: Driver[] = [];
+    isNewDriverModalOpen = false; // State for modal
 
     tableConfig: TableConfig = {
         loading: false,
@@ -33,6 +36,30 @@ export class GroupDriversComponent implements OnInit {
         hoverable: true,
         localSort: true
     };
+    // ... existing code ...
+
+    exportList() { console.log('Exportar Lista'); }
+
+    openNewDriverForm() {
+        this.isNewDriverModalOpen = true;
+    }
+
+    onDriverSaved(driverData: any) {
+        console.log('Driver Saved:', driverData);
+        // Add mock driver to list
+        const newDriver: Driver = {
+            id: this.drivers.length + 1,
+            name: driverData.name,
+            curp: driverData.curp,
+            sex: driverData.sex,
+            address: driverData.address,
+            nuc: driverData.nuc || '-----',
+            status: 'Pendiente'
+        };
+        this.drivers = [...this.drivers, newDriver];
+        this.isNewDriverModalOpen = false;
+        alert('Conductor registrado temporalmente');
+    }
 
     tableColumns: TableColumn[] = [];
 
@@ -100,7 +127,4 @@ export class GroupDriversComponent implements OnInit {
             this.drivers = this.drivers.filter(d => d.id !== driver.id);
         }
     }
-
-    exportList() { console.log('Exportar Lista'); }
-    openNewDriverForm() { console.log('Nuevo Conductor'); }
 }

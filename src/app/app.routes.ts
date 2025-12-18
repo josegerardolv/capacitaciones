@@ -14,6 +14,18 @@ export const routes: Routes = [
     loadComponent: () => import('./shared/components/login/login.component').then(m => m.LoginComponent)
   },
 
+  // --- RUTA PÚBLICA DE REGISTRO (Sin Auth) ---
+  {
+    path: 'registro-publico',
+    loadComponent: () => import('./shared/layout/public-layout.component').then(m => m.PublicLayoutComponent),
+    children: [
+      {
+        path: ':id', // ID del token/grupo
+        loadComponent: () => import('./features/cursos/pages/public-registration/public-registration.component').then(m => m.PublicRegistrationComponent)
+      }
+    ]
+  },
+
   // --- GRUPO 2: LAYOUT ADMINISTRATIVO (Sidebar + Header) ---
   {
     path: '',
