@@ -1,83 +1,68 @@
 # 🗳️ Sistema de Capacitaciones - SEMOVI
 
-Este proyecto es el frontend para la gestión de capacitaciones, cursos, grupos y conductores de la SEMOVI. Está construido con **Angular (Standalone Components)** y **TailwindCSS**.
+Bienvenido al repositorio del frontend para la gestión de capacitaciones. Este proyecto maneja todo el flujo operativo de los cursos impartidos por la SEMOVI, desde la creación de la oferta académica hasta la emisión de constancias.
 
-## 📋 Descripción General
+Tecnologías clave: **Angular 18+ (Standalone)** y **TailwindCSS**.
 
-El sistema permite al personal administrativo gestionar el ciclo de vida de una capacitación:
-1.  **Cursos:** Crear y administrar la oferta educativa.
-2.  **Grupos:** Gestionar fechas y cupos.
-3.  **Solicitudes:** Aceptar o rechazar conductores interesados.
-4.  **Conductores:** Calificar exámenes y expedir documentación oficial.
+## � Rutas Principales
 
-## 🚀 Guía de Inicio Rápido
+###  Panel Administrativo (Requiere Login)
+El núcleo de la operación. Aquí gestionamos los cursos y grupos.
 
-### Prerrequisitos
-- Node.js (v18 o superior recomendado)
-- Angular CLI
+| Ruta | Descripción |
+|------|-------------|
+| `/cursos/lista` | Catálogo general de cursos disponibles. |
+| `/cursos/grupos` | Gestión de fechas y apertura de grupos. |
+| `/cursos/grupos/:id/conductores` | **Control de Asistencia:** Aquí aprobamos exámenes y documentos. |
 
-### Instalación
-```bash
-npm install
-```
+###  Acceso Público (Conductores)
+Rutas accesibles para usuarios externos (no requieren autenticación).
 
-### Ejecución (Entorno Local)
-```bash
-npm start
-# O comando estándar:
-ng serve
-```
-La aplicación estará disponible en: `http://localhost:4200`
+| Ruta | Descripción |
+|------|-------------|
+| `/registro-publico/:id` | **Formulario de Registro:** Donde los conductores se inscriben usando un ID de grupo. |
 
 ---
 
-## 🏛️ Arquitectura del Proyecto
+##  Cómo correr el proyecto
 
-El proyecto sigue una arquitectura modular en `src/app/features`:
+Si eres nuevo en el equipo, solo necesitas Node.js y Angular CLI.
 
-*   **🗂️ features/cursos:** Módulo principal.
-    *   `pages/course-list`: Catálogo de cursos.
-    *   `pages/group-list`: Gestión de grupos activos/inactivos.
-    *   `pages/group-drivers`: **(Nuevo)** Lista detallada de conductores por grupo.
-    *   `components/group-requests`: Modal para aceptar solicitudes.
-*   **📊 features/dashboard:** Vista resumen principal.
-*   **🧱 shared:** Componentes reutilizables.
-    *   `institutional-table`: Tabla estándar con ordenamiento y paginación.
-    *   `institutional-button`: Botones con los colores oficiales (Vino #8B1538, Café #6D282E).
+1.  **Instalar dependencias:**
+    ```bash
+    npm install
+    ```
 
----
+2.  **Levantar el servidor de desarrollo:**
+    ```bash
+    npm start
+    # O también: ng serve
+    ```
 
-## 🔄 Flujo de Negocio y Lógica Clave
-
-### 1. Gestión de Estatus de Conductores
-En la vista de **Lista de Conductores** (`GroupDriversComponent`), el flujo de un conductor es:
-
-1.  **Pendiente:**
-    *   El conductor ha sido aceptado en el grupo pero no ha hecho el examen.
-    *   **Acción Admin:** Aparecen botones para **Aprobar (✅)** o **Reprobar (❌)** el examen.
-    *   *Restricción:* No puede descargar Constancia ni Tarjetón.
-2.  **Aprobado:**
-    *   El conductor pasó el examen.
-    *   **Acción Admin:** Se habilitan los botones para descargar:
-        *   📄 **Constancia** (Verde)
-        *   🪪 **Tarjetón** (Azul)
-        *   🖨️ **Orden de Pago** (Amarillo)
-3.  **No Aprobado:**
-    *   El conductor reprobó.
-    *   **Restricción:** Los botones de documentación se bloquean (se ven opacos).
-    *   **Nota:** El botón de **Eliminar** siempre está activo para correcciones, independientemente del estatus.
-
-### 2. Validaciones de UI
-*   **Componentes Compartidos:** Se prioriza el uso de `app-institutional-table` para mantener consistencia visual.
-*   **Acciones Condicionales:** Los botones de acción en las tablas usan directivas `[disabled]` basadas en la regla de negocio: *"Si no aprueba, no tiene privilegios de documentación"*.
+3.  Visita `http://localhost:4200` y loguéate (Credenciales en 1Password o pregunta al Admin).
 
 ---
 
-## 🛠️ Comandos de Desarrollo
+## 🏛️ Estructura del Código
 
-*   `ng generate component feature/nombre`: Crear nuevo componente.
-*   `ng build`: Compilar para producción.
+Nos hemos movido a una arquitectura modular basada en **Features**:
+
+*   **`src/app/features/cursos`**: Aquí vive toda la lógica del negocio.
+    *   Usamos componentes *Smart* (Páginas) y *Dumb* (Componentes reutilizables como tablas y formularios).
+*   **`src/app/shared`**: UI Kit Institucional.
+    *   Si necesitas un botón color vino o una tabla con paginación, búscala aquí primero.
+    *   *Nota:* El modal de registro (`driver-form`) se diseñó para ser híbrido (funciona tanto en el admin como en la vista pública).
 
 ---
 
-> **Nota:** Este proyecto utiliza componentes Standalone, por lo que no depende de `AppModule` tradicional. Las importaciones se gestionan directamente en cada componente.
+##  Flujo de Trabajo (Cheat Sheet)
+
+### Para aprobar a un conductor:
+1.  Ve a "Grupos" -> Click en "Ver Conductores".
+2.  Busca al conductor en la lista.
+3.  Usa el botón **Check Verde (✅)** para aprobar su examen.
+4.  *Automáticamente* se desbloquearán los botones de **Constancia, Tarjetón y Orden de Pago**.
+
+---
+
+> **Nota para Devs:** Mantenemos este repo sincronizado tanto en GitHub como en GitLab (Laboratorio). Antes de hacer push, asegura que tu rama esté limpia.
