@@ -14,12 +14,12 @@ interface Driver {
     status: 'Aprobado' | 'No Aprobado' | 'Pendiente';
 }
 
-import { DriverFormComponent } from '../../components/driver-form/driver-form.component';
+import { TooltipDirective } from '../../../../shared/components/tooltip/tooltip.directive';
 
 @Component({
     selector: 'app-group-drivers',
     standalone: true,
-    imports: [CommonModule, RouterModule, InstitutionalTableComponent, InstitutionalButtonComponent, DriverFormComponent],
+    imports: [CommonModule, RouterModule, InstitutionalTableComponent, InstitutionalButtonComponent, TooltipDirective],
     templateUrl: './group-drivers.component.html'
 })
 export class GroupDriversComponent implements OnInit {
@@ -28,7 +28,7 @@ export class GroupDriversComponent implements OnInit {
 
     groupId: string | null = null;
     drivers: Driver[] = [];
-    isNewDriverModalOpen = false; // State for modal
+    // isNewDriverModalOpen = false; // Ya no se usa modal
 
     tableConfig: TableConfig = {
         loading: false,
@@ -36,30 +36,15 @@ export class GroupDriversComponent implements OnInit {
         hoverable: true,
         localSort: true
     };
-    // ... existing code ...
 
     exportList() { console.log('Exportar Lista'); }
 
     openNewDriverForm() {
-        this.isNewDriverModalOpen = true;
+        // Navegamos a la nueva vista de registro
+        this.router.navigate(['nuevo'], { relativeTo: this.route });
     }
 
-    onDriverSaved(driverData: any) {
-        console.log('Driver Saved:', driverData);
-        // Add mock driver to list
-        const newDriver: Driver = {
-            id: this.drivers.length + 1,
-            name: driverData.name,
-            curp: driverData.curp,
-            sex: driverData.sex,
-            address: driverData.address,
-            nuc: driverData.nuc || '-----',
-            status: 'Pendiente'
-        };
-        this.drivers = [...this.drivers, newDriver];
-        this.isNewDriverModalOpen = false;
-        alert('Conductor registrado temporalmente');
-    }
+    // El guardado ahora se maneja en la otra vista. Al volver, ngOnInit recargará la lista.
 
     tableColumns: TableColumn[] = [];
 

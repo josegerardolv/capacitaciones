@@ -70,9 +70,9 @@
 <ng-template #urlTemplate let-item>
     <div class="flex justify-center" *ngIf="item.url">
         <button
-            class="flex items-center justify-center w-8 h-8 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-200 hover:bg-[#8B1538] hover:text-white hover:border-[#8B1538] transition-colors shadow-sm"
-            title="Copiar Enlace" (click)="copyUrl(item.url); $event.stopPropagation()">
-            <app-universal-icon name="copy" type="bootstrap" [size]="14"></app-universal-icon>
+            class="w-8 h-8 rounded-full bg-blue-100 text-blue-800 hover:bg-blue-200 flex items-center justify-center transition-colors"
+            [appTooltip]="'Copiar Enlace'" tooltipPosition="top" (click)="copyUrl(item.url); $event.stopPropagation()">
+            <span class="material-symbols-outlined text-sm">content_copy</span>
         </button>
     </div>
     <div *ngIf="!item.url" class="text-gray-400 text-xs italic text-center">
@@ -101,7 +101,8 @@
         <!-- Requests Button (Moved here) -->
         <button
             class="hidden md:flex items-center justify-center px-2 py-1 rounded border border-[#00C895] text-[#00C895] hover:bg-green-50 transition-colors text-xs gap-1"
-            title="Gestionar Solicitudes" (click)="openRequests(item); $event.stopPropagation()">
+            [appTooltip]="'Gestionar Solicitudes'" tooltipPosition="top"
+            (click)="openRequests(item); $event.stopPropagation()">
             <span class="font-bold">{{ item.requests || 0 }}</span>
             <app-universal-icon name="person-check" type="bootstrap" [size]="14"></app-universal-icon>
         </button>
@@ -109,21 +110,22 @@
         <!-- View Details -->
         <button
             class="flex items-center justify-center w-8 h-8 rounded-full border border-cyan-400 text-cyan-500 hover:bg-cyan-50 transition-colors"
-            title="Ver conductores" (click)="viewDrivers(item); $event.stopPropagation()">
+            [appTooltip]="'Ver conductores'" tooltipPosition="top"
+            (click)="viewDrivers(item); $event.stopPropagation()">
             <app-universal-icon name="eye" type="bootstrap" [size]="14"></app-universal-icon>
         </button>
 
         <!-- Edit -->
         <button
             class="flex items-center justify-center w-8 h-8 rounded-full border border-orange-400 text-orange-500 hover:bg-orange-50 transition-colors"
-            title="Editar" (click)="openEditGroupForm(item)">
+            [appTooltip]="'Editar'" tooltipPosition="top" (click)="openEditGroupForm(item)">
             <app-universal-icon name="pencil" type="bootstrap" [size]="14"></app-universal-icon>
         </button>
 
         <!-- Delete -->
         <button
             class="flex items-center justify-center w-8 h-8 rounded-full border border-red-400 text-red-500 hover:bg-red-50 transition-colors"
-            title="Eliminar" (click)="deleteGroup(item.id)">
+            [appTooltip]="'Eliminar'" tooltipPosition="top" (click)="deleteGroup(item.id)">
             <app-universal-icon name="trash" type="bootstrap" [size]="14"></app-universal-icon>
         </button>
     </div>

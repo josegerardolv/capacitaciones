@@ -8,11 +8,12 @@ import { InstitutionalTableComponent, TableColumn, TableConfig } from '../../../
 import { TablePaginationComponent, PaginationConfig, PageChangeEvent } from '../../../../shared/components/table-pagination/table-pagination.component';
 import { CourseFormComponent } from '../../components/course-form/course-form.component';
 import { CourseEditFormComponent } from '../../components/course-edit-form/course-edit-form.component';
+import { TooltipDirective } from '../../../../shared/components/tooltip/tooltip.directive';
 
 @Component({
     selector: 'app-course-list',
     standalone: true,
-    imports: [CommonModule, RouterModule, UniversalIconComponent, InstitutionalTableComponent, TablePaginationComponent, CourseFormComponent, CourseEditFormComponent],
+    imports: [CommonModule, RouterModule, UniversalIconComponent, InstitutionalTableComponent, TablePaginationComponent, CourseFormComponent, CourseEditFormComponent, TooltipDirective],
     templateUrl: './course-list.component.html'
 })
 export class CourseListComponent implements OnInit {

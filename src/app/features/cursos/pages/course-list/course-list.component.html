@@ -38,19 +38,19 @@
 <ng-template #actionsTemplate let-item>
     <div class="flex items-center justify-center space-x-3">
         <button
-            class="flex items-center justify-center w-8 h-8 rounded-full border border-cyan-400 text-cyan-500 hover:bg-cyan-50 transition-colors"
-            title="Ver detalles" (click)="viewGroups(item)">
-            <app-universal-icon name="eye" type="bootstrap" [size]="14"></app-universal-icon>
+            class="w-8 h-8 rounded-full bg-blue-100 text-blue-800 hover:bg-blue-200 flex items-center justify-center transition-colors"
+            [appTooltip]="'Ver detalles'" tooltipPosition="top" (click)="viewGroups(item)">
+            <span class="material-symbols-outlined text-sm">visibility</span>
         </button>
         <button
-            class="flex items-center justify-center w-8 h-8 rounded-full border border-orange-400 text-orange-500 hover:bg-orange-50 transition-colors"
-            title="Editar" (click)="openEditForm(item)">
-            <app-universal-icon name="pencil" type="bootstrap" [size]="14"></app-universal-icon>
+            class="w-8 h-8 rounded-full bg-amber-100 text-amber-800 hover:bg-amber-200 flex items-center justify-center transition-colors"
+            [appTooltip]="'Editar'" tooltipPosition="top" (click)="openEditForm(item)">
+            <span class="material-symbols-outlined text-sm">edit</span>
         </button>
         <button
-            class="flex items-center justify-center w-8 h-8 rounded-full border border-red-400 text-red-500 hover:bg-red-50 transition-colors"
-            title="Eliminar" (click)="deleteCourse(item.id)">
-            <app-universal-icon name="trash" type="bootstrap" [size]="14"></app-universal-icon>
+            class="w-8 h-8 rounded-full bg-red-100 text-red-800 hover:bg-red-200 flex items-center justify-center transition-colors"
+            [appTooltip]="'Eliminar'" tooltipPosition="top" (click)="deleteCourse(item.id)">
+            <span class="material-symbols-outlined text-sm">delete</span>
         </button>
     </div>
 </ng-template>

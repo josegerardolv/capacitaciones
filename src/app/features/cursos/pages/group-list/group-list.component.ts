@@ -9,6 +9,7 @@ import { GroupFormComponent } from '../../components/group-form/group-form.compo
 import { GroupRequestsComponent } from '../../components/group-requests/group-requests.component';
 import { Group } from '../../../../core/models/group.model';
 import { GroupsService } from '../../services/groups.service';
+import { TooltipDirective } from '../../../../shared/components/tooltip/tooltip.directive';
 
 @Component({
     selector: 'app-group-list',
@@ -21,7 +22,8 @@ import { GroupsService } from '../../services/groups.service';
         TablePaginationComponent,
         InstitutionalButtonComponent,
         GroupFormComponent,
-        GroupRequestsComponent
+        GroupRequestsComponent,
+        TooltipDirective
     ],
     templateUrl: './group-list.component.html'
 })
@@ -147,9 +149,9 @@ export class GroupListComponent implements OnInit {
         // Logging for now as previously reverted
         console.log('Generating URL for', group.name);
 
-        // Mock generation
-        const randomToken = Math.random().toString(36).substring(7);
-        const newUrl = `https://semovi.oaxaca.gob.mx/registro/${group.name}-${randomToken}`;
+        // Generamos el link dinámico usando el dominio actual (funciona en localhost y en producción)
+        const baseUrl = window.location.origin; // Ej: http://localhost:4200 o https://midominio.com
+        const newUrl = `${baseUrl}/registro-publico/${group.id}`;
         group.url = newUrl;
 
         // Refresh

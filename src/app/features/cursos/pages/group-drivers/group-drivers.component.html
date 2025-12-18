@@ -40,13 +40,13 @@
             <!-- Aprobar (Check Verde) -->
             <button (click)="setExamResult(item, 'Aprobado')"
                 class="w-7 h-7 rounded-full bg-emerald-500 text-white flex items-center justify-center hover:bg-emerald-600 transition-colors shadow-sm"
-                title="Aprobar Examen">
+                [appTooltip]="'Aprobar Examen'" tooltipPosition="top">
                 <span class="material-symbols-outlined text-lg">check</span>
             </button>
             <!-- Reprobar (Cruz Roja) -->
             <button (click)="setExamResult(item, 'No Aprobado')"
                 class="w-7 h-7 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition-colors shadow-sm"
-                title="Reprobar Examen">
+                [appTooltip]="'Reprobar Examen'" tooltipPosition="top">
                 <span class="material-symbols-outlined text-lg">close</span>
             </button>
         </div>
@@ -60,7 +60,8 @@
                 [class.cursor-not-allowed]="item.status !== 'Aprobado'"
                 [class.hover:bg-yellow-500]="item.status === 'Aprobado'"
                 class="w-8 h-8 rounded-full bg-yellow-400 text-white flex items-center justify-center transition-colors shadow-sm"
-                title="Orden de Pago (Solo Aprobados)">
+                [appTooltip]="item.status === 'Aprobado' ? 'Orden de Pago' : 'Requiere Aprobación'"
+                tooltipPosition="top">
                 <span class="material-symbols-outlined text-lg">print</span>
             </button>
             <!-- Constancia (Verde) - Solo si Aprobado -->
@@ -69,7 +70,8 @@
                 [class.cursor-not-allowed]="item.status !== 'Aprobado'"
                 [class.hover:bg-green-600]="item.status === 'Aprobado'"
                 class="w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center transition-colors shadow-sm"
-                title="Constancia (Solo Aprobados)">
+                [appTooltip]="item.status === 'Aprobado' ? 'Descargar Constancia' : 'Requiere Aprobación'"
+                tooltipPosition="top">
                 <span class="material-symbols-outlined text-lg">description</span>
             </button>
             <!-- Tarjetón (Azul) - Solo si Aprobado -->
@@ -78,45 +80,18 @@
                 [class.cursor-not-allowed]="item.status !== 'Aprobado'"
                 [class.hover:bg-blue-600]="item.status === 'Aprobado'"
                 class="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center transition-colors shadow-sm"
-                title="Solicitar Tarjetón (Solo Aprobados)">
+                [appTooltip]="item.status === 'Aprobado' ? 'Solicitar Tarjetón' : 'Requiere Aprobación'"
+                tooltipPosition="top">
                 <span class="material-symbols-outlined text-lg">badge</span>
             </button>
             <!-- Eliminar (Rojo) - Siempre activo -->
             <button (click)="deleteDriver(item)"
                 class="w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition-colors shadow-sm"
-                title="Eliminar">
+                [appTooltip]="'Eliminar Conductor'" tooltipPosition="top">
                 <span class="material-symbols-outlined text-lg">delete</span>
             </button>
         </div>
     </ng-template>
 
     <!-- Modal Nuevo Conductor -->
-    <!-- Modal Nuevo Conductor (Diseño Institucional) -->
-    <div *ngIf="isNewDriverModalOpen"
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
-        <div
-            class="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden animate-modal-in border border-gray-100 flex flex-col">
-
-            <!-- Header Institucional -->
-            <div class="bg-gradient-institucional p-6 flex-shrink-0">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <h3 class="text-xl font-bold text-white">Registrar Nuevo Conductor</h3>
-                        <p class="text-white/80 text-sm mt-1">Complete la información requerida</p>
-                    </div>
-                    <button (click)="isNewDriverModalOpen = false"
-                        class="text-white hover:text-gray-200 transition-colors p-2 rounded-full hover:bg-white/20">
-                        <span class="material-symbols-outlined text-xl">close</span>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Contenido con Scroll -->
-            <div class="overflow-y-auto p-6 flex-grow">
-                <app-driver-form (close)="isNewDriverModalOpen = false" (saved)="onDriverSaved($event)">
-                </app-driver-form>
-            </div>
-
-        </div>
-    </div>
 </div>

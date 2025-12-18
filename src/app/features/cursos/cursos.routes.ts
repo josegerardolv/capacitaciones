@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { CourseListComponent } from './pages/course-list/course-list.component';
 import { GroupListComponent } from './pages/group-list/group-list.component';
 import { GroupDriversComponent } from './pages/group-drivers/group-drivers.component';
+import { DriverRegistrationComponent } from './pages/driver-registration/driver-registration.component';
 
 export const CURSOS_ROUTES: Routes = [
     {
@@ -10,7 +11,8 @@ export const CURSOS_ROUTES: Routes = [
             { path: '', redirectTo: 'lista', pathMatch: 'full' },
             { path: 'lista', component: CourseListComponent },
             { path: 'grupos', component: GroupListComponent },
-            { path: 'grupos/:id/conductores', component: GroupDriversComponent }
+            { path: 'grupos/:id/conductores', component: GroupDriversComponent },
+            { path: 'grupos/:id/conductores/nuevo', component: DriverRegistrationComponent } // Nueva ruta
         ]
     }
 ];
