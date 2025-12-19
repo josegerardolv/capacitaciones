@@ -17,9 +17,9 @@
             <p class="text-gray-600 mt-1">Complete la información del formulario.</p>
         </div>
 
-        <button (click)="onCancel()" class="text-gray-500 hover:text-gray-700 transition-colors">
+        <!-- <button (click)="onCancel()" class="text-gray-500 hover:text-gray-700 transition-colors">
             <span class="material-symbols-outlined text-3xl">close</span>
-        </button>
+        </button> -->
     </div>
 
     <!-- Contenedor Tarjeta (Full Width) -->
@@ -34,9 +34,13 @@
 
         <!-- Form Body -->
         <div class="p-6">
-            <app-driver-form [submitLabel]="'Registrar Conductor'" [showCancel]="true" (cancel)="onCancel()"
-                (save)="onDriverSaved($event)">
+            <app-driver-form [submitLabel]="'Registrar Conductor'" [showCancel]="true" (close)="onCancel()"
+                (saved)="onDriverSaved($event)">
             </app-driver-form>
+            <!-- El modal utiliza 'isAlertOpen' y 'alertConfig' definidos en el TS -->
+            <app-alert-modal [isOpen]="isAlertOpen" [config]="alertConfig" (modalClose)="closeAndRedirect()"
+                (actionClick)="closeAndRedirect()">
+            </app-alert-modal>
         </div>
     </div>
 </div>

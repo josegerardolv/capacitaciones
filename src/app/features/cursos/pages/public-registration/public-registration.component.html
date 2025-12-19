@@ -32,6 +32,10 @@
 
         </div>
 
+        <!-- Modal de Feedback -->
+        <app-alert-modal [isOpen]="isAlertOpen" [config]="alertConfig" (modalClose)="close()" (actionClick)="close()">
+        </app-alert-modal>
+
     </div>
 
 </div>

@@ -93,5 +93,24 @@
         </div>
     </ng-template>
 
-    <!-- Modal Nuevo Conductor -->
+    <!-- Modal de Aprobación y Upsell -->
+    <app-confirmation-modal [isOpen]="approvalModalOpen" [config]="approvalConfig" [hasContent]="true"
+        (confirm)="confirmApproval()" (cancel)="approvalModalOpen = false" (modalClose)="approvalModalOpen = false">
+
+        <!-- Contenido Personalizado: Checkbox Upsell -->
+        <div class="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200 text-left">
+            <label class="flex items-start gap-3 cursor-pointer select-none">
+                <div class="relative flex items-center mt-1">
+                    <input type="checkbox" [(ngModel)]="tempIncludeTarjeton"
+                        class="w-5 h-5 text-[#8B1538] border-gray-300 rounded focus:ring-[#8B1538] focus:ring-offset-0 cursor-pointer">
+                </div>
+                <div class="flex flex-col">
+                    <span class="font-bold text-gray-800">Generar Pago de Tarjetón</span>
+                    <span class="text-sm text-gray-600">Marcar si el usuario desea tramitar y pagar el Tarjetón
+                        ahora.</span>
+                </div>
+            </label>
+        </div>
+
+    </app-confirmation-modal>
 </div>
