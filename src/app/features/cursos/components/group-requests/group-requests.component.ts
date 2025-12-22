@@ -8,6 +8,7 @@ import {
     TableConfig,
     SelectionEvent
 } from '../../../../shared/components/institutional-table/institutional-table.component';
+import { ConfirmationModalComponent, ConfirmationConfig } from '../../../../shared/components/modals/confirmation-modal.component';
 
 interface Request {
     id: number;
@@ -21,7 +22,7 @@ interface Request {
 @Component({
     selector: 'app-group-requests',
     standalone: true,
-    imports: [CommonModule, InstitutionalButtonComponent, InstitutionalTableComponent],
+    imports: [CommonModule, InstitutionalButtonComponent, InstitutionalTableComponent, ConfirmationModalComponent],
     templateUrl: './group-requests.component.html'
 })
 export class GroupRequestsComponent implements OnChanges {
@@ -45,14 +46,25 @@ export class GroupRequestsComponent implements OnChanges {
 
     tableColumns: TableColumn[] = [];
 
+    // --- MODALES GENÉRICOS ---
+    isConfirmOpen = false;
+    confirmConfig: ConfirmationConfig = {
+        title: '',
+        message: '',
+        type: 'warning',
+        confirmText: 'Aceptar',
+        cancelText: 'Cancelar'
+    };
+    private pendingConfirmAction: (() => void) | null = null;
+
     ngOnInit() {
         // Inicializamos las columnas. Aunque actionsTemplate es static: true,
         // es buena práctica asegurarnos que el view esté listo.
         this.initColumns();
     }
 
-    // Generador de datos de prueba para simular la respuesta del backend
-    private generateMockRequests(): Request[] {
+    // Carga de datos iniciales
+    private loadRequests(): Request[] {
         return [
             { id: 1, name: 'Juan Perez', curp: 'EQPH100809MSPTPV34', sex: 'Hombre', address: 'Oaxaca, Centro', nuc: '01-191' },
             { id: 2, name: 'Sergio Gonzalez', curp: 'VXCE910803MCCRCK34', sex: 'Hombre', address: 'Reforma, Centro', nuc: '25-545' },
@@ -62,7 +74,7 @@ export class GroupRequestsComponent implements OnChanges {
 
     ngOnChanges(changes: SimpleChanges) {
         if (changes['isOpen'] && this.isOpen) {
-            this.requests = this.generateMockRequests();
+            this.requests = this.loadRequests();
             this.selectedRequests = [];
             // Re-inicializamos columnas para asegurar que el template se vincule correctamente
             this.initColumns();
@@ -94,31 +106,62 @@ export class GroupRequestsComponent implements OnChanges {
         this.selectedRequests = event.selectedItems;
     }
 
+    // --- HELPERS PARA MODALES ---
+    openConfirm(config: ConfirmationConfig, action: () => void) {
+        this.confirmConfig = config;
+        this.pendingConfirmAction = action;
+        this.isConfirmOpen = true;
+    }
+
+    onConfirmYes() {
+        if (this.pendingConfirmAction) {
+            this.pendingConfirmAction();
+        }
+        this.isConfirmOpen = false;
+        this.pendingConfirmAction = null;
+    }
+
     acceptRequest(id: number) {
-        // Lógica de aceptación: Por ahora removemos de la lista local
-        // TODO: Conectar con endpoint de aceptación de solicitudes
-        if (confirm('¿Aceptar solicitud?')) {
+        this.openConfirm({
+            title: 'Aceptar Solicitud',
+            message: '¿Estás seguro de aceptar esta solicitud?',
+            type: 'success',
+            confirmText: 'Aceptar',
+            cancelText: 'Cancelar'
+        }, () => {
             this.requests = this.requests.filter(r => r.id !== id);
             this.clearSelection();
-        }
+        });
     }
 
     rejectRequest(id: number) {
-        if (confirm('¿Rechazar solicitud?')) {
+        this.openConfirm({
+            title: 'Rechazar Solicitud',
+            message: '¿Estás seguro de rechazar esta solicitud?',
+            type: 'danger',
+            confirmText: 'Rechazar',
+            cancelText: 'Cancelar'
+        }, () => {
             this.requests = this.requests.filter(r => r.id !== id);
             this.clearSelection();
-        }
+        });
     }
 
     processSelected(action: 'accept' | 'reject') {
         if (this.selectedRequests.length === 0) return;
 
-        if (confirm(`¿${action === 'accept' ? 'Aceptar' : 'Rechazar'} ${this.selectedRequests.length} solicitudes?`)) {
-            // Filtramos los items seleccionados simulando su procesamiento
+        const isAccept = action === 'accept';
+        this.openConfirm({
+            title: isAccept ? 'Aceptar Solicitudes' : 'Rechazar Solicitudes',
+            message: `¿${isAccept ? 'Aceptar' : 'Rechazar'} ${this.selectedRequests.length} solicitudes seleccionadas?`,
+            type: isAccept ? 'success' : 'danger',
+            confirmText: isAccept ? 'Aceptar Todas' : 'Rechazar Todas',
+            cancelText: 'Cancelar'
+        }, () => {
             const selectedIds = this.selectedRequests.map(r => r.id);
             this.requests = this.requests.filter(r => !selectedIds.includes(r.id));
             this.clearSelection();
-        }
+        });
     }
 
     private clearSelection() {

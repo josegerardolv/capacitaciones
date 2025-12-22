@@ -18,7 +18,7 @@
         <div class="p-8">
             <h4 class="text-[#8B1538] text-xl font-bold mb-6 font-montserrat">Solicitudes Pendientes</h4>
 
-            <!-- Toolbar (Bulk Actions) - Only show when items selected -->
+            <!-- Toolbar (Bulk Actions) -->
             <div class="flex justify-between items-center mb-4 min-h-[40px]">
                 <div *ngIf="showBulkActions" class="flex gap-2 animate-fade-in">
                     <app-institutional-button [config]="{variant: 'success', size: 'small', icon: 'check'}"
@@ -59,3 +59,8 @@
         </app-institutional-button>
     </div>
 </ng-template>
+
+<!-- Modales Genéricos de Confirmación -->
+<app-confirmation-modal [isOpen]="isConfirmOpen" [config]="confirmConfig" (confirm)="onConfirmYes()"
+    (cancel)="isConfirmOpen = false" (modalClose)="isConfirmOpen = false">
+</app-confirmation-modal>

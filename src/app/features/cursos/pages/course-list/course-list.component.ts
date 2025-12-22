@@ -9,15 +9,27 @@ import { TablePaginationComponent, PaginationConfig, PageChangeEvent } from '../
 import { CourseFormComponent } from '../../components/course-form/course-form.component';
 import { CourseEditFormComponent } from '../../components/course-edit-form/course-edit-form.component';
 import { TooltipDirective } from '../../../../shared/components/tooltip/tooltip.directive';
+import { ConfirmationModalComponent, ConfirmationConfig } from '../../../../shared/components/modals/confirmation-modal.component';
+import { AlertModalComponent, AlertConfig } from '../../../../shared/components/modals/alert-modal.component';
 
 @Component({
     selector: 'app-course-list',
     standalone: true,
-    imports: [CommonModule, RouterModule, UniversalIconComponent, InstitutionalTableComponent, TablePaginationComponent, CourseFormComponent, CourseEditFormComponent, TooltipDirective],
+    imports: [
+        CommonModule,
+        RouterModule,
+        UniversalIconComponent,
+        InstitutionalTableComponent,
+        TablePaginationComponent,
+        CourseFormComponent,
+        CourseEditFormComponent,
+        TooltipDirective,
+        ConfirmationModalComponent,
+        AlertModalComponent
+    ],
     templateUrl: './course-list.component.html'
 })
 export class CourseListComponent implements OnInit {
-    // ... existing ViewChild ...
     @ViewChild('actionsTemplate', { static: true }) actionsTemplate!: TemplateRef<any>;
 
     courses: Course[] = [];
@@ -27,7 +39,6 @@ export class CourseListComponent implements OnInit {
     showEditForm = false; // Editar Curso
     selectedCourseToEdit: Course | null = null;
 
-    // ... existing config ...
     tableConfig: TableConfig = {
         loading: true,
         striped: false,
@@ -35,7 +46,6 @@ export class CourseListComponent implements OnInit {
         localSort: true
     };
 
-    // ... existing properties ...
     tableColumns: TableColumn[] = [];
     paginationConfig: PaginationConfig = {
         pageSize: 10,
@@ -43,6 +53,24 @@ export class CourseListComponent implements OnInit {
         currentPage: 1,
         pageSizeOptions: [10, 20, 50],
         showInfo: true
+    };
+
+    // --- MODALES GENÉRICOS ---
+    isConfirmOpen = false;
+    confirmConfig: ConfirmationConfig = {
+        title: '',
+        message: '',
+        type: 'warning',
+        confirmText: 'Aceptar',
+        cancelText: 'Cancelar'
+    };
+    private pendingConfirmAction: (() => void) | null = null;
+
+    isAlertOpen = false;
+    alertConfig: AlertConfig = {
+        title: '',
+        message: '',
+        type: 'info'
     };
 
     constructor(
@@ -89,12 +117,43 @@ export class CourseListComponent implements OnInit {
         this.paginationConfig.pageSize = event.pageSize;
     }
 
+    // --- HELPERS PARA MODALES ---
+    openConfirm(config: ConfirmationConfig, action: () => void) {
+        this.confirmConfig = config;
+        this.pendingConfirmAction = action;
+        this.isConfirmOpen = true;
+    }
+
+    onConfirmYes() {
+        if (this.pendingConfirmAction) {
+            this.pendingConfirmAction();
+        }
+        this.isConfirmOpen = false;
+        this.pendingConfirmAction = null;
+    }
+
+    openAlert(title: string, message: string, type: 'success' | 'info' | 'warning' | 'danger' = 'info') {
+        this.alertConfig = {
+            title,
+            message,
+            type
+        };
+        this.isAlertOpen = true;
+    }
+
     deleteCourse(id: number) {
-        if (confirm('¿Estás seguro de eliminar este curso?')) {
+        this.openConfirm({
+            title: 'Eliminar Curso',
+            message: '¿Estás seguro de eliminar este curso?',
+            type: 'danger',
+            confirmText: 'Eliminar',
+            cancelText: 'Cancelar'
+        }, () => {
             this.coursesService.deleteCourse(id).subscribe(() => {
                 this.loadCourses();
+                this.openAlert('Eliminado', 'Curso eliminado correctamente.', 'success');
             });
-        }
+        });
     }
 
     viewGroups(course: Course) {
@@ -114,6 +173,7 @@ export class CourseListComponent implements OnInit {
     onFormSaved() {
         this.showForm = false;
         this.loadCourses();
+        this.openAlert('Guardado', 'Curso guardado exitosamente.', 'success');
     }
 
     // Manejo del Modal de Edición
@@ -131,5 +191,6 @@ export class CourseListComponent implements OnInit {
         this.showEditForm = false;
         this.selectedCourseToEdit = null;
         this.loadCourses();
+        this.openAlert('Actualizado', 'Curso actualizado correctamente.', 'success');
     }
 }

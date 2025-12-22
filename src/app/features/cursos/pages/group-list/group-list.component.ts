@@ -1,15 +1,17 @@
 import { Component, OnInit, ViewChild, TemplateRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule, Router } from '@angular/router'; // Added Router import
+import { RouterModule, Router } from '@angular/router';
 import { UniversalIconComponent } from '../../../../shared/components/universal-icon/universal-icon.component';
 import { InstitutionalTableComponent, TableColumn, TableConfig, SelectionEvent } from '../../../../shared/components/institutional-table/institutional-table.component';
 import { TablePaginationComponent, PaginationConfig, PageChangeEvent } from '../../../../shared/components/table-pagination/table-pagination.component';
-import { InstitutionalButtonComponent } from '../../../../shared/components/buttons/institutional-button.component'; // Import button
+import { InstitutionalButtonComponent } from '../../../../shared/components/buttons/institutional-button.component';
 import { GroupFormComponent } from '../../components/group-form/group-form.component';
 import { GroupRequestsComponent } from '../../components/group-requests/group-requests.component';
 import { Group } from '../../../../core/models/group.model';
 import { GroupsService } from '../../services/groups.service';
 import { TooltipDirective } from '../../../../shared/components/tooltip/tooltip.directive';
+import { ConfirmationModalComponent, ConfirmationConfig } from '../../../../shared/components/modals/confirmation-modal.component';
+import { AlertModalComponent, AlertConfig } from '../../../../shared/components/modals/alert-modal.component';
 
 @Component({
     selector: 'app-group-list',
@@ -23,7 +25,9 @@ import { TooltipDirective } from '../../../../shared/components/tooltip/tooltip.
         InstitutionalButtonComponent,
         GroupFormComponent,
         GroupRequestsComponent,
-        TooltipDirective
+        TooltipDirective,
+        ConfirmationModalComponent,
+        AlertModalComponent
     ],
     templateUrl: './group-list.component.html'
 })
@@ -59,6 +63,24 @@ export class GroupListComponent implements OnInit {
         currentPage: 1,
         pageSizeOptions: [10, 20, 50],
         showInfo: true
+    };
+
+    // --- MODALES GENÉRICOS ---
+    isConfirmOpen = false;
+    confirmConfig: ConfirmationConfig = {
+        title: '',
+        message: '',
+        type: 'warning',
+        confirmText: 'Aceptar',
+        cancelText: 'Cancelar'
+    };
+    private pendingConfirmAction: (() => void) | null = null;
+
+    isAlertOpen = false;
+    alertConfig: AlertConfig = {
+        title: '',
+        message: '',
+        type: 'info'
     };
 
     constructor(
@@ -123,10 +145,40 @@ export class GroupListComponent implements OnInit {
         this.paginationConfig.pageSize = event.pageSize;
     }
 
-    deleteGroup(id: number) {
-        if (confirm('¿Estás seguro de eliminar este grupo?')) {
-            this.groupsService.deleteGroup(id).subscribe(() => this.loadGroups());
+    // --- HELPERS PARA MODALES ---
+    openConfirm(config: ConfirmationConfig, action: () => void) {
+        this.confirmConfig = config;
+        this.pendingConfirmAction = action;
+        this.isConfirmOpen = true;
+    }
+
+    onConfirmYes() {
+        if (this.pendingConfirmAction) {
+            this.pendingConfirmAction();
         }
+        this.isConfirmOpen = false;
+        this.pendingConfirmAction = null;
+    }
+
+    openAlert(title: string, message: string, type: 'success' | 'info' | 'warning' | 'danger' = 'info') {
+        this.alertConfig = {
+            title,
+            message,
+            type
+        };
+        this.isAlertOpen = true;
+    }
+
+    deleteGroup(id: number) {
+        this.openConfirm({
+            title: 'Eliminar Grupo',
+            message: '¿Estás seguro de eliminar este grupo?',
+            type: 'danger',
+            confirmText: 'Eliminar',
+            cancelText: 'Cancelar'
+        }, () => {
+            this.groupsService.deleteGroup(id).subscribe(() => this.loadGroups());
+        });
     }
 
     onSelectionChange(event: SelectionEvent) {
@@ -137,9 +189,7 @@ export class GroupListComponent implements OnInit {
     // Acciones temporales para demostración
     exportData() {
         if (this.selectedGroups.length === 0) return;
-        // TODO: Implementar lógica real de exportación con el servicio
-        console.log('Exporting', this.selectedGroups.length, 'items');
-        alert(`Exportando ${this.selectedGroups.length} grupos.`);
+        this.openAlert('Exportación', `Exportando ${this.selectedGroups.length} grupos.`, 'info');
     }
 
     generateUrl() {
@@ -161,7 +211,7 @@ export class GroupListComponent implements OnInit {
     copyUrl(url: string) {
         if (!url) return;
         navigator.clipboard.writeText(url).then(() => {
-            alert('URL copiada al portapapeles');
+            this.openAlert('URL Copiada', 'URL copiada al portapapeles', 'success');
         }).catch(err => {
             console.error('Error al copiar URL', err);
         });
@@ -174,7 +224,7 @@ export class GroupListComponent implements OnInit {
 
     onGroupSaved() {
         this.loadGroups();
-        alert(this.editingGroup ? 'Grupo actualizado correctamente' : 'Grupo creado exitosamente');
+        this.openAlert('Éxito', this.editingGroup ? 'Grupo actualizado correctamente' : 'Grupo creado exitosamente', 'success');
         this.isNewGroupModalOpen = false;
         this.editingGroup = null;
     }

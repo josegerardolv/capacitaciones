@@ -54,3 +54,12 @@
         </button>
     </div>
 </ng-template>
+
+<!-- Modales Genéricos -->
+<app-confirmation-modal [isOpen]="isConfirmOpen" [config]="confirmConfig" (confirm)="onConfirmYes()"
+    (cancel)="isConfirmOpen = false" (modalClose)="isConfirmOpen = false">
+</app-confirmation-modal>
+
+<app-alert-modal [isOpen]="isAlertOpen" [config]="alertConfig" (actionClick)="isAlertOpen = false"
+    (modalClose)="isAlertOpen = false">
+</app-alert-modal>

@@ -1,10 +1,11 @@
 import { Component, Input, OnInit, ViewChild, TemplateRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterModule } from '@angular/router';
+import { Router, RouterModule, ActivatedRoute } from '@angular/router';
 import { InstitutionalTableComponent, TableColumn, TableConfig } from '../../../../shared/components/institutional-table/institutional-table.component';
 import { InstitutionalButtonComponent } from '../../../../shared/components/buttons/institutional-button.component';
 import { TooltipDirective } from '../../../../shared/components/tooltip/tooltip.directive';
 import { ConfirmationModalComponent, ConfirmationConfig } from '../../../../shared/components/modals/confirmation-modal.component';
+import { AlertModalComponent, AlertConfig } from '../../../../shared/components/modals/alert-modal.component';
 import { FormsModule } from '@angular/forms';
 
 interface Driver {
@@ -27,6 +28,7 @@ interface Driver {
         RouterModule,
         TooltipDirective,
         ConfirmationModalComponent,
+        AlertModalComponent,
         FormsModule
     ],
     templateUrl: './group-drivers.component.html'
@@ -46,25 +48,35 @@ export class GroupDriversComponent implements OnInit {
         emptyMessage: 'No hay conductores registrados en este grupo.'
     };
 
-    // Modal de Aprobación
-    approvalModalOpen = false;
-    tempIncludeTarjeton = false;
-    pendingDriver: Driver | null = null;
-    approvalConfig: ConfirmationConfig = {
-        title: 'Confirmar Aprobación',
-        message: '¿Desea aprobar a este conductor?',
-        type: 'success',
-        confirmText: 'Aprobar y Generar',
+    // --- MODALES GENÉRICOS ---
+
+    // 1. Modal de Confirmación
+    isConfirmOpen = false;
+    confirmConfig: ConfirmationConfig = {
+        title: '',
+        message: '',
+        type: 'warning',
+        confirmText: 'Aceptar',
         cancelText: 'Cancelar'
     };
+    private pendingConfirmAction: (() => void) | null = null;
 
+    // 2. Modal de Alerta/Info
+    isAlertOpen = false;
+    alertConfig: AlertConfig = {
+        title: '',
+        message: '',
+        type: 'info'
+    };
+
+    // Datos Mock
     drivers: Driver[] = [
         { id: 1, name: 'Juan Pérez', license: 'A123456789', curp: 'AAAA000000HDFXXX00', status: 'Pendiente', wantsTarjeton: false },
         { id: 2, name: 'María López', license: 'B987654321', curp: 'BBBB000000MDFXXX00', status: 'Pendiente', wantsTarjeton: true },
         { id: 3, name: 'Carlos Ruiz', license: 'C123123123', curp: 'CCCC000000HDFXXX00', status: 'Aprobado', wantsTarjeton: true, paymentStatus: 'Pendiente' },
     ];
 
-    constructor(private router: Router) { }
+    constructor(private router: Router, private route: ActivatedRoute) { }
 
     ngOnInit(): void {
         console.log('GroupDriversComponent initialized for Group:', this.groupId);
@@ -82,85 +94,102 @@ export class GroupDriversComponent implements OnInit {
     }
 
     openNewDriverForm() {
-        this.router.navigate(['new'], { relativeTo: this.router.routerState.root.firstChild?.firstChild });
+        this.router.navigate(['nuevo'], { relativeTo: this.route });
     }
 
-    // Interceptamos la acción de aprobar
+    // --- HELPERS PARA MODALES ---
+    openConfirm(config: ConfirmationConfig, action: () => void) {
+        this.confirmConfig = config;
+        this.pendingConfirmAction = action;
+        this.isConfirmOpen = true;
+    }
+
+    onConfirmYes() {
+        if (this.pendingConfirmAction) {
+            this.pendingConfirmAction();
+        }
+        this.isConfirmOpen = false;
+        this.pendingConfirmAction = null;
+    }
+
+    openAlert(title: string, message: string, type: 'success' | 'info' | 'warning' | 'danger' = 'info') {
+        this.alertConfig = {
+            title,
+            message,
+            type
+        };
+        this.isAlertOpen = true;
+    }
+
+    // --- LÓGICA DE NEGOCIO ---
+
     setExamResult(driver: Driver, result: 'Aprobado' | 'No Aprobado') {
         if (result === 'Aprobado') {
-            this.openApprovalModal(driver);
+            driver.status = 'Aprobado';
+            this.openAlert('Aprobado', `El conductor ${driver.name} ha sido APROBADO correctamente.\nAhora puede proceder a solicitar su Tarjetón.`, 'success');
         } else {
-            if (confirm(`¿Seguro que desea REPROBAR a ${driver.name}?`)) {
-                driver.status = result;
+            this.openConfirm({
+                title: 'Reprobar Conductor',
+                message: `¿Está seguro de que desea REPROBAR a ${driver.name}?`,
+                type: 'danger',
+                confirmText: 'Sí, Reprobar',
+                cancelText: 'Cancelar'
+            }, () => {
+                driver.status = 'No Aprobado';
                 console.log(`Conductor ${driver.name} reprobado.`);
-            }
+            });
         }
     }
 
-    openApprovalModal(driver: Driver) {
-        this.pendingDriver = driver;
-        // Inicializamos el checkbox con la preferencia original del usuario
-        this.tempIncludeTarjeton = driver.wantsTarjeton;
-
-        this.approvalConfig = {
-            title: 'Confirmar Aprobación',
-            message: `Está a punto de aprobar a <strong>${driver.name}</strong>.<br>Verifique si se generará el pago del Tarjetón.`,
-            type: 'success',
-            confirmText: 'Confirmar Aprobación',
+    requestTarjeton(driver: Driver) {
+        this.openConfirm({
+            title: 'Generar Tarjetón',
+            message: `Se generará la Orden de Pago del Tarjetón para ${driver.name}.\nEsta acción enviará la línea de captura a su correo.`,
+            type: 'info',
+            confirmText: 'Generar y Enviar',
             cancelText: 'Cancelar',
             showIcon: true
-        };
-        this.approvalModalOpen = true;
+        }, () => {
+            this.processTarjetonGeneration(driver);
+        });
     }
 
-    confirmApproval() {
-        if (!this.pendingDriver) return;
+    processTarjetonGeneration(driver: Driver) {
+        console.log('>> PROCESANDO SOLICITUD DE TARJETÓN...');
+        driver.wantsTarjeton = true;
+        driver.paymentStatus = 'Pendiente';
 
-        const driver = this.pendingDriver;
-        driver.status = 'Aprobado';
-
-        // Actualizamos la intención final basada en la decisión del Admin (Upsell)
-        driver.wantsTarjeton = this.tempIncludeTarjeton;
-
-        console.log('--- PROCESANDO APROBACIÓN ---');
-        console.log(`Conductor: ${driver.name}`);
-        console.log(`Incluir Tarjetón: ${driver.wantsTarjeton ? 'SÍ' : 'NO'}`);
-
-        if (driver.wantsTarjeton) {
-            console.log('>> GENERANDO LÍNEA DE CAPTURA DE TARJETÓN...');
-            driver.paymentStatus = 'Pendiente';
-            alert(`Conductor Aprobado.\n\nSe ha generado la ORDEN DE PAGO DEL TARJETÓN para ${driver.name} y se ha enviado a su correo electrónico.`);
-        } else {
-            console.log('>> SOLO CURSO APROBADO. Sin cobro extra.');
-            alert(`Conductor Aprobado.\n\nEl conductor NO solicitó Tarjetón. Finalizado.`);
-        }
-
-        this.approvalModalOpen = false;
-        this.pendingDriver = null;
+        setTimeout(() => {
+            this.openConfirm({
+                title: 'Orden Generada',
+                message: `✅ Orden enviada al correo de ${driver.name}.\n\n¿Desea descargar e imprimir el PDF ahora mismo?`,
+                type: 'success',
+                confirmText: 'Sí, Descargar',
+                cancelText: 'No, solo correo'
+            }, () => {
+                this.printPaymentOrder(driver);
+            });
+        }, 300);
     }
 
     printPaymentOrder(driver: Driver) {
         console.log('Imprimiendo orden de pago para:', driver.name);
-        alert('Simulando descarga de PDF del Curso (y Tarjetón si aplica)');
+        this.openAlert('Descargando', 'Simulando descarga de PDF...', 'success');
     }
 
     viewCertificate(driver: Driver) {
-        console.log('Viendo constancia para:', driver.name);
-        alert('Simulando vista de Constancia');
-    }
-
-    requestTarjeton(driver: Driver) {
-        console.log('Solicitando tarjetón para:', driver.name);
-        if (confirm('¿Generar pago de Tarjetón ahora?')) {
-            driver.wantsTarjeton = true;
-            driver.paymentStatus = 'Pendiente';
-            alert('Orden de pago de Tarjetón generada manualmente.');
-        }
+        this.openAlert('Visualizando', 'Simulando vista de Constancia...', 'info');
     }
 
     deleteDriver(driver: Driver) {
-        if (confirm('¿Eliminar conductor?')) {
+        this.openConfirm({
+            title: 'Eliminar Conductor',
+            message: `¿Está seguro de que desea eliminar a ${driver.name} del grupo?`,
+            type: 'danger',
+            confirmText: 'Eliminar',
+            cancelText: 'Cancelar'
+        }, () => {
             this.drivers = this.drivers.filter(d => d.id !== driver.id);
-        }
+        });
     }
 }
