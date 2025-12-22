@@ -54,42 +54,38 @@
     <!-- Acciones: Botones circulares de colores -->
     <ng-template #actionsTemplate let-item>
         <div class="flex items-center justify-center gap-2">
-            <!-- Orden de Pago (Amarillo) - Solo si Aprobado -->
-            <button (click)="item.status === 'Aprobado' && printPaymentOrder(item)"
-                [disabled]="item.status !== 'Aprobado'" [class.opacity-50]="item.status !== 'Aprobado'"
-                [class.cursor-not-allowed]="item.status !== 'Aprobado'"
-                [class.hover:bg-yellow-500]="item.status === 'Aprobado'"
-                class="w-8 h-8 rounded-full bg-yellow-400 text-white flex items-center justify-center transition-colors shadow-sm"
-                [appTooltip]="item.status === 'Aprobado' ? 'Orden de Pago' : 'Requiere Aprobación'"
+            <!-- Constancia (Verde/Naranja) -->
+            <app-institutional-button [config]="{
+                    variant: item.coursePaymentStatus === 'Pagado' ? 'success' : 'warning',
+                    icon: item.coursePaymentStatus === 'Pagado' ? 'description' : 'schedule',
+                    iconPosition: 'only',
+                    disabled: item.status !== 'Aprobado',
+                    customClass: '!rounded-full !w-8 !h-8 !p-0 min-w-[unset]'
+                }" (buttonClick)="item.status === 'Aprobado' && viewCertificate(item)"
+                [appTooltip]="item.status === 'Aprobado' ? (item.coursePaymentStatus === 'Pagado' ? 'Descargar Constancia' : 'Pago Curso Pendiente') : 'Requiere Aprobación'"
                 tooltipPosition="top">
-                <span class="material-symbols-outlined text-lg">print</span>
-            </button>
-            <!-- Constancia (Verde) - Solo si Aprobado -->
-            <button (click)="item.status === 'Aprobado' && viewCertificate(item)"
-                [disabled]="item.status !== 'Aprobado'" [class.opacity-50]="item.status !== 'Aprobado'"
-                [class.cursor-not-allowed]="item.status !== 'Aprobado'"
-                [class.hover:bg-green-600]="item.status === 'Aprobado'"
-                class="w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center transition-colors shadow-sm"
-                [appTooltip]="item.status === 'Aprobado' ? 'Descargar Constancia' : 'Requiere Aprobación'"
+            </app-institutional-button>
+
+            <!-- Tarjetón (Verde/Ambar/Azul) -->
+            <app-institutional-button [config]="{
+                    variant: item.paymentStatus === 'Pagado' ? 'success' : (item.paymentStatus === 'Pendiente' ? 'warning' : 'info'),
+                    icon: item.paymentStatus === 'Pagado' ? 'badge' : (item.paymentStatus === 'Pendiente' ? 'schedule' : 'badge'),
+                    iconPosition: 'only',
+                    disabled: item.status !== 'Aprobado',
+                    customClass: '!rounded-full !w-8 !h-8 !p-0 min-w-[unset]'
+                }" (buttonClick)="item.status === 'Aprobado' && requestTarjeton(item)"
+                [appTooltip]="item.status === 'Aprobado' ? (item.paymentStatus === 'Pagado' ? 'Descargar Tarjetón' : (item.paymentStatus === 'Pendiente' ? 'Pago Pendiente' : 'Generar Tarjetón')) : 'Requiere Aprobación'"
                 tooltipPosition="top">
-                <span class="material-symbols-outlined text-lg">description</span>
-            </button>
-            <!-- Tarjetón (Azul) - Solo si Aprobado -->
-            <button (click)="item.status === 'Aprobado' && requestTarjeton(item)"
-                [disabled]="item.status !== 'Aprobado'" [class.opacity-50]="item.status !== 'Aprobado'"
-                [class.cursor-not-allowed]="item.status !== 'Aprobado'"
-                [class.hover:bg-blue-600]="item.status === 'Aprobado'"
-                class="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center transition-colors shadow-sm"
-                [appTooltip]="item.status === 'Aprobado' ? 'Solicitar Tarjetón' : 'Requiere Aprobación'"
-                tooltipPosition="top">
-                <span class="material-symbols-outlined text-lg">badge</span>
-            </button>
-            <!-- Eliminar (Rojo) - Siempre activo -->
-            <button (click)="deleteDriver(item)"
-                class="w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition-colors shadow-sm"
-                [appTooltip]="'Eliminar Conductor'" tooltipPosition="top">
-                <span class="material-symbols-outlined text-lg">delete</span>
-            </button>
+            </app-institutional-button>
+
+            <!-- Eliminar (Rojo) -->
+            <app-institutional-button [config]="{
+                    variant: 'danger',
+                    icon: 'delete',
+                    iconPosition: 'only',
+                    customClass: '!rounded-full !w-8 !h-8 !p-0 min-w-[unset]'
+                }" (buttonClick)="deleteDriver(item)" [appTooltip]="'Eliminar Conductor'" tooltipPosition="top">
+            </app-institutional-button>
         </div>
     </ng-template>
 

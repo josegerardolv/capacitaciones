@@ -16,7 +16,11 @@ interface Driver {
     status: 'Pendiente' | 'Aprobado' | 'No Aprobado';
     wantsTarjeton: boolean; // Intención original del usuario
     paymentStatus?: 'Pendiente' | 'Pagado'; // Para Tarjetón
+    coursePaymentStatus?: 'Pendiente' | 'Pagado'; // Para el Curso
 }
+
+// ... existing code ...
+
 
 @Component({
     selector: 'app-group-drivers',
@@ -48,8 +52,6 @@ export class GroupDriversComponent implements OnInit {
         emptyMessage: 'No hay conductores registrados en este grupo.'
     };
 
-    // --- MODALES GENÉRICOS ---
-
     // 1. Modal de Confirmación
     isConfirmOpen = false;
     confirmConfig: ConfirmationConfig = {
@@ -71,9 +73,9 @@ export class GroupDriversComponent implements OnInit {
 
     // Datos Mock
     drivers: Driver[] = [
-        { id: 1, name: 'Juan Pérez', license: 'A123456789', curp: 'AAAA000000HDFXXX00', status: 'Pendiente', wantsTarjeton: false },
-        { id: 2, name: 'María López', license: 'B987654321', curp: 'BBBB000000MDFXXX00', status: 'Pendiente', wantsTarjeton: true },
-        { id: 3, name: 'Carlos Ruiz', license: 'C123123123', curp: 'CCCC000000HDFXXX00', status: 'Aprobado', wantsTarjeton: true, paymentStatus: 'Pendiente' },
+        { id: 1, name: 'Juan Pérez', license: 'A123456789', curp: 'AAAA000000HDFXXX00', status: 'Pendiente', wantsTarjeton: false, coursePaymentStatus: 'Pagado' },
+        { id: 2, name: 'María López', license: 'B987654321', curp: 'BBBB000000MDFXXX00', status: 'Pendiente', wantsTarjeton: true, coursePaymentStatus: 'Pendiente' },
+        { id: 3, name: 'Carlos Ruiz', license: 'C123123123', curp: 'CCCC000000HDFXXX00', status: 'Aprobado', wantsTarjeton: true, paymentStatus: 'Pendiente', coursePaymentStatus: 'Pagado' },
     ];
 
     constructor(private router: Router, private route: ActivatedRoute) { }
@@ -125,8 +127,16 @@ export class GroupDriversComponent implements OnInit {
 
     setExamResult(driver: Driver, result: 'Aprobado' | 'No Aprobado') {
         if (result === 'Aprobado') {
-            driver.status = 'Aprobado';
-            this.openAlert('Aprobado', `El conductor ${driver.name} ha sido APROBADO correctamente.\nAhora puede proceder a solicitar su Tarjetón.`, 'success');
+            this.openConfirm({
+                title: 'Aprobar Conductor',
+                message: `¿Está seguro de que desea APROBAR a ${driver.name}?\nEsta acción habilitará la gestión del Tarjetón.`,
+                type: 'success',
+                confirmText: 'Sí, Aprobar',
+                cancelText: 'Cancelar'
+            }, () => {
+                driver.status = 'Aprobado';
+                this.openAlert('Aprobado', `El conductor ${driver.name} ha sido aprobado exitosamente.`, 'success');
+            });
         } else {
             this.openConfirm({
                 title: 'Reprobar Conductor',
@@ -142,42 +152,110 @@ export class GroupDriversComponent implements OnInit {
     }
 
     requestTarjeton(driver: Driver) {
-        this.openConfirm({
-            title: 'Generar Tarjetón',
-            message: `Se generará la Orden de Pago del Tarjetón para ${driver.name}.\nEsta acción enviará la línea de captura a su correo.`,
+        // 1. Ya pagado -> Descargar Final
+        if (driver.paymentStatus === 'Pagado') {
+            this.downloadFinalTarjeton(driver);
+            return;
+        }
+
+        // 2. Pago Pendiente -> Verificar
+        if (driver.paymentStatus === 'Pendiente') {
+            this.openConfirm({
+                title: 'Verificar Pago',
+                message: `Existe una orden de pago pendiente para ${driver.name}.\n¿Desea verificar el estatus del pago ahora?`,
+                type: 'info',
+                confirmText: 'Verificar Pago',
+                cancelText: 'Cerrar'
+            }, () => this.simulatePaymentVerification(driver));
+            return;
+        }
+
+        // 3. Generación de Orden (Selección de Método)
+        // Usamos AlertModal con acciones personalizadas para ofrecer opciones múltiples
+        this.alertConfig = {
+            title: 'Generar Orden de Pago',
+            message: `Seleccione cómo desea entregar la Línea de Captura a ${driver.name}:`,
             type: 'info',
-            confirmText: 'Generar y Enviar',
-            cancelText: 'Cancelar',
-            showIcon: true
-        }, () => {
-            this.processTarjetonGeneration(driver);
-        });
+            actions: [
+                {
+                    label: 'Descargar PDF',
+                    variant: 'primary',
+                    icon: 'download',
+                    action: () => this.generatePaymentOrder(driver, 'download')
+                },
+                {
+                    label: 'Enviar por Correo',
+                    variant: 'secondary',
+                    icon: 'send',
+                    action: () => this.generatePaymentOrder(driver, 'email')
+                }
+            ]
+        };
+        this.isAlertOpen = true;
     }
 
-    processTarjetonGeneration(driver: Driver) {
-        console.log('>> PROCESANDO SOLICITUD DE TARJETÓN...');
+    generatePaymentOrder(driver: Driver, mode: 'download' | 'email') {
+        console.log(`>> GENERANDO ORDEN (${mode})...`);
         driver.wantsTarjeton = true;
         driver.paymentStatus = 'Pendiente';
 
         setTimeout(() => {
-            this.openConfirm({
-                title: 'Orden Generada',
-                message: `✅ Orden enviada al correo de ${driver.name}.\n\n¿Desea descargar e imprimir el PDF ahora mismo?`,
-                type: 'success',
-                confirmText: 'Sí, Descargar',
-                cancelText: 'No, solo correo'
-            }, () => {
-                this.printPaymentOrder(driver);
-            });
-        }, 300);
+            if (mode === 'email') {
+                this.openAlert(
+                    'Orden Enviada',
+                    `Se ha enviado la Línea de Captura al correo de ${driver.name}.`,
+                    'success'
+                );
+            } else {
+                this.openAlert(
+                    'Orden Descargada',
+                    `Se ha descargado la Línea de Captura correctamente.\nEntréguela al conductor para su pago.`,
+                    'success'
+                );
+            }
+        }, 800);
     }
 
-    printPaymentOrder(driver: Driver) {
-        console.log('Imprimiendo orden de pago para:', driver.name);
-        this.openAlert('Descargando', 'Simulando descarga de PDF...', 'success');
+
+    simulatePaymentVerification(driver: Driver) {
+        // Simulamos que el sistema busca el pago
+        this.openAlert('Verificando', 'Consultando estatus de pago...', 'info');
+
+        setTimeout(() => {
+            driver.paymentStatus = 'Pagado'; // Marcamos como pagado
+            this.openAlert(
+                'Pago Confirmado',
+                `El pago de ${driver.name} ha sido validado correctamente.\nAhora puede descargar el Tarjetón.`,
+                'success'
+            );
+        }, 1500);
     }
+
+    downloadFinalTarjeton(driver: Driver) {
+        console.log('Descargando Tarjetón Final para:', driver.name);
+        this.openAlert('Descargando', 'Generando PDF del Tarjetón Oficial...', 'success');
+    }
+
 
     viewCertificate(driver: Driver) {
+        // Validación: El curso debe estar pagado para descargar constancia
+        if (driver.coursePaymentStatus !== 'Pagado') {
+            this.openConfirm({
+                title: 'Pago de Curso Pendiente',
+                message: `El conductor ${driver.name} no ha pagado el curso.\n¿Desea validar el pago ahora?`,
+                type: 'warning',
+                confirmText: 'Validar Pago',
+                cancelText: 'Cancelar'
+            }, () => {
+                this.openAlert('Verificando', 'Validando pago del curso...', 'info');
+                setTimeout(() => {
+                    driver.coursePaymentStatus = 'Pagado';
+                    this.openAlert('Pago Validado', 'El pago del curso ha sido registrado.\nAhora puede descargar la constancia.', 'success');
+                }, 1000);
+            });
+            return;
+        }
+
         this.openAlert('Visualizando', 'Simulando vista de Constancia...', 'info');
     }
 

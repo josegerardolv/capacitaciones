@@ -11,6 +11,7 @@ import { CourseEditFormComponent } from '../../components/course-edit-form/cours
 import { TooltipDirective } from '../../../../shared/components/tooltip/tooltip.directive';
 import { ConfirmationModalComponent, ConfirmationConfig } from '../../../../shared/components/modals/confirmation-modal.component';
 import { AlertModalComponent, AlertConfig } from '../../../../shared/components/modals/alert-modal.component';
+import { InstitutionalButtonComponent } from '../../../../shared/components/buttons/institutional-button.component';
 
 @Component({
     selector: 'app-course-list',
@@ -25,7 +26,8 @@ import { AlertModalComponent, AlertConfig } from '../../../../shared/components/
         CourseEditFormComponent,
         TooltipDirective,
         ConfirmationModalComponent,
-        AlertModalComponent
+        AlertModalComponent,
+        InstitutionalButtonComponent
     ],
     templateUrl: './course-list.component.html'
 })

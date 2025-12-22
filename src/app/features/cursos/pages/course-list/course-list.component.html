@@ -37,21 +37,27 @@
 <!-- Template para Acciones -->
 <ng-template #actionsTemplate let-item>
     <div class="flex items-center justify-center space-x-3">
-        <button
-            class="w-8 h-8 rounded-full bg-blue-100 text-blue-800 hover:bg-blue-200 flex items-center justify-center transition-colors"
-            [appTooltip]="'Ver detalles'" tooltipPosition="top" (click)="viewGroups(item)">
-            <span class="material-symbols-outlined text-sm">visibility</span>
-        </button>
-        <button
-            class="w-8 h-8 rounded-full bg-amber-100 text-amber-800 hover:bg-amber-200 flex items-center justify-center transition-colors"
-            [appTooltip]="'Editar'" tooltipPosition="top" (click)="openEditForm(item)">
-            <span class="material-symbols-outlined text-sm">edit</span>
-        </button>
-        <button
-            class="w-8 h-8 rounded-full bg-red-100 text-red-800 hover:bg-red-200 flex items-center justify-center transition-colors"
-            [appTooltip]="'Eliminar'" tooltipPosition="top" (click)="deleteCourse(item.id)">
-            <span class="material-symbols-outlined text-sm">delete</span>
-        </button>
+        <app-institutional-button [config]="{
+                variant: 'info',
+                icon: 'list_alt',
+                iconPosition: 'only',
+                customClass: '!rounded-full !w-8 !h-8 !p-0 min-w-[unset]'
+            }" (buttonClick)="viewGroups(item)" [appTooltip]="'Ver detalles'" tooltipPosition="top">
+        </app-institutional-button>
+        <app-institutional-button [config]="{
+                variant: 'warning',
+                icon: 'edit',
+                iconPosition: 'only',
+                customClass: '!rounded-full !w-8 !h-8 !p-0 min-w-[unset]'
+            }" (buttonClick)="openEditForm(item)" [appTooltip]="'Editar'" tooltipPosition="top">
+        </app-institutional-button>
+        <app-institutional-button [config]="{
+                variant: 'danger',
+                icon: 'delete',
+                iconPosition: 'only',
+                customClass: '!rounded-full !w-8 !h-8 !p-0 min-w-[unset]'
+            }" (buttonClick)="deleteCourse(item.id)" [appTooltip]="'Eliminar'" tooltipPosition="top">
+        </app-institutional-button>
     </div>
 </ng-template>
 

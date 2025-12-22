@@ -108,26 +108,32 @@
         </button>
 
         <!-- View Details -->
-        <button
-            class="flex items-center justify-center w-8 h-8 rounded-full border border-cyan-400 text-cyan-500 hover:bg-cyan-50 transition-colors"
-            [appTooltip]="'Ver conductores'" tooltipPosition="top"
-            (click)="viewDrivers(item); $event.stopPropagation()">
-            <app-universal-icon name="eye" type="bootstrap" [size]="14"></app-universal-icon>
-        </button>
+        <app-institutional-button [config]="{
+                variant: 'info',
+                icon: 'list_alt',
+                iconPosition: 'only',
+                customClass: '!rounded-full !w-8 !h-8 !p-0 min-w-[unset]'
+            }" (buttonClick)="viewDrivers(item); $event.stopPropagation()" [appTooltip]="'Ver conductores'"
+            tooltipPosition="top">
+        </app-institutional-button>
 
         <!-- Edit -->
-        <button
-            class="flex items-center justify-center w-8 h-8 rounded-full border border-orange-400 text-orange-500 hover:bg-orange-50 transition-colors"
-            [appTooltip]="'Editar'" tooltipPosition="top" (click)="openEditGroupForm(item)">
-            <app-universal-icon name="pencil" type="bootstrap" [size]="14"></app-universal-icon>
-        </button>
+        <app-institutional-button [config]="{
+                variant: 'warning',
+                icon: 'edit',
+                iconPosition: 'only',
+                customClass: '!rounded-full !w-8 !h-8 !p-0 min-w-[unset]'
+            }" (buttonClick)="openEditGroupForm(item)" [appTooltip]="'Editar'" tooltipPosition="top">
+        </app-institutional-button>
 
         <!-- Delete -->
-        <button
-            class="flex items-center justify-center w-8 h-8 rounded-full border border-red-400 text-red-500 hover:bg-red-50 transition-colors"
-            [appTooltip]="'Eliminar'" tooltipPosition="top" (click)="deleteGroup(item.id)">
-            <app-universal-icon name="trash" type="bootstrap" [size]="14"></app-universal-icon>
-        </button>
+        <app-institutional-button [config]="{
+                variant: 'danger',
+                icon: 'delete',
+                iconPosition: 'only',
+                customClass: '!rounded-full !w-8 !h-8 !p-0 min-w-[unset]'
+            }" (buttonClick)="deleteGroup(item.id)" [appTooltip]="'Eliminar'" tooltipPosition="top">
+        </app-institutional-button>
     </div>
 </ng-template>
 
