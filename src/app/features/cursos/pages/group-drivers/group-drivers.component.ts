@@ -4,8 +4,10 @@ import { Router, RouterModule, ActivatedRoute } from '@angular/router';
 import { InstitutionalTableComponent, TableColumn, TableConfig } from '../../../../shared/components/institutional-table/institutional-table.component';
 import { InstitutionalButtonComponent } from '../../../../shared/components/buttons/institutional-button.component';
 import { TooltipDirective } from '../../../../shared/components/tooltip/tooltip.directive';
+import { TablePaginationComponent, PaginationConfig, PageChangeEvent } from '../../../../shared/components/table-pagination/table-pagination.component';
 import { ConfirmationModalComponent, ConfirmationConfig } from '../../../../shared/components/modals/confirmation-modal.component';
 import { AlertModalComponent, AlertConfig } from '../../../../shared/components/modals/alert-modal.component';
+import { NotificationService } from '../../../../shared/services/notification.service';
 import { FormsModule } from '@angular/forms';
 
 interface Driver {
@@ -29,6 +31,7 @@ interface Driver {
         CommonModule,
         InstitutionalTableComponent,
         InstitutionalButtonComponent,
+        TablePaginationComponent,
         RouterModule,
         TooltipDirective,
         ConfirmationModalComponent,
@@ -50,6 +53,14 @@ export class GroupDriversComponent implements OnInit {
         loading: false,
         localSort: true,
         emptyMessage: 'No hay conductores registrados en este grupo.'
+    };
+
+    paginationConfig: PaginationConfig = {
+        pageSize: 10,
+        totalItems: 0,
+        currentPage: 1,
+        pageSizeOptions: [10, 20, 50],
+        showInfo: true
     };
 
     // 1. Modal de Confirmación
@@ -78,11 +89,32 @@ export class GroupDriversComponent implements OnInit {
         { id: 3, name: 'Carlos Ruiz', license: 'C123123123', curp: 'CCCC000000HDFXXX00', status: 'Aprobado', wantsTarjeton: true, paymentStatus: 'Pendiente', coursePaymentStatus: 'Pagado' },
     ];
 
-    constructor(private router: Router, private route: ActivatedRoute) { }
+    constructor(
+        private router: Router,
+        private route: ActivatedRoute,
+        private notificationService: NotificationService
+    ) { }
 
     ngOnInit(): void {
         console.log('GroupDriversComponent initialized for Group:', this.groupId);
         this.initColumns();
+        this.loadDrivers();
+    }
+
+    loadDrivers() {
+        this.tableConfig.loading = true;
+        // Simulación de carga de datos
+        setTimeout(() => {
+            this.paginationConfig.totalItems = this.drivers.length;
+            this.tableConfig.loading = false;
+        }, 800);
+    }
+
+    onPageChange(event: PageChangeEvent) {
+        this.paginationConfig.currentPage = event.page;
+        this.paginationConfig.pageSize = event.pageSize;
+        // Aquí llamaríamos al backend con (page, pageSize)
+        console.log('Paginación:', event);
     }
 
     initColumns() {
@@ -135,7 +167,7 @@ export class GroupDriversComponent implements OnInit {
                 cancelText: 'Cancelar'
             }, () => {
                 driver.status = 'Aprobado';
-                this.openAlert('Aprobado', `El conductor ${driver.name} ha sido aprobado exitosamente.`, 'success');
+                this.notificationService.success('Aprobado', `El conductor ${driver.name} ha sido aprobado exitosamente.`);
             });
         } else {
             this.openConfirm({
@@ -170,8 +202,27 @@ export class GroupDriversComponent implements OnInit {
             return;
         }
 
-        // 3. Generación de Orden (Selección de Método)
-        // Usamos AlertModal con acciones personalizadas para ofrecer opciones múltiples
+        // 3. Generación de Orden
+        // CASO ESPECIAL: Si NO solicitó tarjetón, preguntar primero (Upsell)
+        if (!driver.wantsTarjeton) {
+            this.openConfirm({
+                title: 'Solicitud Adicional',
+                message: `El conductor ${driver.name} NO solicitó tarjetón originalmente.\n\n¿Desea generar una orden de pago de todas formas?`,
+                type: 'warning',
+                confirmText: 'Sí, Generar Orden',
+                cancelText: 'Cancelar'
+            }, () => {
+                // Si acepta, procedemos a mostrar las opciones de generación
+                this.showGenerationOptions(driver);
+            });
+            return;
+        }
+
+        // Si SÍ lo solicitó, pasar directo a las opciones
+        this.showGenerationOptions(driver);
+    }
+
+    showGenerationOptions(driver: Driver) {
         this.alertConfig = {
             title: 'Generar Orden de Pago',
             message: `Seleccione cómo desea entregar la Línea de Captura a ${driver.name}:`,
@@ -201,16 +252,14 @@ export class GroupDriversComponent implements OnInit {
 
         setTimeout(() => {
             if (mode === 'email') {
-                this.openAlert(
+                this.notificationService.success(
                     'Orden Enviada',
-                    `Se ha enviado la Línea de Captura al correo de ${driver.name}.`,
-                    'success'
+                    `Se ha enviado la Línea de Captura al correo de ${driver.name}.`
                 );
             } else {
-                this.openAlert(
+                this.notificationService.success(
                     'Orden Descargada',
-                    `Se ha descargado la Línea de Captura correctamente.\nEntréguela al conductor para su pago.`,
-                    'success'
+                    `Se ha descargado la Línea de Captura correctamente.`
                 );
             }
         }, 800);
@@ -223,17 +272,16 @@ export class GroupDriversComponent implements OnInit {
 
         setTimeout(() => {
             driver.paymentStatus = 'Pagado'; // Marcamos como pagado
-            this.openAlert(
+            this.notificationService.success(
                 'Pago Confirmado',
-                `El pago de ${driver.name} ha sido validado correctamente.\nAhora puede descargar el Tarjetón.`,
-                'success'
+                `El pago de ${driver.name} ha sido validado correctamente.`
             );
         }, 1500);
     }
 
     downloadFinalTarjeton(driver: Driver) {
         console.log('Descargando Tarjetón Final para:', driver.name);
-        this.openAlert('Descargando', 'Generando PDF del Tarjetón Oficial...', 'success');
+        this.notificationService.success('Descargando', 'Generando PDF del Tarjetón Oficial...');
     }
 
 
@@ -250,7 +298,7 @@ export class GroupDriversComponent implements OnInit {
                 this.openAlert('Verificando', 'Validando pago del curso...', 'info');
                 setTimeout(() => {
                     driver.coursePaymentStatus = 'Pagado';
-                    this.openAlert('Pago Validado', 'El pago del curso ha sido registrado.\nAhora puede descargar la constancia.', 'success');
+                    this.notificationService.success('Pago Validado', 'El pago ha sido registrado. Descargando constancia...');
                 }, 1000);
             });
             return;

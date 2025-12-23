@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { DriverFormComponent } from '../../components/driver-form/driver-form.component';
 import { AlertModalComponent, AlertConfig } from '../../../../shared/components/modals/alert-modal.component';
+import { NotificationService } from '../../../../shared/services/notification.service';
 
 @Component({
     selector: 'app-driver-registration',
@@ -25,7 +26,10 @@ export class DriverRegistrationComponent {
         type: 'success'
     };
 
-    constructor(private router: Router) { }
+    constructor(
+        private router: Router,
+        private notificationService: NotificationService
+    ) { }
 
     onDriverSaved(driverData: any) {
         // Simulamos guardado exitoso
@@ -78,12 +82,12 @@ export class DriverRegistrationComponent {
 
     // Acciones del Modal
     downloadPaymentOrder() {
-        alert('Simulando descarga de PDF del Curso...');
+        this.notificationService.success('Descarga iniciada', 'La orden de pago se está descargando.');
         this.closeAndRedirect();
     }
 
     sendEmail() {
-        alert('Simulando envío de correo al conductor...');
+        this.notificationService.success('Correo enviado', 'Se ha enviado la orden de pago al conductor.');
         this.closeAndRedirect();
     }
 

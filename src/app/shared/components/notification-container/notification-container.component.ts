@@ -5,9 +5,9 @@ import { takeUntil } from 'rxjs/operators';
 import { NotificationService, Notification } from '../../services/notification.service';
 
 @Component({
-    selector: 'app-notification-container',
-    imports: [CommonModule],
-    template: `
+  selector: 'app-notification-container',
+  imports: [CommonModule],
+  template: `
     <div class="fixed top-4 right-4 z-50 space-y-2 max-w-sm">
       <div *ngFor="let notification of notifications"
            class="bg-white rounded-lg shadow-lg p-4 border-l-4 flex items-start space-x-3 transform transition-all duration-300 ease-in-out opacity-100 translate-x-0"
@@ -53,7 +53,7 @@ import { NotificationService, Notification } from '../../services/notification.s
       </div>
     </div>
   `,
-    styles: [`
+  styles: [`
     @keyframes shrink {
       from { width: 100%; }
       to { width: 0%; }
@@ -67,10 +67,10 @@ export class NotificationContainerComponent implements OnInit, OnDestroy {
   notifications: Notification[] = [];
   private destroy$ = new Subject<void>();
 
-  constructor(private notificationService: NotificationService) {}
+  constructor(private notificationService: NotificationService) { }
 
   ngOnInit(): void {
-    this.notificationService.getNotifications()
+    this.notificationService.getActiveNotifications()
       .pipe(takeUntil(this.destroy$))
       .subscribe(notifications => {
         this.notifications = notifications;

@@ -52,13 +52,17 @@
             </div>
         </div>
 
+        <app-table-pagination [config]="paginationConfig" [showPageSizeSelector]="true" [showPaginationControls]="false"
+            (pageChange)="onPageChange($event)">
+        </app-table-pagination>
         <!-- Institutional Table -->
         <app-institutional-table [data]="groups" [columns]="tableColumns" [config]="tableConfig"
             [selectedItems]="selectedGroups" (selectionChange)="onSelectionChange($event)">
         </app-institutional-table>
 
         <!-- Pagination -->
-        <app-table-pagination [config]="paginationConfig" (pageChange)="onPageChange($event)">
+        <app-table-pagination [config]="paginationConfig" [showPageSizeSelector]="false" [showPaginationControls]="true"
+            (pageChange)="onPageChange($event)">
         </app-table-pagination>
 
     </div>

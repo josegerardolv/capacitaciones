@@ -16,12 +16,17 @@
             </button>
         </div>
 
+        <app-table-pagination [config]="paginationConfig" [showPageSizeSelector]="true" [showPaginationControls]="false"
+            (pageChange)="onPageChange($event)">
+        </app-table-pagination>
+
         <!-- Institutional Table -->
         <app-institutional-table [data]="courses" [columns]="tableColumns" [config]="tableConfig">
         </app-institutional-table>
 
         <!-- Pagination -->
-        <app-table-pagination [config]="paginationConfig" (pageChange)="onPageChange($event)">
+        <app-table-pagination [config]="paginationConfig" [showPageSizeSelector]="false" [showPaginationControls]="true"
+            (pageChange)="onPageChange($event)">
         </app-table-pagination>
 
     </div>
@@ -65,7 +70,3 @@
 <app-confirmation-modal [isOpen]="isConfirmOpen" [config]="confirmConfig" (confirm)="onConfirmYes()"
     (cancel)="isConfirmOpen = false" (modalClose)="isConfirmOpen = false">
 </app-confirmation-modal>
-
-<app-alert-modal [isOpen]="isAlertOpen" [config]="alertConfig" (actionClick)="isAlertOpen = false"
-    (modalClose)="isAlertOpen = false">
-</app-alert-modal>

@@ -17,9 +17,9 @@ import { UniversalIconComponent } from '../universal-icon/universal-icon.compone
 */
 
 @Component({
-    selector: 'app-header',
-    imports: [CommonModule, RouterModule, UniversalIconComponent],
-    template: `
+  selector: 'app-header',
+  imports: [CommonModule, RouterModule, UniversalIconComponent],
+  template: `
   <header class="bg-white shadow-md border-b border-gray-300 select-none">
       <div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center min-h-[85px]">
@@ -64,6 +64,27 @@ import { UniversalIconComponent } from '../universal-icon/universal-icon.compone
           <!-- Lado derecho: Acciones + Usuario -->
           <div class="flex items-center space-x-4">
             
+
+            <!-- Notificaciones -->
+            <button
+              (click)="onToggleNotifications()"
+              class="relative p-2 text-gray-400 hover:text-institucional-primario focus:outline-none focus:text-institucional-primario focus:bg-institucional-primario focus:bg-opacity-10 rounded-full transition-colors duration-200"
+              aria-label="Ver notificaciones"
+              title="Notificaciones">
+              <app-universal-icon 
+                name="bell" 
+                [type]="'bootstrap'"
+                [size]="20" 
+                customClass="h-6 w-6" 
+                aria-hidden="true">
+              </app-universal-icon>
+              
+              <!-- Badge de notificaciones -->
+              <span *ngIf="notificationCount > 0" 
+                class="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full ring-2 ring-white bg-red-500 text-[10px] font-bold text-white shadow-sm animate-pulse">
+                {{ notificationCount > 9 ? '9+' : notificationCount }}
+              </span>
+            </button>
 
             <!-- Menú de usuario -->
             <div class="relative" #userMenuRef>
@@ -253,8 +274,8 @@ import { UniversalIconComponent } from '../universal-icon/universal-icon.compone
       </div>
     </header>
   `,
-    styles: [
-        `
+  styles: [
+    `
     /* Animaciones del dropdown mejoradas */
     .dropdown-appear {
       animation: dropdownIn 300ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
@@ -415,7 +436,7 @@ import { UniversalIconComponent } from '../universal-icon/universal-icon.compone
       vertical-align: middle;
     }
     `
-    ]
+  ]
 })
 export class HeaderComponent {
   @Input() sidebarOpen = false;
@@ -434,7 +455,7 @@ export class HeaderComponent {
   @ViewChild('userMenu', { static: false }) userMenuElement!: ElementRef;
   @ViewChild('userToggleButton', { static: false }) userToggleButton!: ElementRef;
 
-  constructor(private authService: AuthService) {}
+  constructor(private authService: AuthService) { }
 
   /**
    * Emite evento para toggle del sidebar
@@ -458,8 +479,8 @@ export class HeaderComponent {
       return this.sidebarOpen ? 'x-lg' : 'list';
     } else {
 
-  // En desktop el botón principal muestra/oculta el sidebar
-    return this.sidebarOpen ? 'layout-sidebar-inset' : 'layout-sidebar';
+      // En desktop el botón principal muestra/oculta el sidebar
+      return this.sidebarOpen ? 'layout-sidebar-inset' : 'layout-sidebar';
     }
   }
 
@@ -470,8 +491,8 @@ export class HeaderComponent {
     if (this.isMobile) {
       return this.sidebarOpen ? 'Cerrar menú' : 'Abrir menú';
     } else {
-  // En desktop: botón principal show/hide
-  return this.sidebarOpen ? 'Ocultar sidebar' : 'Mostrar sidebar';
+      // En desktop: botón principal show/hide
+      return this.sidebarOpen ? 'Ocultar sidebar' : 'Mostrar sidebar';
     }
   }
 
@@ -510,7 +531,7 @@ export class HeaderComponent {
     // Tomar el mayor de los textos mostrados (nombre y rol)
     const contentWidth = Math.max(emailWidth, nameWidth);
     const fixedElementsWidth = 90; // Avatar (32px) + icono (14px) + padding (16px) + espacios y margins (28px)
-    
+
     // Permitir mayor ancho para nombres largos
     return Math.min(Math.max(contentWidth + fixedElementsWidth, 180), 600);
   }
@@ -545,7 +566,7 @@ export class HeaderComponent {
     // Tomar el mayor de todos los textos
     const contentWidth = Math.max(nameWidth, emailWidth, roleWidth, menuItemsWidth);
     const fixedElementsWidth = 130; // Avatar (40px) + iconos containers (48px) + padding total (32px) + margins (10px)
-    
+
     // Asegurar que dropdown sea al menos tan ancho como el botón calculado
     const buttonWidth = this.getMinButtonWidth();
     const computed = Math.min(Math.max(contentWidth + fixedElementsWidth, 280), 800);
@@ -639,7 +660,7 @@ export class HeaderComponent {
     if (!person) {
       return 'U';
     }
-    
+
     // Usar first_name y last_name si están disponibles, o nombre como fallback
     const firstName = person.first_name || '';
     const lastName = person.last_name || '';
@@ -647,24 +668,24 @@ export class HeaderComponent {
     if (firstName && lastName) {
       return (firstName[0] + lastName[0]).toUpperCase();
     }
-    
+
     // Fallback al campo nombre si existe
     if (this.currentUser.full_name) {
       const nameParts = this.currentUser.full_name.trim().split(' ').filter((part: string) => part.length > 0);
       if (nameParts.length === 0) {
         return '';
       }
-      
+
       if (nameParts.length === 1) {
         const name = nameParts[0];
         return name.length >= 2 ? name.substring(0, 2).toUpperCase() : name[0].toUpperCase();
       }
-      
+
       const firstNamePart = nameParts[0];
       const lastNamePart = nameParts[1];
       return (firstNamePart[0] + lastNamePart[0]).toUpperCase();
     }
-    
+
     return 'U';
   }
 
@@ -676,8 +697,8 @@ export class HeaderComponent {
       return 'Usuario';
     }
 
-    let person = this.currentUser.person; 
-    
+    let person = this.currentUser.person;
+
     if (!person) {
       return 'Usuario';
     }
@@ -690,7 +711,7 @@ export class HeaderComponent {
       }
       return fullName;
     }
-    
+
     // Fallback al campo nombre
     return person.full_name || 'Usuario';
   }
@@ -700,7 +721,7 @@ export class HeaderComponent {
    */
   getRoleDisplayName(): string {
     //console.log(this.currentUser);
-    
+
     const roleMap: { [key: string]: string } = {
       'CALLCENTER_TI': 'Call Center TI'
     };

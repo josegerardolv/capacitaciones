@@ -10,8 +10,8 @@ import { CourseFormComponent } from '../../components/course-form/course-form.co
 import { CourseEditFormComponent } from '../../components/course-edit-form/course-edit-form.component';
 import { TooltipDirective } from '../../../../shared/components/tooltip/tooltip.directive';
 import { ConfirmationModalComponent, ConfirmationConfig } from '../../../../shared/components/modals/confirmation-modal.component';
-import { AlertModalComponent, AlertConfig } from '../../../../shared/components/modals/alert-modal.component';
 import { InstitutionalButtonComponent } from '../../../../shared/components/buttons/institutional-button.component';
+import { NotificationService } from '../../../../shared/services/notification.service';
 
 @Component({
     selector: 'app-course-list',
@@ -26,7 +26,7 @@ import { InstitutionalButtonComponent } from '../../../../shared/components/butt
         CourseEditFormComponent,
         TooltipDirective,
         ConfirmationModalComponent,
-        AlertModalComponent,
+
         InstitutionalButtonComponent
     ],
     templateUrl: './course-list.component.html'
@@ -68,16 +68,12 @@ export class CourseListComponent implements OnInit {
     };
     private pendingConfirmAction: (() => void) | null = null;
 
-    isAlertOpen = false;
-    alertConfig: AlertConfig = {
-        title: '',
-        message: '',
-        type: 'info'
-    };
+
 
     constructor(
         private coursesService: CoursesService,
-        private router: Router
+        private router: Router,
+        private notificationService: NotificationService
     ) { }
 
     ngOnInit(): void {
@@ -110,6 +106,7 @@ export class CourseListComponent implements OnInit {
             },
             error: () => {
                 this.tableConfig.loading = false;
+                this.notificationService.error('Error', 'No se pudieron cargar los cursos.');
             }
         });
     }
@@ -134,14 +131,7 @@ export class CourseListComponent implements OnInit {
         this.pendingConfirmAction = null;
     }
 
-    openAlert(title: string, message: string, type: 'success' | 'info' | 'warning' | 'danger' = 'info') {
-        this.alertConfig = {
-            title,
-            message,
-            type
-        };
-        this.isAlertOpen = true;
-    }
+
 
     deleteCourse(id: number) {
         this.openConfirm({
@@ -151,9 +141,14 @@ export class CourseListComponent implements OnInit {
             confirmText: 'Eliminar',
             cancelText: 'Cancelar'
         }, () => {
-            this.coursesService.deleteCourse(id).subscribe(() => {
-                this.loadCourses();
-                this.openAlert('Eliminado', 'Curso eliminado correctamente.', 'success');
+            this.coursesService.deleteCourse(id).subscribe({
+                next: () => {
+                    this.loadCourses();
+                    this.notificationService.success('Eliminado', 'Curso eliminado correctamente.');
+                },
+                error: () => {
+                    this.notificationService.error('Error', 'No se pudo eliminar el curso.');
+                }
             });
         });
     }
@@ -175,7 +170,7 @@ export class CourseListComponent implements OnInit {
     onFormSaved() {
         this.showForm = false;
         this.loadCourses();
-        this.openAlert('Guardado', 'Curso guardado exitosamente.', 'success');
+        this.notificationService.success('Guardado', 'Curso guardado exitosamente.');
     }
 
     // Manejo del Modal de Edición
@@ -193,6 +188,6 @@ export class CourseListComponent implements OnInit {
         this.showEditForm = false;
         this.selectedCourseToEdit = null;
         this.loadCourses();
-        this.openAlert('Actualizado', 'Curso actualizado correctamente.', 'success');
+        this.notificationService.success('Actualizado', 'Curso actualizado correctamente.');
     }
 }
