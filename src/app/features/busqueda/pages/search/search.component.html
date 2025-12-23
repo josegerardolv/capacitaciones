@@ -1,0 +1,80 @@
+<div class="p-8">
+  <h1 class="text-3xl font-bold text-gray-800 mb-6">Búsqueda de Conductores</h1>
+  
+  <app-search-form
+    [title]="'Buscar Conductores'"
+    [searchFields]="searchFields"
+    [quickFilters]="quickFilters"
+    [showMainSearch]="true"
+    [mainSearchPlaceholder]="'Espacio de escritura para la busqueda'"
+    [debounceTime]="500"
+    [autoSearch]="true"
+    [allowSaveSearch]="false"
+    [allowExport]="false"
+    [resultCount]="resultCount"
+    [isCollapsed]="false"
+    (search)="onSearch($event)"
+    (filterChange)="onFilterChange($event)">
+  </app-search-form>
+
+  <h1 class="text-[#8B1538] font-bold text-2xl mt-2 mb-6"><br>Ultimo Curso Tomado</h1>
+
+  <div class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+    <app-institutional-table
+      [columns]="tableColumns"
+      [data]="ultimosCursos"
+      [config]="tableConfig">
+    </app-institutional-table>
+  </div>
+
+  <h1 class="text-[#8B1538] font-bold text-2xl mt-2 mb-6"><br>Cursos Tomados Anteriormente</h1>
+
+  <div class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+    <app-institutional-table
+      [columns]="tableColumnsAnteriores"
+      [data]="cursosAnteriores"
+      [config]="tableConfigAnteriores">
+      (buttonClick)="onConstanciaClick($event)">
+    </app-institutional-table>
+  </div>
+
+<!-- Template definido fuera de la tabla -->
+<ng-template #estatusTemplate let-item let-column="column" let-index="index">
+  <div class="w-full flex justify-center items-center min-h-full">
+    <app-badge-group
+      [badges]="[getEstatusBadge(item.estatus)]"
+      [config]="{
+        orientation: 'horizontal',
+        spacing: 'normal',
+        wrap: false
+      }">
+    </app-badge-group>
+  </div>
+</ng-template>
+
+  <ng-template #constanciasTemplate let-item let-column="column" let-index="index">
+    <div style="display: flex; justify-content: center; align-items: center; width: 100%;">
+      <app-button-group
+        [buttons]="[
+          {
+            id: 'view-' + item.id,
+            label: '',
+            config: {
+              variant: 'info',
+              icon: 'visibility',
+              iconPosition: 'only',
+              size: 'small'
+            },
+            tooltip: 'Ver constancia'
+          }
+        ]"
+        [config]="{
+          orientation: 'horizontal',
+          separated: false
+        }"
+        (buttonClick)="onVerConstancia(item, $event)">
+      </app-button-group>
+    </div>
+  </ng-template>
+
+</div>
