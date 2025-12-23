@@ -1,0 +1,85 @@
+<div class="min-h-screen">
+    <app-page-header
+        [title]="'Formatos de Certificados'"
+        [subtitle]="'Gestiona los formatos de certificados disponibles para los cursos'"
+        [actionButton]="actionButtonConfig">
+    </app-page-header>
+
+    <app-institutional-card [config]="{ showHeader: false, showFooter: false, showShadow: true, showBorder: true }">
+        <app-table-pagination
+            [config]="paginationConfig"
+            [showPageSizeSelector]="true"
+            [showPaginationControls]="false"
+            (pageChange)="onPageChange($event)">
+        </app-table-pagination>
+        <app-institutional-table
+            [data]="certificates"
+            [columns]="tableColumns"    
+            [config]="tableConfig">
+        </app-institutional-table>
+        <app-table-pagination
+            [config]="paginationConfig"
+            [showPageSizeSelector]="false"
+            [showPaginationControls]="true"
+            (pageChange)="onPageChange($event)">
+        </app-table-pagination>
+    </app-institutional-card>
+</div>
+
+<!-- Modal de creación -->
+<app-modal-form *ngIf="createModalOpen && form"
+    [formGroup]="form"
+    [isOpen]="createModalOpen"
+    [title]="'Nuevo Certificado'"
+    [isLoading]="isSaving"
+    (formSubmit)="onCreateSubmit($event)"
+    (modalClose)="createModalOpen = false">
+
+    <app-input-enhanced [control]="nameControl" label="Nombre" placeholder="Ingrese nombre" [required]="true"></app-input-enhanced>
+    <app-input-enhanced [control]="descriptionControl" label="Descripción" placeholder="Descripción breve" type="textarea"></app-input-enhanced>
+
+</app-modal-form>
+
+<!-- Modal de edición -->
+<app-modal-form *ngIf="editModalOpen && form"
+    [formGroup]="form"
+    [isOpen]="editModalOpen"
+    [title]="'Editar Certificado'"
+    [isLoading]="isSaving"
+    (formSubmit)="onEditSubmit($event)"
+    (modalClose)="editModalOpen = false">
+
+    <app-input-enhanced [control]="nameControl" label="Nombre" placeholder="Ingrese nombre" [required]="true"></app-input-enhanced>
+    <app-input-enhanced [control]="descriptionControl" label="Descripción" placeholder="Descripción breve" type="textarea"></app-input-enhanced>
+
+</app-modal-form>
+
+<!-- Template para Acciones -->
+<ng-template #actionsTemplate let-item>
+    <div class="flex items-center justify-center space-x-3">
+        <app-institutional-button
+            [config]="{ variant: 'primary', size: 'small', icon: 'design_services', iconPosition: 'only' }"
+            [appTooltip]="'Editar diseño visual'" tooltipPosition="top"
+            (buttonClick)="editTemplateDesign(item)">
+        </app-institutional-button>
+        <app-institutional-button
+            [config]="{ variant: 'secondary', size: 'small', icon: 'edit', iconPosition: 'only' }"
+            [appTooltip]="'Editar información'" tooltipPosition="top"
+            (buttonClick)="openEditForm(item)">
+        </app-institutional-button>
+        <app-institutional-button
+            [config]="{ variant: 'danger', size: 'small', icon: 'delete', iconPosition: 'only' }"
+            [appTooltip]="'Eliminar'" tooltipPosition="top"
+            (buttonClick)="deleteCertificate(item.id)">
+        </app-institutional-button>
+    </div>
+</ng-template>
+
+<!-- Modales Genéricos -->
+<app-confirmation-modal [isOpen]="isConfirmOpen" [config]="confirmConfig" (confirm)="onConfirmYes()"
+    (cancel)="isConfirmOpen = false" (modalClose)="isConfirmOpen = false">
+</app-confirmation-modal>
+
+<app-alert-modal [isOpen]="isAlertOpen" [config]="alertConfig" (actionClick)="isAlertOpen = false"
+    (modalClose)="isAlertOpen = false">
+</app-alert-modal>

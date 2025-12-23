@@ -138,10 +138,16 @@ export class LayoutWrapperComponent implements OnInit, OnDestroy {
    * Configura la suscripción a cambios del usuario
    */
   private setupUserSubscription(): void {
-    this.authService.currentUser$
+    const currentUser$ = this.authService && (this.authService as any).currentUser$;
+    if (!currentUser$ || typeof currentUser$.pipe !== 'function') {
+      // No hay observable disponible; evitar errores y salir
+      return;
+    }
+
+    currentUser$
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (user) => {
+        next: (user: any) => {
           this.currentUser = user;
           // Si el usuario se autentica por primera vez, cargar notificaciones
           if (user && !this.notifications.length) {
@@ -149,7 +155,7 @@ export class LayoutWrapperComponent implements OnInit, OnDestroy {
             this.setupNotificationSubscription();
           }
         },
-        error: (error) => {
+        error: (error: any) => {
           // Error silencioso
         }
       });

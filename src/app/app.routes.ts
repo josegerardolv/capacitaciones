@@ -13,6 +13,18 @@ export const routes: Routes = [
     path: 'login',
     loadComponent: () => import('./shared/components/login/login.component').then(m => m.LoginComponent)
   },
+  
+  // --- EDITOR VISUAL EN PANTALLA COMPLETA (Sin Layout) ---
+  {
+    path: 'documentos/certificados/editor/:id',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/documents/pages/template-editor/template-editor.component').then(m => m.TemplateEditorComponent)
+  },
+  {
+    path: 'documentos/tarjetones/editor/:id',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/documents/pages/template-editor/template-editor.component').then(m => m.TemplateEditorComponent)
+  },
 
   // --- RUTA PÚBLICA DE REGISTRO (Sin Auth) ---
   {
@@ -37,8 +49,17 @@ export const routes: Routes = [
         loadComponent: () => import('./features/dashboard/dashboard.component').then(m => m.DashboardComponent)
       },
       {
+        path: 'breadcrumb-demo',
+        loadComponent: () => import('./shared/components/breadcrumb/breadcrumb-demo.component').then(m => m.BreadcrumbDemoComponent)
+      },
+      {
         path: 'cursos',
         loadChildren: () => import('./features/cursos/cursos.routes').then(m => m.CURSOS_ROUTES)
+      }
+      ,
+      {
+        path: 'documentos',
+        loadChildren: () => import('./features/documents/documents.routes').then(m => m.DOCUMENTS_ROUTES)
       }
 
 
