@@ -19,9 +19,22 @@
     </div>
     <!-- Contenedor Tabla (Estilo Card) -->
     <div class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+        <div class="p-4 border-b border-gray-100">
+            <app-table-pagination [config]="paginationConfig" [showPageSizeSelector]="true"
+                [showPaginationControls]="false" (pageChange)="onPageChange($event)">
+            </app-table-pagination>
+        </div>
+
         <!-- Tabla Institucional -->
         <app-institutional-table [data]="drivers" [columns]="tableColumns" [config]="tableConfig">
         </app-institutional-table>
+    </div>
+
+    <!-- Paginación -->
+    <div class="mt-4">
+        <app-table-pagination [config]="paginationConfig" [showPageSizeSelector]="false" [showPaginationControls]="true"
+            (pageChange)="onPageChange($event)">
+        </app-table-pagination>
     </div>
     <!-- Templates -->
     <!-- Estatus: Badge Aprobado/No Aprobado o Botones de Calificación -->
@@ -57,7 +70,7 @@
             <!-- Constancia (Verde/Naranja) -->
             <app-institutional-button [config]="{
                     variant: item.coursePaymentStatus === 'Pagado' ? 'success' : 'warning',
-                    icon: item.coursePaymentStatus === 'Pagado' ? 'description' : 'schedule',
+                    icon: 'description',
                     iconPosition: 'only',
                     disabled: item.status !== 'Aprobado',
                     customClass: '!rounded-full !w-8 !h-8 !p-0 min-w-[unset]'
@@ -69,7 +82,7 @@
             <!-- Tarjetón (Verde/Ambar/Azul) -->
             <app-institutional-button [config]="{
                     variant: item.paymentStatus === 'Pagado' ? 'success' : (item.paymentStatus === 'Pendiente' ? 'warning' : 'info'),
-                    icon: item.paymentStatus === 'Pagado' ? 'badge' : (item.paymentStatus === 'Pendiente' ? 'schedule' : 'badge'),
+                    icon: 'badge',
                     iconPosition: 'only',
                     disabled: item.status !== 'Aprobado',
                     customClass: '!rounded-full !w-8 !h-8 !p-0 min-w-[unset]'

@@ -12,6 +12,7 @@ import { GroupsService } from '../../services/groups.service';
 import { TooltipDirective } from '../../../../shared/components/tooltip/tooltip.directive';
 import { ConfirmationModalComponent, ConfirmationConfig } from '../../../../shared/components/modals/confirmation-modal.component';
 import { AlertModalComponent, AlertConfig } from '../../../../shared/components/modals/alert-modal.component';
+import { NotificationService } from '../../../../shared/services/notification.service';
 
 @Component({
     selector: 'app-group-list',
@@ -85,12 +86,22 @@ export class GroupListComponent implements OnInit {
 
     constructor(
         private groupsService: GroupsService,
-        private router: Router
+        private router: Router,
+        private notificationService: NotificationService
     ) { }
 
     ngOnInit(): void {
         this.initColumns();
         this.loadGroups();
+
+        // Simulación de notificación de registro (Demo)
+        setTimeout(() => {
+            this.notificationService.success(
+                'Nueva Solicitud',
+                'Juan Pérez se ha registrado al Grupo A05',
+                5000
+            );
+        }, 3000);
     }
 
     initColumns() {
@@ -136,6 +147,10 @@ export class GroupListComponent implements OnInit {
             },
             error: () => {
                 this.tableConfig.loading = false;
+                this.notificationService.error(
+                    'Error de Conexión',
+                    'No se pudieron cargar los grupos. Intente más tarde.'
+                );
             }
         });
     }
@@ -177,7 +192,15 @@ export class GroupListComponent implements OnInit {
             confirmText: 'Eliminar',
             cancelText: 'Cancelar'
         }, () => {
-            this.groupsService.deleteGroup(id).subscribe(() => this.loadGroups());
+            this.groupsService.deleteGroup(id).subscribe({
+                next: () => {
+                    this.loadGroups();
+                    this.notificationService.success('Eliminado', 'Grupo eliminado correctamente');
+                },
+                error: () => {
+                    this.notificationService.error('Error', 'No se pudo eliminar el grupo');
+                }
+            });
         });
     }
 
@@ -224,7 +247,10 @@ export class GroupListComponent implements OnInit {
 
     onGroupSaved() {
         this.loadGroups();
-        this.openAlert('Éxito', this.editingGroup ? 'Grupo actualizado correctamente' : 'Grupo creado exitosamente', 'success');
+        this.notificationService.success(
+            'Éxito',
+            this.editingGroup ? 'Grupo actualizado correctamente' : 'Grupo creado exitosamente'
+        );
         this.isNewGroupModalOpen = false;
         this.editingGroup = null;
     }

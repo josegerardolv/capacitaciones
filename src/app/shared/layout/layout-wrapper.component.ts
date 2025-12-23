@@ -21,15 +21,15 @@ import { NotificationService } from '../../shared/services/notification.service'
  * Utiliza la paleta institucional institucional sin amarillos
  */
 @Component({
-    selector: 'app-layout-wrapper',
-    imports: [
-        CommonModule,
-        RouterOutlet,
-        SidebarComponent,
-        HeaderComponent,
-        NotificationPanelComponent
-    ],
-    template: `
+  selector: 'app-layout-wrapper',
+  imports: [
+    CommonModule,
+    RouterOutlet,
+    SidebarComponent,
+    HeaderComponent,
+    NotificationPanelComponent
+  ],
+  template: `
     <div class="min-h-screen bg-white flex overflow-hidden">
       <!-- Sidebar -->
       <app-sidebar 
@@ -85,7 +85,7 @@ import { NotificationService } from '../../shared/services/notification.service'
       </app-notification-panel>
     </div>
   `,
-    styles: []
+  styles: []
 })
 export class LayoutWrapperComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
@@ -95,7 +95,7 @@ export class LayoutWrapperComponent implements OnInit, OnDestroy {
   sidebarCollapsed = false; // Nueva propiedad para colapsar
   notificationPanelOpen = false;
   isMobile = false;
-  
+
   // Datos del usuario y notificaciones
   currentUser: any = null;
   notifications: any[] = [];
@@ -112,10 +112,10 @@ export class LayoutWrapperComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     // PRIMERO: detectar tipo de dispositivo
     this.detectMobile();
-    
+
     // SEGUNDO: cargar estado desde localStorage
     this.loadSidebarState();
-    
+
     // Solo cargar datos si el usuario está autenticado
     if (this.authService.isAuthenticated()) {
       this.loadUserData();
@@ -161,7 +161,7 @@ export class LayoutWrapperComponent implements OnInit, OnDestroy {
   private detectMobile(): void {
     const wasMobile = this.isMobile;
     this.isMobile = window.innerWidth < 1024;
-    
+
     // Si cambió de mobile a desktop o viceversa, recargar estado apropiado
     if (wasMobile !== this.isMobile) {
       this.loadSidebarState();
@@ -195,7 +195,7 @@ export class LayoutWrapperComponent implements OnInit, OnDestroy {
         const savedState = localStorage.getItem('sidebarState');
         if (savedState) {
           const state = JSON.parse(savedState);
-          
+
           if (this.isMobile) {
             // En móvil: empezar cerrado por UX, pero respetamos estado de collapsed para cuando cambie a desktop
             this.sidebarOpen = false;
@@ -276,25 +276,15 @@ export class LayoutWrapperComponent implements OnInit, OnDestroy {
    * Configura la suscripción a notificaciones en tiempo real
    */
   private setupNotificationSubscription(): void {
-    // Comentado temporalmente hasta implementar WebSockets
-    /*
-    this.notificationService.getNotificationUpdates()
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (notification: any) => {
-          this.notifications.unshift(notification);
-          this.updateNotificationCount();
-        }
-      });
-    */
+    // Configuración para futuras notificaciones (WebSockets o similar)
   }
 
   /**
    * Actualiza el contador de notificaciones no leídas
    */
   private updateNotificationCount(): void {
-    // Como no tenemos propiedad 'read', contar todas las notificaciones
-    this.notificationCount = this.notifications.length;
+    // Count only unread notifications
+    this.notificationCount = this.notifications.filter(n => !n.read).length;
   }
 
   /**
@@ -365,21 +355,11 @@ export class LayoutWrapperComponent implements OnInit, OnDestroy {
    * Marca todas las notificaciones como leídas
    */
   markAllNotificationsAsRead(): void {
-    // Este método no está disponible en el NotificationService actual
-    // Por ahora solo dismiss todas las notificaciones
-    this.notificationService.dismissAll();
-    this.notifications = [];
-    this.updateNotificationCount();
+    this.notificationService.markAllAsRead();
+    // No need to clear local array manually as subscription will update it
   }
 
-  /**
-   * Marca una notificación específica como leída
-   */
   markNotificationAsRead(notificationId: string): void {
-    // Este método no está disponible en el NotificationService actual
-    // Por ahora solo dismiss la notificación específica
-    this.notificationService.dismiss(notificationId);
-    this.notifications = this.notifications.filter(n => n.id !== notificationId);
-    this.updateNotificationCount();
+    this.notificationService.markAsRead(notificationId);
   }
 }
