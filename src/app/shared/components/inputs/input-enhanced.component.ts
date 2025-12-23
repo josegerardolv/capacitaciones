@@ -65,7 +65,10 @@ import { ValidatorSpec, ValidationErrorMessages } from '../../interfaces/validat
               [disabled]="disabled || isDisabled"
               [attr.aria-invalid]="invalidTouched"
               [attr.aria-describedby]="getAriaDescribedBy()"
-              [value]="value || ''"
+              [value]="value !== null && value !== undefined ? value : ''"
+              [attr.min]="min"
+              [attr.max]="max"
+              [attr.step]="step"
               (focus)="onFocus()" 
               (blur)="onBlur()"
               (input)="onInput($event)"
@@ -92,7 +95,7 @@ import { ValidatorSpec, ValidationErrorMessages } from '../../interfaces/validat
               [disabled]="disabled || isDisabled"
               [attr.aria-invalid]="invalidTouched"
               [attr.aria-describedby]="getAriaDescribedBy()"
-              [value]="value || ''"
+                  [value]="value !== null && value !== undefined ? value : ''"
               (focus)="onFocus()" 
               (blur)="onBlur()"
               (input)="onInput($event)"
@@ -179,7 +182,7 @@ import { ValidatorSpec, ValidationErrorMessages } from '../../interfaces/validat
                  [readonly]="readonly"
                  [attr.aria-invalid]="invalidTouched"
                  [attr.aria-describedby]="getAriaDescribedBy()"
-                 [value]="value || ''"
+                 [value]="value !== null && value !== undefined ? value : ''"
                  (focus)="onFocus()" 
                  (blur)="onBlur()"
                  (input)="onInput($event)"
@@ -595,6 +598,7 @@ export class InputEnhancedComponent implements OnInit, AfterViewInit, DoCheck, O
   @Output() blur = new EventEmitter<Event>();
   @Output() keydown = new EventEmitter<KeyboardEvent>();
   @Output() keyup = new EventEmitter<KeyboardEvent>();
+  @Output() inputEvent = new EventEmitter<Event>();
 
   controlId = '';
   isFocused = false;
@@ -752,16 +756,20 @@ export class InputEnhancedComponent implements OnInit, AfterViewInit, DoCheck, O
       this._validatorsApplied = true;
     }
 
-    // Sincronizar valores
-    if (this._value !== undefined && this._value !== this.control.value) {
-      // Si el componente ya tiene un valor, aplicarlo al FormControl
-      this.control.setValue(this._value, { emitEvent: false });
-      this.control.markAsDirty();
-      this.control.markAsTouched();
-    } else {
-      // Si no, tomar el valor del FormControl
+    // Sincronizar valores - Priorizar el valor del FormControl
+    // Solo si el componente tiene un valor explícito y el control no, usamos el del componente
+    if (this.control.value !== null && this.control.value !== undefined && this.control.value !== '') {
+      // Tomar el valor del FormControl
       this._value = this.control.value;
+      this._shifted = true;
+    } else if (this._value !== undefined && this._value !== null && this._value !== '') {
+      // Si el componente tiene valor pero el control no, aplicar al control
+      this.control.setValue(this._value, { emitEvent: false });
+      this._shifted = true;
     }
+    
+    // Forzar actualización visual
+    this.cdr.markForCheck();
     
     // Suscribirse a cambios
     this._valueSub = this.control.valueChanges?.subscribe((val: any) => {
@@ -769,8 +777,8 @@ export class InputEnhancedComponent implements OnInit, AfterViewInit, DoCheck, O
       const hasValue = !(val === null || val === undefined || val === '');
       if (hasValue !== this._shifted) {
         this._shifted = hasValue;
-        this.cdr.markForCheck();
       }
+      this.cdr.markForCheck();
     });
   }
 
@@ -1192,9 +1200,28 @@ export class InputEnhancedComponent implements OnInit, AfterViewInit, DoCheck, O
     if (hasValue !== this._shifted) {
       this._shifted = hasValue;
     }
+    // Si es input tipo number, aplicar clamping con min/max y pasar número
+    if (this.type === 'number') {
+      let num = parseFloat(String(v));
+      if (isNaN(num)) {
+        // si está vacío o inválido, asignar cadena vacía
+        this.value = '';
+      } else {
+        if (this.min !== undefined && num < this.min) num = this.min;
+        if (this.max !== undefined && num > this.max) num = this.max;
+        // Asegurar que el elemento muestre el valor clamped
+        try {
+          (target as HTMLInputElement).value = String(num);
+        } catch (e) { /* ignore */ }
+        this.value = num;
+      }
+    } else {
+      // Actualizar el valor a través de ControlValueAccessor
+      this.value = v;
+    }
     
-    // Actualizar el valor a través de ControlValueAccessor
-    this.value = v;
+    // Emitir evento input para escucha externa
+    this.inputEvent.emit(event);
   }
   
   onPaste(event: ClipboardEvent): void {

@@ -1,0 +1,1138 @@
+<div class="template-editor">
+    <!-- ===== HEADER TOOLBAR ===== -->
+    <header class="editor-header">
+        <div class="header-left">
+            <button class="btn-icon" (click)="cancel()" title="Volver">
+                <span class="material-symbols-outlined">arrow_back</span>
+            </button>
+            <div class="document-info">
+                <h1 class="document-title">{{ documentForm.get('name')?.value || 'Sin título' }}</h1>
+                <span class="document-type">{{ documentType === 'certificate' ? 'Certificado' : 'Tarjetón' }}</span>
+            </div>
+        </div>
+
+        <!-- SIMPLIFIED TOOLBAR - Only essential actions -->
+        <div class="formatting-toolbar">
+            <!-- Undo/Redo -->
+            <div class="toolbar-group">
+                <button class="btn-toolbar" (click)="undo()" [disabled]="!canUndo" title="Deshacer (Ctrl+Z)">
+                    <span class="material-symbols-outlined">undo</span>
+                </button>
+                <button class="btn-toolbar" (click)="redo()" [disabled]="!canRedo" title="Rehacer (Ctrl+Y)">
+                    <span class="material-symbols-outlined">redo</span>
+                </button>
+            </div>
+
+            <div class="toolbar-separator"></div>
+
+            <!-- Visual Guides -->
+            <div class="toolbar-group">
+                <button class="btn-toolbar" [class.active]="showGrid" (click)="toggleGrid()" title="Mostrar/ocultar rejilla">
+                    <span class="material-symbols-outlined">grid_4x4</span>
+                </button>
+                <button class="btn-toolbar" [class.active]="showSmartGuides" (click)="toggleSmartGuides()" title="Guías de alineación inteligentes">
+                    <span class="material-symbols-outlined">straighten</span>
+                </button>
+                <button class="btn-toolbar" [class.active]="pageSettingsForm.get('showMarginGuides')?.value" 
+                        (click)="toggleMarginGuidesHeader()" title="Mostrar/ocultar márgenes">
+                    <span class="material-symbols-outlined">
+                        {{ pageSettingsForm.get('showMarginGuides')?.value ? 'visibility' : 'visibility_off' }}
+                    </span>
+                </button>
+            </div>
+
+            <!-- Quick actions when element is selected -->
+            <ng-container *ngIf="selectedObject">
+                <div class="toolbar-separator"></div>
+
+                <div class="toolbar-group">
+                    <button class="btn-toolbar" (click)="duplicateSelected()" title="Duplicar (Ctrl+D)">
+                        <span class="material-symbols-outlined">content_copy</span>
+                    </button>
+                    <button class="btn-toolbar btn-danger" (click)="deleteSelected()" title="Eliminar (Supr)">
+                        <span class="material-symbols-outlined">delete</span>
+                    </button>
+                </div>
+
+                <div class="toolbar-separator"></div>
+
+                <div class="toolbar-group">
+                    <button class="btn-toolbar" (click)="bringToFront()" title="Traer al frente">
+                        <span class="material-symbols-outlined">flip_to_front</span>
+                    </button>
+                    <button class="btn-toolbar" (click)="sendToBack()" title="Enviar al fondo">
+                        <span class="material-symbols-outlined">flip_to_back</span>
+                    </button>
+                </div>
+            </ng-container>
+        </div>
+
+        <div class="header-right">
+            <!-- Preview PDF (icon) -->
+            <button class="icon-btn" (click)="previewPDF()" [disabled]="isGeneratingPDF" title="Previsualizar PDF" aria-label="Previsualizar PDF">
+                <span class="material-symbols-outlined">{{ isGeneratingPDF ? 'hourglass_empty' : 'picture_as_pdf' }}</span>
+            </button>
+
+            
+
+            <!-- Cancel / Close (icon) -->
+            <button class="icon-btn" (click)="cancel()" title="Cancelar edición" aria-label="Cancelar edición">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+
+            <!-- Save (primary) - icon only, accessible label -->
+            <app-institutional-button 
+                [config]="{ variant: 'primary', loading: isSaving, disabled: isSaving }"
+                (buttonClick)="saveTemplate()"
+                title="Guardar diseño"
+                aria-label="Guardar diseño">
+                <span class="material-symbols-outlined">save</span>
+                <span class="sr-only">Guardar diseño</span>
+            </app-institutional-button>
+        </div>
+    </header>
+
+    <!-- ===== MAIN CONTENT ===== -->
+    <div class="editor-body">
+        <!-- LEFT PANEL - Tools -->
+        <aside *ngIf="showToolPanel" class="panel panel-left" [style.width.px]="leftPanelWidth">
+            <div class="panel-header">
+                <h2>Herramientas</h2>
+                <button class="btn-icon-sm" (click)="showToolPanel = false" title="Ocultar panel">
+                    <span class="material-symbols-outlined">chevron_left</span>
+                </button>
+            </div>
+
+            <div class="panel-content">
+                <!-- Tab Navigation -->
+                <div class="tab-nav">
+                    <button class="tab-btn" [class.active]="activeTab === 'page'" (click)="activeTab = 'page'">
+                        Página
+                    </button>
+                    <button class="tab-btn" [class.active]="activeTab === 'elements'" (click)="activeTab = 'elements'">
+                        Elementos
+                    </button>
+                    <button class="tab-btn" [class.active]="activeTab === 'variables'" (click)="activeTab = 'variables'">
+                        Variables
+                    </button>
+                    <button class="tab-btn" [class.active]="activeTab === 'layers'" (click)="activeTab = 'layers'">
+                        Capas
+                    </button>
+                </div>
+
+                <!-- PAGE TAB -->
+                <div *ngIf="activeTab === 'page'" class="tab-content">
+                    <!-- Page Size -->
+                    <section class="tool-section">
+                        <h3 class="section-title">Tamaño de Página</h3>
+                        <form [formGroup]="pageSettingsForm" class="form-compact">
+                            <div class="form-field">
+                                <app-select
+                                    label="Formato"
+                                    controlName="pageSize"
+                                    [options]="pageSizeOptions"
+                                    placeholder="Seleccionar formato"
+                                    (change)="applyPageSettings()">
+                                </app-select>
+                            </div>
+
+                            <div class="form-field">
+                                <label>Orientación</label>
+                                <div class="orientation-buttons">
+                                    <button type="button" class="orientation-btn" 
+                                            [class.active]="pageSettingsForm.get('orientation')?.value === 'portrait'"
+                                            (click)="setOrientation('portrait')">
+                                        <span class="material-symbols-outlined">crop_portrait</span>
+                                        Vertical
+                                    </button>
+                                    <button type="button" class="orientation-btn" 
+                                            [class.active]="pageSettingsForm.get('orientation')?.value === 'landscape'"
+                                            (click)="setOrientation('landscape')">
+                                        <span class="material-symbols-outlined">crop_landscape</span>
+                                        Horizontal
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Custom size inputs -->
+                            <div *ngIf="pageSettingsForm.get('pageSize')?.value === 'Custom'" class="custom-size-section">
+                                <div class="form-grid-2">
+                                    <app-input-enhanced
+                                        type="number"
+                                        label="Ancho (mm)"
+                                        controlName="customWidthMm"
+                                        (blur)="applyPageSettings()">
+                                    </app-input-enhanced>
+                                    <app-input-enhanced
+                                        type="number"
+                                        label="Alto (mm)"
+                                        controlName="customHeightMm"
+                                        (blur)="applyPageSettings()">
+                                    </app-input-enhanced>
+                                </div>
+                            </div>
+                        </form>
+                    </section>
+
+                    <!-- Margins -->
+                    <section class="tool-section">
+                        <h3 class="section-title">Márgenes</h3>
+                        <form [formGroup]="pageSettingsForm" class="form-compact">
+                            <div class="margin-preview">
+                                <div class="margin-box">
+                                    <input type="number" class="margin-input top" formControlName="marginTopMm" 
+                                           min="0" max="100" (change)="applyPageSettings()" title="Margen superior (mm)">
+                                    <input type="number" class="margin-input left" formControlName="marginLeftMm" 
+                                           min="0" max="100" (change)="applyPageSettings()" title="Margen izquierdo (mm)">
+                                    <div class="margin-inner"></div>
+                                    <input type="number" class="margin-input right" formControlName="marginRightMm" 
+                                           min="0" max="100" (change)="applyPageSettings()" title="Margen derecho (mm)">
+                                    <input type="number" class="margin-input bottom" formControlName="marginBottomMm" 
+                                           min="0" max="100" (change)="applyPageSettings()" title="Margen inferior (mm)">
+                                </div>
+                            </div>
+                            <div class="margin-labels">
+                                <span>Superior: {{ pageSettingsForm.get('marginTopMm')?.value }} mm</span>
+                                <span>Inferior: {{ pageSettingsForm.get('marginBottomMm')?.value }} mm</span>
+                                <span>Izquierdo: {{ pageSettingsForm.get('marginLeftMm')?.value }} mm</span>
+                                <span>Derecho: {{ pageSettingsForm.get('marginRightMm')?.value }} mm</span>
+                            </div>
+
+                        </form>
+                    </section>
+
+                    <!-- Grid Settings -->
+                    <section class="tool-section">
+                        <h3 class="section-title">Rejilla (Grid)</h3>
+                        <div class="form-compact">
+                            <div class="form-field">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" [checked]="showGrid" (change)="toggleGrid()">
+                                    <span>Mostrar rejilla</span>
+                                </label>
+                            </div>
+                            <div class="form-field" *ngIf="showGrid">
+                                <app-select
+                                    label="Tamaño de celda"
+                                    [options]="gridSizeOptions"
+                                    [control]="gridSizeControl"
+                                    (change)="onGridSizeChange($event)">
+                                </app-select>
+                            </div>
+                            <div class="form-field" *ngIf="showGrid">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" [checked]="snapToGrid" (change)="toggleSnapToGrid()">
+                                    <span>Ajustar a rejilla (snap)</span>
+                                </label>
+                            </div>
+                           
+                        </div>
+
+                        
+                    </section>
+
+                    <!-- Page Info -->
+                    <section class="tool-section">
+                        <h3 class="section-title">Información</h3>
+                        <div class="page-info">
+                            <div class="info-row">
+                                <span class="info-label">Dimensiones:</span>
+                                <span class="info-value">{{ canvasWidth }} × {{ canvasHeight }} px</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Área imprimible:</span>
+                                <span class="info-value">{{ getPrintableWidth() }} × {{ getPrintableHeight() }} px</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">DPI:</span>
+                                <span class="info-value">{{ displayDpi }}</span>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- ELEMENTS TAB -->
+                <div *ngIf="activeTab === 'elements'" class="tab-content">
+                    <!-- Background -->
+                    <section class="tool-section">
+                        <h3 class="section-title">Fondo</h3>
+                        <div class="background-controls">
+                            <label class="file-upload-btn">
+                                <span class="material-symbols-outlined">upload</span>
+                                <span>{{ backgroundImageSrc ? 'Cambiar imagen' : 'Subir imagen de fondo' }}</span>
+                                <input type="file" accept="image/*" (change)="onBackgroundImageChange($event)" hidden>
+                            </label>
+
+                            <div *ngIf="backgroundImageSrc" class="background-options">
+                                <div class="fit-buttons">
+                                    <button class="fit-btn" [class.active]="backgroundFit === 'cover'" 
+                                            (click)="updateBackgroundFit('cover')">Cover</button>
+                                    <button class="fit-btn" [class.active]="backgroundFit === 'contain'" 
+                                            (click)="updateBackgroundFit('contain')">Contain</button>
+                                    <button class="fit-btn" [class.active]="backgroundFit === 'fill'" 
+                                            (click)="updateBackgroundFit('fill')">Fill</button>
+                                </div>
+                                <button class="btn-remove" (click)="removeBackgroundImage()">
+                                    <span class="material-symbols-outlined">delete</span>
+                                    Quitar fondo
+                                </button>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Add Elements -->
+                    <section class="tool-section">
+                        <h3 class="section-title">Agregar Elementos</h3>
+                        <div class="element-grid">
+                            <button class="element-btn" (click)="addTextElement()">
+                                <span class="material-symbols-outlined">text_fields</span>
+                                <span>Texto</span>
+                            </button>
+                            <button class="element-btn" (click)="addHeadingElement()">
+                                <span class="material-symbols-outlined">title</span>
+                                <span>Título</span>
+                            </button>
+                            <button class="element-btn" (click)="addImage()">
+                                <span class="material-symbols-outlined">image</span>
+                                <span>Imagen</span>
+                            </button>
+                            <button class="element-btn" (click)="addQRElement()">
+                                <span class="material-symbols-outlined">qr_code_2</span>
+                                <span>Código QR</span>
+                            </button>
+                        </div>
+                    </section>
+
+                    <!-- Shapes -->
+                    <section class="tool-section">
+                        <h3 class="section-title">Formas Básicas</h3>
+                        <div class="element-grid">
+                            <button class="element-btn" (click)="addShapeElement('rectangle')">
+                                <span class="material-symbols-outlined">rectangle</span>
+                                <span>Rectángulo</span>
+                            </button>
+                            <button class="element-btn" (click)="addShapeElement('circle')">
+                                <span class="material-symbols-outlined">circle</span>
+                                <span>Círculo</span>
+                            </button>
+                            <button class="element-btn" (click)="addShapeElement('ellipse')">
+                                <span class="material-symbols-outlined">radio_button_unchecked</span>
+                                <span>Elipse</span>
+                            </button>
+                            <button class="element-btn" (click)="addShapeElement('triangle')">
+                                <span class="material-symbols-outlined">change_history</span>
+                                <span>Triángulo</span>
+                            </button>
+                        </div>
+                    </section>
+
+                    <!-- Advanced Shapes -->
+                    <section class="tool-section">
+                        <h3 class="section-title">Formas Avanzadas</h3>
+                        <div class="element-grid">
+                            <button class="element-btn" (click)="addShapeElement('diamond')">
+                                <span class="material-symbols-outlined">diamond</span>
+                                <span>Rombo</span>
+                            </button>
+                            <button class="element-btn" (click)="addShapeElement('star')">
+                                <span class="material-symbols-outlined">star</span>
+                                <span>Estrella</span>
+                            </button>
+                            <button class="element-btn" (click)="addShapeElement('pentagon')">
+                                <span class="material-symbols-outlined">pentagon</span>
+                                <span>Pentágono</span>
+                            </button>
+                            <button class="element-btn" (click)="addShapeElement('hexagon')">
+                                <span class="material-symbols-outlined">hexagon</span>
+                                <span>Hexágono</span>
+                            </button>
+                            <button class="element-btn" (click)="addShapeElement('arrow')">
+                                <span class="material-symbols-outlined">arrow_forward</span>
+                                <span>Flecha</span>
+                            </button>
+                        </div>
+                    </section>
+
+                    <!-- Lines -->
+                    <section class="tool-section">
+                        <h3 class="section-title">Líneas</h3>
+                        <div class="element-grid">
+                            <button class="element-btn" (click)="addShapeElement('line')">
+                                <span class="material-symbols-outlined">horizontal_rule</span>
+                                <span>Línea</span>
+                            </button>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- VARIABLES TAB -->
+                <div *ngIf="activeTab === 'variables'" class="tab-content">
+                    <section class="tool-section">
+                        <h3 class="section-title">Variables Dinámicas</h3>
+                        <p class="helper-text">Selecciona un elemento y haz clic en una variable para insertarla.</p>
+                        
+                        <!-- Buscador de variables -->
+                        <div class="variable-search">
+                            <span class="material-symbols-outlined search-icon">search</span>
+                            <input type="text" 
+                                   class="variable-search-input" 
+                                   placeholder="Buscar variable..."
+                                   [(ngModel)]="variableSearchTerm"
+                                   (input)="filterVariables()">
+                            <button *ngIf="variableSearchTerm" 
+                                    class="clear-search-btn" 
+                                    (click)="clearVariableSearch()">
+                                <span class="material-symbols-outlined">close</span>
+                            </button>
+                        </div>
+
+                        <!-- Filtros por categoría -->
+                        <div class="variable-category-filters">
+                            <button class="category-filter-btn" 
+                                    [class.active]="selectedVariableCategory === 'all'"
+                                    (click)="filterByCategory('all')">
+                                Todas
+                            </button>
+                            <button class="category-filter-btn" 
+                                    [class.active]="selectedVariableCategory === 'participante'"
+                                    (click)="filterByCategory('participante')">
+                                <span class="material-symbols-outlined">person</span>
+                            </button>
+                            <button class="category-filter-btn" 
+                                    [class.active]="selectedVariableCategory === 'curso'"
+                                    (click)="filterByCategory('curso')">
+                                <span class="material-symbols-outlined">school</span>
+                            </button>
+                            <button class="category-filter-btn" 
+                                    [class.active]="selectedVariableCategory === 'institucion'"
+                                    (click)="filterByCategory('institucion')">
+                                <span class="material-symbols-outlined">domain</span>
+                            </button>
+                            <button class="category-filter-btn" 
+                                    [class.active]="selectedVariableCategory === 'media'"
+                                    (click)="filterByCategory('media')">
+                                <span class="material-symbols-outlined">image</span>
+                            </button>
+                        </div>
+                        
+                        <div *ngIf="filteredVariables.length === 0" class="empty-state">
+                            <span class="material-symbols-outlined">search_off</span>
+                            <p *ngIf="variableSearchTerm">No se encontraron variables</p>
+                            <p *ngIf="!variableSearchTerm">No hay variables disponibles</p>
+                        </div>
+
+                        <div class="variable-list">
+                            <button *ngFor="let variable of filteredVariables" 
+                                    class="variable-btn"
+                                    [class.variable-image]="variable.type === 'image'"
+                                    [class.variable-qr]="variable.type === 'qr'"
+                                    [disabled]="!canInsertVariable(variable)"
+                                    [title]="variable.description || variable.label"
+                                    (click)="insertVariable(variable)">
+                                <span class="material-symbols-outlined var-icon">{{ variable.icon || 'data_object' }}</span>
+                                <div class="var-info">
+                                    <span class="var-label">{{ variable.label }}</span>
+                                    <code class="var-code">{{"{{" + variable.name + "}}"}}</code>
+                                </div>
+                                <span *ngIf="variable.type === 'image'" class="var-type-badge type-image">IMG</span>
+                                <span *ngIf="variable.type === 'qr'" class="var-type-badge type-qr">QR</span>
+                            </button>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- LAYERS TAB -->
+                <div *ngIf="activeTab === 'layers'" class="tab-content">
+                    <section class="tool-section">
+                        <h3 class="section-title">Capas</h3>
+                        
+                        <div *ngIf="canvasObjects.length === 0" class="empty-state">
+                            <span class="material-symbols-outlined">layers</span>
+                            <p>No hay elementos en el lienzo</p>
+                        </div>
+
+                        <div class="layer-list">
+                            <div *ngFor="let obj of canvasObjects; let i = index" 
+                                 class="layer-item"
+                                 [class.selected]="selectedObject === obj"
+                                 (click)="selectLayer(obj)">
+                                <span class="material-symbols-outlined layer-icon">{{ getElementIcon(obj.type) }}</span>
+                                <span class="layer-name">{{ obj.elementName || 'Elemento ' + (canvasObjects.length - i) }}</span>
+                                <div class="layer-actions">
+                                    <button class="btn-icon-xs" 
+                                            [class.active]="obj.visible !== false"
+                                            (click)="toggleLayerVisibility(obj); $event.stopPropagation()" 
+                                            title="Visibilidad">
+                                        <span class="material-symbols-outlined">
+                                            {{ obj.visible !== false ? 'visibility' : 'visibility_off' }}
+                                        </span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Resizer Left -->
+        <div *ngIf="showToolPanel" class="panel-resizer" (pointerdown)="startSidebarResize('left', $event)"></div>
+
+        <!-- Toggle Left Panel Button -->
+        <button *ngIf="!showToolPanel" class="panel-toggle panel-toggle-left" (click)="showToolPanel = true">
+            <span class="material-symbols-outlined">chevron_right</span>
+        </button>
+
+        <!-- CANVAS AREA -->
+        <main class="canvas-container">
+            <!-- Zoom Controls -->
+            <div class="zoom-controls">
+                <button class="btn-zoom" (click)="zoomOut()" title="Alejar">
+                    <span class="material-symbols-outlined">remove</span>
+                </button>
+                <select class="zoom-select" [value]="zoomLevel" (change)="setZoom(+$any($event.target).value)">
+                    <option *ngFor="let level of zoomLevels" [value]="level">{{ level }}%</option>
+                </select>
+                <button class="btn-zoom" (click)="zoomIn()" title="Acercar">
+                    <span class="material-symbols-outlined">add</span>
+                </button>
+                <button class="btn-zoom" (click)="resetZoom()" title="Restablecer zoom">
+                    <span class="material-symbols-outlined">fit_screen</span>
+                </button>
+                <div class="zoom-separator"></div>
+                <button class="btn-zoom" [class.active]="isPanMode" (click)="togglePanMode()" title="Mover documento (pan)">
+                    <span class="material-symbols-outlined">pan_tool</span>
+                </button>
+                <button class="btn-zoom" (click)="resetCanvasPosition()" title="Centrar documento">
+                    <span class="material-symbols-outlined">center_focus_strong</span>
+                </button>
+            </div>
+
+            <!-- Canvas Wrapper -->
+            <div #canvasScrollContainer class="canvas-scroll" [class.pan-mode]="isPanMode">
+                <div class="canvas-wrapper" [class.pan-active]="isPanMode">
+                    <canvas #fabricCanvas></canvas>
+                </div>
+                <!-- Pan Mode Indicator -->
+                <div *ngIf="isPanMode" class="pan-mode-indicator">
+                    <span class="material-symbols-outlined">pan_tool</span>
+                    <span>Modo navegación - Arrastra para desplazar la vista</span>
+                </div>
+            </div>
+
+            <!-- Status Bar -->
+            <div class="status-bar">
+                <div class="status-left">
+                    <span *ngIf="isPanMode" class="status-item status-mode">
+                        <span class="material-symbols-outlined">pan_tool</span>
+                        Navegación
+                    </span>
+                    <span *ngIf="selectedObject && !isPanMode" class="status-item">
+                        <span class="material-symbols-outlined">{{ getElementIcon(selectedObject.type) }}</span>
+                        {{ selectedObject.elementName }}
+                    </span>
+                    <span *ngIf="!selectedObject && !isPanMode" class="status-item">
+                        Haz clic en un elemento para seleccionarlo. Doble clic en texto para editar.
+                    </span>
+                </div>
+                <div class="status-right">
+                    <span *ngIf="showGrid" class="status-item status-active" title="Rejilla activa">
+                        <span class="material-symbols-outlined">grid_4x4</span>
+                    </span>
+                    <span *ngIf="snapToGrid && showGrid" class="status-item status-snap" title="Snap a rejilla activo">
+                        <span class="material-symbols-outlined">apps</span>
+                    </span>
+                    <span *ngIf="showSmartGuides" class="status-item status-active" title="Guías inteligentes activas">
+                        <span class="material-symbols-outlined">straighten</span>
+                    </span>
+                    <span class="status-item">{{ canvasWidth }} × {{ canvasHeight }} px</span>
+                    <span class="status-item">Elementos: {{ canvasObjects.length }}</span>
+                </div>
+            </div>
+        </main>
+
+        <!-- Resizer Right (visible only when a selection exists) -->
+        <div *ngIf="showPropertiesPanel && selectedObject" class="panel-resizer" (pointerdown)="startSidebarResize('right', $event)"></div>
+
+        <!-- RIGHT PANEL - Properties (visible only when an element is selected) -->
+        <aside *ngIf="showPropertiesPanel && selectedObject" class="panel panel-right" [style.width.px]="rightPanelWidth">
+            <div class="panel-header">
+                <h2>Propiedades</h2>
+                <button class="btn-icon-sm" (click)="showPropertiesPanel = false" title="Ocultar panel">
+                    <span class="material-symbols-outlined">chevron_right</span>
+                </button>
+            </div>
+
+            <div class="panel-content">
+                <!-- Empty State when no element selected -->
+                <div *ngIf="!selectedObject" class="empty-state-panel">
+                    <span class="material-symbols-outlined">touch_app</span>
+                    <h4>Ningún elemento seleccionado</h4>
+                    <p>Haz clic en un elemento del lienzo para ver y editar sus propiedades.</p>
+                    <p class="hint">Doble clic en texto para editar directamente.</p>
+                </div>
+
+                <form *ngIf="selectedObject" [formGroup]="elementPropertiesForm" class="properties-form">
+                    <!-- Element Name -->
+                    <section class="prop-section">
+                        <div class="form-field">
+                            <app-input-enhanced
+                                type="text"
+                                label="Nombre del elemento"
+                                controlName="name"
+                                (keydown)="$event.key === ' ' ? $event.preventDefault() : null"
+                                (inputEvent)="onPropertyChange('name', elementPropertiesForm.get('name')?.value)">
+                            </app-input-enhanced>
+                        </div>
+                    </section>
+
+                    <!-- Transform -->
+                    <section class="prop-section">
+                        <h3 class="section-title">Posición y Tamaño</h3>
+                        <div class="form-grid-2">
+                            <app-input-enhanced
+                                type="number"
+                                label="X (px)"
+                                controlName="x"
+                                size="sm"
+                                (inputEvent)="onPropertyChange('x', +elementPropertiesForm.get('x')?.value)">
+                            </app-input-enhanced>
+                            <app-input-enhanced
+                                type="number"
+                                label="Y (px)"
+                                controlName="y"
+                                size="sm"
+                                (inputEvent)="onPropertyChange('y', +elementPropertiesForm.get('y')?.value)">
+                            </app-input-enhanced>
+                            <app-input-enhanced
+                                type="number"
+                                label="Ancho (px)"
+                                controlName="width"
+                                size="sm"
+                                (inputEvent)="onPropertyChange('width', +elementPropertiesForm.get('width')?.value)">
+                            </app-input-enhanced>
+                            <app-input-enhanced
+                                type="number"
+                                label="Alto (px)"
+                                controlName="height"
+                                size="sm"
+                                (inputEvent)="onPropertyChange('height', +elementPropertiesForm.get('height')?.value)">
+                            </app-input-enhanced>
+                        </div>
+                        <div class="form-grid-2">
+                            <app-input-enhanced
+                                type="number"
+                                label="Rotación (°)"
+                                controlName="rotation"
+                                size="sm"
+                                [min]="-360"
+                                [max]="360"
+                                (inputEvent)="onPropertyChange('rotation', +elementPropertiesForm.get('rotation')?.value)">
+                            </app-input-enhanced>
+                            <app-input-enhanced
+                                type="number"
+                                label="Opacidad (%)"
+                                controlName="opacity"
+                                [min]="0"
+                                [max]="100"
+                                size="sm"
+                                (inputEvent)="onPropertyChange('opacity', +elementPropertiesForm.get('opacity')?.value)">
+                            </app-input-enhanced>
+                        </div>
+                    </section>
+
+                    <!-- Text Properties -->
+                    <section *ngIf="isTextSelected()" class="prop-section">
+                        <h3 class="section-title">Texto</h3>
+                        <div class="form-field">
+                            <label>Contenido</label>
+                            <textarea formControlName="content" rows="3"
+                                      (input)="onPropertyChange('content', $any($event.target).value)"></textarea>
+                            <span class="field-hint">Usa {{"{{variable}}"}} para datos dinámicos</span>
+                        </div>
+                        
+                        <!-- Font Family & Size -->
+                        <div class="form-grid-2">
+                            <app-select
+                                label="Fuente"
+                                controlName="fontFamily"
+                                [options]="fontFamilyOptions"
+                                (change)="onPropertyChange('fontFamily', $event)">
+                            </app-select>
+                            <app-select
+                                label="Tamaño"
+                                controlName="fontSize"
+                                [options]="fontSizeOptions"
+                                (change)="onPropertyChange('fontSize', $event)">
+                            </app-select>
+                        </div>
+
+                        <!-- Text Style Buttons -->
+                        <div class="form-field">
+                            <label>Estilo</label>
+                            <div class="style-buttons">
+                                <button type="button" class="style-btn" 
+                                        [class.active]="elementPropertiesForm.get('fontWeight')?.value === 'bold'"
+                                        (click)="toggleBold()" title="Negrita">
+                                    <span class="material-symbols-outlined">format_bold</span>
+                                </button>
+                                <button type="button" class="style-btn"
+                                        [class.active]="elementPropertiesForm.get('fontStyle')?.value === 'italic'"
+                                        (click)="toggleItalic()" title="Cursiva">
+                                    <span class="material-symbols-outlined">format_italic</span>
+                                </button>
+                                <button type="button" class="style-btn"
+                                        [class.active]="elementPropertiesForm.get('textDecoration')?.value === 'underline'"
+                                        (click)="toggleUnderline()" title="Subrayado">
+                                    <span class="material-symbols-outlined">format_underlined</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Text Alignment -->
+                        <div class="form-field">
+                            <label>Alineación</label>
+                            <div class="style-buttons">
+                                <button type="button" class="style-btn" 
+                                        [class.active]="elementPropertiesForm.get('textAlign')?.value === 'left'"
+                                        (click)="setTextAlign('left')" title="Izquierda">
+                                    <span class="material-symbols-outlined">format_align_left</span>
+                                </button>
+                                <button type="button" class="style-btn"
+                                        [class.active]="elementPropertiesForm.get('textAlign')?.value === 'center'"
+                                        (click)="setTextAlign('center')" title="Centro">
+                                    <span class="material-symbols-outlined">format_align_center</span>
+                                </button>
+                                <button type="button" class="style-btn"
+                                        [class.active]="elementPropertiesForm.get('textAlign')?.value === 'right'"
+                                        (click)="setTextAlign('right')" title="Derecha">
+                                    <span class="material-symbols-outlined">format_align_right</span>
+                                </button>
+                                <button type="button" class="style-btn"
+                                        [class.active]="elementPropertiesForm.get('textAlign')?.value === 'justify'"
+                                        (click)="setTextAlign('justify')" title="Justificado">
+                                    <span class="material-symbols-outlined">format_align_justify</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Color -->
+                        <div class="form-field">
+                            <label>Color</label>
+                            <div class="color-palette">
+                                <button type="button" *ngFor="let color of institutionalColors"
+                                        class="color-swatch"
+                                        [style.background]="color"
+                                        [class.active]="elementPropertiesForm.get('color')?.value === color"
+                                        (click)="setTextColor(color)"
+                                        [title]="color">
+                                </button>
+                                <input type="color" class="custom-color" 
+                                       [value]="elementPropertiesForm.get('color')?.value"
+                                       (input)="setTextColor($any($event.target).value)"
+                                       title="Color personalizado">
+                            </div>
+                        </div>
+
+                        <!-- Line Height & Letter Spacing -->
+                        <div class="form-grid-2">
+                            <app-input-enhanced
+                                type="number"
+                                label="Interlineado"
+                                controlName="lineHeight"
+                                size="sm"
+                                (inputEvent)="onPropertyChange('lineHeight', +elementPropertiesForm.get('lineHeight')?.value)">
+                            </app-input-enhanced>
+                            <app-input-enhanced
+                                type="number"
+                                label="Espaciado"
+                                controlName="charSpacing"
+                                size="sm"
+                                (inputEvent)="onPropertyChange('charSpacing', +elementPropertiesForm.get('charSpacing')?.value)">
+                            </app-input-enhanced>
+                        </div>
+                    </section>
+
+                    <!-- Shape Properties -->
+                    <section *ngIf="isShapeSelected()" class="prop-section">
+                        <h3 class="section-title">Forma</h3>
+                        <div class="form-field">
+                            <label>Color de relleno</label>
+                            <div class="color-palette">
+                                <button type="button" *ngFor="let color of institutionalColors"
+                                        class="color-swatch"
+                                        [style.background]="color"
+                                        [class.active]="elementPropertiesForm.get('fill')?.value === color"
+                                        (click)="onPropertyChange('fill', color)"
+                                        [title]="color">
+                                </button>
+                                <input type="color" class="custom-color" 
+                                       [value]="elementPropertiesForm.get('fill')?.value"
+                                       (input)="onPropertyChange('fill', $any($event.target).value)"
+                                       title="Color personalizado">
+                            </div>
+                        </div>
+                        <div class="form-field">
+                            <label>Color de borde</label>
+                            <div class="color-palette">
+                                <button type="button" *ngFor="let color of institutionalColors"
+                                        class="color-swatch"
+                                        [style.background]="color"
+                                        [class.active]="elementPropertiesForm.get('stroke')?.value === color"
+                                        (click)="onPropertyChange('stroke', color)"
+                                        [title]="color">
+                                </button>
+                                <input type="color" class="custom-color" 
+                                       [value]="elementPropertiesForm.get('stroke')?.value"
+                                       (input)="onPropertyChange('stroke', $any($event.target).value)"
+                                       title="Color personalizado">
+                            </div>
+                        </div>
+                        <div class="form-grid-2">
+                            <app-input-enhanced
+                                type="number"
+                                label="Grosor de borde"
+                                controlName="strokeWidth"
+                                size="sm"
+                                (inputEvent)="onPropertyChange('strokeWidth', +elementPropertiesForm.get('strokeWidth')?.value)">
+                            </app-input-enhanced>
+                            <app-input-enhanced *ngIf="selectedObject?.type === 'rect'"
+                                type="number"
+                                label="Radio de esquina"
+                                controlName="borderRadius"
+                                size="sm"
+                                (inputEvent)="onPropertyChange('borderRadius', +elementPropertiesForm.get('borderRadius')?.value)">
+                            </app-input-enhanced>
+                        </div>
+
+                        <!-- Tipo de línea del borde -->
+                        <div class="form-field">
+                            <label>Tipo de borde</label>
+                            <div class="style-buttons">
+                                <button type="button" class="style-btn"
+                                        [class.active]="elementPropertiesForm.get('strokeDashArray')?.value === 'solid'"
+                                        (click)="onPropertyChange('strokeDashArray', 'solid')" 
+                                        title="Continuo">
+                                    <span class="material-symbols-outlined">remove</span>
+                                </button>
+                                <button type="button" class="style-btn"
+                                        [class.active]="elementPropertiesForm.get('strokeDashArray')?.value === 'dashed'"
+                                        (click)="onPropertyChange('strokeDashArray', 'dashed')" 
+                                        title="Discontinuo">
+                                    <span class="material-symbols-outlined">line_style</span>
+                                </button>
+                                <button type="button" class="style-btn"
+                                        [class.active]="elementPropertiesForm.get('strokeDashArray')?.value === 'dotted'"
+                                        (click)="onPropertyChange('strokeDashArray', 'dotted')" 
+                                        title="Punteado">
+                                    <span class="material-symbols-outlined">more_horiz</span>
+                                </button>
+                                <button type="button" class="style-btn"
+                                        [class.active]="elementPropertiesForm.get('strokeDashArray')?.value === 'dashdot'"
+                                        (click)="onPropertyChange('strokeDashArray', 'dashdot')" 
+                                        title="Guión-punto">
+                                    <span class="material-symbols-outlined">stacked_line_chart</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <hr class="section-divider">
+                        <h4 class="subsection-title">Transformación</h4>
+
+                        <!-- Volteo -->
+                        <div class="form-field">
+                            <label>Voltear</label>
+                            <div class="style-buttons">
+                                <button type="button" class="style-btn"
+                                        [class.active]="elementPropertiesForm.get('flipX')?.value"
+                                        (click)="onPropertyChange('flipX', !elementPropertiesForm.get('flipX')?.value)" 
+                                        title="Voltear horizontalmente">
+                                    <span class="material-symbols-outlined">flip</span>
+                                </button>
+                                <button type="button" class="style-btn"
+                                        [class.active]="elementPropertiesForm.get('flipY')?.value"
+                                        (click)="onPropertyChange('flipY', !elementPropertiesForm.get('flipY')?.value)" 
+                                        title="Voltear verticalmente">
+                                    <span class="material-symbols-outlined" style="transform: rotate(90deg)">flip</span>
+                                </button>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Image Properties -->
+                    <section *ngIf="isImageSelected() && !isQRSelected()" class="prop-section">
+                        <h3 class="section-title">Imagen</h3>
+                        
+                        <!-- Image Fit (siempre visible primero) -->
+                        <div class="form-field">
+                            <label>Ajuste</label>
+                            <div class="style-buttons">
+                                <button type="button" class="style-btn wide"
+                                        [class.active]="elementPropertiesForm.get('imageFit')?.value === 'contain'"
+                                        (click)="onPropertyChange('imageFit', 'contain')" 
+                                        title="Contener">
+                                    Contener
+                                </button>
+                                <button type="button" class="style-btn wide"
+                                        [class.active]="elementPropertiesForm.get('imageFit')?.value === 'cover'"
+                                        (click)="onPropertyChange('imageFit', 'cover')" 
+                                        title="Cubrir">
+                                    Cubrir
+                                </button>
+                                <button type="button" class="style-btn wide"
+                                        [class.active]="elementPropertiesForm.get('imageFit')?.value === 'fill'"
+                                        (click)="onPropertyChange('imageFit', 'fill')" 
+                                        title="Estirar">
+                                    Estirar
+                                </button>
+                            </div>
+                        </div>
+
+                        <hr class="section-divider">
+                        <h4 class="subsection-title">Origen de la imagen</h4>
+
+                        <!-- Modo: Variable o Imagen subida -->
+                        <div class="form-field mb-4">
+                            <label class="checkbox-label">
+                                <input type="checkbox" formControlName="isDynamic"
+                                       (change)="onPropertyChange('isDynamic', $any($event.target).checked)">
+                                <span>Usar variable dinámica</span>
+                            </label>
+                        </div>
+
+                        <!-- Selector de variable (solo si isDynamic) -->
+                        <div class="form-field" *ngIf="elementPropertiesForm.get('isDynamic')?.value">
+                            <label>Variable de imagen</label>
+                            <select formControlName="variableName"
+                                    (change)="onPropertyChange('variableName', $any($event.target).value)">
+                                <option value="">Seleccionar variable...</option>
+                                <ng-container *ngFor="let variable of availableVariables">
+                                    <option *ngIf="variable.type === 'image'" [value]="variable.name">{{ variable.label }}</option>
+                                </ng-container>
+                            </select>
+                            <span class="field-hint">La imagen se cargará desde la API al generar</span>
+                        </div>
+
+                        <!-- Subir imagen (solo si NO isDynamic) -->
+                        <ng-container *ngIf="!elementPropertiesForm.get('isDynamic')?.value">
+                            <!-- Preview -->
+                            <div class="image-preview-container" *ngIf="elementPropertiesForm.get('imageSrc')?.value">
+                                <img [src]="elementPropertiesForm.get('imageSrc')?.value" 
+                                     alt="Vista previa" 
+                                     class="image-preview">
+                            </div>
+
+                            <!-- Upload button -->
+                            <div class="form-field">
+                                <label class="file-upload-btn compact">
+                                    <span class="material-symbols-outlined">upload</span>
+                                    <span>{{ elementPropertiesForm.get('imageSrc')?.value ? 'Cambiar imagen' : 'Subir imagen' }}</span>
+                                    <input type="file" accept="image/*" (change)="onReplaceImage($event)" hidden>
+                                </label>
+                            </div>
+                        </ng-container>
+                    </section>
+
+                    <!-- QR Properties -->
+                    <section *ngIf="isQRSelected()" class="prop-section">
+                        <h3 class="section-title">Código QR</h3>
+                        
+                        <!-- QR Content -->
+                        <div class="form-field">
+                            <app-input-enhanced
+                                type="text"
+                                label="Contenido del QR"
+                                controlName="qrContent"
+                                placeholder="URL o texto para el QR"
+                                helperText="URL, texto o variable dinámica"
+                                (inputEvent)="onPropertyChange('qrContent', elementPropertiesForm.get('qrContent')?.value)">
+                            </app-input-enhanced>
+                        </div>
+
+                        <!-- QR Size -->
+                        <div class="form-field">
+                            <app-input-enhanced
+                                type="number"
+                                label="Tamaño del QR (px)"
+                                controlName="qrSize"
+                                size="sm"
+                                (inputEvent)="onPropertyChange('qrSize', +elementPropertiesForm.get('qrSize')?.value)">
+                            </app-input-enhanced>
+                        </div>
+
+                        <!-- Dynamic Variable -->
+                        <div class="form-field mb-4">
+                            <label class="checkbox-label">
+                                <input type="checkbox" formControlName="isDynamic"
+                                       (change)="onPropertyChange('isDynamic', $any($event.target).checked)">
+                                <span>Usar variable dinámica</span>
+                            </label>
+                        </div>
+
+                        <div class="form-field" *ngIf="elementPropertiesForm.get('isDynamic')?.value">
+                            <label>Variable</label>
+                            <select formControlName="variableName"
+                                    (change)="onPropertyChange('variableName', $any($event.target).value)">
+                                <option value="">Seleccionar variable...</option>
+                                <option *ngFor="let variable of availableVariables" [value]="variable.name">
+                                    {{ variable.label }}
+                                </option>
+                            </select>
+                        </div>
+
+                        <!-- Regenerate QR Button -->
+                        <div class="form-field">
+                            <button type="button" class="btn-action" (click)="regenerateQR()">
+                                <span class="material-symbols-outlined">refresh</span>
+                                Regenerar QR
+                            </button>
+                        </div>
+                    </section>
+
+                    <!-- Alignment on Canvas -->
+                    <section class="prop-section">
+                        <h3 class="section-title">Alinear en Lienzo</h3>
+                        <div class="form-field">
+                            <label>Horizontal</label>
+                            <div class="style-buttons">
+                                <button type="button" class="style-btn" (click)="alignSelected('left')" title="Izquierda">
+                                    <span class="material-symbols-outlined">align_horizontal_left</span>
+                                </button>
+                                <button type="button" class="style-btn" (click)="alignSelected('center')" title="Centro">
+                                    <span class="material-symbols-outlined">align_horizontal_center</span>
+                                </button>
+                                <button type="button" class="style-btn" (click)="alignSelected('right')" title="Derecha">
+                                    <span class="material-symbols-outlined">align_horizontal_right</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="form-field">
+                            <label>Vertical</label>
+                            <div class="style-buttons">
+                                <button type="button" class="style-btn" (click)="alignSelected('top')" title="Arriba">
+                                    <span class="material-symbols-outlined">align_vertical_top</span>
+                                </button>
+                                <button type="button" class="style-btn" (click)="alignSelected('middle')" title="Medio">
+                                    <span class="material-symbols-outlined">align_vertical_center</span>
+                                </button>
+                                <button type="button" class="style-btn" (click)="alignSelected('bottom')" title="Abajo">
+                                    <span class="material-symbols-outlined">align_vertical_bottom</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="form-field">
+                            <label>Distribuir (selección múltiple)</label>
+                            <div class="style-buttons">
+                                <button type="button" class="style-btn wide" (click)="distributeHorizontally()" title="Distribuir horizontalmente">
+                                    <span class="material-symbols-outlined">horizontal_distribute</span>
+                                    <span class="btn-label">Horizontal</span>
+                                </button>
+                                <button type="button" class="style-btn wide" (click)="distributeVertically()" title="Distribuir verticalmente">
+                                    <span class="material-symbols-outlined">vertical_distribute</span>
+                                    <span class="btn-label">Vertical</span>
+                                </button>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Actions -->
+                    <section class="prop-section actions-section">
+                        <button class="btn-action" (click)="lockSelected()">
+                            <span class="material-symbols-outlined">
+                                {{ elementPropertiesForm.get('locked')?.value ? 'lock' : 'lock_open' }}
+                            </span>
+                            {{ elementPropertiesForm.get('locked')?.value ? 'Desbloquear' : 'Bloquear' }}
+                        </button>
+                        <button class="btn-action" (click)="duplicateSelected()">
+                            <span class="material-symbols-outlined">content_copy</span>
+                            Duplicar
+                        </button>
+                        <button class="btn-action btn-danger" (click)="deleteSelected()">
+                            <span class="material-symbols-outlined">delete</span>
+                            Eliminar
+                        </button>
+                    </section>
+                </form>
+            </div>
+        </aside>
+
+        <!-- Toggle Right Panel Button (only shown when an element is selected) -->
+        <button *ngIf="!showPropertiesPanel && selectedObject" 
+                class="panel-toggle panel-toggle-right" 
+                (click)="showPropertiesPanel = true">
+            <span class="material-symbols-outlined">chevron_left</span>
+        </button>
+    </div>
+</div>
+
+<!-- PDF Preview Modal -->
+<div class="pdf-modal-overlay" *ngIf="showPDFPreview" (click)="closePDFPreview()">
+    <div class="pdf-modal" (click)="$event.stopPropagation()">
+        <!-- Modal Header -->
+        <div class="pdf-modal-header">
+            <div class="pdf-modal-title">
+                <div class="pdf-icon-wrapper">
+                    <span class="material-symbols-outlined">picture_as_pdf</span>
+                </div>
+                <div class="pdf-title-text">
+                    <h2>Vista Previa del Documento</h2>
+                    <span class="pdf-subtitle">{{ documentForm.get('name')?.value || 'Sin título' }}</span>
+                </div>
+            </div>
+            <div class="pdf-modal-actions">
+                <button class="pdf-action-btn" (click)="printPDF()" title="Imprimir">
+                    <span class="material-symbols-outlined">print</span>
+                </button>
+                <button class="pdf-action-btn primary" (click)="downloadPDF()" title="Descargar PDF">
+                    <span class="material-symbols-outlined">download</span>
+                </button>
+                <button class="pdf-close-btn" (click)="closePDFPreview()" title="Cerrar">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Modal Body - PDF Viewer -->
+        <div class="pdf-modal-body">
+            <!-- Loading State -->
+            <div *ngIf="isGeneratingPDF" class="pdf-loading-state">
+                <div class="pdf-loading-animation">
+                    <div class="pdf-loading-icon">
+                        <span class="material-symbols-outlined">description</span>
+                    </div>
+                    <div class="pdf-loading-progress"></div>
+                </div>
+                <h3>Generando documento...</h3>
+                <p>Esto puede tomar unos segundos</p>
+            </div>
+
+            <!-- PDF Frame -->
+            <div *ngIf="!isGeneratingPDF && pdfPreviewUrl" class="pdf-viewer-wrapper">
+                <iframe 
+                    [src]="pdfPreviewUrl" 
+                    class="pdf-viewer-frame"
+                    title="Vista previa del PDF">
+                </iframe>
+            </div>
+
+            <!-- Error State -->
+            <div *ngIf="!isGeneratingPDF && !pdfPreviewUrl" class="pdf-error-state">
+                <span class="material-symbols-outlined">error_outline</span>
+                <h3>No se pudo generar la vista previa</h3>
+                <p>Intenta nuevamente o descarga el documento directamente</p>
+                <button class="pdf-retry-btn" (click)="previewPDF()">
+                    <span class="material-symbols-outlined">refresh</span>
+                    Reintentar
+                </button>
+            </div>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="pdf-modal-footer">
+            <div class="pdf-info-badge">
+                <span class="material-symbols-outlined">info</span>
+                <span>Vista previa con datos de ejemplo. Las variables se sustituirán con datos reales al generar.</span>
+            </div>
+        </div>
+    </div>
+</div>

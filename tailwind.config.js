@@ -3,6 +3,15 @@ module.exports = {
   content: [
     "./src/**/*.{html,ts}",
   ],
+  safelist: [
+    'bg-primary-700',
+    'bg-secondary-500',
+    'rounded-full',
+    'rounded-xl',
+    'text-white',
+    'hover:text-primary-100',
+    'text-primary-200',
+  ],
   theme: {
     extend: {
       colors: {

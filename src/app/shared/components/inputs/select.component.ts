@@ -408,9 +408,10 @@ export class SelectComponent implements OnInit, AfterViewInit, OnChanges {
     // Setup validators
     this.setupValidators();
 
-    // Watch for value changes
-    if (this.control!.value) {
-      this.updateSelectedOption(this.control!.value);
+    // Watch for value changes - Siempre intentar actualizar la opción seleccionada
+    const currentValue = this.control!.value;
+    if (currentValue !== null && currentValue !== undefined) {
+      this.updateSelectedOption(currentValue);
     }
 
     this.control!.valueChanges.subscribe(value => {
