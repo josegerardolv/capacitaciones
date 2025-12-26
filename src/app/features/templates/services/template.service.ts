@@ -8,6 +8,7 @@ export class TemplateService {
     {
       id: 1,
       name: 'Constancia Básica',
+      claveConcepto: 'CB-001',
       description: 'Template básico para constancias de participación',
       category: 'Participación',
       pageConfig: {

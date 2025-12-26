@@ -3,12 +3,16 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterModule, ActivatedRoute } from '@angular/router';
 import { InstitutionalTableComponent, TableColumn, TableConfig } from '../../../../shared/components/institutional-table/institutional-table.component';
 import { InstitutionalButtonComponent } from '../../../../shared/components/buttons/institutional-button.component';
+import { InstitutionalCardComponent } from '../../../../shared/components/institutional-card/institutional-card.component';
+import { BreadcrumbComponent } from '../../../../shared/components/breadcrumb/breadcrumb.component';
+import { BreadcrumbItem } from '../../../../shared/components/breadcrumb/breadcrumb.model';
 import { TooltipDirective } from '../../../../shared/components/tooltip/tooltip.directive';
 import { TablePaginationComponent, PaginationConfig, PageChangeEvent } from '../../../../shared/components/table-pagination/table-pagination.component';
 import { ConfirmationModalComponent, ConfirmationConfig } from '../../../../shared/components/modals/confirmation-modal.component';
 import { AlertModalComponent, AlertConfig } from '../../../../shared/components/modals/alert-modal.component';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { FormsModule } from '@angular/forms';
+import { UniversalIconComponent } from "@/app/shared/components";
 
 interface Driver {
     id: number;
@@ -28,16 +32,19 @@ interface Driver {
     selector: 'app-group-drivers',
     standalone: true,
     imports: [
-        CommonModule,
-        InstitutionalTableComponent,
-        InstitutionalButtonComponent,
-        TablePaginationComponent,
-        RouterModule,
-        TooltipDirective,
-        ConfirmationModalComponent,
-        AlertModalComponent,
-        FormsModule
-    ],
+    CommonModule,
+    InstitutionalTableComponent,
+    InstitutionalCardComponent,
+    InstitutionalButtonComponent,
+    TablePaginationComponent,
+    RouterModule,
+    TooltipDirective,
+    ConfirmationModalComponent,
+    AlertModalComponent,
+    BreadcrumbComponent,
+    FormsModule,
+    UniversalIconComponent
+],
     templateUrl: './group-drivers.component.html'
 })
 export class GroupDriversComponent implements OnInit {
@@ -87,6 +94,13 @@ export class GroupDriversComponent implements OnInit {
         { id: 1, name: 'Juan Pérez', license: 'A123456789', curp: 'AAAA000000HDFXXX00', status: 'Pendiente', wantsTarjeton: false, coursePaymentStatus: 'Pagado' },
         { id: 2, name: 'María López', license: 'B987654321', curp: 'BBBB000000MDFXXX00', status: 'Pendiente', wantsTarjeton: true, coursePaymentStatus: 'Pendiente' },
         { id: 3, name: 'Carlos Ruiz', license: 'C123123123', curp: 'CCCC000000HDFXXX00', status: 'Aprobado', wantsTarjeton: true, paymentStatus: 'Pendiente', coursePaymentStatus: 'Pagado' },
+    ];
+
+    // Breadcrumb items
+    breadcrumbItems: BreadcrumbItem[] = [
+        { label: 'Cursos', url: '/cursos' },
+        { label: 'Grupos', url: '/cursos/grupos' },
+        { label: 'Personas' }
     ];
 
     constructor(

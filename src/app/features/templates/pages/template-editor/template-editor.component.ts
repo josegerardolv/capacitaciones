@@ -14,8 +14,8 @@ import { Subscription } from 'rxjs';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormBuilder, FormGroup, FormControl, ReactiveFormsModule, Validators, FormsModule } from '@angular/forms';
-import { DocumentsService } from '../../services/documents.service';
-import { Certificate, Tarjeton, EmbeddedTemplate } from '../../../../core/models/document.model';
+import { TemplateService } from '../../services/template.service';
+import { CertificateTemplate } from '../../../../core/models/template.model';
 import { CanvasElement, ElementType, TemplateVariable, PageConfig } from '../../../../core/models/template.model';
 import { InstitutionalButtonComponent } from '../../../../shared/components/buttons/institutional-button.component';
 import { PDFGeneratorService, PDFGeneratorInput } from '../../../../core/services/pdf-generator.service';
@@ -55,11 +55,10 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
     @ViewChild('fabricCanvas', { static: false }) canvasRef!: ElementRef<HTMLCanvasElement>;
     @ViewChild('canvasScrollContainer', { static: false }) canvasScrollRef!: ElementRef<HTMLDivElement>;
     
-    // Document state
+    // Document / Template state
     documentId: number | null = null;
-    documentType: 'certificate' | 'tarjeton' = 'certificate';
-    document: Certificate | Tarjeton | null = null;
-    template: EmbeddedTemplate | null = null;
+    // Usamos directamente plantillas (templates)
+    template: CertificateTemplate | null = null;
     
     // Fabric.js canvas
     private canvas!: fabric.Canvas;
@@ -216,7 +215,7 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
     constructor(
         private route: ActivatedRoute,
         private router: Router,
-        private documentsService: DocumentsService,
+        private templateService: TemplateService,
         private fb: FormBuilder,
         private cdr: ChangeDetectorRef,
         private ngZone: NgZone,
@@ -290,11 +289,7 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
     }
 
     ngOnInit(): void {
-        const url = this.router.url;
-        this.documentType = url.includes('certificados') ? 'certificate' : 'tarjeton';
-        
         this.documentId = this.route.snapshot.params['id'] ? +this.route.snapshot.params['id'] : null;
-        
         if (this.documentId) {
             this.loadDocument(this.documentId);
         }
@@ -583,20 +578,15 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
 
     // ===== DOCUMENT LOADING =====
     loadDocument(id: number): void {
-        const loadObs = this.documentType === 'certificate' 
-            ? this.documentsService.getCertificate(id)
-            : this.documentsService.getTarjeton(id);
-            
-        loadObs.subscribe(doc => {
-            if (doc) {
-                this.document = doc;
-                this.template = doc.template;
-                
+        this.templateService.getTemplate(id).subscribe(tpl => {
+            if (tpl) {
+                this.template = tpl;
+
                 this.documentForm.patchValue({
-                    name: doc.name,
-                    description: doc.description
+                    name: tpl.name,
+                    description: tpl.description
                 });
-                
+
                 // Wait for canvas initialization
                 const waitForCanvas = setInterval(() => {
                     if (this.isCanvasInitialized) {
@@ -2354,7 +2344,7 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
 
     // ===== SAVE =====
     saveTemplate(): void {
-        if (this.documentForm.invalid || !this.document || !this.template) {
+        if (this.documentForm.invalid || !this.template) {
             this.documentForm.markAllAsTouched();
             return;
         }
@@ -2364,28 +2354,19 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
         // Convert canvas objects back to CanvasElement format
         const elements: CanvasElement[] = this.canvasObjects.map(obj => this.fabricObjectToElement(obj)).filter(e => e !== null) as CanvasElement[];
         
-        const updatedTemplate: EmbeddedTemplate = {
-            ...this.template,
-            elements,
+        const updatedTemplatePayload = {
+            name: this.documentForm.value.name,
+            description: this.documentForm.value.description,
             pageConfig: {
-                ...this.template.pageConfig,
+                ...this.template!.pageConfig,
                 backgroundImage: this.backgroundImageSrc || undefined,
                 backgroundFit: this.backgroundFit
-            }
+            },
+            elements,
+            variables: this.template!.variables || []
         };
-        
-        const formValue = this.documentForm.value;
-        const documentData = {
-            name: formValue.name,
-            description: formValue.description,
-            template: updatedTemplate
-        };
-        
-        const saveObs = this.documentType === 'certificate'
-            ? this.documentsService.updateCertificate(this.document.id, documentData)
-            : this.documentsService.updateTarjeton(this.document.id, documentData);
-        
-        saveObs.subscribe({
+
+        this.templateService.updateTemplate(this.template!.id, updatedTemplatePayload).subscribe({
             next: () => {
                 this.isSaving = false;
                 this.cancel();
@@ -2472,8 +2453,7 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
     }
     
     cancel(): void {
-        const route = this.documentType === 'certificate' ? '/documentos/certificados' : '/documentos/tarjetones';
-        this.router.navigate([route]);
+        this.router.navigate(['/documentos/templates']);
     }
 
     // ===== HELPERS =====

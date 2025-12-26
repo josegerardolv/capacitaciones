@@ -53,19 +53,11 @@ export const SIDEBAR_MENU_CONFIG: MenuItem[] = [
     roles: ['ADMINISTRADOR', 'SUPER_ADMINISTRADOR', 'SUPERVISOR'],
     children: [
       {
-        id: 'certificados',
-        label: 'Certificados',
-        icon: 'award',
+        id: 'templates',
+        label: 'Templates',
+        icon: 'layers',
         iconType: 'bootstrap',
-        route: '/documentos/certificados',
-        roles: ['ADMINISTRADOR', 'SUPER_ADMINISTRADOR', 'SUPERVISOR']
-      },
-      {
-        id: 'tarjetones',
-        label: 'Tarjetones',
-        icon: 'card-heading',
-        iconType: 'bootstrap',
-        route: '/documentos/tarjetones',
+        route: '/documentos/templates',
         roles: ['ADMINISTRADOR', 'SUPER_ADMINISTRADOR', 'SUPERVISOR']
       }
     ]

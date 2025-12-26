@@ -1,7 +1,7 @@
 <div class="min-h-screen">
     <app-page-header
-        [title]="'Formatos de Certificados'"
-        [subtitle]="'Gestiona los formatos de certificados disponibles para los cursos'"
+        [title]="'Formatos de Templates'"
+        [subtitle]="'Gestiona los formatos reutilizables para los cursos'"
         [actionButton]="actionButtonConfig">
     </app-page-header>
 
@@ -13,7 +13,7 @@
             (pageChange)="onPageChange($event)">
         </app-table-pagination>
         <app-institutional-table
-            [data]="certificates"
+            [data]="templates"
             [columns]="tableColumns"    
             [config]="tableConfig">
         </app-institutional-table>
@@ -27,30 +27,40 @@
 </div>
 
 <!-- Modal de creación -->
-<app-modal-form *ngIf="createModalOpen && form"
+<!-- Modal unificado (crear / editar) -->
+<app-modal-form *ngIf="(createModalOpen || editModalOpen) && form"
     [formGroup]="form"
-    [isOpen]="createModalOpen"
-    [title]="'Nuevo Certificado'"
+    [isOpen]="createModalOpen || editModalOpen"
+    [title]="editModalOpen ? 'Editar Template' : 'Nuevo Template'"
     [isLoading]="isSaving"
-    (formSubmit)="onCreateSubmit($event)"
-    (modalClose)="createModalOpen = false">
+    (formSubmit)="editModalOpen ? onEditSubmit($event) : onCreateSubmit($event)"
+    (modalClose)="closeModal()">
 
-    <app-input-enhanced [control]="nameControl" label="Nombre" placeholder="Ingrese nombre" [required]="true"></app-input-enhanced>
-    <app-input-enhanced [control]="descriptionControl" label="Descripción" placeholder="Descripción breve" type="textarea"></app-input-enhanced>
+    <app-input-enhanced 
+        [control]="nameControl" 
+        label="Nombre" 
+        placeholder="Ingrese nombre" 
+        [required]="true">
+    </app-input-enhanced>
 
-</app-modal-form>
-
-<!-- Modal de edición -->
-<app-modal-form *ngIf="editModalOpen && form"
-    [formGroup]="form"
-    [isOpen]="editModalOpen"
-    [title]="'Editar Certificado'"
-    [isLoading]="isSaving"
-    (formSubmit)="onEditSubmit($event)"
-    (modalClose)="editModalOpen = false">
-
-    <app-input-enhanced [control]="nameControl" label="Nombre" placeholder="Ingrese nombre" [required]="true"></app-input-enhanced>
-    <app-input-enhanced [control]="descriptionControl" label="Descripción" placeholder="Descripción breve" type="textarea"></app-input-enhanced>
+    <app-input-enhanced 
+        [control]="claveConceptoControl" 
+        label="Clave de concepto" 
+        placeholder="Ingrese clave de concepto" 
+        [required]="false">
+    </app-input-enhanced>
+    <app-select
+        [control]="tipoControl"
+        [options]="[{ value: 'A', label: 'Tipo A' }, { value: 'B', label: 'Tipo B' }, { value: 'C', label: 'Tipo C' }]"
+        [size]="'md'"
+        [placeholder]="'Seleccione tipo'">
+    </app-select>
+    <app-input-enhanced 
+        [control]="descriptionControl" 
+        label="Descripción" 
+        placeholder="Descripción breve" 
+        type="textarea">
+    </app-input-enhanced>
 
 </app-modal-form>
 
@@ -58,7 +68,11 @@
 <ng-template #actionsTemplate let-item>
     <div class="flex items-center justify-center space-x-3">
         <app-institutional-button
-            [config]="{ variant: 'primary', size: 'small', icon: 'design_services', iconPosition: 'only' }"
+            [config]="{ 
+                variant: 'primary', 
+                size: 'small', 
+                icon: 'design_services', 
+                iconPosition: 'only' }"
             [appTooltip]="'Editar diseño visual'" tooltipPosition="top"
             (buttonClick)="editTemplateDesign(item)">
         </app-institutional-button>
@@ -70,7 +84,7 @@
         <app-institutional-button
             [config]="{ variant: 'danger', size: 'small', icon: 'delete', iconPosition: 'only' }"
             [appTooltip]="'Eliminar'" tooltipPosition="top"
-            (buttonClick)="deleteCertificate(item.id)">
+            (buttonClick)="deleteTemplate(item)">
         </app-institutional-button>
     </div>
 </ng-template>

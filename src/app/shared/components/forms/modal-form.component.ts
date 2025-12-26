@@ -23,7 +23,7 @@ export interface FormAction {
          (click)="onOverlayClick($event)">
       
       <!-- Contenedor del modal -->
-      <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden animate-modal-in border border-gray-100"
+      <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden animate-modal-in"
            [class.max-w-sm]="size === 'sm'"
            [class.max-w-lg]="size === 'md'"
            [class.max-w-2xl]="size === 'lg'"

@@ -12,7 +12,7 @@ import { LoadingModalComponent, LoadingConfig } from './loading-modal.component'
 import { GalleryModalComponent, GalleryItem } from './gallery-modal.component';
 import { SelectionModalComponent, SelectionOption, SelectionConfig } from './selection-modal.component';
 import { DrawerModalComponent, DrawerConfig } from './drawer-modal.component';
-import { FullscreenModalComponent, FullscreenConfig } from './fullscreen-modal.component';
+import { ModalComponent, ModalConfig } from './modal.component';
 import { TabModalComponent, TabModalTab, TabModalConfig } from './tab-modal.component';
 import { SettingsModalComponent, SettingsSection, SettingsModalConfig } from './settings-modal.component';
 
@@ -32,7 +32,7 @@ import { ModalFormComponent } from '../forms/modal-form.component';
     GalleryModalComponent,
     SelectionModalComponent,
     DrawerModalComponent,
-    FullscreenModalComponent,
+    ModalComponent,
     TabModalComponent,
     SettingsModalComponent,
     ModalFormComponent
@@ -463,7 +463,7 @@ import { ModalFormComponent } from '../forms/modal-form.component';
     </app-drawer-modal>
 
     <!-- Modal Fullscreen -->
-    <app-fullscreen-modal
+    <app-modal
       [isOpen]="fullscreenModalOpen"
       [config]="fullscreenConfig"
       (modalClose)="fullscreenModalOpen = false">
@@ -517,7 +517,7 @@ import { ModalFormComponent } from '../forms/modal-form.component';
           </button>
         </div>
       </div>
-    </app-fullscreen-modal>
+    </app-modal>
 
     <!-- Modal con Tabs -->
     <app-tab-modal
@@ -732,7 +732,7 @@ export class DemoModalesComponent implements OnInit {
     size: 'md'
   };
 
-  fullscreenConfig: FullscreenConfig = {
+  fullscreenConfig: ModalConfig = {
     title: 'Vista Completa',
     subtitle: 'Contenido en pantalla completa'
   };

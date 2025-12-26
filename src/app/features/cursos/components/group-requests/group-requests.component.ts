@@ -1,5 +1,6 @@
 import { Component, EventEmitter, Input, Output, OnChanges, SimpleChanges, ViewChild, TemplateRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormGroup, FormBuilder } from '@angular/forms'; // Added FormGroup and FormBuilder
 import { Group } from '../../../../core/models/group.model';
 import { InstitutionalButtonComponent } from '../../../../shared/components/buttons/institutional-button.component';
 import {
@@ -8,7 +9,9 @@ import {
     TableConfig,
     SelectionEvent
 } from '../../../../shared/components/institutional-table/institutional-table.component';
+import { TablePaginationComponent, PaginationConfig, PageChangeEvent } from '../../../../shared/components/table-pagination/table-pagination.component';
 import { ConfirmationModalComponent, ConfirmationConfig } from '../../../../shared/components/modals/confirmation-modal.component';
+import { ModalComponent } from '../../../../shared/components/modals/modal.component';
 
 interface Request {
     id: number;
@@ -22,7 +25,13 @@ interface Request {
 @Component({
     selector: 'app-group-requests',
     standalone: true,
-    imports: [CommonModule, InstitutionalButtonComponent, InstitutionalTableComponent, ConfirmationModalComponent],
+    imports: [
+        CommonModule, 
+        InstitutionalButtonComponent, 
+        InstitutionalTableComponent, 
+        ConfirmationModalComponent, 
+        TablePaginationComponent,
+        ModalComponent],
     templateUrl: './group-requests.component.html'
 })
 export class GroupRequestsComponent implements OnChanges {
@@ -45,6 +54,15 @@ export class GroupRequestsComponent implements OnChanges {
     };
 
     tableColumns: TableColumn[] = [];
+    paginationConfig: PaginationConfig = {
+            pageSize: 10,
+            totalItems: 0,
+            currentPage: 1,
+            pageSizeOptions: [10, 20, 50],
+            showInfo: true
+        };
+
+    dummyFormGroup: FormGroup; // Declared dummy form group
 
     // --- MODALES GENÉRICOS ---
     isConfirmOpen = false;
@@ -57,10 +75,8 @@ export class GroupRequestsComponent implements OnChanges {
     };
     private pendingConfirmAction: (() => void) | null = null;
 
-    ngOnInit() {
-        // Inicializamos las columnas. Aunque actionsTemplate es static: true,
-        // es buena práctica asegurarnos que el view esté listo.
-        this.initColumns();
+    constructor(private fb: FormBuilder) { // Injected FormBuilder
+        this.dummyFormGroup = this.fb.group({}); // Initialized dummy form group
     }
 
     // Carga de datos iniciales
@@ -92,12 +108,6 @@ export class GroupRequestsComponent implements OnChanges {
         ];
     }
 
-    onOverlayClick(event: MouseEvent) {
-        if ((event.target as HTMLElement).classList.contains('institutional-modal-overlay')) {
-            this.closeModal();
-        }
-    }
-
     closeModal() {
         this.close.emit();
     }
@@ -105,6 +115,10 @@ export class GroupRequestsComponent implements OnChanges {
     onSelectionChange(event: SelectionEvent) {
         this.selectedRequests = event.selectedItems;
     }
+    onPageChange(event: PageChangeEvent) {
+            this.paginationConfig.currentPage = event.page;
+            this.paginationConfig.pageSize = event.pageSize;
+        }
 
     // --- HELPERS PARA MODALES ---
     openConfirm(config: ConfirmationConfig, action: () => void) {
@@ -168,6 +182,10 @@ export class GroupRequestsComponent implements OnChanges {
         this.selectedRequests = [];
         // Forzamos actualización de referencia para que la tabla detecte el cambio
         this.requests = [...this.requests];
+    }
+
+    get modalTitle(): string {
+        return this.group ? `Solicitudes para el Grupo: ${this.group.name}` : 'Solicitudes';
     }
 
     get showBulkActions(): boolean {

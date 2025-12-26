@@ -5,7 +5,7 @@ export { LoadingModalComponent, LoadingConfig } from './loading-modal.component'
 export { GalleryModalComponent, GalleryItem } from './gallery-modal.component';
 export { SelectionModalComponent, SelectionOption, SelectionConfig } from './selection-modal.component';
 export { DrawerModalComponent, DrawerConfig } from './drawer-modal.component';
-export { FullscreenModalComponent, FullscreenConfig } from './fullscreen-modal.component';
+export { ModalComponent, ModalConfig } from './modal.component';
 export { TabModalComponent, TabModalTab, TabModalConfig } from './tab-modal.component';
 export { SettingsModalComponent, SettingsSection, SettingsModalConfig } from './settings-modal.component';
 export { DemoModalesComponent } from './demo-modales.component';

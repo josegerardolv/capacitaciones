@@ -1,17 +1,22 @@
 import { Component, OnInit, ViewChild, TemplateRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Course } from '../../../../core/models/course.model';
 import { CoursesService } from '../../services/courses.service';
-import { UniversalIconComponent } from '../../../../shared/components/universal-icon/universal-icon.component';
 import { InstitutionalTableComponent, TableColumn, TableConfig } from '../../../../shared/components/institutional-table/institutional-table.component';
 import { TablePaginationComponent, PaginationConfig, PageChangeEvent } from '../../../../shared/components/table-pagination/table-pagination.component';
-import { CourseFormComponent } from '../../components/course-form/course-form.component';
-import { CourseEditFormComponent } from '../../components/course-edit-form/course-edit-form.component';
 import { TooltipDirective } from '../../../../shared/components/tooltip/tooltip.directive';
 import { ConfirmationModalComponent, ConfirmationConfig } from '../../../../shared/components/modals/confirmation-modal.component';
 import { InstitutionalButtonComponent } from '../../../../shared/components/buttons/institutional-button.component';
 import { NotificationService } from '../../../../shared/services/notification.service';
+import { InstitutionalCardComponent } from '../../../../shared/components/institutional-card/institutional-card.component';
+import { ModalFormComponent } from '../../../../shared/components/forms/modal-form.component';
+import { InputEnhancedComponent } from '@/app/shared/components';
+import { HttpErrorResponse } from '@angular/common/http'; // Import HttpErrorResponse
+import { BreadcrumbComponent } from '../../../../shared/components/breadcrumb/breadcrumb.component';
+import { BreadcrumbItem } from '../../../../shared/components/breadcrumb/breadcrumb.model';
+import { UniversalIconComponent } from '../../../../shared/components/universal-icon/universal-icon.component';
 
 @Component({
     selector: 'app-course-list',
@@ -19,15 +24,17 @@ import { NotificationService } from '../../../../shared/services/notification.se
     imports: [
         CommonModule,
         RouterModule,
-        UniversalIconComponent,
+        ReactiveFormsModule,
         InstitutionalTableComponent,
         TablePaginationComponent,
-        CourseFormComponent,
-        CourseEditFormComponent,
         TooltipDirective,
         ConfirmationModalComponent,
-
-        InstitutionalButtonComponent
+        InstitutionalCardComponent,
+        InstitutionalButtonComponent,
+        ModalFormComponent,
+        UniversalIconComponent,
+        InputEnhancedComponent,
+        BreadcrumbComponent // Add BreadcrumbComponent here
     ],
     templateUrl: './course-list.component.html'
 })
@@ -35,11 +42,14 @@ export class CourseListComponent implements OnInit {
     @ViewChild('actionsTemplate', { static: true }) actionsTemplate!: TemplateRef<any>;
 
     courses: Course[] = [];
+    courseModalForm!: FormGroup;
+    modalMode: 'create' | 'edit' = 'create';
+    editingCourseId: number | null = null;
 
     // Estado de los Modales
-    showForm = false; // Nuevo Curso
-    showEditForm = false; // Editar Curso
+    showModal = false;
     selectedCourseToEdit: Course | null = null;
+    isSaving = false;
 
     tableConfig: TableConfig = {
         loading: true,
@@ -57,6 +67,11 @@ export class CourseListComponent implements OnInit {
         showInfo: true
     };
 
+    // Breadcrumb items
+    breadcrumbItems: BreadcrumbItem[] = [
+        { label: 'Cursos'}
+    ];
+
     // --- MODALES GENÉRICOS ---
     isConfirmOpen = false;
     confirmConfig: ConfirmationConfig = {
@@ -73,25 +88,40 @@ export class CourseListComponent implements OnInit {
     constructor(
         private coursesService: CoursesService,
         private router: Router,
-        private notificationService: NotificationService
+        private notificationService: NotificationService,
+        private fb: FormBuilder
     ) { }
 
     ngOnInit(): void {
+        this.initForms();
         this.initColumns();
         this.loadCourses();
+    }
+
+    initForms() {
+        this.courseModalForm = this.fb.group({
+            code: ['', [Validators.required]],
+            description: ['', [Validators.required]],
+            duration: ['', [Validators.required]]
+        });
     }
 
     initColumns() {
         this.tableColumns = [
             { key: 'code', label: 'Nombre', sortable: true, minWidth: '120px' },
             { key: 'description', label: 'Descripción', sortable: true, minWidth: '250px' },
-            { key: 'duration', label: 'Duración', sortable: true, minWidth: '100px' },
+            { 
+            key: 'duration', 
+            label: 'Duración', 
+            sortable: true, 
+            minWidth: '100px'
+            },
             {
-                key: 'actions',
-                label: 'Acciones',
-                align: 'center',
-                minWidth: '140px',
-                template: this.actionsTemplate
+            key: 'actions',
+            label: 'Acciones',
+            align: 'center',
+            minWidth: '140px',
+            template: this.actionsTemplate
             }
         ];
     }
@@ -104,9 +134,10 @@ export class CourseListComponent implements OnInit {
                 this.paginationConfig.totalItems = data.length;
                 this.tableConfig.loading = false;
             },
-            error: () => {
+            error: (err: HttpErrorResponse) => { // Explicitly type err
                 this.tableConfig.loading = false;
                 this.notificationService.error('Error', 'No se pudieron cargar los cursos.');
+                console.error('Error loading courses:', err); // Add logging for debugging
             }
         });
     }
@@ -146,8 +177,9 @@ export class CourseListComponent implements OnInit {
                     this.loadCourses();
                     this.notificationService.success('Eliminado', 'Curso eliminado correctamente.');
                 },
-                error: () => {
+                error: (err: HttpErrorResponse) => { // Explicitly type err
                     this.notificationService.error('Error', 'No se pudo eliminar el curso.');
+                    console.error('Error deleting course:', err); // Add logging for debugging
                 }
             });
         });
@@ -158,36 +190,72 @@ export class CourseListComponent implements OnInit {
         this.router.navigate(['/cursos/grupos']);
     }
 
-    // Manejo del Modal de Nuevo Curso
     openForm() {
-        this.showForm = true;
+        this.modalMode = 'create';
+        this.courseModalForm.reset();
+        this.showModal = true;
     }
 
-    closeForm() {
-        this.showForm = false;
-    }
-
-    onFormSaved() {
-        this.showForm = false;
-        this.loadCourses();
-        this.notificationService.success('Guardado', 'Curso guardado exitosamente.');
-    }
-
-    // Manejo del Modal de Edición
     openEditForm(course: Course) {
-        this.selectedCourseToEdit = course;
-        this.showEditForm = true;
+        this.modalMode = 'edit';
+        this.editingCourseId = course.id;
+        this.courseModalForm.patchValue(course);
+        this.showModal = true;
     }
 
-    closeEditForm() {
-        this.showEditForm = false;
-        this.selectedCourseToEdit = null;
+    closeModal() {
+        this.showModal = false;
+        this.editingCourseId = null;
+        this.courseModalForm.reset();
     }
 
-    onEditSaved() {
-        this.showEditForm = false;
-        this.selectedCourseToEdit = null;
-        this.loadCourses();
-        this.notificationService.success('Actualizado', 'Curso actualizado correctamente.');
+    onModalSubmit() {
+        if (this.courseModalForm.invalid) {
+            this.courseModalForm.markAllAsTouched();
+            return;
+        }
+
+        this.isSaving = true;
+        const formValue = this.courseModalForm.value;
+
+        if (this.modalMode === 'create') {
+            this.coursesService.createCourse(formValue).subscribe({
+                next: () => {
+                    this.isSaving = false;
+                    this.showModal = false;
+                    this.loadCourses();
+                    this.notificationService.success('Guardado', 'Curso guardado exitosamente.');
+                },
+                error: (err: HttpErrorResponse) => { // Explicitly type err
+                    this.isSaving = false;
+                    console.error('Error saving course:', err);
+                    this.notificationService.error('Error', 'No se pudo guardar el curso.');
+                }
+            });
+        } else { // edit mode
+            if (!this.editingCourseId) {
+                this.notificationService.error('Error', 'ID de curso no definido para la edición.');
+                this.isSaving = false;
+                return;
+            }
+            const payload = {
+                id: this.editingCourseId,
+                ...formValue
+            };
+            this.coursesService.updateCourse(this.editingCourseId, payload).subscribe({
+                next: () => {
+                    this.isSaving = false;
+                    this.showModal = false;
+                    this.editingCourseId = null;
+                    this.loadCourses();
+                    this.notificationService.success('Actualizado', 'Curso actualizado correctamente.');
+                },
+                error: (err: HttpErrorResponse) => { // Explicitly type err
+                    this.isSaving = false;
+                    console.error('Error updating course:', err);
+                    this.notificationService.error('Error', 'No se pudo actualizar el curso.');
+                }
+            });
+        }
     }
 }

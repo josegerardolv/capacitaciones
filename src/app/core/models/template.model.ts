@@ -119,6 +119,7 @@ export interface PageConfig {
 export interface CertificateTemplate {
   id: number;
   name: string;
+  claveConcepto: string;
   description?: string;
   category?: string;
   pageConfig: PageConfig;

@@ -57,4 +57,19 @@ export class GroupsService {
         this.mockGroups = this.mockGroups.filter(g => g.id !== id);
         return of(void 0).pipe(delay(500));
     }
+
+    createGroup(group: Group): Observable<Group> {
+        const newId = Math.max(...this.mockGroups.map(g => g.id), 0) + 1;
+        const newGroup = { ...group, id: newId };
+        this.mockGroups.push(newGroup);
+        return of(newGroup).pipe(delay(500));
+    }
+
+    updateGroup(id: number, updatedGroup: Group): Observable<Group> {
+        const index = this.mockGroups.findIndex(g => g.id === id);
+        if (index > -1) {
+            this.mockGroups[index] = { ...this.mockGroups[index], ...updatedGroup };
+        }
+        return of(this.mockGroups[index]).pipe(delay(500));
+    }
 }

@@ -16,14 +16,9 @@ export const routes: Routes = [
   
   // --- EDITOR VISUAL EN PANTALLA COMPLETA (Sin Layout) ---
   {
-    path: 'documentos/certificados/editor/:id',
+    path: 'documentos/templates/editor/:id',
     canActivate: [authGuard],
-    loadComponent: () => import('./features/documents/pages/template-editor/template-editor.component').then(m => m.TemplateEditorComponent)
-  },
-  {
-    path: 'documentos/tarjetones/editor/:id',
-    canActivate: [authGuard],
-    loadComponent: () => import('./features/documents/pages/template-editor/template-editor.component').then(m => m.TemplateEditorComponent)
+    loadComponent: () => import('./features/templates/pages/template-editor/template-editor.component').then(m => m.TemplateEditorComponent)
   },
 
   // --- RUTA PÚBLICA DE REGISTRO (Sin Auth) ---
@@ -59,7 +54,7 @@ export const routes: Routes = [
       ,
       {
         path: 'documentos',
-        loadChildren: () => import('./features/documents/documents.routes').then(m => m.DOCUMENTS_ROUTES)
+        loadChildren: () => import('./features/templates/documents.routes').then(m => m.DOCUMENTS_ROUTES)
       }
 
 

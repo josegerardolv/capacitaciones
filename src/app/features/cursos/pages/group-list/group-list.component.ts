@@ -1,18 +1,24 @@
 import { Component, OnInit, ViewChild, TemplateRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
-import { UniversalIconComponent } from '../../../../shared/components/universal-icon/universal-icon.component';
-import { InstitutionalTableComponent, TableColumn, TableConfig, SelectionEvent } from '../../../../shared/components/institutional-table/institutional-table.component';
-import { TablePaginationComponent, PaginationConfig, PageChangeEvent } from '../../../../shared/components/table-pagination/table-pagination.component';
-import { InstitutionalButtonComponent } from '../../../../shared/components/buttons/institutional-button.component';
-import { GroupFormComponent } from '../../components/group-form/group-form.component';
-import { GroupRequestsComponent } from '../../components/group-requests/group-requests.component';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Group } from '../../../../core/models/group.model';
 import { GroupsService } from '../../services/groups.service';
+import { InstitutionalTableComponent, TableColumn, TableConfig } from '../../../../shared/components/institutional-table/institutional-table.component';
+import { TablePaginationComponent, PaginationConfig, PageChangeEvent } from '../../../../shared/components/table-pagination/table-pagination.component';
 import { TooltipDirective } from '../../../../shared/components/tooltip/tooltip.directive';
 import { ConfirmationModalComponent, ConfirmationConfig } from '../../../../shared/components/modals/confirmation-modal.component';
 import { AlertModalComponent, AlertConfig } from '../../../../shared/components/modals/alert-modal.component';
+import { InstitutionalButtonComponent } from '../../../../shared/components/buttons/institutional-button.component';
 import { NotificationService } from '../../../../shared/services/notification.service';
+import { InstitutionalCardComponent } from '../../../../shared/components/institutional-card/institutional-card.component';
+import { ModalFormComponent } from '../../../../shared/components/forms/modal-form.component';
+import { InputEnhancedComponent } from '@/app/shared/components';
+import { GroupRequestsComponent } from '../../components/group-requests/group-requests.component';
+import { BreadcrumbComponent } from '../../../../shared/components/breadcrumb/breadcrumb.component';
+import { BreadcrumbItem } from '../../../../shared/components/breadcrumb/breadcrumb.model';
+import { UniversalIconComponent } from '@/app/shared/components';
+import { HttpErrorResponse } from '@angular/common/http'; // Import HttpErrorResponse
 
 @Component({
     selector: 'app-group-list',
@@ -20,40 +26,43 @@ import { NotificationService } from '../../../../shared/services/notification.se
     imports: [
         CommonModule,
         RouterModule,
-        UniversalIconComponent,
+        ReactiveFormsModule,
         InstitutionalTableComponent,
         TablePaginationComponent,
-        InstitutionalButtonComponent,
-        GroupFormComponent,
-        GroupRequestsComponent,
         TooltipDirective,
         ConfirmationModalComponent,
+        InstitutionalCardComponent,
+        InstitutionalButtonComponent,
+        ModalFormComponent,
+        InputEnhancedComponent,
+        GroupRequestsComponent,
+        BreadcrumbComponent,
+        UniversalIconComponent,
         AlertModalComponent
     ],
     templateUrl: './group-list.component.html'
 })
 export class GroupListComponent implements OnInit {
     @ViewChild('actionsTemplate', { static: true }) actionsTemplate!: TemplateRef<any>;
-    @ViewChild('statusTemplate', { static: true }) statusTemplate!: TemplateRef<any>;
-    @ViewChild('requestsTemplate', { static: true }) requestsTemplate!: TemplateRef<any>;
-    @ViewChild('urlTemplate', { static: true }) urlTemplate!: TemplateRef<any>;
-    @ViewChild('selectTemplate', { static: true }) selectTemplate!: TemplateRef<any>;
 
     groups: Group[] = [];
-    selectedGroups: Group[] = []; // Track selected items
+    groupModalForm!: FormGroup;
+    modalMode: 'create' | 'edit' = 'create';
+    editingGroupId: number | null = null;
 
-    // Estado de los modales
-    isNewGroupModalOpen = false;
+    // Estado de los Modales
+    showModal = false;
+    isSaving = false;
+
     isRequestsModalOpen = false;
-    editingGroup: Group | null = null;
     selectedRequestGroup: Group | null = null;
+
 
     tableConfig: TableConfig = {
         loading: true,
         striped: false,
         hoverable: true,
-        localSort: true,
-        selectable: true // Enable checkboxes
+        localSort: true
     };
 
     tableColumns: TableColumn[] = [];
@@ -65,6 +74,12 @@ export class GroupListComponent implements OnInit {
         pageSizeOptions: [10, 20, 50],
         showInfo: true
     };
+
+    // Breadcrumb items
+    breadcrumbItems: BreadcrumbItem[] = [
+        { label: 'Cursos', url: '/cursos' },
+        { label: 'Grupos'}
+    ];
 
     // --- MODALES GENÉRICOS ---
     isConfirmOpen = false;
@@ -84,54 +99,39 @@ export class GroupListComponent implements OnInit {
         type: 'info'
     };
 
+
+
     constructor(
         private groupsService: GroupsService,
         private router: Router,
-        private notificationService: NotificationService
+        private notificationService: NotificationService,
+        private fb: FormBuilder
     ) { }
 
     ngOnInit(): void {
+        this.initForms();
         this.initColumns();
         this.loadGroups();
+    }
 
-        // Simulación de notificación de registro (Demo)
-        setTimeout(() => {
-            this.notificationService.success(
-                'Nueva Solicitud',
-                'Juan Pérez se ha registrado al Grupo A05',
-                5000
-            );
-        }, 3000);
+    initForms() {
+        this.groupModalForm = this.fb.group({
+            name: ['', [Validators.required]],
+            description: ['', [Validators.required]],
+            course: ['', [Validators.required]]
+        });
     }
 
     initColumns() {
         this.tableColumns = [
             { key: 'name', label: 'Nombre', sortable: true, minWidth: '120px' },
-            { key: 'description', label: 'Descripción', sortable: true, minWidth: '200px' },
-            { key: 'location', label: 'Ubicación', sortable: true, minWidth: '150px' },
-            { key: 'dateTime', label: 'Fecha y hora', sortable: true, minWidth: '150px' },
-            { key: 'quantity', label: 'Cantidad', sortable: true, minWidth: '100px', align: 'center' },
-            {
-                key: 'url',
-                label: 'Enlace',
-                sortable: false,
-                minWidth: '100px',
-                align: 'center',
-                template: this.urlTemplate
-            },
-            {
-                key: 'status',
-                label: 'Estatus',
-                sortable: true,
-                align: 'center',
-                minWidth: '100px',
-                template: this.statusTemplate
-            },
+            { key: 'description', label: 'Descripción', sortable: true, minWidth: '250px' },
+            { key: 'course', label: 'Curso Asociado', sortable: true, minWidth: '100px' },
             {
                 key: 'actions',
                 label: 'Acciones',
                 align: 'center',
-                minWidth: '180px', // Aumentado para caber más botones
+                minWidth: '140px',
                 template: this.actionsTemplate
             }
         ];
@@ -145,12 +145,10 @@ export class GroupListComponent implements OnInit {
                 this.paginationConfig.totalItems = data.length;
                 this.tableConfig.loading = false;
             },
-            error: () => {
+            error: (err) => {
                 this.tableConfig.loading = false;
-                this.notificationService.error(
-                    'Error de Conexión',
-                    'No se pudieron cargar los grupos. Intente más tarde.'
-                );
+                this.notificationService.error('Error', 'No se pudieron cargar los grupos.');
+                console.error('Error loading groups:', err);
             }
         });
     }
@@ -176,12 +174,79 @@ export class GroupListComponent implements OnInit {
     }
 
     openAlert(title: string, message: string, type: 'success' | 'info' | 'warning' | 'danger' = 'info') {
-        this.alertConfig = {
-            title,
-            message,
-            type
-        };
+        this.alertConfig = { title, message, type };
         this.isAlertOpen = true;
+    }
+
+
+
+    openForm() {
+        this.modalMode = 'create';
+        this.groupModalForm.reset();
+        this.showModal = true;
+    }
+
+    openEditForm(group: Group) {
+        this.modalMode = 'edit';
+        this.editingGroupId = group.id;
+        this.groupModalForm.patchValue(group);
+        this.showModal = true;
+    }
+
+    closeModal() {
+        this.showModal = false;
+        this.editingGroupId = null;
+        this.groupModalForm.reset();
+    }
+
+    onGroupModalSubmit() {
+        if (this.groupModalForm.invalid) {
+            this.groupModalForm.markAllAsTouched();
+            return;
+        }
+
+        this.isSaving = true;
+        const formValue = this.groupModalForm.value;
+
+        if (this.modalMode === 'create') {
+            this.groupsService.createGroup(formValue).subscribe({
+                next: () => {
+                    this.isSaving = false;
+                    this.showModal = false;
+                    this.loadGroups();
+                    this.notificationService.success('Guardado', 'Grupo guardado exitosamente.');
+                },
+                error: (err: HttpErrorResponse) => {
+                    this.isSaving = false;
+                    console.error('Error saving group:', err);
+                    this.notificationService.error('Error', 'No se pudo guardar el grupo.');
+                }
+            });
+        } else { // edit mode
+            if (!this.editingGroupId) {
+                this.notificationService.error('Error', 'ID de grupo no definido para la edición.');
+                this.isSaving = false;
+                return;
+            }
+            const payload = {
+                id: this.editingGroupId,
+                ...formValue
+            };
+            this.groupsService.updateGroup(this.editingGroupId, payload).subscribe({
+                next: () => {
+                    this.isSaving = false;
+                    this.showModal = false;
+                    this.editingGroupId = null;
+                    this.loadGroups();
+                    this.notificationService.success('Actualizado', 'Grupo actualizado correctamente.');
+                },
+                error: (err: HttpErrorResponse) => {
+                    this.isSaving = false;
+                    console.error('Error updating group:', err);
+                    this.notificationService.error('Error', 'No se pudo actualizar el grupo.');
+                }
+            });
+        }
     }
 
     deleteGroup(id: number) {
@@ -197,68 +262,12 @@ export class GroupListComponent implements OnInit {
                     this.loadGroups();
                     this.notificationService.success('Eliminado', 'Grupo eliminado correctamente');
                 },
-                error: () => {
+                error: (err: HttpErrorResponse) => {
                     this.notificationService.error('Error', 'No se pudo eliminar el grupo');
+                    console.error('Error deleting group:', err);
                 }
             });
         });
-    }
-
-    onSelectionChange(event: SelectionEvent) {
-        this.selectedGroups = event.selectedItems;
-        console.log('Selection:', this.selectedGroups);
-    }
-
-    // Acciones temporales para demostración
-    exportData() {
-        if (this.selectedGroups.length === 0) return;
-        this.openAlert('Exportación', `Exportando ${this.selectedGroups.length} grupos.`, 'info');
-    }
-
-    generateUrl() {
-        if (this.selectedGroups.length !== 1) return;
-
-        const group = this.selectedGroups[0];
-        // Logging for now as previously reverted
-        console.log('Generating URL for', group.name);
-
-        // Generamos el link dinámico usando el dominio actual (funciona en localhost y en producción)
-        const baseUrl = window.location.origin; // Ej: http://localhost:4200 o https://midominio.com
-        const newUrl = `${baseUrl}/registro-publico/${group.id}`;
-        group.url = newUrl;
-
-        // Refresh
-        this.groups = [...this.groups];
-    }
-
-    copyUrl(url: string) {
-        if (!url) return;
-        navigator.clipboard.writeText(url).then(() => {
-            this.openAlert('URL Copiada', 'URL copiada al portapapeles', 'success');
-        }).catch(err => {
-            console.error('Error al copiar URL', err);
-        });
-    }
-
-    openNewGroupForm() {
-        this.editingGroup = null;
-        this.isNewGroupModalOpen = true;
-    }
-
-    onGroupSaved() {
-        this.loadGroups();
-        this.notificationService.success(
-            'Éxito',
-            this.editingGroup ? 'Grupo actualizado correctamente' : 'Grupo creado exitosamente'
-        );
-        this.isNewGroupModalOpen = false;
-        this.editingGroup = null;
-    }
-
-    openEditGroupForm(group: Group) {
-        console.log('Edit Group', group);
-        this.editingGroup = group;
-        this.isNewGroupModalOpen = true;
     }
 
     openRequests(group: Group) {
