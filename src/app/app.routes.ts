@@ -39,10 +39,6 @@ export const routes: Routes = [
       {
         path: 'cursos',
         loadChildren: () => import('./features/cursos/cursos.routes').then(m => m.CURSOS_ROUTES)
-      },
-      {
-        path: 'busqueda',
-        loadChildren: () => import('./features/busqueda/busqueda.routes').then(m => m.BUSQUEDA_ROUTES)
       }
 
 
