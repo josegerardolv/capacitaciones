@@ -1,0 +1,35 @@
+<div class="min-h-screen">
+
+    <!-- Tarjeta superior: título y breadcrumb (estilo institucional) -->
+    <app-institutional-card [config]="{ showHeader: false, showFooter: false, showShadow: true, showBorder: true }" class="mb-6">
+        <div class="flex items-center gap-4">
+            <div class="p-3 rounded-lg bg-institucional-primario bg-opacity-10 flex items-center justify-center">
+                <app-universal-icon name="person_add" type="material" class="w-6 h-6 text-white"></app-universal-icon>
+            </div>
+
+            <div class="min-w-0">
+                <h1 class="text-2xl md:text-3xl font-extrabold text-gray-900">Agregar Nueva Persona</h1>
+                <p class="text-sm text-gray-500 mt-1">Complete la información del formulario.</p>
+            </div>
+        </div>
+
+        <div class="mt-2 ml-4">
+            <app-breadcrumb [items]="breadcrumbItems"></app-breadcrumb>
+        </div>
+    </app-institutional-card>
+
+    <br>
+
+    <!-- Tarjeta principal: formulario -->
+    <app-institutional-card [config]="{ showHeader: false, showFooter: false, showShadow: true, showBorder: true }">
+        <div class="p-6">
+            <app-person-form [submitLabel]="'Agregar Persona'" [showCancel]="true" (close)="onCancel()" (saved)="onDriverSaved($event)">
+            </app-person-form>
+        </div>
+    </app-institutional-card>
+
+    <!-- Modal de alerta de resultado -->
+    <app-alert-modal [isOpen]="isAlertOpen" [config]="alertConfig" (modalClose)="closeAndRedirect()" (actionClick)="closeAndRedirect()">
+    </app-alert-modal>
+
+</div>

@@ -1,6 +1,6 @@
 import { Component, OnInit, ViewChild, TemplateRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule, Router } from '@angular/router';
+import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Group } from '../../../../core/models/group.model';
 import { GroupsService } from '../../services/groups.service';
@@ -43,6 +43,9 @@ import { HttpErrorResponse } from '@angular/common/http'; // Import HttpErrorRes
     templateUrl: './group-list.component.html'
 })
 export class GroupListComponent implements OnInit {
+    cursoId: string | null = null;
+    courseLabel: string = '';
+    courseNameFromQuery: string | null = null;
     @ViewChild('actionsTemplate', { static: true }) actionsTemplate!: TemplateRef<any>;
 
     groups: Group[] = [];
@@ -104,6 +107,7 @@ export class GroupListComponent implements OnInit {
     constructor(
         private groupsService: GroupsService,
         private router: Router,
+        private route: ActivatedRoute,
         private notificationService: NotificationService,
         private fb: FormBuilder
     ) { }
@@ -111,6 +115,18 @@ export class GroupListComponent implements OnInit {
     ngOnInit(): void {
         this.initForms();
         this.initColumns();
+        // Leer cursoId desde la ruta si existe (rutas: /cursos/:cursoId/grupos)
+        this.cursoId = this.route.snapshot.paramMap.get('cursoId');
+        // Leer posible nombre del curso pasado desde la navegación (query param)
+        this.courseNameFromQuery = this.route.snapshot.queryParamMap.get('courseName');
+        if (this.cursoId) {
+            this.courseLabel = this.courseNameFromQuery ? this.courseNameFromQuery :this.cursoId;
+            this.breadcrumbItems = [
+                { label: 'Cursos', url: '/cursos' },
+                { label: `Curso ${this.courseLabel}` },
+                { label: 'Grupos', url: `/cursos/${this.cursoId}/grupos` }
+            ];
+        }
         this.loadGroups();
     }
 
@@ -277,6 +293,12 @@ export class GroupListComponent implements OnInit {
 
     viewDrivers(group: Group) {
         // Navegamos a la vista completa de conductores del grupo
-        this.router.navigate(['/cursos/grupos', group.id, 'conductores']);
+        if (this.cursoId) {
+            this.router.navigate(['/cursos', this.cursoId, 'grupos', group.id, 'conductores'], { queryParams: { courseName: this.courseNameFromQuery ?? undefined, groupLabel: group.name } });
+            return;
+        }
+        // No existe ruta global /cursos/grupos; redirigimos a la lista de cursos
+        this.notificationService.info('Selecciona un curso', 'Para ver los conductores del grupo, primero selecciona el curso asociado.');
+        this.router.navigate(['/cursos']);
     }
 }

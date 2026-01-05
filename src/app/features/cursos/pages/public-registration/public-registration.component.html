@@ -1,41 +1,38 @@
-<div class="min-h-screen bg-white flex flex-col font-montserrat">
 
-    <!-- Main Content -->
-    <div class="flex-grow container mx-auto px-4 py-8 flex flex-col items-center">
+<!-- Main Content -->
+<div class="w-full px-12 py-4">
 
-        <!-- Contenedor Principal (Card) -->
-        <div class="w-full max-w-5xl bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
+    <app-institutional-card [config]="{ variant: 'standard', size: 'auto', showFooter: false, showShadow: true }" class="w-full max-w-3xl">
 
-            <!-- Header del Formulario -->
-            <div class="bg-gradient-institucional p-8">
-                <h2 class="text-3xl font-bold text-white mb-2">Registro de Conductor</h2>
-                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 text-white/90">
-                    <div>
-                        <p class="font-medium text-lg">{{ groupInfo.courseName }}</p>
-                        <p class="opacity-80">{{ groupInfo.groupName }}</p>
+        <!-- Header de la carta (slot) -->
+        <div slot="header" class="card-institucional-header p-6">
+            <h2 class="text-2xl md:text-3xl font-bold text-white mb-1">Registro de Conductor</h2>
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 text-white/90">
+                <div>
+                    <p class="font-medium text-lg">{{ groupInfo.courseName }}</p>
+                    <p class="opacity-80">{{ groupInfo.groupName }}</p>
+                </div>
+                <div class="flex flex-col items-end">
+                    <div class="bg-white/20 px-3 py-1 rounded-full backdrop-blur-sm mb-1">
+                        <span class="font-semibold">{{ groupInfo.slotsAvailable }} lugares disponibles</span>
                     </div>
-                    <div class="flex flex-col items-end">
-                        <div class="bg-white/20 px-4 py-1 rounded-full backdrop-blur-sm mb-2">
-                            <span class="font-bold">{{ groupInfo.slotsAvailable }} lugares disponibles</span>
-                        </div>
-                        <p class="text-sm">Cierra: {{ groupInfo.deadline }}</p>
-                    </div>
+                    <p class="text-sm">Cierra: {{ groupInfo.deadline }}</p>
                 </div>
             </div>
-
-            <!-- Formulario -->
-            <div class="p-8">
-                <app-driver-form [submitLabel]="'Solicitar registro'" [showCancel]="false"
-                    (saved)="onDriverRegistered($event)">
-                </app-driver-form>
-            </div>
-
         </div>
 
-        <!-- Modal de Feedback -->
-        <app-alert-modal [isOpen]="isAlertOpen" [config]="alertConfig" (modalClose)="close()" (actionClick)="close()">
-        </app-alert-modal>
+        <!-- Body: formulario -->
+        <div>
+            <div class="p-6 md:p-8">
+                <app-person-form [submitLabel]="'Solicitar registro'" [showCancel]="false" (saved)="onDriverRegistered($event)">
+                </app-person-form>
+            </div>
+        </div>
 
-    </div>
+    </app-institutional-card>
+
+    <!-- Modal de Feedback -->
+    <app-alert-modal [isOpen]="isAlertOpen" [config]="alertConfig" (modalClose)="close()" (actionClick)="close()">
+    </app-alert-modal>
 
 </div>

@@ -1,13 +1,14 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
-import { DriverFormComponent } from '../../components/driver-form/driver-form.component';
+import { PersonFormComponent } from '../../components/person-form/person-form.component';
 import { AlertModalComponent, AlertConfig } from '../../../../shared/components/modals/alert-modal.component';
+import { InstitutionalCardComponent } from '../../../../shared/components/institutional-card/institutional-card.component';
 
 @Component({
     selector: 'app-public-registration',
     standalone: true,
-    imports: [CommonModule, DriverFormComponent, AlertModalComponent],
+    imports: [CommonModule, PersonFormComponent, AlertModalComponent, InstitutionalCardComponent],
     templateUrl: './public-registration.component.html'
 })
 export class PublicRegistrationComponent implements OnInit {

@@ -46,21 +46,12 @@ export const SIDEBAR_MENU_CONFIG: MenuItem[] = [
     roles: ['ADMINISTRADOR', 'SUPER_ADMINISTRADOR', 'CAPTURISTA', 'CONSULTA', 'SUPERVISOR']
   },
   {
-    id: 'documentos',
-    label: 'Documentos',
-    icon: 'file-text', // Similar icons: file-earmark-text
+    id: 'templates',
+    label: 'Templates',
+    icon: 'file-text',
     iconType: 'bootstrap',
-    roles: ['ADMINISTRADOR', 'SUPER_ADMINISTRADOR', 'SUPERVISOR'],
-    children: [
-      {
-        id: 'templates',
-        label: 'Templates',
-        icon: 'layers',
-        iconType: 'bootstrap',
-        route: '/documentos/templates',
-        roles: ['ADMINISTRADOR', 'SUPER_ADMINISTRADOR', 'SUPERVISOR']
-      }
-    ]
+    route: '/documentos/templates',
+    roles: ['ADMINISTRADOR', 'SUPER_ADMINISTRADOR', 'SUPERVISOR']
   },
   {
     id: 'configuracion',

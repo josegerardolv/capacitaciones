@@ -10,7 +10,12 @@ export interface TableColumn {
   maxWidth?: string;
   minWidth?: string;
   align?: 'left' | 'center' | 'right';
-  type?: 'text' | 'number' | 'date' | 'boolean' | 'custom';
+  type?: 'text' | 'number' | 'date' | 'boolean' | 'custom' | 'duration';
+  // Para columnas de tipo duration, indicar la unidad base del valor
+  // Valores permitidos: 'seconds'|'minutes'|'hours'|'days'|'weeks'|'months'|'years'
+  durationUnit?: 'seconds' | 'minutes' | 'hours' | 'days' | 'weeks' | 'months' | 'years';
+  // Cómo mostrar la duración: 'long' (ej. "1 año 2 meses") o 'short' (ej. "1a 2mes")
+  durationDisplay?: 'long' | 'short';
   template?: TemplateRef<any>;
   /** Pin column during horizontal scroll. Use 'left' or 'right' to pin to that side. */
   pin?: 'left' | 'right';
@@ -511,6 +516,62 @@ export class InstitutionalTableComponent implements AfterContentInit, AfterViewI
     const value = this.getNestedProperty(item, column.key);
     
     switch (column.type) {
+      case 'duration':
+        // Determinar unidad base (por defecto: minutes para compatibilidad)
+        const base = (column as any).durationUnit || 'minutes';
+        const num = typeof value === 'number' ? value : parseFloat(value);
+        if (isNaN(num)) return '';
+
+        // Convertir todo a segundos
+        const multipliers: { [k: string]: number } = {
+          seconds: 1,
+          minutes: 60,
+          hours: 3600,
+          days: 86400,
+          weeks: 604800,
+          months: 2592000, // 30 días
+          years: 31536000 // 365 días
+        };
+
+        const totalSeconds = Math.round(num * (multipliers[base] || 60));
+
+        if (totalSeconds === 0) {
+          const baseLabels: any = { seconds: 'segundos', minutes: 'minutos', hours: 'horas', days: 'días', weeks: 'semanas', months: 'meses', years: 'años' };
+          return `0 ${baseLabels[base] || 'segundos'}`;
+        }
+
+        let rest = totalSeconds;
+        const years = Math.floor(rest / multipliers['years']); rest %= multipliers['years'];
+        const months = Math.floor(rest / multipliers['months']); rest %= multipliers['months'];
+        const weeks = Math.floor(rest / multipliers['weeks']); rest %= multipliers['weeks'];
+        const days = Math.floor(rest / multipliers['days']); rest %= multipliers['days'];
+        const hours = Math.floor(rest / multipliers['hours']); rest %= multipliers['hours'];
+        const minutes = Math.floor(rest / multipliers['minutes']); rest %= multipliers['minutes'];
+        const seconds = rest;
+
+        const display = (column as any).durationDisplay || 'long';
+        const parts: string[] = [];
+        if (display === 'short') {
+          const mapShort: any = { years: 'a', months: 'mes', weeks: 'sem', days: 'd', hours: 'h', minutes: 'min', seconds: 's' };
+          if (years) parts.push(`${years}${mapShort['years']}`);
+          if (months) parts.push(`${months}${mapShort['months']}`);
+          if (weeks) parts.push(`${weeks}${mapShort['weeks']}`);
+          if (days) parts.push(`${days}${mapShort['days']}`);
+          if (hours) parts.push(`${hours}${mapShort['hours']}`);
+          if (minutes) parts.push(`${minutes}${mapShort['minutes']}`);
+          if (seconds) parts.push(`${seconds}${mapShort['seconds']}`);
+          return parts.join(' ');
+        }
+
+        if (years) parts.push(`${years} año${years > 1 ? 's' : ''}`);
+        if (months) parts.push(`${months} mes${months > 1 ? 'es' : ''}`);
+        if (weeks) parts.push(`${weeks} semana${weeks > 1 ? 's' : ''}`);
+        if (days) parts.push(`${days} día${days > 1 ? 's' : ''}`);
+        if (hours) parts.push(`${hours} hora${hours > 1 ? 's' : ''}`);
+        if (minutes) parts.push(`${minutes} minuto${minutes > 1 ? 's' : ''}`);
+        if (seconds) parts.push(`${seconds} segundo${seconds > 1 ? 's' : ''}`);
+
+        return parts.join(' ');
       case 'date':
         return value ? new Date(value).toLocaleDateString('es-ES') : '';
       case 'boolean':

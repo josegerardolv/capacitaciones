@@ -26,7 +26,6 @@ import { SelectComponent } from '@/app/shared/components';
         ReactiveFormsModule,
         ModalFormComponent,
         InputComponent,
-        UniversalIconComponent,
         SelectComponent,
         InstitutionalTableComponent,
         TablePaginationComponent,

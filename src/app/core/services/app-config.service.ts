@@ -6,6 +6,13 @@ export interface AppConfig {
   logo?: string;
   footerLogo?: string;
   orgName?: string;
+  headerTitle?: string;
+  headerSubtitle?: string;
+  navScheduleLabel?: string;
+  navValidateLabel?: string;
+  footerCopyrightTemplate?: string;
+  footerTagline?: string;
+  version?: string;
 }
 
 @Injectable({
@@ -17,7 +24,14 @@ export class AppConfigService {
     subtitle: 'SEMOVI Oaxaca',
     logo: 'assets/images/icons/Icon.svg',
     footerLogo: 'assets/images/icons/logo_movilidad.svg',
-    orgName: 'Secretaría de Movilidad, Gobierno del Estado de Oaxaca'
+    orgName: 'Secretaría de Movilidad, Gobierno del Estado de Oaxaca',
+    headerTitle: 'SEMOVI Oaxaca',
+    headerSubtitle: 'Sistema de Capacitaciones',
+    navScheduleLabel: 'Agendar',
+    navValidateLabel: 'Validar',
+    footerCopyrightTemplate: '© {{year}} {{org}}. Todos los derechos reservados.',
+    footerTagline: 'Sistema de Gestión de Citas',
+    version: '2.0.0'
   };
 
   constructor() {}

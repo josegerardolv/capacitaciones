@@ -4,6 +4,7 @@ import { RouterModule } from '@angular/router';
 import { UniversalIconComponent } from '../universal-icon/universal-icon.component';
 import { Router, NavigationEnd } from '@angular/router';
 import { Subscription } from 'rxjs';
+import { AppConfigService } from '../../../core/services/app-config.service';
 
 /**
  * PublicHeaderComponent - Header simplificado para la parte pública
@@ -40,38 +41,9 @@ import { Subscription } from 'rxjs';
 
               <!-- Información institucional -->
               <div>
-                <h1 class="font-bold text-xl">SEMOVI Oaxaca</h1>
-                <p class="text-white/90 text-sm">Sistema de Citas</p>
+                <h1 class="font-bold text-xl">{{ headerTitle }}</h1>
+                <p class="text-white/90 text-sm">{{ headerSubtitle }}</p>
               </div>
-            </a>
-          </div>
-
-          <!-- Navegación pública -->
-          <nav class="hidden md:flex items-center gap-6">
-            <a *ngIf="!isActive('/')" [routerLink]="['/']" 
-               class="nav-link text-white/90 hover:text-white font-medium transition-colors duration-200">
-              Agendar
-            </a>
-            <!--<a *ngIf="!isActive('/agendar-cita')" [routerLink]="['/agendar-cita']" 
-               class="nav-link text-white/90 hover:text-white font-medium transition-colors duration-200">
-              Agendar Cita
-            </a>-->
-            <a *ngIf="!isActive('/validar-cita')" [routerLink]="['/validar-cita']" 
-               class="nav-link text-white/90 hover:text-white font-medium transition-colors duration-200">
-              Validar
-            </a>
-          </nav>
-
-          <!-- Botón de acceso al sistema -->
-          <div class="flex items-center gap-4">
-            <a *ngIf="!isActive('/login')" [routerLink]="['/login']" 
-               class="btn-access bg-white text-institucional-primario px-4 py-2 rounded-md font-medium hover:bg-gray-100 transition-colors duration-200 flex items-center gap-2">
-              <app-universal-icon 
-                [name]="'login'" 
-                [type]="'material'"
-                [size]="20">
-              </app-universal-icon>
-              <span class="hidden sm:inline">Acceder</span>
             </a>
           </div>
         </div>
@@ -83,7 +55,7 @@ import { Subscription } from 'rxjs';
             <a *ngIf="!isActive('/')" [routerLink]="['/']" 
                (click)="closeMobileMenu()"
                class="nav-link-mobile text-white/90 hover:text-white hover:bg-white/10 px-4 py-3 rounded-md transition-all duration-200">
-              Agendar
+              {{ navScheduleLabel }}
             </a>
             <!--<a *ngIf="!isActive('/agendar-cita')" [routerLink]="['/agendar-cita']" 
                (click)="closeMobileMenu()"
@@ -93,7 +65,7 @@ import { Subscription } from 'rxjs';
             <a *ngIf="!isActive('/validar-cita')" [routerLink]="['/validar-cita']" 
                (click)="closeMobileMenu()"
                class="nav-link-mobile text-white/90 hover:text-white hover:bg-white/10 px-4 py-3 rounded-md transition-all duration-200">
-              Validar
+              {{ navValidateLabel }}
             </a>
           </nav>
         </div>
@@ -174,10 +146,19 @@ export class PublicHeaderComponent implements OnInit, OnDestroy {
   currentUrl = '/';
   private routerSub: Subscription | null = null;
 
-  constructor(private router: Router) {}
+  headerTitle = '';
+  headerSubtitle = '';
+  navScheduleLabel = '';
+  navValidateLabel = '';
+
+  constructor(private router: Router, private appConfig: AppConfigService) {}
 
   ngOnInit(): void {
     this.currentUrl = this.cleanPath(this.router.url);
+    this.headerTitle = this.appConfig.get('headerTitle') || this.appConfig.get('orgName') || 'SEMOVI Oaxaca';
+    this.headerSubtitle = this.appConfig.get('headerSubtitle') || this.appConfig.get('subtitle') || '';
+    this.navScheduleLabel = this.appConfig.get('navScheduleLabel') || 'Agendar';
+    this.navValidateLabel = this.appConfig.get('navValidateLabel') || 'Validar';
     this.routerSub = this.router.events.subscribe(evt => {
       if (evt instanceof NavigationEnd) {
         this.currentUrl = this.cleanPath(evt.urlAfterRedirects || evt.url);

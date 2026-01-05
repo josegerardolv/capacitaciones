@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterModule, ActivatedRoute } from '@angular/router';
 import { InstitutionalTableComponent, TableColumn, TableConfig } from '../../../../shared/components/institutional-table/institutional-table.component';
 import { InstitutionalButtonComponent } from '../../../../shared/components/buttons/institutional-button.component';
+import { InstitutionalBadgeComponent } from '../../../../shared/components/badge/institutional-badge.component';
 import { InstitutionalCardComponent } from '../../../../shared/components/institutional-card/institutional-card.component';
 import { BreadcrumbComponent } from '../../../../shared/components/breadcrumb/breadcrumb.component';
 import { BreadcrumbItem } from '../../../../shared/components/breadcrumb/breadcrumb.model';
@@ -33,6 +34,7 @@ interface Driver {
     standalone: true,
     imports: [
     CommonModule,
+    InstitutionalBadgeComponent,
     InstitutionalTableComponent,
     InstitutionalCardComponent,
     InstitutionalButtonComponent,
@@ -45,10 +47,15 @@ interface Driver {
     FormsModule,
     UniversalIconComponent
 ],
-    templateUrl: './group-drivers.component.html'
+    templateUrl: './group-persons.component.html'
 })
-export class GroupDriversComponent implements OnInit {
+export class GroupPersonsComponent implements OnInit {
     @Input() groupId: string = '';
+
+    cursoId: string | null = null;
+    currentGroupId: string | null = null;
+    courseLabel: string = '';
+    groupLabel: string = '';
 
     // Referencias a Templates del HTML
     @ViewChild('statusTemplate', { static: true }) statusTemplate!: TemplateRef<any>;
@@ -96,12 +103,8 @@ export class GroupDriversComponent implements OnInit {
         { id: 3, name: 'Carlos Ruiz', license: 'C123123123', curp: 'CCCC000000HDFXXX00', status: 'Aprobado', wantsTarjeton: true, paymentStatus: 'Pendiente', coursePaymentStatus: 'Pagado' },
     ];
 
-    // Breadcrumb items
-    breadcrumbItems: BreadcrumbItem[] = [
-        { label: 'Cursos', url: '/cursos' },
-        { label: 'Grupos', url: '/cursos/grupos' },
-        { label: 'Personas' }
-    ];
+    // Breadcrumb items (se construyen en ngOnInit según params)
+    breadcrumbItems: BreadcrumbItem[] = [];
 
     constructor(
         private router: Router,
@@ -111,6 +114,39 @@ export class GroupDriversComponent implements OnInit {
 
     ngOnInit(): void {
         console.log('GroupDriversComponent initialized for Group:', this.groupId);
+        // Leer parámetros de ruta para construir breadcrumbs y contexto
+        this.cursoId = this.route.snapshot.paramMap.get('cursoId');
+        this.currentGroupId = this.route.snapshot.paramMap.get('groupId') || this.groupId || null;
+
+        // Leer posible nombre del curso y del grupo pasados por query params
+        const courseName = this.route.snapshot.queryParamMap.get('courseName');
+        const groupLabel = this.route.snapshot.queryParamMap.get('groupLabel');
+
+        // Construir breadcrumbs según la jerarquía solicitada:
+        // Cursos (url) > Nombre del curso (SIN url) > Grupos (url al curso) > Nombre del grupo (SIN url) > Personas (SIN url)
+        this.courseLabel = courseName ? courseName : (this.cursoId ? `Curso ${this.cursoId}` : 'Curso');
+
+        this.breadcrumbItems = [
+            { label: 'Cursos', url: '/cursos' },
+            { label: this.courseLabel }
+        ];
+
+        if (this.cursoId) {
+            this.breadcrumbItems.push({ label: 'Grupos', url: `/cursos/${this.cursoId}/grupos` });
+        } else {
+            this.breadcrumbItems.push({ label: 'Grupos', url: '/cursos' });
+        }
+
+        if (groupLabel) {
+            this.groupLabel = groupLabel;
+            this.breadcrumbItems.push({ label: this.groupLabel });
+        } else if (this.currentGroupId) {
+            this.groupLabel = `Grupo ${this.currentGroupId}`;
+            this.breadcrumbItems.push({ label: this.groupLabel });
+        }
+
+        this.breadcrumbItems.push({ label: 'Personas' });
+
         this.initColumns();
         this.loadDrivers();
     }

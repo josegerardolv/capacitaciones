@@ -15,31 +15,31 @@ export class CoursesService {
     private courses: Course[] = [
         {
             id: 1,
-            code: 'A05',
+            name: 'A05',
             description: 'Lorem Ipsum is simply dummy text of the',
-            duration: 180
+            duration: 270
         },
         {
             id: 2,
-            code: 'A06',
+            name: 'A06',
             description: 'Lorem Ipsum is simply dummy text of the',
             duration: 120
         },
         {
             id: 3,
-            code: 'B13',
+            name: 'B13',
             description: 'Lorem Ipsum is simply dummy text of the',
             duration: 60
         },
         {
             id: 4,
-            code: 'C01',
+            name: 'C01',
             description: 'Curso de manejo básico para principiantes',
             duration: 300
         },
         {
             id: 5,
-            code: 'C02',
+            name: 'C02',
             description: 'Curso avanzado de seguridad vial',
             duration: 240
         }

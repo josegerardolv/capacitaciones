@@ -13,21 +13,14 @@ export const routes: Routes = [
     path: 'login',
     loadComponent: () => import('./shared/components/login/login.component').then(m => m.LoginComponent)
   },
-  
-  // --- EDITOR VISUAL EN PANTALLA COMPLETA (Sin Layout) ---
-  {
-    path: 'documentos/templates/editor/:id',
-    canActivate: [authGuard],
-    loadComponent: () => import('./features/templates/pages/template-editor/template-editor.component').then(m => m.TemplateEditorComponent)
-  },
 
   // --- RUTA PÚBLICA DE REGISTRO (Sin Auth) ---
   {
-    path: 'registro-publico',
+    path: 'public',
     loadComponent: () => import('./shared/layout/public-layout.component').then(m => m.PublicLayoutComponent),
     children: [
       {
-        path: ':id', // ID del token/grupo
+        path: 'register/:id', // ID del token/grupo
         loadComponent: () => import('./features/cursos/pages/public-registration/public-registration.component').then(m => m.PublicRegistrationComponent)
       }
     ]
@@ -50,12 +43,21 @@ export const routes: Routes = [
       {
         path: 'cursos',
         loadChildren: () => import('./features/cursos/cursos.routes').then(m => m.CURSOS_ROUTES)
-      }
-      ,
+      },
+      {
+        path: 'busqueda',
+        loadComponent: () => import('./features/busqueda/busqueda.component').then(m => m.BusquedaComponent)
+      },
       {
         path: 'documentos',
         loadChildren: () => import('./features/templates/documents.routes').then(m => m.DOCUMENTS_ROUTES)
-      }
+      },
+      // --- EDITOR VISUAL EN PANTALLA COMPLETA (Sin Layout) ---
+      {
+        path: 'documentos/templates/editor/:id',
+        canActivate: [authGuard],
+        loadComponent: () => import('./features/templates/pages/template-editor/template-editor.component').then(m => m.TemplateEditorComponent)
+      },
 
 
     ]

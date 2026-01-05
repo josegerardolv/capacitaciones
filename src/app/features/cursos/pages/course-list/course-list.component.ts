@@ -108,11 +108,14 @@ export class CourseListComponent implements OnInit {
 
     initColumns() {
         this.tableColumns = [
-            { key: 'code', label: 'Nombre', sortable: true, minWidth: '120px' },
+            { key: 'name', label: 'Nombre', sortable: true, minWidth: '120px' },
             { key: 'description', label: 'Descripción', sortable: true, minWidth: '250px' },
             { 
             key: 'duration', 
             label: 'Duración', 
+            type: 'duration',
+            durationDisplay: 'long',
+            durationUnit: 'minutes',
             sortable: true, 
             minWidth: '100px'
             },
@@ -186,8 +189,10 @@ export class CourseListComponent implements OnInit {
     }
 
     viewGroups(course: Course) {
-        // En el futuro, podríamos pasar el ID course.id como query param para filtrar
-        this.router.navigate(['/cursos/grupos']);
+        // Navegar a la lista de grupos de este curso
+        // Pasar el nombre del curso como query param para que la vista de grupos
+        // pueda mostrarlo en el breadcrumb
+        this.router.navigate(['/cursos', course.id, 'grupos'], { queryParams: { courseName: course.name } });
     }
 
     openForm() {

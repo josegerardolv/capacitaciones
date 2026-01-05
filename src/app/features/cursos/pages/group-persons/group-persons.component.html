@@ -8,7 +8,7 @@
             </div>
 
             <div class="min-w-0">
-                <h1 class="text-2xl md:text-3xl font-extrabold text-gray-900">Lista de Personas</h1>
+                <h1 class="text-2xl md:text-3xl font-extrabold text-gray-900">Personas inscritas {{ 'al grupo ' + (this.groupLabel ? (this.groupLabel || 'id' + this.groupId) : '')}}</h1>
                 <p class="text-sm text-gray-500 mt-1">Gestiona las personas del grupo</p>
             </div>
         </div>
@@ -61,29 +61,28 @@
     <!-- Templates -->
     <!-- Estatus: Badge Aprobado/No Aprobado o Botones de Calificación -->
     <ng-template #statusTemplate let-item>
-        <!-- Caso 1: Ya calificado (Mostrar Badge) -->
-        <span *ngIf="item.status !== 'Pendiente'"
-            class="px-3 py-1 rounded-full text-xs font-bold text-white shadow-sm inline-block min-w-[90px] text-center"
-            [ngClass]="{
-                'bg-emerald-500': item.status === 'Aprobado',
-                'bg-red-500': item.status === 'No Aprobado'
-              }">
-            {{ item.status }}
-        </span>
-        <!-- Caso 2: Pendiente (Mostrar Acciones de Calificación) -->
+        <!-- Estado ya calificado: usar badge institucional -->
+        <ng-container *ngIf="item.status !== 'Pendiente'">
+            <app-institutional-badge [config]="{ variant: item.status === 'Aprobado' ? 'success' : 'danger', size: 'small' }">
+                {{ item.status }}
+            </app-institutional-badge>
+        </ng-container>
+
+        <!-- Pendiente: acciones de calificación con botones institucionales -->
         <div *ngIf="item.status === 'Pendiente'" class="flex items-center justify-center gap-2">
-            <!-- Aprobar (Check Verde) -->
-            <button (click)="setExamResult(item, 'Aprobado')"
-                class="w-7 h-7 rounded-full bg-emerald-500 text-white flex items-center justify-center hover:bg-emerald-600 transition-colors shadow-sm"
-                [appTooltip]="'Aprobar Examen'" tooltipPosition="top">
-                <span class="material-symbols-outlined text-lg">check</span>
-            </button>
-            <!-- Reprobar (Cruz Roja) -->
-            <button (click)="setExamResult(item, 'No Aprobado')"
-                class="w-7 h-7 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition-colors shadow-sm"
-                [appTooltip]="'Reprobar Examen'" tooltipPosition="top">
-                <span class="material-symbols-outlined text-lg">close</span>
-            </button>
+            <app-institutional-button
+                [config]="{ variant: 'success', icon: 'check', iconPosition: 'only', size: 'small' }"
+                (buttonClick)="setExamResult(item, 'Aprobado')"
+                [appTooltip]="'Aprobar Examen'"
+                tooltipPosition="top">
+            </app-institutional-button>
+
+            <app-institutional-button
+                [config]="{ variant: 'danger', icon: 'close', iconPosition: 'only', size: 'small' }"
+                (buttonClick)="setExamResult(item, 'No Aprobado')"
+                [appTooltip]="'Reprobar Examen'"
+                tooltipPosition="top">
+            </app-institutional-button>
         </div>
     </ng-template>
     <!-- Acciones: Botones circulares de colores -->
@@ -95,7 +94,6 @@
                     icon: 'description',
                     iconPosition: 'only',
                     disabled: item.status !== 'Aprobado',
-                    customClass: '!rounded-full !w-8 !h-8 !p-0 min-w-[unset]'
                 }" (buttonClick)="item.status === 'Aprobado' && viewCertificate(item)"
                 [appTooltip]="item.status === 'Aprobado' ? (item.coursePaymentStatus === 'Pagado' ? 'Descargar Constancia' : 'Pago Curso Pendiente') : 'Requiere Aprobación'"
                 tooltipPosition="top">
@@ -107,7 +105,6 @@
                     icon: 'badge',
                     iconPosition: 'only',
                     disabled: item.status !== 'Aprobado',
-                    customClass: '!rounded-full !w-8 !h-8 !p-0 min-w-[unset]'
                 }" (buttonClick)="item.status === 'Aprobado' && requestTarjeton(item)"
                 [appTooltip]="item.status === 'Aprobado' ? (item.paymentStatus === 'Pagado' ? 'Descargar Tarjetón' : (item.paymentStatus === 'Pendiente' ? 'Pago Pendiente' : 'Generar Tarjetón')) : 'Requiere Aprobación'"
                 tooltipPosition="top">
@@ -118,7 +115,6 @@
                     variant: 'danger',
                     icon: 'delete',
                     iconPosition: 'only',
-                    customClass: '!rounded-full !w-8 !h-8 !p-0 min-w-[unset]'
                 }" (buttonClick)="deleteDriver(item)" [appTooltip]="'Eliminar Conductor'" tooltipPosition="top">
             </app-institutional-button>
         </div>

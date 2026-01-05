@@ -1,22 +1,33 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterModule } from '@angular/router';
-import { DriverFormComponent } from '../../components/driver-form/driver-form.component';
+import { Router, RouterModule, ActivatedRoute } from '@angular/router';
+import { PersonFormComponent } from '../../components/person-form/person-form.component';
 import { AlertModalComponent, AlertConfig } from '../../../../shared/components/modals/alert-modal.component';
 import { NotificationService } from '../../../../shared/services/notification.service';
+import { InstitutionalCardComponent } from '../../../../shared/components/institutional-card/institutional-card.component';
+import { BreadcrumbComponent } from '../../../../shared/components/breadcrumb/breadcrumb.component';
+import { BreadcrumbItem } from '../../../../shared/components/breadcrumb/breadcrumb.model';
+import { UniversalIconComponent } from '../../../../shared/components/universal-icon/universal-icon.component';
 
 @Component({
-    selector: 'app-driver-registration',
+    selector: 'app-person-registration',
     standalone: true,
     imports: [
         CommonModule,
         RouterModule,
-        DriverFormComponent,
-        AlertModalComponent
+        PersonFormComponent,
+        AlertModalComponent,
+        InstitutionalCardComponent,
+        BreadcrumbComponent,
+        UniversalIconComponent
     ],
-    templateUrl: './driver-registration.component.html'
+    templateUrl: './person-registration.component.html'
 })
-export class DriverRegistrationComponent {
+export class PersonRegistrationComponent implements OnInit {
+
+    cursoId: string | null = null;
+    groupId: string | null = null;
+    breadcrumbItems: BreadcrumbItem[] = [];
 
     // Configuración del Modal
     isAlertOpen = false;
@@ -30,6 +41,24 @@ export class DriverRegistrationComponent {
         private router: Router,
         private notificationService: NotificationService
     ) { }
+
+    ngOnInit(): void {
+        const root = this.router.routerState.root;
+        this.cursoId = root.firstChild?.snapshot.paramMap.get('cursoId') || null;
+        // groupId puede estar en la siguiente ruta segment
+        this.groupId = root.firstChild?.firstChild?.snapshot.paramMap.get('groupId') || root.firstChild?.snapshot.paramMap.get('groupId') || null;
+
+        this.breadcrumbItems = [
+            { label: 'Cursos', url: '/cursos' },
+        ];
+        if (this.cursoId) {
+            this.breadcrumbItems.push({ label: 'Grupos', url: `/cursos/${this.cursoId}/grupos` });
+        } else {
+            this.breadcrumbItems.push({ label: 'Grupos', url: '/cursos' });
+        }
+        this.breadcrumbItems.push({ label: 'Personas', url: this.cursoId && this.groupId ? `/cursos/${this.cursoId}/grupos/${this.groupId}/conductores` : '/cursos' });
+        this.breadcrumbItems.push({ label: 'Agregar' });
+    }
 
     onDriverSaved(driverData: any) {
         // Simulamos guardado exitoso

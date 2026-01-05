@@ -201,6 +201,7 @@ type ValidatorSpec = {
       padding: 0 4px;
       font-family: 'Montserrat', sans-serif;
       font-weight: 500;
+      margin-left: 1rem;
     }
 
     .label--shifted {
