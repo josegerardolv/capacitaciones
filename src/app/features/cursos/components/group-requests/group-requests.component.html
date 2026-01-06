@@ -1,58 +1,53 @@
-<app-modal
-        [isOpen]="isOpen"
-        [config]="{ 
+<app-modal [isOpen]="isOpen" [config]="{ 
             title: 'Solicitudes Pendientes Grupo' + (`: ${group?.name}` || ''), 
             subtitle: 'Seleccione solicitudes para acciones masivas', 
             showHeader: true, 
             padding: true, 
-            size: 'fullscreen' }"
-        (modalClose)="closeModal()">
+            size: 'fullscreen' }" (modalClose)="closeModal()">
 
-        <div class="p-6" slot="">
-            <div class="w-full">
-                <app-table-pagination
-                    [config]="paginationConfig"
-                    [showPageSizeSelector]="true"
-                    [showPaginationControls]="false"
-                    (pageChange)="onPageChange($event)">
-                </app-table-pagination>
-                <app-institutional-table 
-                        [data]="requests" 
-                        [columns]="tableColumns" 
-                        [config]="tableConfig"
-                        [selectedItems]="selectedRequests" 
-                        (selectionChange)="onSelectionChange($event)">
-                </app-institutional-table>
-                <app-table-pagination
-                    [config]="paginationConfig"
-                    [showPageSizeSelector]="false"
-                    [showPaginationControls]="true"
-                    (pageChange)="onPageChange($event)">
-                </app-table-pagination>
+    <div class="p-6" slot="">
+        <div class="w-full">
+            <!-- Bulk Actions Toolbar -->
+            <div class="mb-4 flex gap-3 justify-end" *ngIf="showBulkActions">
+                <app-institutional-button [config]="{variant: 'success', icon: 'check'}"
+                    (buttonClick)="processSelected('accept')">
+                    Aceptar Seleccionados
+                </app-institutional-button>
+                <app-institutional-button [config]="{variant: 'danger', icon: 'close'}"
+                    (buttonClick)="processSelected('reject')">
+                    Rechazar Seleccionados
+                </app-institutional-button>
             </div>
+
+            <app-table-pagination [config]="paginationConfig" [showPageSizeSelector]="true"
+                [showPaginationControls]="false" (pageChange)="onPageChange($event)">
+            </app-table-pagination>
+            <app-institutional-table [data]="requests" [columns]="tableColumns" [config]="tableConfig"
+                [selectedItems]="selectedRequests" (selectionChange)="onSelectionChange($event)">
+            </app-institutional-table>
+            <app-table-pagination [config]="paginationConfig" [showPageSizeSelector]="false"
+                [showPaginationControls]="true" (pageChange)="onPageChange($event)">
+            </app-table-pagination>
         </div>
+    </div>
 
 </app-modal>
 
 <!-- Actions Template (Moved outside *ngIf to ensure availability) -->
 <ng-template #actionsTemplate let-item>
     <div class="flex items-center justify-center gap-2">
-        <app-institutional-button
-            [config]="{
+        <app-institutional-button [config]="{
                 variant: 'success', 
                 size: 'small', 
                 icon: 'check',
-                iconPosition: 'only'}"
-            (buttonClick)="acceptRequest(item.id)">
+                iconPosition: 'only'}" (buttonClick)="acceptRequest(item.id)">
         </app-institutional-button>
 
-        <app-institutional-button
-            [config]="{
+        <app-institutional-button [config]="{
                 variant: 'danger', 
                 size: 'small', 
                 icon: 'close',
-                iconPosition: 'only'}"
-            (buttonClick)="rejectRequest(item.id)">
+                iconPosition: 'only'}" (buttonClick)="rejectRequest(item.id)">
         </app-institutional-button>
     </div>
 </ng-template>

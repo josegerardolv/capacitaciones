@@ -47,8 +47,14 @@ export class GroupListComponent implements OnInit {
     courseLabel: string = '';
     courseNameFromQuery: string | null = null;
     @ViewChild('actionsTemplate', { static: true }) actionsTemplate!: TemplateRef<any>;
+    @ViewChild('urlTemplate', { static: true }) urlTemplate!: TemplateRef<any>; // Template para URL
+    @ViewChild('statusTemplate', { static: true }) statusTemplate!: TemplateRef<any>; // Template para Estatus
+    @ViewChild('dateTemplate', { static: true }) dateTemplate!: TemplateRef<any>; // Template para Fecha
+    @ViewChild('timeTemplate', { static: true }) timeTemplate!: TemplateRef<any>; // Template para Hora
 
     groups: Group[] = [];
+    selectedGroups: Group[] = []; // Array de grupos seleccionados (para la tabla institucional)
+
     groupModalForm!: FormGroup;
     modalMode: 'create' | 'edit' = 'create';
     editingGroupId: number | null = null;
@@ -65,7 +71,8 @@ export class GroupListComponent implements OnInit {
         loading: true,
         striped: false,
         hoverable: true,
-        localSort: true
+        localSort: true,
+        selectable: true // Habilitar selección nativa
     };
 
     tableColumns: TableColumn[] = [];
@@ -81,7 +88,7 @@ export class GroupListComponent implements OnInit {
     // Breadcrumb items
     breadcrumbItems: BreadcrumbItem[] = [
         { label: 'Cursos', url: '/cursos' },
-        { label: 'Grupos'}
+        { label: 'Grupos' }
     ];
 
     // --- MODALES GENÉRICOS ---
@@ -120,7 +127,7 @@ export class GroupListComponent implements OnInit {
         // Leer posible nombre del curso pasado desde la navegación (query param)
         this.courseNameFromQuery = this.route.snapshot.queryParamMap.get('courseName');
         if (this.cursoId) {
-            this.courseLabel = this.courseNameFromQuery ? this.courseNameFromQuery :this.cursoId;
+            this.courseLabel = this.courseNameFromQuery ? this.courseNameFromQuery : this.cursoId;
             this.breadcrumbItems = [
                 { label: 'Cursos', url: '/cursos' },
                 { label: `Curso ${this.courseLabel}` },
@@ -130,19 +137,30 @@ export class GroupListComponent implements OnInit {
         this.loadGroups();
     }
 
+    // Inicialización del formulario con los campos requeridos por diseño
     initForms() {
         this.groupModalForm = this.fb.group({
             name: ['', [Validators.required]],
-            description: ['', [Validators.required]],
-            course: ['', [Validators.required]]
+            duration: ['', [Validators.required]],
+            location: ['', [Validators.required]],
+            date: ['', [Validators.required]], // Separated date
+            time: ['', [Validators.required]], // Separated time
+            quantity: ['', [Validators.required, Validators.min(1)]],
+            autoRegisterLimit: ['', [Validators.required, Validators.min(1)]],
+            course: ['', []]
         });
     }
 
     initColumns() {
         this.tableColumns = [
-            { key: 'name', label: 'Nombre', sortable: true, minWidth: '120px' },
-            { key: 'description', label: 'Descripción', sortable: true, minWidth: '250px' },
-            { key: 'course', label: 'Curso Asociado', sortable: true, minWidth: '100px' },
+            { key: 'name', label: 'Nombre', sortable: true, minWidth: '100px' },
+            { key: 'location', label: 'Ubicación', sortable: true, minWidth: '150px' },
+            { key: 'date', label: 'Fecha', template: this.dateTemplate, minWidth: '100px' },
+            { key: 'time', label: 'Hora', template: this.timeTemplate, minWidth: '80px' },
+            { key: 'quantity', label: 'Cantidad', sortable: true, minWidth: '80px', align: 'center' },
+            { key: 'autoRegisterLimit', label: 'Límite de autoregistro', sortable: true, minWidth: '120px', align: 'center' },
+            { key: 'url', label: 'URL', align: 'center', template: this.urlTemplate, minWidth: '80px' },
+            { key: 'status', label: 'Estatus', align: 'center', template: this.statusTemplate, minWidth: '100px' },
             {
                 key: 'actions',
                 label: 'Acciones',
@@ -158,6 +176,7 @@ export class GroupListComponent implements OnInit {
         this.groupsService.getGroups().subscribe({
             next: (data) => {
                 this.groups = data;
+                this.selectedGroups = []; // Limpiar selección al recargar
                 this.paginationConfig.totalItems = data.length;
                 this.tableConfig.loading = false;
             },
@@ -202,10 +221,35 @@ export class GroupListComponent implements OnInit {
         this.showModal = true;
     }
 
+
+
     openEditForm(group: Group) {
         this.modalMode = 'edit';
         this.editingGroupId = group.id;
-        this.groupModalForm.patchValue(group);
+
+        // Separar dateTime en date y time
+        let dateVal = '';
+        let timeVal = '';
+        if (group.dateTime) {
+            const dt = new Date(group.dateTime);
+            if (!isNaN(dt.getTime())) {
+                // Formato YYYY-MM-DD
+                dateVal = dt.toISOString().split('T')[0];
+                // Formato HH:mm
+                timeVal = dt.toTimeString().substring(0, 5);
+            } else {
+                // Fallback si es string simple
+                const parts = group.dateTime.split(' ');
+                if (parts.length > 0) dateVal = parts[0];
+                if (parts.length > 1) timeVal = parts[1];
+            }
+        }
+
+        this.groupModalForm.patchValue({
+            ...group,
+            date: dateVal,
+            time: timeVal
+        });
         this.showModal = true;
     }
 
@@ -213,6 +257,11 @@ export class GroupListComponent implements OnInit {
         this.showModal = false;
         this.editingGroupId = null;
         this.groupModalForm.reset();
+        // Aseguramos que se limpie completamente
+        Object.keys(this.groupModalForm.controls).forEach(key => {
+            this.groupModalForm.get(key)?.setErrors(null);
+            this.groupModalForm.get(key)?.setValue('');
+        });
     }
 
     onGroupModalSubmit() {
@@ -300,5 +349,63 @@ export class GroupListComponent implements OnInit {
         // No existe ruta global /cursos/grupos; redirigimos a la lista de cursos
         this.notificationService.info('Selecciona un curso', 'Para ver los conductores del grupo, primero selecciona el curso asociado.');
         this.router.navigate(['/cursos']);
+    }
+
+    // Lógica para Generar URL
+    generateUrl() {
+        // Filtramos grupos que ya están seleccionados pero no tienen URL
+        // (Aunque la UI debería seleccionarlos, validamos aquí de nuevo)
+        const groupsToGenerate = this.selectedGroups.filter(g => !g.url);
+
+        if (this.selectedGroups.length === 0) {
+            this.notificationService.warning('Selección Requerida', 'Por favor selecciona al menos un grupo para generar la URL.');
+            return;
+        }
+
+        if (groupsToGenerate.length === 0) {
+            this.notificationService.info('Información', 'Los grupos seleccionados ya tienen URL generada.');
+            return;
+        }
+
+        // Confirmar generación masiva
+        this.openConfirm({
+            title: 'Generar URL Pública',
+            message: `Se generará el enlace de registro para ${groupsToGenerate.length} grupo(s). \n\n¿Continuar?`,
+            type: 'info',
+            confirmText: 'Generar',
+            cancelText: 'Cancelar'
+        }, () => {
+            let count = 0;
+            groupsToGenerate.forEach(group => {
+                if (group.quantity > 0) {
+                    group.url = `https://semovi.cdmx.gob.mx/public-registration/cur-${group.name.toLowerCase()}-${Math.floor(Math.random() * 1000)}`;
+                    group.status = 'Activo';
+                    count++;
+                }
+            });
+
+            if (count > 0) {
+                this.notificationService.success('URL Generada', `Se generaron ${count} enlaces correctamente.`);
+                this.selectedGroups = []; // Limpiar selección
+            } else {
+                this.notificationService.warning('Advertencia', 'No se pudieron generar URLs (verifique cupo de los grupos).');
+            }
+        });
+    }
+
+    // --- SELECTION LOGIC ---
+    onSelectionChange(event: any) {
+        this.selectedGroups = event.selectedItems;
+    }
+
+    copyUrl(url: string) {
+        if (!url) return;
+        navigator.clipboard.writeText(url).then(() => {
+            this.notificationService.success('Copiado', 'Enlace copiado al portapapeles.');
+        });
+    }
+
+    exportData() {
+        this.notificationService.info('Exportar', 'Descargando reporte de grupos...');
     }
 }

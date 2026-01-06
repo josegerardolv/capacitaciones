@@ -69,7 +69,7 @@ export class CourseListComponent implements OnInit {
 
     // Breadcrumb items
     breadcrumbItems: BreadcrumbItem[] = [
-        { label: 'Cursos'}
+        { label: 'Cursos' }
     ];
 
     // --- MODALES GENÉRICOS ---
@@ -100,7 +100,7 @@ export class CourseListComponent implements OnInit {
 
     initForms() {
         this.courseModalForm = this.fb.group({
-            code: ['', [Validators.required]],
+            name: ['', [Validators.required]],
             description: ['', [Validators.required]],
             duration: ['', [Validators.required]]
         });
@@ -110,21 +110,21 @@ export class CourseListComponent implements OnInit {
         this.tableColumns = [
             { key: 'name', label: 'Nombre', sortable: true, minWidth: '120px' },
             { key: 'description', label: 'Descripción', sortable: true, minWidth: '250px' },
-            { 
-            key: 'duration', 
-            label: 'Duración', 
-            type: 'duration',
-            durationDisplay: 'long',
-            durationUnit: 'minutes',
-            sortable: true, 
-            minWidth: '100px'
+            {
+                key: 'duration',
+                label: 'Duración',
+                type: 'duration',
+                durationDisplay: 'long',
+                durationUnit: 'minutes',
+                sortable: true,
+                minWidth: '100px'
             },
             {
-            key: 'actions',
-            label: 'Acciones',
-            align: 'center',
-            minWidth: '140px',
-            template: this.actionsTemplate
+                key: 'actions',
+                label: 'Acciones',
+                align: 'center',
+                minWidth: '140px',
+                template: this.actionsTemplate
             }
         ];
     }
