@@ -111,6 +111,18 @@ export class GroupListComponent implements OnInit {
 
 
 
+    // --- HELPERS PARA UI ---
+    get canGenerateUrl(): boolean {
+        // Debe haber seleccionados
+        if (this.selectedGroups.length === 0) return false;
+        // Al menos uno de los seleccionados NO debe tener URL ya generada
+        return this.selectedGroups.some(g => !g.url);
+    }
+
+    get canExport(): boolean {
+        return this.selectedGroups.length > 0;
+    }
+
     constructor(
         private groupsService: GroupsService,
         private router: Router,
@@ -353,17 +365,11 @@ export class GroupListComponent implements OnInit {
 
     // Lógica para Generar URL
     generateUrl() {
-        // Filtramos grupos que ya están seleccionados pero no tienen URL
-        // (Aunque la UI debería seleccionarlos, validamos aquí de nuevo)
+        // Filtramos grupos que ya están seleccionados pero no tienen URL (doble validación)
         const groupsToGenerate = this.selectedGroups.filter(g => !g.url);
 
-        if (this.selectedGroups.length === 0) {
-            this.notificationService.warning('Selección Requerida', 'Por favor selecciona al menos un grupo para generar la URL.');
-            return;
-        }
-
         if (groupsToGenerate.length === 0) {
-            this.notificationService.info('Información', 'Los grupos seleccionados ya tienen URL generada.');
+            this.notificationService.info('Información', 'Todos los grupos seleccionados ya tienen una URL generada.');
             return;
         }
 
@@ -376,26 +382,39 @@ export class GroupListComponent implements OnInit {
             cancelText: 'Cancelar'
         }, () => {
             let count = 0;
+            const origin = window.location.origin; // Ej: http://localhost:4200
+
             groupsToGenerate.forEach(group => {
-                if (group.quantity > 0) {
-                    group.url = `https://semovi.cdmx.gob.mx/public-registration/cur-${group.name.toLowerCase()}-${Math.floor(Math.random() * 1000)}`;
-                    group.status = 'Activo';
+                // Solo si tiene cupo (aunque esto es lógica de negocio extra, la mantenemos si existe)
+                // y doble check de que no tenga url
+                if (!group.url) {
+                    // FORMATO SOLICITADO: Ruta al registro público
+                    group.url = `${origin}/public/register/${group.id}`;
+                    group.status = 'Activo'; // Asumimos que al generar URL se activa
                     count++;
                 }
             });
 
             if (count > 0) {
                 this.notificationService.success('URL Generada', `Se generaron ${count} enlaces correctamente.`);
-                this.selectedGroups = []; // Limpiar selección
+                this.selectedGroups = []; // Limpiar selección opcionalmente, o dejarla
             } else {
-                this.notificationService.warning('Advertencia', 'No se pudieron generar URLs (verifique cupo de los grupos).');
+                this.notificationService.warning('Advertencia', 'No se generaron URLs (posiblemente ya existían).');
             }
         });
     }
 
     // --- SELECTION LOGIC ---
     onSelectionChange(event: any) {
-        this.selectedGroups = event.selectedItems;
+        // Si es una selección masiva ("Select All"), filtramos los que ya tienen URL
+        if (event.allSelected) {
+            this.selectedGroups = event.selectedItems.filter((g: Group) => !g.url);
+        } else {
+            // Si es selección manual, respetamos lo que el usuario cliquee
+            // (aunque la UI probablemente permita seleccionar uno con URL,
+            // las acciones se manejarán con los getters canGenerateUrl/canExport)
+            this.selectedGroups = event.selectedItems;
+        }
     }
 
     copyUrl(url: string) {

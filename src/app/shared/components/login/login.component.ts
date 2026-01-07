@@ -22,7 +22,8 @@ import { LoginRequest } from '../../../core/models/auth.model';
               <img src="assets/images/icons/Icon_vino.svg" alt="SEMOVI Logo" class="h-12 w-12">
             </div>
             <h2 class="text-2xl sm:text-3xl font-bold text-guinda-900 mb-2">
-              Sistema de Soporte Informático
+              <!-- TODO: Cambiar por el nombre del sistema -->
+              Sistema de Capacitaciones
             </h2>
             <p class="text-sm sm:text-base text-gray-600 mb-8">
               <span class="font-semibold text-guinda-700">SEMOVI</span> - Secretaría de Movilidad
@@ -136,7 +137,8 @@ import { LoginRequest } from '../../../core/models/auth.model';
               <span class="font-medium">© 2025 SEMOVI Oaxaca</span>
             </div>
             <p class="text-xs text-gray-500 mt-2">
-              Sistema de Soporte Técnico - <span class="font-semibold">Versión 1.0.0</span>
+              <!-- TODO: Cambiar por el nombre del sistema -->
+              Sistema de Capacitaciones - <span class="font-semibold">Versión 1.0.0</span>
             </p>
           </div>
         </div>

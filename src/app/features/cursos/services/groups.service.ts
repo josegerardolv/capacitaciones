@@ -19,7 +19,7 @@ export class GroupsService {
             dateTime: '12/07/2026, 14:30',
             quantity: 55,
             autoRegisterLimit: 5, // Días (número)
-            url: 'https://semovi.cdmx.gob.mx/registro/cur-a05-x8z',
+            url: 'http://localhost:4200/public/register/1',
             requests: 2,
             status: 'Activo'
         },
@@ -43,7 +43,7 @@ export class GroupsService {
             dateTime: '12/07/2026, 14:30',
             quantity: 30,
             autoRegisterLimit: 2,
-            url: 'https://semovi.cdmx.gob.mx/registro/cur-b13-9aa',
+            url: 'http://localhost:4200/public/register/3',
             requests: 5,
             status: 'Activo'
         }
