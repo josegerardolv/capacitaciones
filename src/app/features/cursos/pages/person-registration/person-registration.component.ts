@@ -28,6 +28,7 @@ export class PersonRegistrationComponent implements OnInit {
     cursoId: string | null = null;
     groupId: string | null = null;
     breadcrumbItems: BreadcrumbItem[] = [];
+    prefilledData: any = null;
 
     // Configuración del Modal
     isAlertOpen = false;
@@ -39,14 +40,24 @@ export class PersonRegistrationComponent implements OnInit {
 
     constructor(
         private router: Router,
+        private route: ActivatedRoute, // Needed to read query params
         private notificationService: NotificationService
     ) { }
 
     ngOnInit(): void {
-        const root = this.router.routerState.root;
-        this.cursoId = root.firstChild?.snapshot.paramMap.get('cursoId') || null;
-        // groupId puede estar en la siguiente ruta segment
-        this.groupId = root.firstChild?.firstChild?.snapshot.paramMap.get('groupId') || root.firstChild?.snapshot.paramMap.get('groupId') || null;
+        // Mejor estrategia para leer params de rutas padres
+        // Intentamos leer del snapshot actual (si estuvieran ahí) o de los padres
+        // Asumiendo ruta: /cursos/:cursoId/grupos/:groupId/conductores/nuevo
+        // El ActivatedRoute actual es 'nuevo'. Su parent es 'conductores' (o dummy wrapper), su parent es ':groupId'... etc.
+        // Angular Router a veces aplana o anida.
+        // Estrategia segura: recorrer hacia arriba buscando los params.
+
+        let route = this.route;
+        while (route) {
+            if (route.snapshot.paramMap.has('cursoId')) this.cursoId = route.snapshot.paramMap.get('cursoId');
+            if (route.snapshot.paramMap.has('groupId')) this.groupId = route.snapshot.paramMap.get('groupId');
+            route = route.parent!;
+        }
 
         this.breadcrumbItems = [
             { label: 'Cursos', url: '/cursos' },
@@ -56,8 +67,18 @@ export class PersonRegistrationComponent implements OnInit {
         } else {
             this.breadcrumbItems.push({ label: 'Grupos', url: '/cursos' });
         }
+        // Fix previous duplication
         this.breadcrumbItems.push({ label: 'Personas', url: this.cursoId && this.groupId ? `/cursos/${this.cursoId}/grupos/${this.groupId}/conductores` : '/cursos' });
         this.breadcrumbItems.push({ label: 'Agregar' });
+
+        // LEER QUERY PARAMS PARA AUTO-RELLENADO
+        this.route.queryParams.subscribe(params => {
+            if (Object.keys(params).length > 0) {
+                // Mapeamos los params directamente (name, license, curp, etc.)
+                // Nota: Los queryParams son strings, asegurarse de conversión si fuera necesario.
+                this.prefilledData = { ...params };
+            }
+        });
     }
 
     onDriverSaved(driverData: any) {

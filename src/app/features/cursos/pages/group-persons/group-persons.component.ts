@@ -90,6 +90,11 @@ export class GroupPersonsComponent implements OnInit {
     // Datos de Conductores
     drivers: Driver[] = [];
 
+    // --- BÚSQUEDA ---
+    isSearchModalOpen = false;
+    searchLicense = '';
+    isSearching = false;
+
     // Breadcrumb items (se construyen en ngOnInit según params)
     breadcrumbItems: BreadcrumbItem[] = [];
 
@@ -174,7 +179,83 @@ export class GroupPersonsComponent implements OnInit {
     }
 
     openNewDriverForm() {
-        this.router.navigate(['nuevo'], { relativeTo: this.route });
+        // En lugar de navegar, abrimos el modal de búsqueda
+        this.isSearchModalOpen = true;
+        this.searchLicense = '';
+    }
+
+    closeSearchModal() {
+        this.isSearchModalOpen = false;
+        this.searchLicense = '';
+    }
+
+    searchDriver() {
+        if (!this.searchLicense.trim()) return;
+
+        this.isSearching = true;
+        this.groupsService.searchDriverByLicense(this.searchLicense).subscribe({
+            next: (driver) => {
+                this.isSearching = false;
+                this.closeSearchModal();
+
+                if (driver) {
+                    // SI SE ENCUENTRA: Navegar con datos precargados
+                    console.log('Conductor encontrado:', driver);
+                    this.router.navigate(['nuevo'], {
+                        relativeTo: this.route,
+                        queryParams: {
+                            found: 'true',
+                            name: driver.name,
+                            firstSurname: driver.firstSurname,
+                            secondSurname: driver.secondSurname,
+                            license: driver.license,
+                            curp: driver.curp
+                        }
+                    });
+                } else {
+                    // NO SE ENCUENTRA: Mostrar modal de error/advertencia
+                    this.showNotFoundAlert();
+                }
+            },
+            error: (err) => {
+                this.isSearching = false;
+                console.error('Error buscando conductor:', err);
+                this.notificationService.showError('Error', 'Error en el servicio de búsqueda.');
+            }
+        });
+    }
+
+    showNotFoundAlert() {
+        this.alertConfig = {
+            title: 'Error',
+            message: 'Ha ocurrido un error al procesar la solicitud (no encontrado). Por favor, ingrese manualmente la información.',
+            type: 'danger',
+            actions: [
+                {
+                    label: 'Reintentar',
+                    variant: 'secondary',
+                    action: () => {
+                        this.isAlertOpen = false;
+                        this.isSearchModalOpen = true; // Volver a abrir búsqueda
+                    }
+                },
+                {
+                    label: 'Continuar', // Ir a manual
+                    variant: 'primary',
+                    action: () => {
+                        this.isAlertOpen = false;
+                        // Navegar solo con la licencia para llenado manual
+                        this.router.navigate(['nuevo'], {
+                            relativeTo: this.route,
+                            queryParams: {
+                                license: this.searchLicense
+                            }
+                        });
+                    }
+                }
+            ]
+        };
+        this.isAlertOpen = true;
     }
 
     // --- HELPERS PARA MODALES ---

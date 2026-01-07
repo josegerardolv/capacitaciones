@@ -68,12 +68,35 @@ export class GroupsService {
 
     getDriversByGroupId(groupId: number): Observable<Driver[]> {
         const drivers = this.mockDrivers[groupId] || [];
-        return of([...drivers]).pipe(delay(600)); // Simular carga
+        return of([...drivers]).pipe(delay(600)); // Simular carga de datos 
     }
 
     deleteGroup(id: number): Observable<void> {
         this.mockGroups = this.mockGroups.filter(g => g.id !== id);
         return of(void 0).pipe(delay(500));
+    }
+
+    // Nueva función para búsqueda simulada de conductores
+    searchDriverByLicense(license: string): Observable<Driver | null> {
+        // Simulamos que si la licencia empieza por "EXIST", la encuentra
+        // Si no, retorna null
+        if (license.toUpperCase().startsWith('EXIST')) {
+            const mockDriver: Driver = {
+                id: 999,
+                name: 'Juan',
+                firstSurname: 'Pérez',
+                secondSurname: 'Encontrado',
+                license: license.toUpperCase(),
+                curp: 'PEHJ901212HDFR05',
+                // rfc: 'PEHJ901212', // Removed as it is not in Driver interface
+                status: 'Pendiente',
+                paymentStatus: 'Pendiente',
+                coursePaymentStatus: 'Pendiente',
+                requestTarjeton: false
+            };
+            return of(mockDriver).pipe(delay(800));
+        }
+        return of(null).pipe(delay(800));
     }
 
     createGroup(group: Group): Observable<Group> {

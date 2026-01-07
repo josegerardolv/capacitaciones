@@ -1,6 +1,8 @@
 export interface Driver {
     id: number;
     name: string;
+    firstSurname?: string; // Apellido Paterno
+    secondSurname?: string; // Apellido Materno
     license: string;
     curp: string;
     status: 'Pendiente' | 'Aprobado' | 'No Aprobado';

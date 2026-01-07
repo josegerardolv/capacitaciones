@@ -115,8 +115,9 @@ export class GroupListComponent implements OnInit {
     get canGenerateUrl(): boolean {
         // Debe haber seleccionados
         if (this.selectedGroups.length === 0) return false;
-        // Al menos uno de los seleccionados NO debe tener URL ya generada
-        return this.selectedGroups.some(g => !g.url);
+        // Solo se activa si TODOS los seleccionados NO tienen URL
+        // Si al menos uno tiene URL, se desactiva (para obligar al usuario a filtrar)
+        return this.selectedGroups.every(g => !g.url);
     }
 
     get canExport(): boolean {
@@ -406,15 +407,9 @@ export class GroupListComponent implements OnInit {
 
     // --- SELECTION LOGIC ---
     onSelectionChange(event: any) {
-        // Si es una selección masiva ("Select All"), filtramos los que ya tienen URL
-        if (event.allSelected) {
-            this.selectedGroups = event.selectedItems.filter((g: Group) => !g.url);
-        } else {
-            // Si es selección manual, respetamos lo que el usuario cliquee
-            // (aunque la UI probablemente permita seleccionar uno con URL,
-            // las acciones se manejarán con los getters canGenerateUrl/canExport)
-            this.selectedGroups = event.selectedItems;
-        }
+        // Seleccionamos todo lo que venga del evento, sin filtrar.
+        // La validación de acciones se hace en los getters canGenerateUrl/canExport
+        this.selectedGroups = event.selectedItems;
     }
 
     copyUrl(url: string) {
