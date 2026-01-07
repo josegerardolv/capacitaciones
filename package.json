@@ -28,7 +28,7 @@
     "@zxing/library": "^0.21.3",
     "@zxing/ngx-scanner": "^20.0.0",
     "fabric": "^6.9.1",
-    "jspdf": "^3.0.4",
+    "jspdf": "^4.0.0",
     "material-design-icons": "^3.0.1",
     "qrcode": "^1.5.4",
     "rxjs": "^7.8.2",
@@ -37,7 +37,7 @@
   },
   "devDependencies": {
     "@angular-devkit/build-angular": "^20.2.6",
-    "@angular/cli": "^20.2.6",
+    "@angular/cli": "^20.0.6",
     "@angular/compiler-cli": "^20.3.15",
     "@tailwindcss/forms": "^0.5.9",
     "@tailwindcss/typography": "^0.5.15",
