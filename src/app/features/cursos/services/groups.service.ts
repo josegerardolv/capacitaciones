@@ -89,6 +89,8 @@ export class GroupsService {
                 license: license.toUpperCase(),
                 curp: 'PEHJ901212HDFR05',
                 // rfc: 'PEHJ901212', // Removed as it is not in Driver interface
+                sex: 'H', // Added for consistency
+                address: 'Calle Conocida 123, Centro', // Added for consistency
                 status: 'Pendiente',
                 paymentStatus: 'Pendiente',
                 coursePaymentStatus: 'Pendiente',

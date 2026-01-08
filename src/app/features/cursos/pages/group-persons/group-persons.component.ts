@@ -209,7 +209,9 @@ export class GroupPersonsComponent implements OnInit {
                             firstSurname: driver.firstSurname,
                             secondSurname: driver.secondSurname,
                             license: driver.license,
-                            curp: driver.curp
+                            curp: driver.curp,
+                            sex: driver.sex,
+                            address: driver.address
                         }
                     });
                 } else {
