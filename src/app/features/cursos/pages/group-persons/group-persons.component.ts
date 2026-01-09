@@ -16,6 +16,8 @@ import { FormsModule } from '@angular/forms';
 import { UniversalIconComponent } from "@/app/shared/components";
 import { Driver } from '../../../../core/models/driver.model';
 import { GroupsService } from '../../services/groups.service';
+import { DocumentSelectionModalComponent, DocumentOption } from '../../components/modals/document-selection-modal/document-selection-modal.component';
+import { Group } from '../../../../core/models/group.model';
 
 // ... existing code ...
 
@@ -36,7 +38,8 @@ import { GroupsService } from '../../services/groups.service';
         AlertModalComponent,
         BreadcrumbComponent,
         FormsModule,
-        UniversalIconComponent
+        UniversalIconComponent,
+        DocumentSelectionModalComponent
     ],
     templateUrl: './group-persons.component.html'
 })
@@ -45,6 +48,7 @@ export class GroupPersonsComponent implements OnInit {
 
     cursoId: string | null = null;
     currentGroupId: string | null = null;
+    currentGroup: Group | null = null; // Store full group details
     courseLabel: string = '';
     groupLabel: string = '';
 
@@ -86,6 +90,10 @@ export class GroupPersonsComponent implements OnInit {
         message: '',
         type: 'info'
     };
+
+    // 3. Modal de Selección de Documentos
+    isDocumentsModalOpen = false;
+    selectedDriverForDocs: Driver | null = null;
 
     // Datos de Conductores
     drivers: Driver[] = [];
@@ -141,7 +149,19 @@ export class GroupPersonsComponent implements OnInit {
         this.breadcrumbItems.push({ label: 'Personas' });
 
         this.initColumns();
+        this.loadGroupDetails();
         this.loadDrivers();
+    }
+
+    loadGroupDetails() {
+        if (!this.currentGroupId) return;
+        this.groupsService.getGroupById(+this.currentGroupId).subscribe(group => {
+            if (group) {
+                this.currentGroup = group;
+                // Update label if available
+                if (group.name) this.groupLabel = `Grupo ${group.name}`;
+            }
+        });
     }
 
     loadDrivers() {
@@ -284,7 +304,7 @@ export class GroupPersonsComponent implements OnInit {
         this.isAlertOpen = true;
     }
 
-    // --- LÓGICA DE NEGOCIO ---
+    // LOGICA DE NEGOCIO 
 
     setExamResult(driver: Driver, result: 'Aprobado' | 'No Aprobado') {
         if (result === 'Aprobado') {
@@ -341,20 +361,46 @@ export class GroupPersonsComponent implements OnInit {
                 confirmText: 'Sí, Generar Orden',
                 cancelText: 'Cancelar'
             }, () => {
-                // Si acepta, procedemos a mostrar las opciones de generación
-                this.showGenerationOptions(driver);
+                // Si acepta, procedemos a mostrar las opciones de generación (ahora vía el selector de documentos)
+                driver.requestTarjeton = true; // Asumimos que si dijo que sí, ahora lo quiere
+                this.openDocumentSelection(driver);
             });
             return;
         }
 
-        // Si SÍ lo solicitó, pasar directo a las opciones
-        this.showGenerationOptions(driver);
+        // Si SÍ lo solicitó (o es el flujo nuevo), abrir el selector
+        this.openDocumentSelection(driver);
     }
 
-    showGenerationOptions(driver: Driver) {
+    // --- NUEVO FLUJO DE DOCUMENTOS ---
+    openDocumentSelection(driver: Driver) {
+        this.selectedDriverForDocs = driver;
+        this.isDocumentsModalOpen = true;
+    }
+
+    closeDocumentsModal() {
+        this.isDocumentsModalOpen = false;
+        this.selectedDriverForDocs = null;
+    }
+
+    onDocumentsConfirmed(documents: DocumentOption[]) {
+        if (!this.selectedDriverForDocs) return;
+
+        const driver = this.selectedDriverForDocs;
+        const documentNames = documents.map(d => d.name).join(', ');
+
+        console.log(`Generando orden para ${driver.name} con: ${documentNames}`);
+
+        this.closeDocumentsModal();
+
+        // Proceder a generación (usando el método existente)
+        this.showGenerationOptions(driver, documentNames);
+    }
+
+    showGenerationOptions(driver: Driver, details: string = '') {
         this.alertConfig = {
             title: 'Generar Orden de Pago',
-            message: `Seleccione cómo desea entregar la Línea de Captura a ${driver.name}:`,
+            message: `Conceptos: ${details || 'Tarjetón'}\n\nSeleccione cómo desea entregar la Línea de Captura a ${driver.name}:`,
             type: 'info',
             actions: [
                 {

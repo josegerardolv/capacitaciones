@@ -21,7 +21,9 @@ export class GroupsService {
             autoRegisterLimit: 5, // Días (número)
             url: 'http://localhost:4200/public/register/1',
             requests: 2,
-            status: 'Activo'
+            status: 'Activo',
+            courseType: 'LICENCIA',
+            courseTypeId: 1
         },
         {
             id: 2,
@@ -33,7 +35,9 @@ export class GroupsService {
             autoRegisterLimit: 3,
             url: '', // Sin URL generada aún
             requests: 0,
-            status: 'Inactivo'
+            status: 'Inactivo',
+            courseType: 'GENERICO',
+            courseTypeId: 3
         },
         {
             id: 3,
@@ -45,7 +49,9 @@ export class GroupsService {
             autoRegisterLimit: 2,
             url: 'http://localhost:4200/public/register/3',
             requests: 5,
-            status: 'Activo'
+            status: 'Activo',
+            courseType: 'LICENCIA',
+            courseTypeId: 1
         }
     ];
 
@@ -114,5 +120,10 @@ export class GroupsService {
             this.mockGroups[index] = { ...this.mockGroups[index], ...updatedGroup };
         }
         return of(this.mockGroups[index]).pipe(delay(500));
+    }
+
+    getGroupById(id: number): Observable<Group | undefined> {
+        const group = this.mockGroups.find(g => g.id === id);
+        return of(group).pipe(delay(500));
     }
 }

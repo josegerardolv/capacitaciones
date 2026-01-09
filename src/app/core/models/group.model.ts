@@ -1,3 +1,5 @@
+export type CourseType = 'LICENCIA' | 'GENERICO' | 'CAPACITACION_ESCOLAR';
+
 export interface Group {
     id: number;
     name: string; // e.g., "A05"
@@ -11,4 +13,6 @@ export interface Group {
     requests: number; // Cantidad de solicitudes pendientes
     status: 'Activo' | 'Inactivo';
     selected?: boolean; // Para lógica de selección en tabla
+    courseType: CourseType; // Nuevo campo para distinguir lógica
+    courseTypeId?: number; // ID de la configuración dinámica
 }

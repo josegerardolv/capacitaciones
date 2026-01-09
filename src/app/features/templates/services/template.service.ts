@@ -11,9 +11,12 @@ export class TemplateService {
       claveConcepto: 'CB-001',
       description: 'Template básico para constancias de participación',
       category: 'Participación',
+
+      // NOTA: Este valor debe venir del backend calculado: COUNT(certificates) WHERE status = 'Entregado' AND templateId = X
+      usageCount: 150,
       pageConfig: {
-        width: 279.4, // A4 landscape width in mm
-        height: 215.9, // A4 landscape height in mm
+        width: 279.4,
+        height: 215.9,
         orientation: 'landscape',
         margins: { top: 20, right: 20, bottom: 20, left: 20 },
         backgroundColor: '#ffffff'
@@ -25,16 +28,45 @@ export class TemplateService {
         { name: 'fecha', label: 'Fecha de emisión', type: 'date', required: true }
       ],
       created_at: new Date().toISOString()
+    },
+    {
+      id: 2,
+      name: 'Certificado de Aprobación',
+      claveConcepto: 'CA-002',
+      description: 'Certificado oficial de aprobación de curso',
+      category: 'Certificación',
+      usageCount: 85,
+      pageConfig: this.getDefaultPageConfig(),
+      elements: [],
+      variables: [],
+      created_at: new Date().toISOString()
+    },
+    {
+      id: 3,
+      name: 'Diploma de Honor',
+      claveConcepto: 'DH-003',
+      description: 'Diploma para alumnos destacados',
+      category: 'Reconocimiento',
+      usageCount: 20,
+      pageConfig: this.getDefaultPageConfig(),
+      elements: [],
+      variables: [],
+      created_at: new Date().toISOString()
     }
   ];
 
   private generatedCertificates: GeneratedCertificate[] = [];
   private nextCertId = 1;
 
-  constructor() {}
+  constructor() { }
 
   // ===== TEMPLATES =====
   getTemplates(): Observable<CertificateTemplate[]> {
+    // TODO: Pendiente conectar con el backend cuando esté listo.
+    // Aquí es donde voy a cambiar la URL por la del API real.
+    // return this.http.get<CertificateTemplate[]>('http://localhost:3000/api/templates');
+
+    // Por ahora regreso los datos de prueba simulando un pequeño delay para ver el loading
     return of([...this.templatesData]).pipe(delay(500));
   }
 
@@ -57,8 +89,8 @@ export class TemplateService {
   updateTemplate(id: number, template: Partial<CertificateTemplate>): Observable<CertificateTemplate> {
     const index = this.templatesData.findIndex(t => t.id === id);
     if (index !== -1) {
-      this.templatesData[index] = { 
-        ...this.templatesData[index], 
+      this.templatesData[index] = {
+        ...this.templatesData[index],
         ...template,
         updated_at: new Date().toISOString()
       };
@@ -77,7 +109,7 @@ export class TemplateService {
     if (!template) {
       throw new Error('Template not found');
     }
-    
+
     const newId = Math.max(...this.templatesData.map(t => t.id), 0) + 1;
     const duplicated: CertificateTemplate = {
       ...JSON.parse(JSON.stringify(template)), // Deep clone
@@ -104,6 +136,7 @@ export class TemplateService {
       recipientName: data.variables['nombre'] || 'Sin nombre',
       data: data.variables,
       pdfUrl: `/api/certificates/${this.nextCertId - 1}.pdf`, // Mock URL
+      status: 'Pendiente',
       generatedAt: new Date().toISOString()
     };
 
@@ -132,7 +165,7 @@ export class TemplateService {
       { name: 'nombre', label: 'Nombre completo', type: 'text', required: true, icon: 'person', category: 'participante', description: 'Nombre del participante' },
       { name: 'curp', label: 'CURP', type: 'text', required: false, icon: 'badge', category: 'participante', description: 'CURP del participante' },
       { name: 'email', label: 'Correo electrónico', type: 'text', required: false, icon: 'email', category: 'participante', description: 'Email del participante' },
-      
+
       // Curso
       { name: 'curso', label: 'Nombre del curso', type: 'text', required: true, icon: 'school', category: 'curso', description: 'Título del curso o capacitación' },
       { name: 'fecha_inicio', label: 'Fecha de inicio', type: 'date', required: false, icon: 'event', category: 'curso', description: 'Fecha de inicio del curso' },
@@ -140,13 +173,13 @@ export class TemplateService {
       { name: 'duracion', label: 'Duración', type: 'text', required: false, icon: 'schedule', category: 'curso', description: 'Duración total (ej: 40 horas)' },
       { name: 'instructor', label: 'Nombre del instructor', type: 'text', required: false, icon: 'record_voice_over', category: 'curso', description: 'Instructor o facilitador' },
       { name: 'modalidad', label: 'Modalidad', type: 'text', required: false, icon: 'devices', category: 'curso', description: 'Presencial, en línea, híbrido' },
-      
+
       // Institución
       { name: 'folio', label: 'Número de folio', type: 'text', required: false, icon: 'tag', category: 'institucion', description: 'Folio único del documento' },
       { name: 'institucion', label: 'Nombre de la institución', type: 'text', required: false, icon: 'domain', category: 'institucion', description: 'Nombre de la institución emisora' },
       { name: 'director', label: 'Nombre del director', type: 'text', required: false, icon: 'supervisor_account', category: 'institucion', description: 'Director o responsable' },
       { name: 'cargo_director', label: 'Cargo del director', type: 'text', required: false, icon: 'work', category: 'institucion', description: 'Puesto del firmante' },
-      
+
       // Media (imagen y QR dinámicos)
       { name: 'foto_participante', label: 'Foto del participante', type: 'image', required: false, icon: 'account_circle', category: 'media', description: 'Fotografía del participante desde API' },
       { name: 'logo_institucion', label: 'Logo de la institución', type: 'image', required: false, icon: 'image', category: 'media', description: 'Logo institucional desde API' },

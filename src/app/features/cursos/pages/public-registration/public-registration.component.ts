@@ -3,12 +3,14 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { PersonFormComponent } from '../../components/person-form/person-form.component';
 import { AlertModalComponent, AlertConfig } from '../../../../shared/components/modals/alert-modal.component';
+import { DocumentSelectionModalComponent, DocumentOption } from '../../components/modals/document-selection-modal/document-selection-modal.component';
 import { InstitutionalCardComponent } from '../../../../shared/components/institutional-card/institutional-card.component';
+import { CourseType } from '../../../../core/models/group.model'; // Need CourseType
 
 @Component({
     selector: 'app-public-registration',
     standalone: true,
-    imports: [CommonModule, PersonFormComponent, AlertModalComponent, InstitutionalCardComponent],
+    imports: [CommonModule, PersonFormComponent, AlertModalComponent, InstitutionalCardComponent, DocumentSelectionModalComponent],
     templateUrl: './public-registration.component.html'
 })
 export class PublicRegistrationComponent implements OnInit {
@@ -20,6 +22,9 @@ export class PublicRegistrationComponent implements OnInit {
         slotsAvailable: 5,
         deadline: '20 Oct 2025'
     };
+
+    // Configuración de campos
+    fieldsConfig: Record<string, { visible?: boolean; required?: boolean }> = {};
 
     // Configuración del Modal
     isAlertOpen = false;
@@ -34,10 +39,53 @@ export class PublicRegistrationComponent implements OnInit {
     ngOnInit() {
         const groupId = this.route.snapshot.paramMap.get('id');
         // Aquí llamaríamos al servicio: this.groupsService.getPublicGroupInfo(groupId)...
+        // Aquí llamaríamos al servicio: this.groupsService.getPublicGroupInfo(groupId)...
         console.log('Cargando información pública para el grupo:', groupId);
+
+        // Simular carga y configuración (Asumir LICENCIA por defecto o lógica real)
+        // Por ahora forzamos la configuración para ocultar requestTarjeton
+        this.setupFormFields(this.currentCourseType);
     }
 
+    setupFormFields(courseType: string) {
+        if (courseType === 'LICENCIA') {
+            this.fieldsConfig = {
+                requestTarjeton: { visible: false } // Siempre oculto, se pide en modal
+            };
+        } else {
+            this.fieldsConfig = {
+                license: { visible: false, required: false },
+                nuc: { visible: false },
+                requestTarjeton: { visible: false }
+            };
+        }
+    }
+
+    // State for modal
+    isDocumentsModalOpen = false;
+    tempDriverData: any = null;
+    currentCourseType: CourseType = 'LICENCIA'; // Default
+
     onDriverRegistered(driverData: any) {
+        this.tempDriverData = driverData;
+        this.isDocumentsModalOpen = true;
+    }
+
+    onDocumentsConfirmed(documents: DocumentOption[]) {
+        this.isDocumentsModalOpen = false;
+        // Map selected documents to driver data
+        const wantsTarjeton = documents.some(d => d.id === 'tarjeton' && d.selected);
+
+        // Merge with temp data
+        const finalDriverData = {
+            ...this.tempDriverData,
+            requestTarjeton: wantsTarjeton
+        };
+
+        this.finalizeRegistration(finalDriverData);
+    }
+
+    finalizeRegistration(driverData: any) {
         console.log('Solicitud de registro pública:', driverData);
 
         // 1. Preparamos el mensaje base (Enfoque: Envío por correo)

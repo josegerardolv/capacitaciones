@@ -27,7 +27,7 @@ export const SIDEBAR_MENU_CONFIG: MenuItem[] = [
     icon: 'house',
     iconType: 'bootstrap',
     route: '/dashboard',
-    roles: ['ADMINISTRADOR', 'SUPER_ADMINISTRADOR', 'CAPTURISTA', 'CONSULTA', 'SUPERVISOR']
+    roles: ['ADMIN', 'SUPER_ADMINISTRADOR', 'CAPTURISTA', 'CONSULTA', 'SUPERVISOR']
   },
   {
     id: 'cursos',
@@ -35,7 +35,7 @@ export const SIDEBAR_MENU_CONFIG: MenuItem[] = [
     icon: 'people',
     iconType: 'bootstrap',
     route: '/cursos',
-    roles: ['ADMINISTRADOR', 'SUPER_ADMINISTRADOR', 'CAPTURISTA', 'SUPERVISOR']
+    roles: ['ADMIN', 'SUPER_ADMINISTRADOR', 'CAPTURISTA', 'SUPERVISOR']
   },
   {
     id: 'busqueda',
@@ -43,7 +43,7 @@ export const SIDEBAR_MENU_CONFIG: MenuItem[] = [
     icon: 'search',
     iconType: 'bootstrap',
     route: '/busqueda',
-    roles: ['ADMINISTRADOR', 'SUPER_ADMINISTRADOR', 'CAPTURISTA', 'CONSULTA', 'SUPERVISOR']
+    roles: ['ADMIN', 'SUPER_ADMINISTRADOR', 'CAPTURISTA', 'CONSULTA', 'SUPERVISOR']
   },
   {
     id: 'templates',
@@ -51,14 +51,14 @@ export const SIDEBAR_MENU_CONFIG: MenuItem[] = [
     icon: 'file-text',
     iconType: 'bootstrap',
     route: '/documentos/templates',
-    roles: ['ADMINISTRADOR', 'SUPER_ADMINISTRADOR', 'SUPERVISOR']
+    roles: ['ADMIN', 'SUPER_ADMINISTRADOR', 'SUPERVISOR']
   },
   {
     id: 'configuracion',
     label: 'Configuración',
     icon: 'gear',
     iconType: 'bootstrap',
-    roles: ['ADMINISTRADOR', 'SUPER_ADMINISTRADOR'],
+    roles: ['ADMIN', 'SUPER_ADMINISTRADOR'],
     children: [
       {
         id: 'encuesta',
@@ -66,32 +66,17 @@ export const SIDEBAR_MENU_CONFIG: MenuItem[] = [
         icon: 'clipboard-data',
         iconType: 'bootstrap',
         route: '/config/encuesta',
-        roles: ['ADMINISTRADOR', 'SUPER_ADMINISTRADOR']
+        roles: ['ADMIN', 'SUPER_ADMINISTRADOR']
       },
       {
-        id: 'contrasena',
-        label: 'Contraseña',
-        icon: 'key',
+        id: 'cursos',
+        label: 'Tipo de curso',
+        icon: 'person',
         iconType: 'bootstrap',
-        route: '/config/contrasena',
-        roles: ['ADMINISTRADOR', 'SUPER_ADMINISTRADOR']
-      },
-      {
-        id: 'notificaciones',
-        label: 'Notificaciones',
-        icon: 'bell',
-        iconType: 'bootstrap',
-        route: '/config/notificaciones',
-        roles: ['ADMINISTRADOR', 'SUPER_ADMINISTRADOR']
-      },
-      {
-        id: 'usuarios',
-        label: 'Gestión de usuarios',
-        icon: 'person-gear',
-        iconType: 'bootstrap',
-        route: '/config/usuarios',
-        roles: ['SUPER_ADMINISTRADOR']
+        route: '/config/tipos-cursos',
+        roles: ['ADMIN', 'SUPER_ADMINISTRADOR']
       }
+
     ]
   }
 ];

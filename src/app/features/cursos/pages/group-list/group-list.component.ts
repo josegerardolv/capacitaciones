@@ -4,6 +4,7 @@ import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Group } from '../../../../core/models/group.model';
 import { GroupsService } from '../../services/groups.service';
+import { CoursesService } from '../../services/courses.service';
 import { InstitutionalTableComponent, TableColumn, TableConfig } from '../../../../shared/components/institutional-table/institutional-table.component';
 import { TablePaginationComponent, PaginationConfig, PageChangeEvent } from '../../../../shared/components/table-pagination/table-pagination.component';
 import { TooltipDirective } from '../../../../shared/components/tooltip/tooltip.directive';
@@ -124,8 +125,11 @@ export class GroupListComponent implements OnInit {
         return this.selectedGroups.length > 0;
     }
 
+    currentCourse: any = null; // Store full course object
+
     constructor(
         private groupsService: GroupsService,
+        private coursesService: CoursesService, // Inject
         private router: Router,
         private route: ActivatedRoute,
         private notificationService: NotificationService,
@@ -139,6 +143,7 @@ export class GroupListComponent implements OnInit {
         this.cursoId = this.route.snapshot.paramMap.get('cursoId');
         // Leer posible nombre del curso pasado desde la navegación (query param)
         this.courseNameFromQuery = this.route.snapshot.queryParamMap.get('courseName');
+
         if (this.cursoId) {
             this.courseLabel = this.courseNameFromQuery ? this.courseNameFromQuery : this.cursoId;
             this.breadcrumbItems = [
@@ -146,6 +151,12 @@ export class GroupListComponent implements OnInit {
                 { label: `Curso ${this.courseLabel}` },
                 { label: 'Grupos', url: `/cursos/${this.cursoId}/grupos` }
             ];
+
+            // Load Course Details to get courseTypeId
+            this.coursesService.getCourses().subscribe(courses => {
+                // In real app use getById
+                this.currentCourse = courses.find(c => c.id === +this.cursoId!);
+            });
         }
         this.loadGroups();
     }
@@ -287,7 +298,13 @@ export class GroupListComponent implements OnInit {
         const formValue = this.groupModalForm.value;
 
         if (this.modalMode === 'create') {
-            this.groupsService.createGroup(formValue).subscribe({
+            const payload = {
+                ...formValue,
+                courseTypeId: this.currentCourse?.courseTypeId,
+                courseType: 'LICENCIA' // Fallback or map from ID if needed
+            };
+
+            this.groupsService.createGroup(payload).subscribe({
                 next: () => {
                     this.isSaving = false;
                     this.showModal = false;

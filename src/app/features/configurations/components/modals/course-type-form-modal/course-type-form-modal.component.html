@@ -1,0 +1,108 @@
+<app-modal [isOpen]="isOpen" [config]="modalConfig" (modalClose)="onClose()">
+    <!-- Body Content handled by app-modal projection -->
+    <div class="space-y-6">
+        <form [formGroup]="form" class="space-y-6">
+
+            <!-- Row 1: Basic Info -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="col-span-1">
+                    <app-input-enhanced controlName="name" [control]="form.get('name')" label="Nombre del tipo de curso"
+                        placeholder="Ingresa el nombre del tipo de curso" [required]="true">
+                    </app-input-enhanced>
+                </div>
+                <div class="col-span-1">
+                    <app-input-enhanced controlName="description" [control]="form.get('description')"
+                        label="Descripción del tipo de curso" placeholder="Ingresa la descripción del tipo de curso"
+                        [required]="true">
+                    </app-input-enhanced>
+                </div>
+                <!-- Custom Select for Payment Type -->
+                <div class="col-span-1">
+                    <div class="form-control w-full">
+                        <label class="label">
+                            <span class="label-text font-medium text-gray-700">Tipo de cobro</span>
+                        </label>
+                        <select formControlName="paymentType"
+                            class="select select-bordered w-full focus:ring-[#8B1538] focus:border-[#8B1538]">
+                            <option value="Gratuito">Gratuito</option>
+                            <option value="Pagado">Pagado</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="divider"></div>
+
+            <!-- Row 2: Fields Selection -->
+            <div>
+                <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">SELECCIONE LOS CAMPOS</h3>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                    <div *ngFor="let field of registrationFields"
+                        class="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer"
+                        (click)="toggleField(field)">
+
+                        <div class="relative flex items-center justify-center h-5 w-5">
+                            <input type="checkbox" [checked]="field.visible"
+                                class="h-5 w-5 text-[#8B1538] border-gray-300 rounded focus:ring-[#8B1538] cursor-pointer">
+                        </div>
+                        <span class="text-sm font-medium text-gray-700 select-none">{{ field.label }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="divider"></div>
+
+            <!-- Template Selection Section -->
+            <div>
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">SELECCIONE LOS TEMPLATES
+                    </h3>
+                </div>
+
+                <!-- Search Bar -->
+                <div class="relative w-full mb-4">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <app-universal-icon name="search" type="bootstrap" class="text-gray-400"></app-universal-icon>
+                    </div>
+                    <input type="text" [formControl]="searchControl" placeholder="BUSCAR TEMPLATE"
+                        class="input input-bordered w-full pl-10 rounded-full border-gray-300 focus:border-[#621132] focus:ring-[#621132]">
+                </div>
+
+                <!-- Table -->
+                <div class="border rounded-lg overflow-hidden border-[#621132]">
+                    <app-institutional-table [data]="filteredTemplates" [columns]="tableColumns" [config]="tableConfig"
+                        [selectedItems]="selectedTemplates" (selectionChange)="onSelectionChange($event)">
+
+                        <!-- Custom Actions Template -->
+                        <ng-template #actionsTemplate let-item>
+                            <button (click)="openPreview(item)"
+                                class="btn btn-ghost btn-xs btn-circle text-[#8B1538] hover:bg-pink-50"
+                                title="Ver Vista Previa">
+                                <span class="material-symbols-outlined text-[20px]">visibility</span>
+                            </button>
+                        </ng-template>
+
+                    </app-institutional-table>
+                </div>
+            </div>
+
+        </form>
+    </div>
+
+    <!-- Footer -->
+    <div slot="footer" class="flex justify-end gap-3">
+        <app-institutional-button (buttonClick)="onClose()"
+            [config]="{variant: 'secondary', customClass: 'border-gray-300 text-gray-600'}">
+            Cancelar
+        </app-institutional-button>
+        <app-institutional-button (buttonClick)="onSave()"
+            [config]="{variant: 'primary', customClass: '!bg-[#9D2449]'}">
+            Guardar Configuración
+        </app-institutional-button>
+    </div>
+</app-modal>
+
+<!-- Template Preview Modal -->
+<app-template-preview-modal [isOpen]="showPreviewModal" [template]="previewTemplate" (close)="showPreviewModal = false">
+</app-template-preview-modal>

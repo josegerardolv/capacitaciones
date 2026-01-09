@@ -17,31 +17,36 @@ export class CoursesService {
             id: 1,
             name: 'A05',
             description: 'Lorem Ipsum is simply dummy text of the',
-            duration: 270
+            duration: 270,
+            courseTypeId: 1
         },
         {
             id: 2,
             name: 'A06',
             description: 'Lorem Ipsum is simply dummy text of the',
-            duration: 120
+            duration: 120,
+            courseTypeId: 1
         },
         {
             id: 3,
             name: 'B13',
             description: 'Lorem Ipsum is simply dummy text of the',
-            duration: 60
+            duration: 60,
+            courseTypeId: 1
         },
         {
             id: 4,
             name: 'C01',
             description: 'Curso de manejo básico para principiantes',
-            duration: 300
+            duration: 300,
+            courseTypeId: 2
         },
         {
             id: 5,
             name: 'C02',
             description: 'Curso avanzado de seguridad vial',
-            duration: 240
+            duration: 240,
+            courseTypeId: 3 // Fixed to match one of the config IDs (1, 2, 3)
         }
     ];
 

@@ -64,6 +64,13 @@
             </app-input-enhanced>
         </div>
 
+        <!-- Tipo de curso -->
+        <div class="col-span-1">
+            <app-select controlName="courseTypeId" [control]="getControl('courseTypeId')" label="Tipo de curso"
+                [options]="courseTypeOptions" placeholder="Seleccione tipo de curso">
+            </app-select>
+        </div>
+
         <!-- Duración -->
         <div class="col-span-1">
             <app-input-enhanced [type]="'number'" controlName="duration" [control]="courseModalForm.get('duration')"

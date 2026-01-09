@@ -76,7 +76,7 @@ export interface CanvasElement {
   visualStyle?: VisualStyle;
   locked?: boolean;
   visible?: boolean;
-  
+
   // Configuraciones específicas por tipo
   textConfig?: TextConfig;
   imageConfig?: ImageConfig;
@@ -126,6 +126,11 @@ export interface CertificateTemplate {
   elements: CanvasElement[];
   variables: TemplateVariable[];
   thumbnail?: string;
+  /** 
+   * Conteo de certificados que han sido oficialmente 'Entregados'.
+   * No debe contar borradores ni pendientes de aprobación.
+   */
+  usageCount?: number;
   created_at?: string;
   updated_at?: string;
 }
@@ -144,5 +149,8 @@ export interface GeneratedCertificate {
   recipientName?: string;
   data: { [key: string]: any };
   pdfUrl?: string;
+  // Estado del proceso de certificación
+  status: 'Pendiente' | 'Aprobado' | 'Impreso' | 'Entregado';
   generatedAt: string;
+  deliveredAt?: string; // Fecha de entrega real
 }

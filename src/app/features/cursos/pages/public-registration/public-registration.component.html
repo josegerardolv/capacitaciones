@@ -1,8 +1,8 @@
-
 <!-- Main Content -->
 <div class="w-full px-12 py-4">
 
-    <app-institutional-card [config]="{ variant: 'standard', size: 'auto', showFooter: false, showShadow: true }" class="w-full max-w-3xl">
+    <app-institutional-card [config]="{ variant: 'standard', size: 'auto', showFooter: false, showShadow: true }"
+        class="w-full max-w-3xl">
 
         <!-- Header de la carta (slot) -->
         <div slot="header" class="card-institucional-header p-6">
@@ -24,7 +24,8 @@
         <!-- Body: formulario -->
         <div>
             <div class="p-6 md:p-8">
-                <app-person-form [submitLabel]="'Solicitar registro'" [showCancel]="false" (saved)="onDriverRegistered($event)">
+                <app-person-form [submitLabel]="'Solicitar registro'" [fieldsConfig]="fieldsConfig" [showCancel]="false"
+                    (saved)="onDriverRegistered($event)">
                 </app-person-form>
             </div>
         </div>
@@ -34,5 +35,10 @@
     <!-- Modal de Feedback -->
     <app-alert-modal [isOpen]="isAlertOpen" [config]="alertConfig" (modalClose)="close()" (actionClick)="close()">
     </app-alert-modal>
+
+    <!-- Modal de Selección de Documentos -->
+    <app-document-selection-modal [isOpen]="isDocumentsModalOpen" [courseType]="currentCourseType"
+        (modalClose)="isDocumentsModalOpen = false" (confirm)="onDocumentsConfirmed($event)">
+    </app-document-selection-modal>
 
 </div>

@@ -174,4 +174,9 @@
     <app-alert-modal [isOpen]="isAlertOpen" [config]="alertConfig" (actionClick)="isAlertOpen = false"
         (modalClose)="isAlertOpen = false">
     </app-alert-modal>
+
+    <!-- Modal de Selección de Documentos -->
+    <app-document-selection-modal [isOpen]="isDocumentsModalOpen" [courseType]="currentGroup?.courseType || 'LICENCIA'"
+        (modalClose)="closeDocumentsModal()" (confirm)="onDocumentsConfirmed($event)">
+    </app-document-selection-modal>
 </div>
