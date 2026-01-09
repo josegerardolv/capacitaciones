@@ -54,45 +54,12 @@ export const SIDEBAR_MENU_CONFIG: MenuItem[] = [
     roles: ['ADMINISTRADOR', 'SUPER_ADMINISTRADOR', 'SUPERVISOR']
   },
   {
-    id: 'configuracion',
-    label: 'Configuración',
-    icon: 'gear',
+    id: 'encuesta',
+    label: 'Encuesta',
+    icon: 'clipboard-data',
     iconType: 'bootstrap',
+    route: '/encuesta',
     roles: ['ADMINISTRADOR', 'SUPER_ADMINISTRADOR'],
-    children: [
-      {
-        id: 'encuesta',
-        label: 'Encuesta',
-        icon: 'clipboard-data',
-        iconType: 'bootstrap',
-        route: '/config/encuesta',
-        roles: ['ADMINISTRADOR', 'SUPER_ADMINISTRADOR']
-      },
-      {
-        id: 'contrasena',
-        label: 'Contraseña',
-        icon: 'key',
-        iconType: 'bootstrap',
-        route: '/config/contrasena',
-        roles: ['ADMINISTRADOR', 'SUPER_ADMINISTRADOR']
-      },
-      {
-        id: 'notificaciones',
-        label: 'Notificaciones',
-        icon: 'bell',
-        iconType: 'bootstrap',
-        route: '/config/notificaciones',
-        roles: ['ADMINISTRADOR', 'SUPER_ADMINISTRADOR']
-      },
-      {
-        id: 'usuarios',
-        label: 'Gestión de usuarios',
-        icon: 'person-gear',
-        iconType: 'bootstrap',
-        route: '/config/usuarios',
-        roles: ['SUPER_ADMINISTRADOR']
-      }
-    ]
   }
 ];
 

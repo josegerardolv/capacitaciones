@@ -1,0 +1,196 @@
+<div class="min-h-screen">
+  <!-- Tarjeta superior: título y breadcrumb -->
+  <app-institutional-card [config]="{ showHeader: false, showFooter: false, showShadow: true, showBorder: true }" class="mb-6">
+    <div class="flex items-center gap-4">
+      <div class="p-3 rounded-lg bg-institucional-primario bg-opacity-10 flex items-center justify-center">
+        <app-universal-icon name="clipboard2-check" type="bootstrap" class="w-6 h-6 text-white"></app-universal-icon>
+      </div>
+      <div class="min-w-0">
+        <h1 class="text-2xl md:text-3xl font-extrabold text-gray-900">Encuesta</h1>
+        <p class="text-sm text-gray-500 mt-1">Califica un curso de acuerdo al grado de satisfacción</p>
+      </div>
+    </div>
+    <div class="mt-2 ml-4">
+      <app-breadcrumb [items]="breadcrumbItems"></app-breadcrumb>
+    </div>
+  </app-institutional-card>
+
+  <form [formGroup]="encuestaForm" (ngSubmit)="onSubmit()">
+
+
+    <!-- Selección del curso -->
+    <div class="mb-6">
+      <h3 class="text-lg font-semibold text-gray-900 mb-4">
+          Experiencia de satisfacción del curso:
+      </h3>
+
+      <app-select
+          controlName="curso"
+          [options]="cursosOptions"
+          [placeholder]="'Selecciona el curso'"
+          [required]="true">
+      </app-select>
+    </div>
+
+
+    <!-- Pregunta 1 -->
+    <div class="mb-8">
+      <h3 class="text-lg font-semibold text-gray-900 mb-4">
+          ¿Cómo calificarías la relevancia y actualización de los temas tratados sobre movilidad y tránsito?
+      </h3>
+
+      <app-select
+          controlName="relevancia"
+          [options]="relevanciaOptions"
+          [placeholder]="'Selecciona que tan relevante siente usted que es el tema...'"
+          [required]="true"
+          [helperText]="'Selecciona la opción que mejor se adapte a tu criterio'">
+      </app-select>
+    </div>
+
+    <!-- Pregunta 2 -->
+    <div class="mb-8">
+      <h3 class="text-lg font-semibold text-gray-900 mb-4">
+          ¿Qué tan clara fue la explicación del instructor al abordar conceptos complejos?
+      </h3>
+
+      <app-select
+          controlName="desempenio"
+          [options]="desempenioOptions"
+          [placeholder]="'Selecciona el nivel de claridad...'"
+          [required]="true"
+          [helperText]="'Selecciona la opción que mejor describa la claridad del instructor'">
+      </app-select>
+    </div>
+
+    <!-- Pregunta 3 -->
+    <div class="mb-8">
+      <h3 class="text-lg font-semibold text-gray-900 mb-4">
+          ¿Cómo valoras el material didáctico entregado (manuales, presentaciones, videos o guías)?
+      </h3>
+
+      <app-select
+          controlName="material"
+          [options]="materialOptions"
+          [placeholder]="'Selecciona la opción que mejor describa al material...'"
+          [required]="true"
+          [helperText]="'Selecciona la opción que mejor describa la calidad del material didáctico'">
+      </app-select>
+    </div>
+
+    <!-- Pregunta 4 -->
+    <div class="mb-8">
+      <h3 class="text-lg font-semibold text-gray-900 mb-4">
+          ¿Qué tan preparado(a) te sientes ahora para aplicar lo aprendido en tu entorno laboral o ciudadano?
+      </h3>
+
+      <app-select
+          controlName="preparacion"
+          [options]="preparacionOptions"
+          [placeholder]="'Selecciona que tan preparado se siente...'"
+          [required]="true"
+          [helperText]="'Selecciona la opción que mejor describa su preparación para aplicar lo aprendido'">
+      </app-select>
+    </div>
+
+    <!-- Preguntas dinámicas agregadas por el usuario -->
+    <div *ngFor="let pregunta of preguntasDinamicas; let i = index" class="mb-8">
+      <div class="flex items-start gap-2">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4 flex-1">
+          {{ pregunta.pregunta }}
+        </h3>
+      </div>
+
+      <!-- Si es de opción múltiple, mostrar select -->
+      <app-select
+          *ngIf="pregunta.tipo === 'multiple'"
+          [controlName]="pregunta.id"
+          [options]="pregunta.opciones!"
+          [placeholder]="'Selecciona una opción...'"
+          [required]="true">
+      </app-select>
+
+      <!-- Si es de texto libre, mostrar textarea -->
+      <app-input-enhanced
+          *ngIf="pregunta.tipo === 'texto'"
+          [controlName]="pregunta.id"
+          type="textarea"
+          [rows]="3"
+          [placeholder]="'Escribe tu respuesta aquí...'"
+          [required]="true">
+      </app-input-enhanced>
+    </div>
+
+    <!-- Pregunta Input -->
+    <div class="mb-8">
+      <h3 class="text-lg font-semibold text-gray-900 mb-4">
+          ¿En que podría mejorar el curso?
+      </h3>
+
+      <app-input-enhanced
+          controlName="mejora"
+          type="textarea"
+          [rows]="4"
+          placeholder="Comparte tus sugerencias para mejorar el curso">
+      </app-input-enhanced>
+    </div>
+
+    <!-- Botones inferiores -->
+    <div class="mt-12">
+      <app-button-group
+        [buttons]="formButtons"
+        [config]="buttonGroupConfig"
+        (buttonClick)="onButtonGroupClick($event)">
+      </app-button-group>
+    </div>
+  </form>
+    <app-alert-modal
+    [isOpen]="showSuccessModal"
+    [config]="successModalConfig"
+    (modalClose)="onModalClose()">
+  </app-alert-modal>
+
+  <app-modal-form
+    [formGroup]="newQuestionForm"
+    [isOpen]="showAddQuestionModal"
+    [title]="addQuestionModalConfig.title"
+    [size]="addQuestionModalConfig.size"
+    (modalClose)="onAddQuestionModalClose()"
+    (formSubmit)="onAddQuestionSubmit($event)">
+    
+    <!-- Tipo de pregunta -->
+    <div class="mb-6">
+      <app-select
+        controlName="tipoPregunta"
+        [options]="tipoPreguntaOptions"
+        [placeholder]="'Selecciona el tipo de pregunta'"
+        [required]="true"
+        [helperText]="'Elige el tipo de pregunta que deseas añadir'">
+      </app-select>
+    </div>
+
+    <!-- Texto de la pregunta -->
+    <div class="mb-6">
+      <app-input-enhanced
+        controlName="pregunta"
+        [validationMap]="newQuestionValidationMap"
+        type="textarea"
+        [rows]="3"
+        placeholder="Escribe aquí la pregunta que deseas agregar"
+        label="Pregunta">
+      </app-input-enhanced>
+    </div>
+
+    <!-- Opciones de respuesta (solo para opción múltiple) -->
+    <div *ngIf="mostrarOpciones" class="mb-6">
+      <app-input-enhanced
+        controlName="opciones"
+        [validationMap]="newQuestionValidationMap"
+        type="textarea"
+        [rows]="4"
+        placeholder="Opción 1, Opción 2, Opción 3, Opción 4"
+        label="Opciones de respuesta">
+      </app-input-enhanced>
+    </div>
+  </app-modal-form>
+</div>
