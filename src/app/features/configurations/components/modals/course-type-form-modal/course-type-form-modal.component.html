@@ -70,8 +70,8 @@
                 </div>
 
                 <!-- Table -->
-                <div class="border rounded-lg overflow-hidden border-[#621132]">
-                    <app-institutional-table [data]="filteredTemplates" [columns]="tableColumns" [config]="tableConfig"
+                <div class="border rounded-lg overflow-hidden border-gray-200 max-h-[300px] overflow-y-auto">
+                    <app-institutional-table [data]="displayedTemplates" [columns]="tableColumns" [config]="tableConfig"
                         [selectedItems]="selectedTemplates" (selectionChange)="onSelectionChange($event)">
 
                         <!-- Custom Actions Template -->
@@ -84,6 +84,11 @@
                         </ng-template>
 
                     </app-institutional-table>
+                </div>
+
+                <div class="text-xs text-gray-500 mt-2 text-right">
+                    Mostrando {{ displayedTemplates.length }} registros{{ filteredTemplates.length !== templates.length
+                    ? ' (filtrado)' : '' }}
                 </div>
             </div>
 

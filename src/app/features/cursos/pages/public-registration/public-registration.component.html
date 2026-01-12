@@ -38,7 +38,8 @@
 
     <!-- Modal de Selección de Documentos -->
     <app-document-selection-modal [isOpen]="isDocumentsModalOpen" [courseType]="currentCourseType"
-        (modalClose)="isDocumentsModalOpen = false" (confirm)="onDocumentsConfirmed($event)">
+        [customDocuments]="availableDocuments" (modalClose)="isDocumentsModalOpen = false"
+        (confirm)="onDocumentsConfirmed($event)">
     </app-document-selection-modal>
 
 </div>

@@ -85,9 +85,7 @@ export interface AlertAction {
           </div>
           
           <!-- Mensaje -->
-          <p class="text-center mb-6" [id]="'modal-desc-' + modalId">
-            {{ config.message }}
-          </p>
+          <div class="text-center mb-6" [id]="'modal-desc-' + modalId" [innerHTML]="config.message"></div>
           
           <!-- Contenido adicional -->
           <div *ngIf="hasContent" class="mb-6">
@@ -226,7 +224,7 @@ export class AlertModalComponent {
 
   getActionClass(variant?: string): string {
     const baseClasses = 'inline-flex items-center gap-2 px-6 py-3 font-semibold rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 shadow-md hover:shadow-lg focus:outline-none focus:ring-4';
-    
+
     switch (variant) {
       case 'primary':
         return `${baseClasses} bg-institucional-primario hover:bg-institucional-primario-dark text-white focus:ring-institucional-secundario`;
@@ -241,7 +239,7 @@ export class AlertModalComponent {
 
   private startAutoClose(): void {
     this.stopAutoClose();
-    
+
     const delay = this.config.autoCloseDelay || 5000;
     this.timeLeft = Math.ceil(delay / 1000);
     this.progressPercentage = 100;
@@ -250,7 +248,7 @@ export class AlertModalComponent {
     this.countdownTimer = setInterval(() => {
       this.timeLeft--;
       this.progressPercentage = (this.timeLeft / Math.ceil(delay / 1000)) * 100;
-      
+
       if (this.timeLeft <= 0) {
         clearInterval(this.countdownTimer);
       }

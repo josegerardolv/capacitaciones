@@ -7,57 +7,77 @@ import { CourseTypeConfig, RegistrationFieldConfig, DEFAULT_REGISTRATION_FIELDS 
 })
 export class CourseTypeService {
 
-    // Mock Data inicial
+    // Datos de prueba iniciales
     private courseTypes: CourseTypeConfig[] = [
         {
             id: 1,
-            name: 'Licencia Tipo A',
-            description: 'Curso para obtención de licencia de transporte público',
+            name: 'Licencia Transporte Público (Tipo A)',
+            description: 'Curso obligatorio para choferes de transporte público',
             status: 'Activo',
             paymentType: 'Pagado',
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
             registrationFields: this.cloneDefaultsWithOverrides({
+                // Requiere todo: Licencia, NUC, CURP, Dirección...
                 license: { visible: true, required: true },
-                nuc: { visible: true, required: false }
+                nuc: { visible: true, required: true },
+                curp: { visible: true, required: true },
+                address: { visible: true, required: true },
+                sex: { visible: true, required: true }
             }),
             availableDocuments: [
-                { id: 'doc_1', name: 'Constancia de Capacitación', templateId: 1, cost: 0, requiresApproval: true },
-                { id: 'doc_2', name: 'Tarjetón', templateId: undefined, cost: 250, requiresApproval: true } // El usuario asignará template después
+                { id: 'doc_constancia', name: 'Constancia de Capacitación', templateId: 1, cost: 0, requiresApproval: true },
+                { id: 'doc_tarjeton', name: 'Tarjetón de Identidad', templateId: 4, cost: 253, requiresApproval: true },
+                { id: 'doc_manejo', name: 'Constancia de Curso de Manejo', templateId: 6, cost: 150, requiresApproval: true }
             ]
         },
         {
             id: 2,
             name: 'Capacitación Escolar',
-            description: 'Cursos de educación vial para escuelas',
+            description: 'Curso de educación vial para escuelas primarias',
             status: 'Activo',
             paymentType: 'Gratuito',
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
             registrationFields: this.cloneDefaultsWithOverrides({
+                // Solo datos básicos. Ocultamos cosas de choferes.
                 license: { visible: false, required: false },
                 nuc: { visible: false, required: false },
-                curp: { visible: false, required: false }, // Quizás no requieren CURP niños
+                curp: { visible: false, required: false }, // Niños quizas no tienen a mano
+                address: { visible: false, required: false },
+                sex: { visible: true, required: false }
             }),
             availableDocuments: [
-                { id: 'doc_3', name: 'Diploma de Participación', templateId: undefined, cost: 0, requiresApproval: false }
+                { id: 'doc_diploma', name: 'Diploma de Participación', templateId: 5, cost: 0, requiresApproval: false },
+                { id: 'doc_honor', name: 'Diploma de Honor', templateId: 3, cost: 0, requiresApproval: true }
             ]
         },
+        // MOCK: Curso Simple solicitado por usuario
         {
             id: 3,
-            name: 'Sensibilización de Operadores',
-            description: 'Curso obligatorio para operadores de transporte público',
+            name: 'Curso Simple',
+            description: 'Curso básico solo para validar vista pública',
             status: 'Activo',
-            paymentType: 'Pagado',
+            paymentType: 'Gratuito',
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
             registrationFields: this.cloneDefaultsWithOverrides({
-                license: { visible: true, required: true },
-                curp: { visible: true, required: true },
-                nuc: { visible: true, required: false }
+                // "Solo nombre y apellido"
+                name: { visible: true, required: true },
+                firstSurname: { visible: true, required: true },
+                secondSurname: { visible: true, required: false },
+                // Ocultar TODO lo demás
+                curp: { visible: false, required: false },
+                license: { visible: false, required: false },
+                nuc: { visible: false, required: false },
+                address: { visible: false, required: false },
+                phone: { visible: false, required: false },
+                email: { visible: false, required: false },
+                sex: { visible: false, required: false }
             }),
             availableDocuments: [
-                { id: 'doc_4', name: 'Constancia de Sensibilización', templateId: 1, cost: 150, requiresApproval: true }
+                // "Solo certificado de aprobación" (templateId 2 es el real para 'Certificado de Aprobación' en TemplateService)
+                { id: 'doc_constancia', name: 'Certificado de Aprobación', templateId: 2, cost: 0, requiresApproval: false }
             ]
         }
     ];
@@ -95,7 +115,7 @@ export class CourseTypeService {
             };
             return of(this.courseTypes[index]).pipe(delay(600));
         }
-        throw new Error('Course Type not found');
+        throw new Error('Tipo de curso no encontrado');
     }
 
     deleteCourseType(id: number): Observable<void> {
@@ -103,7 +123,7 @@ export class CourseTypeService {
         return of(void 0).pipe(delay(500));
     }
 
-    // Helper para clonar y modificar campos por defecto fácilmente
+    // Método auxiliar para clonar y modificar campos por defecto fácilmente
     private cloneDefaultsWithOverrides(overrides: { [fieldName: string]: { visible?: boolean; required?: boolean } }): RegistrationFieldConfig[] {
         return DEFAULT_REGISTRATION_FIELDS.map(f => {
             const override = overrides[f.fieldName];

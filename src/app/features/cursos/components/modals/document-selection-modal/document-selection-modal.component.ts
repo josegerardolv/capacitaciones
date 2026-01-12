@@ -41,7 +41,7 @@ export class DocumentSelectionModalComponent {
                 id: doc.id,
                 name: doc.name,
                 description: doc.name, // Use name as description if not provided
-                selected: true, // Auto-select by default or logic?
+                selected: false, // Default to unchecked
                 disabled: false // doc.required?
             }));
             return;

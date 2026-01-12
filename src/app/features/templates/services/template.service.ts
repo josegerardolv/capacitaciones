@@ -52,6 +52,42 @@ export class TemplateService {
       elements: [],
       variables: [],
       created_at: new Date().toISOString()
+    },
+    {
+      id: 4,
+      name: 'Tarjetón de Identidad',
+      claveConcepto: 'TI-004',
+      description: 'Documento de identificación para conductores',
+      category: 'Identificación',
+      usageCount: 120,
+      pageConfig: this.getDefaultPageConfig(),
+      elements: [],
+      variables: [],
+      created_at: new Date().toISOString()
+    },
+    {
+      id: 5,
+      name: 'Diploma de Participación',
+      claveConcepto: 'DP-005',
+      description: 'Diploma general de participación',
+      category: 'Reconocimiento',
+      usageCount: 45,
+      pageConfig: this.getDefaultPageConfig(),
+      elements: [],
+      variables: [],
+      created_at: new Date().toISOString()
+    },
+    {
+      id: 6,
+      name: 'Constancia de Curso de Manejo',
+      claveConcepto: 'CM-006',
+      description: 'Constancia específica para curso de manejo',
+      category: 'Certificación',
+      usageCount: 60,
+      pageConfig: this.getDefaultPageConfig(),
+      elements: [],
+      variables: [],
+      created_at: new Date().toISOString()
     }
   ];
 

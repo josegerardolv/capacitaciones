@@ -152,11 +152,11 @@
 <!-- Checkbox templates removed as they are handled natively by institutional-table -->
 
 <ng-template #dateTemplate let-item>
-    <span class="text-gray-900">{{ item.dateTime | date:'dd/MM/yyyy' }}</span>
+    <span class="text-gray-900">{{ item.dateTime.split(',')[0] }}</span>
 </ng-template>
 
 <ng-template #timeTemplate let-item>
-    <span class="text-gray-500">{{ item.dateTime | date:'HH:mm' }}</span>
+    <span class="text-gray-500">{{ item.dateTime.split(',')[1] || '' }}</span>
 </ng-template>
 
 <!-- Template para Acciones -->

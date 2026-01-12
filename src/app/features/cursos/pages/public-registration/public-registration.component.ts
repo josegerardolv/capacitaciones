@@ -5,7 +5,9 @@ import { PersonFormComponent } from '../../components/person-form/person-form.co
 import { AlertModalComponent, AlertConfig } from '../../../../shared/components/modals/alert-modal.component';
 import { DocumentSelectionModalComponent, DocumentOption } from '../../components/modals/document-selection-modal/document-selection-modal.component';
 import { InstitutionalCardComponent } from '../../../../shared/components/institutional-card/institutional-card.component';
-import { CourseType } from '../../../../core/models/group.model'; // Need CourseType
+import { CourseType } from '../../../../core/models/group.model';
+import { GroupsService } from '../../services/groups.service';
+import { CourseTypeService } from '../../../../core/services/course-type.service';
 
 @Component({
     selector: 'app-public-registration',
@@ -15,18 +17,19 @@ import { CourseType } from '../../../../core/models/group.model'; // Need Course
 })
 export class PublicRegistrationComponent implements OnInit {
 
-    // Datos del Grupo (Simulados por ahora, luego vendrán del backend usando el ID de la URL)
+    // Datos del Grupo
     groupInfo = {
-        courseName: 'Manejo Defensivo',
-        groupName: 'Grupo A05',
-        slotsAvailable: 5,
-        deadline: '20 Oct 2025'
+        courseName: 'Cargando...',
+        groupName: '',
+        slotsAvailable: 0,
+        deadline: ''
     };
 
-    // Configuración de campos
+    // Configuración dinámica
     fieldsConfig: Record<string, { visible?: boolean; required?: boolean }> = {};
+    availableDocuments: any[] = []; // Para el modal de documentos
 
-    // Configuración del Modal
+    // Configuración del Modal de Alerta
     isAlertOpen = false;
     alertConfig: AlertConfig = {
         title: '',
@@ -34,37 +37,90 @@ export class PublicRegistrationComponent implements OnInit {
         type: 'success'
     };
 
-    constructor(private route: ActivatedRoute, private router: Router) { }
+    // Estados
+    isDocumentsModalOpen = false;
+    tempDriverData: any = null;
+    currentCourseType: CourseType = 'LICENCIA'; // Fallback
+
+    constructor(
+        private route: ActivatedRoute,
+        private router: Router,
+        private groupsService: GroupsService,
+        private courseTypeService: CourseTypeService
+    ) { }
 
     ngOnInit() {
-        const groupId = this.route.snapshot.paramMap.get('id');
-        // Aquí llamaríamos al servicio: this.groupsService.getPublicGroupInfo(groupId)...
-        // Aquí llamaríamos al servicio: this.groupsService.getPublicGroupInfo(groupId)...
-        console.log('Cargando información pública para el grupo:', groupId);
-
-        // Simular carga y configuración (Asumir LICENCIA por defecto o lógica real)
-        // Por ahora forzamos la configuración para ocultar requestTarjeton
-        this.setupFormFields(this.currentCourseType);
+        const groupId = Number(this.route.snapshot.paramMap.get('id'));
+        if (groupId) {
+            this.loadGroupData(groupId);
+        }
     }
 
-    setupFormFields(courseType: string) {
+    loadGroupData(groupId: number) {
+        this.groupsService.getGroupById(groupId).subscribe(group => {
+            if (!group) {
+                this.router.navigate(['/404']);
+                return;
+            }
+
+            // 1. Actualizar Info del Header
+            this.groupInfo = {
+                courseName: group.name, // O el nombre del curso si tuvieramos la relación completa
+                groupName: group.name,
+                slotsAvailable: group.quantity - (group.requests || 0), // Calculo simple
+                deadline: this.calculateDeadline(group)
+            };
+
+            this.currentCourseType = group.courseType; // Para lógica legacy si hiciera falta
+
+            // 2. Cargar Configuración del Tipo de Curso
+            if (group.courseTypeId) {
+                this.loadCourseTypeConfig(group.courseTypeId);
+            } else {
+                // Fallback para grupos legacy sin courseTypeId
+                this.setupLegacyFields(group.courseType);
+            }
+        });
+    }
+
+    loadCourseTypeConfig(courseTypeId: number) {
+        this.courseTypeService.getCourseTypeById(courseTypeId).subscribe(config => {
+            if (config) {
+                // Update Course Name if we have the config name
+                this.groupInfo.courseName = config.name;
+
+                // A. Mapear campos de registro
+                this.fieldsConfig = {};
+                config.registrationFields.forEach(field => {
+                    this.fieldsConfig[field.fieldName] = {
+                        visible: field.visible,
+                        required: field.required
+                    };
+                });
+
+                // B. Guardar documentos disponibles para el modal
+                this.availableDocuments = config.availableDocuments || [];
+            }
+        });
+    }
+
+    calculateDeadline(group: any): string {
+        // Lógica simple de visualización
+        return `${group.autoRegisterLimit} días restantes`;
+    }
+
+    setupLegacyFields(courseType: string) {
         if (courseType === 'LICENCIA') {
             this.fieldsConfig = {
-                requestTarjeton: { visible: false } // Siempre oculto, se pide en modal
+                // requestTarjeton: { visible: false } // Removed
             };
         } else {
             this.fieldsConfig = {
                 license: { visible: false, required: false },
-                nuc: { visible: false },
-                requestTarjeton: { visible: false }
+                nuc: { visible: false }
             };
         }
     }
-
-    // State for modal
-    isDocumentsModalOpen = false;
-    tempDriverData: any = null;
-    currentCourseType: CourseType = 'LICENCIA'; // Default
 
     onDriverRegistered(driverData: any) {
         this.tempDriverData = driverData;
@@ -73,13 +129,16 @@ export class PublicRegistrationComponent implements OnInit {
 
     onDocumentsConfirmed(documents: DocumentOption[]) {
         this.isDocumentsModalOpen = false;
-        // Map selected documents to driver data
-        const wantsTarjeton = documents.some(d => d.id === 'tarjeton' && d.selected);
 
-        // Merge with temp data
+        // Mapear documentos seleccionados
+        // En el futuro, esto se guardaría como IDs de documentos solicitados en el backend
+        // Por ahora mantenemos la compatibilidad con el campo "requestTarjeton" si existe
+        const wantsTarjeton = documents.some(d => d.name.toLowerCase().includes('tarjetón') && d.selected);
+
         const finalDriverData = {
             ...this.tempDriverData,
-            requestTarjeton: wantsTarjeton
+            requestTarjeton: wantsTarjeton,
+            requestedDocuments: documents.filter(d => d.selected).map(d => d.id)
         };
 
         this.finalizeRegistration(finalDriverData);
@@ -88,24 +147,20 @@ export class PublicRegistrationComponent implements OnInit {
     finalizeRegistration(driverData: any) {
         console.log('Solicitud de registro pública:', driverData);
 
-        // 1. Preparamos el mensaje base (Enfoque: Envío por correo)
         let message = `Tu solicitud ha sido enviada correctamente.<br><br>
-                       La línea de captura para el <strong>Curso de Capacitación</strong> será enviada a tu correo electrónico una vez que el instructor acepte tu solicitud.`;
+                       La línea de captura para el <strong>${this.groupInfo.courseName}</strong> será enviada a tu correo electrónico una vez que el instructor acepte tu solicitud.`;
 
-        // 2. Agregamos nota sobre Tarjetón si fue solicitado (Enfoque: Futuro)
-        if (driverData.requestTarjeton) {
-            message += `<br><br>
-                        <span class="text-sm text-gray-600">
-                        * Solicitaste el Tarjetón. La línea de pago correspondiente se generará y enviará 
-                        automáticamente <strong>a tu correo electrónico</strong> solo si apruebas el curso.
+        // Lógica visual para documentos con costo (ejemplo)
+        if (driverData.requestedDocuments && driverData.requestedDocuments.length > 0) {
+            message += `<br><br><span class="text-sm text-gray-600">
+                        Has solicitado documentos adicionales. Las líneas de pago correspondientes se generarán si apruebas el curso.
                         </span>`;
         }
 
-        // 3. Configuramos el Modal (Solo botón de cerrar/entendido)
         this.alertConfig = {
             title: '¡Solicitud Enviada!',
-            message: '',
-            type: 'info', // Info o Success
+            message: message, // AlertModal debe soportar HTML o usaremos texto plano
+            type: 'info',
             actions: [
                 {
                     label: 'Entendido',
@@ -115,18 +170,12 @@ export class PublicRegistrationComponent implements OnInit {
             ]
         };
 
-        // Simplificación de mensaje para AlertModal (si no soporta HTML rico, usar \n)
-        if (driverData.requestTarjeton) {
-            this.alertConfig.message = `Solicitud enviada.\n\nLa línea de pago del CURSO llegará a tu correo cuando seas aceptado.\n\n(Nota: La línea del Tarjetón se generará SI apruebas el curso).`;
-        } else {
-            this.alertConfig.message = `Solicitud enviada.\n\nLa línea de pago del CURSO llegará a tu correo cuando seas aceptado.`;
-        }
-
         this.isAlertOpen = true;
     }
 
     close() {
         this.isAlertOpen = false;
-        // Opcional: Recargar o limpiar formulario
+        // Navegar fuera o resetear
+        // this.router.navigate(['/']); 
     }
 }

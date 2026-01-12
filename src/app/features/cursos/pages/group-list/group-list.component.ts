@@ -152,13 +152,15 @@ export class GroupListComponent implements OnInit {
                 { label: 'Grupos', url: `/cursos/${this.cursoId}/grupos` }
             ];
 
-            // Load Course Details to get courseTypeId
+            // Load Course Details to get courseTypeId, THEN load groups
             this.coursesService.getCourses().subscribe(courses => {
-                // In real app use getById
                 this.currentCourse = courses.find(c => c.id === +this.cursoId!);
+                this.loadGroups(); // Call AFTER currentCourse is set
             });
+        } else {
+            // If no course context, load all groups immediately
+            this.loadGroups();
         }
-        this.loadGroups();
     }
 
     // Inicialización del formulario con los campos requeridos por diseño
@@ -199,7 +201,11 @@ export class GroupListComponent implements OnInit {
         this.tableConfig.loading = true;
         this.groupsService.getGroups().subscribe({
             next: (data) => {
-                this.groups = data;
+                if (this.currentCourse) {
+                    this.groups = data.filter(g => g.courseTypeId === this.currentCourse.courseTypeId);
+                } else {
+                    this.groups = data;
+                }
                 this.selectedGroups = []; // Limpiar selección al recargar
                 this.paginationConfig.totalItems = data.length;
                 this.tableConfig.loading = false;

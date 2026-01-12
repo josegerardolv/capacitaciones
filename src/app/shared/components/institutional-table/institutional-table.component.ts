@@ -208,7 +208,7 @@ export class InstitutionalTableComponent implements AfterContentInit, AfterViewI
 
   leftOffsets: { [key: number]: number } = {};
   rightOffsets: { [key: number]: number } = {};
-  
+
   // Para ordenamiento local
   private originalData: any[] = [];
   sortedData: any[] = [];
@@ -222,7 +222,7 @@ export class InstitutionalTableComponent implements AfterContentInit, AfterViewI
     if (changes['data'] && changes['data'].currentValue) {
       this.originalData = [...changes['data'].currentValue];
       this.applySortIfLocal();
-      
+
       // Re-aplicar sticky positioning cuando cambien los datos de la tabla
       if (!changes['data'].firstChange) {
         setTimeout(() => {
@@ -231,12 +231,12 @@ export class InstitutionalTableComponent implements AfterContentInit, AfterViewI
         }, 50);
       }
     }
-    
+
     // Si cambió el ordenamiento externo y está en modo local, aplicar ordenamiento
     if ((changes['sortColumn'] || changes['sortDirection']) && this.config.localSort) {
       this.applySortIfLocal();
     }
-    
+
     // Si cambió la configuración, re-aplicar ordenamiento
     if (changes['config'] && this.config.localSort) {
       this.applySortIfLocal();
@@ -270,7 +270,7 @@ export class InstitutionalTableComponent implements AfterContentInit, AfterViewI
 
     const tableContainer = document.querySelector('.institucional-table-responsive') as HTMLElement;
     const stickyHeaders = document.querySelectorAll('.institucional-table-column-sticky-right');
-    
+
     if (!tableContainer || !stickyHeaders.length) return;
 
     // Force the sticky positioning with JavaScript
@@ -279,8 +279,8 @@ export class InstitutionalTableComponent implements AfterContentInit, AfterViewI
       htmlElement.style.position = 'sticky';
       htmlElement.style.right = '0';
       htmlElement.style.zIndex = '1000';
-      htmlElement.style.backgroundColor = htmlElement.tagName.toLowerCase() === 'th' 
-        ? 'transparent' 
+      htmlElement.style.backgroundColor = htmlElement.tagName.toLowerCase() === 'th'
+        ? 'transparent'
         : 'white';
     });
 
@@ -380,11 +380,24 @@ export class InstitutionalTableComponent implements AfterContentInit, AfterViewI
 
   toggleSelectAll(event: Event): void {
     const target = event.target as HTMLInputElement;
-    const newSelection = target.checked ? [...this.displayData] : [];
+    const isChecked = target.checked;
+
+    let newSelection: any[];
+
+    if (isChecked) {
+      // Union: Add visible items to existing selection (avoid duplicates)
+      const currentSelectionIds = new Set(this.selectedItems.map(item => this.trackByFn(0, item)));
+      const itemsToAdd = this.displayData.filter(item => !currentSelectionIds.has(this.trackByFn(0, item)));
+      newSelection = [...this.selectedItems, ...itemsToAdd];
+    } else {
+      // Difference: Remove visible items from existing selection
+      const visibleIds = new Set(this.displayData.map(item => this.trackByFn(0, item)));
+      newSelection = this.selectedItems.filter(item => !visibleIds.has(this.trackByFn(0, item)));
+    }
 
     this.selectionChange.emit({
       selectedItems: newSelection,
-      allSelected: target.checked
+      allSelected: isChecked
     });
   }
 
@@ -393,7 +406,7 @@ export class InstitutionalTableComponent implements AfterContentInit, AfterViewI
 
     let newDirection: 'asc' | 'desc' | null = 'asc';
     let newColumn: string | null = column.key;
-    
+
     if (this.sortColumn === column.key) {
       if (this.sortDirection === 'asc') {
         newDirection = 'desc';
@@ -413,7 +426,7 @@ export class InstitutionalTableComponent implements AfterContentInit, AfterViewI
       // Forzar detección de cambios para actualizar la vista
       this.cd.detectChanges();
     }
-    
+
     // Siempre emitir el evento para mantener sincronización con el componente padre
     this.sort.emit({
       column: newColumn,
@@ -444,7 +457,7 @@ export class InstitutionalTableComponent implements AfterContentInit, AfterViewI
     this.sortedData = [...this.originalData].sort((a, b) => {
       let valueA: any;
       let valueB: any;
-      
+
       // Manejar casos especiales para propiedades calculadas
       if (this.sortColumn === 'person.full_name') {
         // Crear nombre completo para ordenamiento
@@ -454,14 +467,14 @@ export class InstitutionalTableComponent implements AfterContentInit, AfterViewI
         valueA = this.getNestedProperty(a, this.sortColumn!);
         valueB = this.getNestedProperty(b, this.sortColumn!);
       }
-      
+
       // Manejar valores nulos/undefined
       if (valueA == null && valueB == null) return 0;
       if (valueA == null) return this.sortDirection === 'asc' ? 1 : -1;
       if (valueB == null) return this.sortDirection === 'asc' ? -1 : 1;
 
       let comparison = 0;
-      
+
       // Determinar tipo de comparación
       if (typeof valueA === 'string' && typeof valueB === 'string') {
         comparison = valueA.toLowerCase().localeCompare(valueB.toLowerCase(), 'es-ES');
@@ -496,7 +509,7 @@ export class InstitutionalTableComponent implements AfterContentInit, AfterViewI
     if (this.config.expandable) {
       this.toggleExpanded(item);
     }
-    
+
     this.rowClick.emit({ item, index });
   }
 
@@ -514,7 +527,7 @@ export class InstitutionalTableComponent implements AfterContentInit, AfterViewI
 
   getCellValue(item: any, column: TableColumn): any {
     const value = this.getNestedProperty(item, column.key);
-    
+
     switch (column.type) {
       case 'duration':
         // Determinar unidad base (por defecto: minutes para compatibilidad)
