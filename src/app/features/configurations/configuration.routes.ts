@@ -9,6 +9,11 @@ export const CONFIGURATION_ROUTES: Routes = [
     },
     // Future: path: 'tipos-cursos/nuevo', component: CourseTypeFormComponent
     {
+        path: 'concepto',
+        loadComponent: () => import('./pages/concepts/concepts-list.component').then(m => m.ConceptsListComponent),
+        title: 'Configuración - Conceptos'
+    },
+    {
         path: '',
         redirectTo: 'tipos-cursos',
         pathMatch: 'full'

@@ -68,11 +68,11 @@ export class CourseTypeFormModalComponent implements OnInit {
   @ViewChild('actionsTemplate') actionsTemplate!: any;
 
   tableColumns: TableColumn[] = [
-    { key: 'name', label: 'Nombre', sortable: true, width: '230px' },
-    { key: 'claveConcepto', label: 'Clave', sortable: true, width: '140px' },
-    { key: 'category', label: 'Tipo', sortable: true, width: '140px' },
-    { key: 'description', label: 'Descripción', sortable: false }, // Flexible width
-    { key: 'actions', label: 'Ver', align: 'center', width: '80px' }
+    { key: 'name', label: 'Nombre', sortable: true, width: '200px' },
+    { key: 'conceptName', label: 'Concepto', sortable: true, width: '200px' }, // Show full concept name
+    { key: 'category', label: 'Tipo', sortable: true, width: '120px' },
+    { key: 'conceptCosto', label: 'Costo', sortable: true, width: '100px', align: 'right' }, // Added Cost column
+    { key: 'actions', label: 'Documento', align: 'center', width: '80px' } // Renamed to Documento for clarity
   ];
 
   // Modal de Vista Previa
@@ -93,7 +93,7 @@ export class CourseTypeFormModalComponent implements OnInit {
       if (this.courseTypeToEdit) {
         this.fillForm(this.courseTypeToEdit);
       } else {
-        this.form.reset({ paymentType: 'Gratuito' });
+        this.form.reset(); // Removed default paymentType
         this.selectedTemplates = [];
         this.initFields();
       }
@@ -169,8 +169,8 @@ export class CourseTypeFormModalComponent implements OnInit {
   initForm() {
     this.form = this.fb.group({
       name: ['', Validators.required],
-      description: ['', Validators.required],
-      paymentType: ['Gratuito', Validators.required]
+      description: ['', Validators.required]
+      // paymentType removed as it depends on template cost
     });
   }
 
@@ -183,8 +183,8 @@ export class CourseTypeFormModalComponent implements OnInit {
   fillForm(data: CourseTypeConfig) {
     this.form.patchValue({
       name: data.name,
-      description: data.description,
-      paymentType: data.paymentType
+      description: data.description
+      // paymentType removed
     });
 
     if (data.registrationFields) {
@@ -226,7 +226,7 @@ export class CourseTypeFormModalComponent implements OnInit {
       name: t.name,
       description: t.description || t.name,
       templateId: t.id,
-      cost: 0,
+      cost: t.conceptCosto || 0, // Inherit cost from template concept
       requiresApproval: false
     }));
 

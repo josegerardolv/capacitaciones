@@ -80,12 +80,6 @@
         </div>
 
         <div class="col-span-1">
-            <app-input-enhanced controlName="duration" [control]="groupModalForm.get('duration')"
-                label="Duración del grupo *" placeholder="Ingresa la duración del curso" [required]="true">
-            </app-input-enhanced>
-        </div>
-
-        <div class="col-span-1">
             <app-input-enhanced controlName="location" [control]="groupModalForm.get('location')" label="Ubicación"
                 placeholder="Ingresa la ubicación" [required]="true">
             </app-input-enhanced>
@@ -152,11 +146,11 @@
 <!-- Checkbox templates removed as they are handled natively by institutional-table -->
 
 <ng-template #dateTemplate let-item>
-    <span class="text-gray-900">{{ item.dateTime.split(',')[0] }}</span>
+    <span class="text-gray-900">{{ item.dateTime?.split(',')[0] }}</span>
 </ng-template>
 
 <ng-template #timeTemplate let-item>
-    <span class="text-gray-500">{{ item.dateTime.split(',')[1] || '' }}</span>
+    <span class="text-gray-500">{{ item.dateTime?.split(',')[1] || '' }}</span>
 </ng-template>
 
 <!-- Template para Acciones -->

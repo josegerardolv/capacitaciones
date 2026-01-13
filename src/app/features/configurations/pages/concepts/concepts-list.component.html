@@ -1,0 +1,60 @@
+<div class="min-h-screen">
+    <app-page-header title="Gestión de Conceptos" subtitle="Administra el catálogo de conceptos, claves y costos"
+        [actionButton]="actionButtonConfig">
+    </app-page-header>
+
+    <app-institutional-card [config]="{ showHeader: false, showFooter: false, showShadow: true, showBorder: true }">
+        <app-table-pagination [config]="paginationConfig" [showPageSizeSelector]="true" [showPaginationControls]="false"
+            (pageChange)="onPageChange($event)">
+        </app-table-pagination>
+
+        <app-institutional-table [data]="concepts" [columns]="tableColumns" [config]="tableConfig">
+        </app-institutional-table>
+
+        <app-table-pagination [config]="paginationConfig" [showPageSizeSelector]="false" [showPaginationControls]="true"
+            (pageChange)="onPageChange($event)">
+        </app-table-pagination>
+    </app-institutional-card>
+</div>
+
+<!-- Modal Form -->
+<app-modal-form *ngIf="isModalOpen" [isOpen]="isModalOpen" [title]="editingId ? 'Editar Concepto' : 'Nuevo Concepto'"
+    [formGroup]="form" [isLoading]="isSaving" (formSubmit)="onSubmit()" (modalClose)="isModalOpen = false">
+
+    <app-input-enhanced [control]="claveControl" label="Clave" placeholder="Ej. 3IFBAC022" [required]="true">
+    </app-input-enhanced>
+
+    <app-input-enhanced [control]="conceptoControl" label="Concepto" placeholder="Descripción del concepto"
+        type="textarea" [required]="true">
+    </app-input-enhanced>
+
+    <app-input-enhanced [control]="costoControl" label="Costo ($)" placeholder="0.00" type="number" [required]="true">
+    </app-input-enhanced>
+
+</app-modal-form>
+
+<!-- Templates for Table -->
+<ng-template #costoTemplate let-item>
+    <span class="font-medium text-gray-900">{{ item.costo | currency:'MXN' }}</span>
+</ng-template>
+
+<ng-template #actionsTemplate let-item>
+    <div class="flex items-center justify-center space-x-2">
+        <app-institutional-button [config]="{ variant: 'secondary', size: 'small', icon: 'edit', iconPosition: 'only' }"
+            [appTooltip]="'Editar'" (buttonClick)="openForm(item)">
+        </app-institutional-button>
+
+        <app-institutional-button [config]="{ variant: 'danger', size: 'small', icon: 'delete', iconPosition: 'only' }"
+            [appTooltip]="'Eliminar'" (buttonClick)="deleteConcept(item)">
+        </app-institutional-button>
+    </div>
+</ng-template>
+
+<!-- Modals -->
+<app-alert-modal [isOpen]="isAlertOpen" [config]="alertConfig" (modalClose)="isAlertOpen = false"
+    (actionClick)="isAlertOpen = false">
+</app-alert-modal>
+
+<app-confirmation-modal [isOpen]="isConfirmOpen" [config]="confirmConfig" (modalClose)="isConfirmOpen = false"
+    (confirm)="onConfirmYes()" (cancel)="isConfirmOpen = false">
+</app-confirmation-modal>

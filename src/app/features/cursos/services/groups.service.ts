@@ -48,10 +48,25 @@ export class GroupsService {
             quantity: 20,
             autoRegisterLimit: 20,
             url: 'http://localhost:4200/public/register/3',
-            requests: 0,
+            requests: 5,
             status: 'Activo',
             courseType: 'GENERICO',
             courseTypeId: 3 // Enlace estático al 'Curso Simple'
+        },
+        // MOCK: Grupo sin enlace para probar generación
+        {
+            id: 4,
+            name: 'G-NUEVO-01',
+            duration: '4 Horas',
+            location: 'Aula 2',
+            dateTime: '15/12/2026, 10:00',
+            quantity: 30,
+            autoRegisterLimit: 5,
+            url: '', // sin link
+            requests: 0,
+            status: 'Inactivo',
+            courseType: 'LICENCIA',
+            courseTypeId: 1
         }
     ];
 

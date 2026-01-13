@@ -8,11 +8,12 @@ import { InstitutionalCardComponent } from '../../../../shared/components/instit
 import { CourseType } from '../../../../core/models/group.model';
 import { GroupsService } from '../../services/groups.service';
 import { CourseTypeService } from '../../../../core/services/course-type.service';
+import { LicenseSearchModalComponent } from '../../components/modals/license-search-modal/license-search-modal.component';
 
 @Component({
     selector: 'app-public-registration',
     standalone: true,
-    imports: [CommonModule, PersonFormComponent, AlertModalComponent, InstitutionalCardComponent, DocumentSelectionModalComponent],
+    imports: [CommonModule, PersonFormComponent, AlertModalComponent, InstitutionalCardComponent, DocumentSelectionModalComponent, LicenseSearchModalComponent],
     templateUrl: './public-registration.component.html'
 })
 export class PublicRegistrationComponent implements OnInit {
@@ -39,8 +40,11 @@ export class PublicRegistrationComponent implements OnInit {
 
     // Estados
     isDocumentsModalOpen = false;
+    isSearchModalOpen = false; // Nuevo estado para el modal de búsqueda
+    showForm = false; // Nuevo estado para controlar cuándo mostrar el formulario
     tempDriverData: any = null;
     currentCourseType: CourseType = 'LICENCIA'; // Fallback
+    prefilledData: any = null; // Datos precargados de la búsqueda
 
     constructor(
         private route: ActivatedRoute,
@@ -100,6 +104,16 @@ export class PublicRegistrationComponent implements OnInit {
 
                 // B. Guardar documentos disponibles para el modal
                 this.availableDocuments = config.availableDocuments || [];
+
+                // C. Determinar si mostramos modal de búsqueda o formulario directo
+                const licenseField = config.registrationFields.find(f => f.fieldName === 'license');
+                if (licenseField && licenseField.visible) {
+                    this.isSearchModalOpen = true; // Abrir modal de búsqueda
+                    this.showForm = false;
+                } else {
+                    this.showForm = true; // Mostrar formulario directo
+                    this.isSearchModalOpen = false;
+                }
             }
         });
     }
@@ -113,12 +127,17 @@ export class PublicRegistrationComponent implements OnInit {
         if (courseType === 'LICENCIA') {
             this.fieldsConfig = {
                 // requestTarjeton: { visible: false } // Removed
+                nuc: { visible: false }
             };
+            this.isSearchModalOpen = true; // Asumir licencia por defecto para legacy
+            this.showForm = false;
         } else {
             this.fieldsConfig = {
                 license: { visible: false, required: false },
                 nuc: { visible: false }
             };
+            this.showForm = true;
+            this.isSearchModalOpen = false;
         }
     }
 
@@ -177,5 +196,31 @@ export class PublicRegistrationComponent implements OnInit {
         this.isAlertOpen = false;
         // Navegar fuera o resetear
         // this.router.navigate(['/']); 
+    }
+
+    // --- MANEJO DEL MODAL DE BÚSQUEDA ---
+    onDriverFound(driver: any) {
+        console.log('Conductor encontrado en registro público:', driver);
+        this.prefilledData = {
+            name: driver.name,
+            firstSurname: driver.firstSurname,
+            secondSurname: driver.secondSurname,
+            license: driver.license,
+            curp: driver.curp,
+            sex: driver.sex,
+            address: driver.address,
+            found: true
+        };
+        this.isSearchModalOpen = false;
+        this.showForm = true;
+    }
+
+    onManualRegistration(license: string) {
+        console.log('Registro manual con licencia:', license);
+        this.prefilledData = {
+            license: license
+        };
+        this.isSearchModalOpen = false;
+        this.showForm = true;
     }
 }

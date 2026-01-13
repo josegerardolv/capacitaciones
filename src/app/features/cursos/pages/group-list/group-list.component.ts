@@ -167,7 +167,7 @@ export class GroupListComponent implements OnInit {
     initForms() {
         this.groupModalForm = this.fb.group({
             name: ['', [Validators.required]],
-            duration: ['', [Validators.required]],
+            // duration removed, inherited from course
             location: ['', [Validators.required]],
             date: ['', [Validators.required]], // Separated date
             time: ['', [Validators.required]], // Separated time
@@ -306,6 +306,8 @@ export class GroupListComponent implements OnInit {
         if (this.modalMode === 'create') {
             const payload = {
                 ...formValue,
+                dateTime: `${formValue.date}, ${formValue.time}`,
+                duration: this.formatDuration(this.currentCourse?.duration), // Inherit duration
                 courseTypeId: this.currentCourse?.courseTypeId,
                 courseType: 'LICENCIA' // Fallback or map from ID if needed
             };
@@ -331,7 +333,8 @@ export class GroupListComponent implements OnInit {
             }
             const payload = {
                 id: this.editingGroupId,
-                ...formValue
+                ...formValue,
+                dateTime: `${formValue.date}, ${formValue.time}`
             };
             this.groupsService.updateGroup(this.editingGroupId, payload).subscribe({
                 next: () => {
@@ -444,5 +447,11 @@ export class GroupListComponent implements OnInit {
 
     exportData() {
         this.notificationService.info('Exportar', 'Descargando reporte de grupos...');
+    }
+
+    private formatDuration(minutes: number | undefined): string {
+        if (!minutes) return '0 Horas';
+        const hours = Math.floor(minutes / 60);
+        return `${hours} ${hours === 1 ? 'Hora' : 'Horas'}`;
     }
 }
