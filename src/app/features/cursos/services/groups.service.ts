@@ -12,44 +12,59 @@ export class GroupsService {
     private mockGroups: Group[] = [
         {
             id: 1,
-            name: 'A05',
-            // description: 'Regular text column', // Ya no es obligatorio
-            duration: '3 Horas', // Campo requerido restaurado
-            location: 'Carlos Gracida',
-            dateTime: '12/07/2026, 14:30',
-            quantity: 55,
-            autoRegisterLimit: 5, // Días (número)
+            name: 'G-CHOFERES-01',
+            duration: '4 Horas',
+            location: 'Aula Central - Semovi',
+            dateTime: '15/10/2026, 09:00',
+            quantity: 40,
+            autoRegisterLimit: 5,
             url: 'http://localhost:4200/public/register/1',
-            requests: 2,
+            requests: 3,
             status: 'Activo',
             courseType: 'LICENCIA',
-            courseTypeId: 1
+            courseTypeId: 1 // Link to 'Licencia Transporte Público'
         },
         {
             id: 2,
-            name: 'A06',
-            duration: '5 Horas',
-            location: 'Reforma',
-            dateTime: '12/07/2026, 14:30',
-            quantity: 40,
-            autoRegisterLimit: 3,
-            url: '', // Sin URL generada aún
-            requests: 0,
-            status: 'Inactivo',
-            courseType: 'GENERICO',
-            courseTypeId: 3
+            name: 'G-ESCOLAR-B',
+            duration: '2 Horas',
+            location: 'Escuela Primaria Benito Juárez',
+            dateTime: '20/10/2026, 10:30',
+            quantity: 100,
+            autoRegisterLimit: 10,
+            url: 'http://localhost:4200/public/register/2',
+            requests: 3,
+            status: 'Activo',
+            courseType: 'GENERICO', // Legacy
+            courseTypeId: 2 // Enlace a 'Capacitación Escolar'
         },
+        // MOCK: Grupo Simple solicitado por usuario
         {
             id: 3,
-            name: 'B13',
-            duration: '4 Horas',
-            location: 'Carlos Gracida',
-            dateTime: '12/07/2026, 14:30',
-            quantity: 30,
-            autoRegisterLimit: 2,
+            name: 'G-SIMPLE-01',
+            duration: '1 Hora',
+            location: 'Aula Virtual',
+            dateTime: '01/12/2026, 09:00',
+            quantity: 20,
+            autoRegisterLimit: 20,
             url: 'http://localhost:4200/public/register/3',
             requests: 5,
             status: 'Activo',
+            courseType: 'GENERICO',
+            courseTypeId: 3 // Enlace estático al 'Curso Simple'
+        },
+        // MOCK: Grupo sin enlace para probar generación
+        {
+            id: 4,
+            name: 'G-NUEVO-01',
+            duration: '4 Horas',
+            location: 'Aula 2',
+            dateTime: '15/12/2026, 10:00',
+            quantity: 30,
+            autoRegisterLimit: 5,
+            url: '', // sin link
+            requests: 0,
+            status: 'Inactivo',
             courseType: 'LICENCIA',
             courseTypeId: 1
         }
@@ -69,17 +84,17 @@ export class GroupsService {
     constructor() { }
 
     getGroups(): Observable<Group[]> {
-        return of([...this.mockGroups]).pipe(delay(500));
+        return of([...this.mockGroups]).pipe(delay(150));
     }
 
     getDriversByGroupId(groupId: number): Observable<Driver[]> {
         const drivers = this.mockDrivers[groupId] || [];
-        return of([...drivers]).pipe(delay(600)); // Simular carga de datos 
+        return of([...drivers]).pipe(delay(200)); // Simular carga de datos 
     }
 
     deleteGroup(id: number): Observable<void> {
         this.mockGroups = this.mockGroups.filter(g => g.id !== id);
-        return of(void 0).pipe(delay(500));
+        return of(void 0).pipe(delay(200));
     }
 
     // Nueva función para búsqueda simulada de conductores
@@ -111,7 +126,7 @@ export class GroupsService {
         const newId = Math.max(...this.mockGroups.map(g => g.id), 0) + 1;
         const newGroup = { ...group, id: newId };
         this.mockGroups.push(newGroup);
-        return of(newGroup).pipe(delay(500));
+        return of(newGroup).pipe(delay(200));
     }
 
     updateGroup(id: number, updatedGroup: Group): Observable<Group> {
@@ -119,11 +134,11 @@ export class GroupsService {
         if (index > -1) {
             this.mockGroups[index] = { ...this.mockGroups[index], ...updatedGroup };
         }
-        return of(this.mockGroups[index]).pipe(delay(500));
+        return of(this.mockGroups[index]).pipe(delay(200));
     }
 
     getGroupById(id: number): Observable<Group | undefined> {
         const group = this.mockGroups.find(g => g.id === id);
-        return of(group).pipe(delay(500));
+        return of(group).pipe(delay(100));
     }
 }

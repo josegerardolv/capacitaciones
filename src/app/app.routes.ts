@@ -56,9 +56,7 @@ export const routes: Routes = [
         path: 'config',
         loadChildren: () => import('./features/configurations/configuration.routes').then(m => m.CONFIGURATION_ROUTES),
         // canActivate: [authGuard] - inherited from parent
-        data: { roles: ['ADMINISTRADOR', 'SUPER_ADMINISTRADOR'] }
       },
-      // --- EDITOR VISUAL EN PANTALLA COMPLETA (Sin Layout) ---
       {
         path: 'documentos/templates/editor/:id',
         canActivate: [authGuard],

@@ -86,7 +86,8 @@ export class CourseTypeListComponent implements OnInit {
   }
 
   openEditModal(item: CourseTypeConfig) {
-    this.selectedCourseType = item;
+    // Clone to avoid reference issues
+    this.selectedCourseType = JSON.parse(JSON.stringify(item));
     this.showFormModal = true;
   }
 
@@ -95,21 +96,36 @@ export class CourseTypeListComponent implements OnInit {
     this.tableConfig.loading = true;
 
     if (this.selectedCourseType) {
-      // Update
-      console.log('Updating', config);
-      this.courseTypeService.updateCourseType(this.selectedCourseType.id, config).subscribe(() => this.loadData());
+      // Actualizar normal
+      this.courseTypeService.updateCourseType(this.selectedCourseType.id, config).subscribe({
+        next: () => this.loadData(),
+        error: (err) => {
+          console.error('Error actualizando tipo de curso:', err);
+          this.tableConfig.loading = false;
+        }
+      });
     } else {
-      // Create
-      console.log('Creating', config);
-      // Cast to satisfy type (ignoring id/dates as service handles them)
-      this.courseTypeService.createCourseType(config as any).subscribe(() => this.loadData());
+      // Crear normal
+      // Forzamos el tipo (ignorando id/dates ya que el servicio los maneja)
+      this.courseTypeService.createCourseType(config as any).subscribe({
+        next: () => this.loadData(),
+        error: (err) => {
+          console.error('Error creando tipo de curso:', err);
+          this.tableConfig.loading = false;
+        }
+      });
     }
   }
 
   onDelete(item: CourseTypeConfig) {
     if (confirm(`¿Estás seguro de eliminar el tipo de curso "${item.name}"?`)) {
-      this.courseTypeService.deleteCourseType(item.id).subscribe(() => {
-        this.loadData();
+      this.tableConfig.loading = true;
+      this.courseTypeService.deleteCourseType(item.id).subscribe({
+        next: () => this.loadData(),
+        error: (err) => {
+          console.error('Error deleting course type:', err);
+          this.tableConfig.loading = false;
+        }
       });
     }
   }

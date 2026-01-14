@@ -120,6 +120,10 @@ export interface CertificateTemplate {
   id: number;
   name: string;
   claveConcepto: string;
+  conceptId?: number;
+  conceptName?: string;
+  conceptClave?: string;
+  conceptCosto?: number;
   description?: string;
   category?: string;
   pageConfig: PageConfig;
@@ -142,6 +146,17 @@ export interface CertificateData {
 }
 
 // Certificado generado
+// Concept Interface (Merged to reduce files)
+export interface Concept {
+  id: number;
+  concepto: string;
+  clave: string;
+  costo: number;
+  deprecated: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface GeneratedCertificate {
   id: number;
   templateId: number;

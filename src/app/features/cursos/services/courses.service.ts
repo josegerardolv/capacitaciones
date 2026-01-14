@@ -9,73 +9,60 @@ import { environment } from 'src/environments/environment';
     providedIn: 'root'
 })
 export class CoursesService {
-    private apiUrl = `${environment.apiUrl}/courses`; // Assuming an API endpoint
+    private apiUrl = `${environment.apiUrl}/courses`; // Asumiendo un endpoint de API
 
     // Listado de cursos para pruebas locales
     private courses: Course[] = [
         {
             id: 1,
-            name: 'A05',
-            description: 'Lorem Ipsum is simply dummy text of the',
-            duration: 270,
-            courseTypeId: 1
+            name: 'Curso Choferes 2026',
+            description: 'Capacitación integral para nuevos operadores de trasnporte público.',
+            duration: 240,
+            courseTypeId: 1 // Vinculado a 'Licencia Transporte Público'
         },
         {
             id: 2,
-            name: 'A06',
-            description: 'Lorem Ipsum is simply dummy text of the',
+            name: 'Curso Escolar - Seguridad Vial',
+            description: 'Programa educativo para fomentar la cultura vial en primarias.',
             duration: 120,
-            courseTypeId: 1
+            courseTypeId: 2 // Vinculado a 'Capacitación Escolar'
         },
+        // MOCK: Curso Simple solicitado (ID 3)
         {
             id: 3,
-            name: 'B13',
-            description: 'Lorem Ipsum is simply dummy text of the',
+            name: 'Curso Simple',
+            description: 'Curso básico de prueba.',
             duration: 60,
-            courseTypeId: 1
-        },
-        {
-            id: 4,
-            name: 'C01',
-            description: 'Curso de manejo básico para principiantes',
-            duration: 300,
-            courseTypeId: 2
-        },
-        {
-            id: 5,
-            name: 'C02',
-            description: 'Curso avanzado de seguridad vial',
-            duration: 240,
-            courseTypeId: 3 // Fixed to match one of the config IDs (1, 2, 3)
+            courseTypeId: 3 // Vinculado a 'Curso Simple'
         }
     ];
 
-    constructor(private http: HttpClient) { } // Inject HttpClient
+    constructor(private http: HttpClient) { } // Inyectar HttpClient
 
     getCourses(): Observable<Course[]> {
-        // In a real application, you would use this.http.get<Course[]>(this.apiUrl);
+        // En una aplicación real, se usaría this.http.get<Course[]>(this.apiUrl);
         return of([...this.courses]).pipe(delay(500));
     }
 
     createCourse(course: Omit<Course, 'id'>): Observable<Course> {
-        // In a real application, you would use this.http.post<Course>(this.apiUrl, course);
+        // En una aplicación real, se usaría this.http.post<Course>(this.apiUrl, course);
         const newCourse = { ...course, id: this.generateNewId() };
         this.courses.push(newCourse);
         return of(newCourse).pipe(delay(500));
     }
 
     updateCourse(id: number, updatedCourse: Course): Observable<Course> {
-        // In a real application, you would use this.http.put<Course>(`${this.apiUrl}/${id}`, updatedCourse);
+        // En una aplicación real, se usaría this.http.put<Course>(`${this.apiUrl}/${id}`, updatedCourse);
         const index = this.courses.findIndex(c => c.id === id);
         if (index > -1) {
             this.courses[index] = { ...updatedCourse, id };
             return of(this.courses[index]).pipe(delay(500));
         }
-        return of(null as any).pipe(delay(500)); // Simulate not found
+        return of(null as any).pipe(delay(500)); // Simular no encontrado
     }
 
     deleteCourse(id: number): Observable<boolean> {
-        // In a real application, you would use this.http.delete<boolean>(`${this.apiUrl}/${id}`);
+        // En una aplicación real, se usaría this.http.delete<boolean>(`${this.apiUrl}/${id}`);
         this.courses = this.courses.filter(c => c.id !== id);
         return of(true).pipe(delay(300));
     }

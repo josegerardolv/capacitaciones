@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Observable, of, delay } from 'rxjs';
-import { CertificateTemplate, GeneratedCertificate, CertificateData, TemplateVariable, PageConfig } from '../../../core/models/template.model';
+import { CertificateTemplate, GeneratedCertificate, CertificateData, TemplateVariable, PageConfig, Concept } from '../../../core/models/template.model';
 
 @Injectable({ providedIn: 'root' })
 export class TemplateService {
@@ -8,11 +8,13 @@ export class TemplateService {
     {
       id: 1,
       name: 'Constancia Básica',
-      claveConcepto: 'CB-001',
+      claveConcepto: '3IFBAC022',
+      conceptId: 1,
+      conceptName: 'CONSTANCIA DE NO EMPLACAMIENTO',
+      conceptClave: '3IFBAC022',
+      conceptCosto: 473,
       description: 'Template básico para constancias de participación',
       category: 'Participación',
-
-      // NOTA: Este valor debe venir del backend calculado: COUNT(certificates) WHERE status = 'Entregado' AND templateId = X
       usageCount: 150,
       pageConfig: {
         width: 279.4,
@@ -32,7 +34,11 @@ export class TemplateService {
     {
       id: 2,
       name: 'Certificado de Aprobación',
-      claveConcepto: 'CA-002',
+      claveConcepto: '3IFAAA065',
+      conceptId: 2,
+      conceptName: 'PERMISO PROVISIONAL (SERVICIO PÚBLICO)',
+      conceptClave: '3IFAAA065',
+      conceptCosto: 340,
       description: 'Certificado oficial de aprobación de curso',
       category: 'Certificación',
       usageCount: 85,
@@ -44,10 +50,62 @@ export class TemplateService {
     {
       id: 3,
       name: 'Diploma de Honor',
-      claveConcepto: 'DH-003',
+      claveConcepto: '3IFBAC023',
+      conceptId: 3,
+      conceptName: 'PERMISO PROVISIONAL (SERVICIO PRIVADO)',
+      conceptClave: '3IFBAC023',
+      conceptCosto: 340,
       description: 'Diploma para alumnos destacados',
       category: 'Reconocimiento',
       usageCount: 20,
+      pageConfig: this.getDefaultPageConfig(),
+      elements: [],
+      variables: [],
+      created_at: new Date().toISOString()
+    },
+    {
+      id: 4,
+      name: 'Tarjetón de Identidad',
+      claveConcepto: '3IFBAC022',
+      conceptId: 1,
+      conceptName: 'CONSTANCIA DE NO EMPLACAMIENTO',
+      conceptClave: '3IFBAC022',
+      conceptCosto: 473,
+      description: 'Documento de identificación para conductores',
+      category: 'Identificación',
+      usageCount: 120,
+      pageConfig: this.getDefaultPageConfig(),
+      elements: [],
+      variables: [],
+      created_at: new Date().toISOString()
+    },
+    {
+      id: 5,
+      name: 'Diploma de Participación',
+      claveConcepto: '3IFAAA065',
+      conceptId: 2,
+      conceptName: 'PERMISO PROVISIONAL (SERVICIO PÚBLICO)',
+      conceptClave: '3IFAAA065',
+      conceptCosto: 340,
+      description: 'Diploma general de participación',
+      category: 'Reconocimiento',
+      usageCount: 45,
+      pageConfig: this.getDefaultPageConfig(),
+      elements: [],
+      variables: [],
+      created_at: new Date().toISOString()
+    },
+    {
+      id: 6,
+      name: 'Constancia de Curso de Manejo',
+      claveConcepto: '3IFBAC023',
+      conceptId: 3,
+      conceptName: 'PERMISO PROVISIONAL (SERVICIO PRIVADO)',
+      conceptClave: '3IFBAC023',
+      conceptCosto: 340,
+      description: 'Constancia específica para curso de manejo',
+      category: 'Certificación',
+      usageCount: 60,
       pageConfig: this.getDefaultPageConfig(),
       elements: [],
       variables: [],
@@ -57,6 +115,13 @@ export class TemplateService {
 
   private generatedCertificates: GeneratedCertificate[] = [];
   private nextCertId = 1;
+
+  // Mock Concepts Data
+  private concepts: Concept[] = [
+    { id: 1, concepto: 'CONSTANCIA DE NO EMPLACAMIENTO', clave: '3IFBAC022', costo: 473, deprecated: false },
+    { id: 2, concepto: 'PERMISO PROVISIONAL (SERVICIO PÚBLICO)', clave: '3IFAAA065', costo: 340, deprecated: false },
+    { id: 3, concepto: 'PERMISO PROVISIONAL (SERVICIO PRIVADO)', clave: '3IFBAC023', costo: 340, deprecated: false }
+  ];
 
   constructor() { }
 
@@ -120,6 +185,38 @@ export class TemplateService {
     };
     this.templatesData.push(duplicated);
     return of(duplicated).pipe(delay(800));
+    return of(duplicated).pipe(delay(800));
+  }
+
+  // ===== CONCEPTOS (Merged) =====
+  getConcepts(): Observable<Concept[]> {
+    return of([...this.concepts]).pipe(delay(500));
+  }
+
+  searchConcepts(query: string): Observable<Concept[]> {
+    const lower = query.toLowerCase();
+    return of(this.concepts.filter(c => c.concepto.toLowerCase().includes(lower) || c.clave.toLowerCase().includes(lower))).pipe(delay(300));
+  }
+
+  createConcept(concept: Omit<Concept, 'id'>): Observable<Concept> {
+    const newId = Math.max(...this.concepts.map(c => c.id), 0) + 1;
+    const newConcept = { ...concept, id: newId, deprecated: false };
+    this.concepts.push(newConcept);
+    return of(newConcept).pipe(delay(500));
+  }
+
+  updateConcept(id: number, changes: Partial<Concept>): Observable<Concept> {
+    const idx = this.concepts.findIndex(c => c.id === id);
+    if (idx > -1) {
+      this.concepts[idx] = { ...this.concepts[idx], ...changes };
+      return of(this.concepts[idx]).pipe(delay(500));
+    }
+    return of(this.concepts[0]); // fallback
+  }
+
+  deleteConcept(id: number): Observable<void> {
+    this.concepts = this.concepts.filter(c => c.id !== id);
+    return of(void 0).pipe(delay(500));
   }
 
   // ===== GENERACIÓN DE CERTIFICADOS =====

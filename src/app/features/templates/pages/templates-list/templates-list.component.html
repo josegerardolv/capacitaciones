@@ -1,26 +1,15 @@
 <div class="min-h-screen">
-    <app-page-header
-        [title]="'Formatos de Templates'"
-        [subtitle]="'Gestiona los formatos reutilizables para los cursos'"
-        [actionButton]="actionButtonConfig">
+    <app-page-header [title]="'Formatos de Templates'"
+        [subtitle]="'Gestiona los formatos reutilizables para los cursos'" [actionButton]="actionButtonConfig">
     </app-page-header>
 
     <app-institutional-card [config]="{ showHeader: false, showFooter: false, showShadow: true, showBorder: true }">
-        <app-table-pagination
-            [config]="paginationConfig"
-            [showPageSizeSelector]="true"
-            [showPaginationControls]="false"
+        <app-table-pagination [config]="paginationConfig" [showPageSizeSelector]="true" [showPaginationControls]="false"
             (pageChange)="onPageChange($event)">
         </app-table-pagination>
-        <app-institutional-table
-            [data]="templates"
-            [columns]="tableColumns"    
-            [config]="tableConfig">
+        <app-institutional-table [data]="templates" [columns]="tableColumns" [config]="tableConfig">
         </app-institutional-table>
-        <app-table-pagination
-            [config]="paginationConfig"
-            [showPageSizeSelector]="false"
-            [showPaginationControls]="true"
+        <app-table-pagination [config]="paginationConfig" [showPageSizeSelector]="false" [showPaginationControls]="true"
             (pageChange)="onPageChange($event)">
         </app-table-pagination>
     </app-institutional-card>
@@ -28,66 +17,68 @@
 
 <!-- Modal de creación -->
 <!-- Modal unificado (crear / editar) -->
-<app-modal-form *ngIf="(createModalOpen || editModalOpen) && form"
-    [formGroup]="form"
-    [isOpen]="createModalOpen || editModalOpen"
-    [title]="editModalOpen ? 'Editar Template' : 'Nuevo Template'"
-    [isLoading]="isSaving"
-    (formSubmit)="editModalOpen ? onEditSubmit($event) : onCreateSubmit($event)"
+<app-modal-form *ngIf="(createModalOpen || editModalOpen) && form" [formGroup]="form"
+    [isOpen]="createModalOpen || editModalOpen" [title]="editModalOpen ? 'Editar Template' : 'Nuevo Template'"
+    [isLoading]="isSaving" (formSubmit)="editModalOpen ? onEditSubmit($event) : onCreateSubmit($event)"
     (modalClose)="closeModal()">
 
-    <app-input-enhanced 
-        [control]="nameControl" 
-        label="Nombre" 
-        placeholder="Ingrese nombre" 
-        [required]="true">
+    <app-input-enhanced [control]="nameControl" label="Nombre" placeholder="Ingrese nombre" [required]="true">
     </app-input-enhanced>
 
-    <app-input-enhanced 
-        [control]="claveConceptoControl" 
-        label="Clave de concepto" 
-        placeholder="Ingrese clave de concepto" 
-        [required]="false">
-    </app-input-enhanced>
-    <app-select
-        [control]="tipoControl"
-        [options]="[{ value: 'A', label: 'Tipo A' }, { value: 'B', label: 'Tipo B' }, { value: 'C', label: 'Tipo C' }]"
-        [size]="'md'"
-        [placeholder]="'Seleccione tipo'">
+    <div class="mb-4">
+        <app-select [control]="conceptIdControl" [options]="conceptOptions" label="Concepto"
+            placeholder="Seleccione un concepto...">
+        </app-select>
+        <p class="text-xs text-gray-500 mt-1">Busque por nombre o clave del concepto.</p>
+    </div>
+
+    <app-select [control]="tipoControl"
+        [options]="[{ value: 'Participación', label: 'Participación' }, { value: 'Certificación', label: 'Certificación' }, { value: 'Reconocimiento', label: 'Reconocimiento' }, { value: 'Identificación', label: 'Identificación' }]"
+        [size]="'md'" [placeholder]="'Seleccione Categoría'">
     </app-select>
-    <app-input-enhanced 
-        [control]="descriptionControl" 
-        label="Descripción" 
-        placeholder="Descripción breve" 
+
+    <app-input-enhanced [control]="descriptionControl" label="Descripción" placeholder="Descripción breve"
         type="textarea">
     </app-input-enhanced>
 
 </app-modal-form>
 
-<!-- Template para Acciones -->
+<!-- Templates for Table -->
 <ng-template #actionsTemplate let-item>
     <div class="flex items-center justify-center space-x-3">
-        <app-institutional-button
-            [config]="{ 
+        <app-institutional-button [config]="{ 
                 variant: 'primary', 
                 size: 'small', 
                 icon: 'design_services', 
-                iconPosition: 'only' }"
-            [appTooltip]="'Editar diseño visual'" tooltipPosition="top"
+                iconPosition: 'only' }" [appTooltip]="'Editar diseño visual'" tooltipPosition="top"
             (buttonClick)="editTemplateDesign(item)">
         </app-institutional-button>
-        <app-institutional-button
-            [config]="{ variant: 'secondary', size: 'small', icon: 'edit', iconPosition: 'only' }"
-            [appTooltip]="'Editar información'" tooltipPosition="top"
-            (buttonClick)="openEditForm(item)">
+        <app-institutional-button [config]="{ variant: 'secondary', size: 'small', icon: 'edit', iconPosition: 'only' }"
+            [appTooltip]="'Editar información'" tooltipPosition="top" (buttonClick)="openEditForm(item)">
         </app-institutional-button>
-        <app-institutional-button
-            [config]="{ variant: 'danger', size: 'small', icon: 'delete', iconPosition: 'only' }"
-            [appTooltip]="'Eliminar'" tooltipPosition="top"
-            (buttonClick)="deleteTemplate(item)">
+        <app-institutional-button [config]="{ variant: 'danger', size: 'small', icon: 'delete', iconPosition: 'only' }"
+            [appTooltip]="'Eliminar'" tooltipPosition="top" (buttonClick)="deleteTemplate(item)">
         </app-institutional-button>
     </div>
 </ng-template>
+
+<ng-template #conceptTemplate let-item>
+    <div class="flex flex-col">
+        <span class="font-medium text-gray-900">{{ item.conceptName || 'Sin concepto' }}</span>
+        <span class="text-xs text-gray-500 font-mono">{{ item.conceptClave }}</span>
+    </div>
+</ng-template>
+
+<ng-template #costTemplate let-item>
+    <span class="font-medium">{{ item.conceptCosto | currency:'MXN' }}</span>
+</ng-template>
+
+<ng-template #categoryTemplate let-item>
+    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+        {{ item.category || 'General' }}
+    </span>
+</ng-template>
+
 
 <!-- Modales Genéricos -->
 <app-confirmation-modal [isOpen]="isConfirmOpen" [config]="confirmConfig" (confirm)="onConfirmYes()"

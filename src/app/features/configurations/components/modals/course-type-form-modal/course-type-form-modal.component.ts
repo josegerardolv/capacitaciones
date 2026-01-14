@@ -43,7 +43,7 @@ export class CourseTypeFormModalComponent implements OnInit {
 
   modalConfig: ModalConfig = {
     title: 'Registro Tipo de Curso',
-    size: '2xl', // Enhanced width to avoid table scroll
+    size: 'fullscreen',
     showCloseButton: true,
     padding: true
   };
@@ -68,34 +68,46 @@ export class CourseTypeFormModalComponent implements OnInit {
   @ViewChild('actionsTemplate') actionsTemplate!: any;
 
   tableColumns: TableColumn[] = [
-    { key: 'name', label: 'Nombre', sortable: true },
-    { key: 'category', label: 'Categoría', sortable: true, width: '170px' }, // Added Category
-    { key: 'usageCount', label: 'Uso', sortable: true, width: '100px', align: 'center' },
-    { key: 'actions', label: 'Ver documento', align: 'center', width: '120px' }
+    { key: 'name', label: 'Nombre', sortable: true, width: '200px' },
+    { key: 'conceptName', label: 'Concepto', sortable: true, width: '200px' }, // Show full concept name
+    { key: 'category', label: 'Tipo', sortable: true, width: '120px' },
+    { key: 'conceptCosto', label: 'Costo', sortable: true, width: '100px', align: 'right' }, // Added Cost column
+    { key: 'actions', label: 'Documento', align: 'center', width: '80px' } // Renamed to Documento for clarity
   ];
 
   // Modal de Vista Previa
   showPreviewModal = false;
   previewTemplate: CertificateTemplate | null = null;
 
+  displayedTemplates: CertificateTemplate[] = [];
+
   constructor(
     private fb: FormBuilder,
     private templateService: TemplateService
   ) { }
 
+  ngOnChanges(changes: any): void {
+    if (changes['isOpen'] && this.isOpen) {
+      // Recargar templates y estado al abrir
+      this.loadTemplates();
+      if (this.courseTypeToEdit) {
+        this.fillForm(this.courseTypeToEdit);
+      } else {
+        this.form.reset(); // Removed default paymentType
+        this.selectedTemplates = [];
+        this.initFields();
+      }
+    }
+  }
+
   ngOnInit(): void {
     this.initForm();
     this.initFields();
-    this.loadTemplates();
 
     // Lógica de búsqueda
     this.searchControl.valueChanges.subscribe(val => {
       this.filterTemplates(val || '');
     });
-
-    if (this.courseTypeToEdit) {
-      this.fillForm(this.courseTypeToEdit);
-    }
   }
 
   ngAfterViewInit() {
@@ -108,48 +120,71 @@ export class CourseTypeFormModalComponent implements OnInit {
 
   loadTemplates() {
     this.tableConfig.loading = true;
-    this.templateService.getTemplates().subscribe(data => {
-      this.templates = data;
-      // Ordenar por uso descendente por defecto ("Más usados")
-      this.templates.sort((a, b) => (b.usageCount || 0) - (a.usageCount || 0));
+    this.templateService.getTemplates().subscribe({
+      next: (data) => {
+        this.templates = data;
+        // Ordenar por uso descendente por defecto ("Más usados")
+        this.templates.sort((a, b) => (b.usageCount || 0) - (a.usageCount || 0));
 
-      this.filteredTemplates = [...this.templates];
-      this.tableConfig.loading = false;
+        if (this.courseTypeToEdit && this.courseTypeToEdit.availableDocuments) {
+          const selectedIds = this.courseTypeToEdit.availableDocuments.map(d => d.templateId);
+          this.selectedTemplates = this.templates.filter(t => selectedIds.includes(t.id));
 
-      // Si estamos editando, sincronizar selección
-      if (this.courseTypeToEdit && this.courseTypeToEdit.availableDocuments) {
-        const selectedIds = this.courseTypeToEdit.availableDocuments.map(d => d.templateId);
-        this.selectedTemplates = this.templates.filter(t => selectedIds.includes(t.id));
+          if (this.selectedTemplates.length > 0) {
+            this.filteredTemplates = [...this.selectedTemplates];
+          }
+        } else {
+          // Modo Crear: Limpiar seleccion y mostrar todo
+          this.selectedTemplates = [];
+          this.filteredTemplates = [...this.templates];
+        }
+
+        this.updateDisplayedTemplates();
+        this.tableConfig.loading = false;
+      },
+      error: (err) => {
+        console.error('Error cargando templates', err);
+        this.tableConfig.loading = false;
       }
     });
   }
 
   filterTemplates(query: string) {
     if (!query) {
+      // Si se limpia el filtro, mostrar TODOS los templates (para permitir agregar nuevos)
       this.filteredTemplates = [...this.templates];
-      return;
+    } else {
+      const lower = query.toLowerCase();
+      this.filteredTemplates = this.templates.filter(t => t.name.toLowerCase().includes(lower));
     }
-    const lower = query.toLowerCase();
-    this.filteredTemplates = this.templates.filter(t => t.name.toLowerCase().includes(lower));
+
+    this.updateDisplayedTemplates();
+  }
+
+  updateDisplayedTemplates() {
+    // Mostrar todos los filtrados (el scroll del contenedor maneja el desbordamiento)
+    this.displayedTemplates = this.filteredTemplates;
   }
 
   initForm() {
     this.form = this.fb.group({
       name: ['', Validators.required],
-      description: ['', Validators.required],
-      paymentType: ['Gratuito', Validators.required]
+      description: ['', Validators.required]
+      // paymentType removed as it depends on template cost
     });
   }
 
   initFields() {
     this.registrationFields = JSON.parse(JSON.stringify(DEFAULT_REGISTRATION_FIELDS));
+    // Ocultar todos los campos por defecto para nuevos tipos de curso
+    this.registrationFields.forEach(f => f.visible = false);
   }
 
   fillForm(data: CourseTypeConfig) {
     this.form.patchValue({
       name: data.name,
-      description: data.description,
-      paymentType: data.paymentType
+      description: data.description
+      // paymentType removed
     });
 
     if (data.registrationFields) {
@@ -161,7 +196,6 @@ export class CourseTypeFormModalComponent implements OnInit {
         }
       });
     }
-    // La lógica de selección se maneja en loadTemplates debido a la naturaleza asíncrona
   }
 
   toggleField(field: RegistrationFieldConfig) {
@@ -192,7 +226,7 @@ export class CourseTypeFormModalComponent implements OnInit {
       name: t.name,
       description: t.description || t.name,
       templateId: t.id,
-      cost: 0,
+      cost: t.conceptCosto || 0, // Inherit cost from template concept
       requiresApproval: false
     }));
 

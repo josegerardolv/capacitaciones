@@ -27,10 +27,7 @@ export class PersonFormComponent implements OnInit {
         { value: 'M', label: 'Mujer' }
     ];
 
-    tarjetonOptions: SelectOption[] = [
-        { value: false, label: 'No' },
-        { value: true, label: 'Sí' }
-    ];
+
 
     getControl(key: string): FormControl {
         return this.form.get(key) as FormControl;
@@ -47,8 +44,7 @@ export class PersonFormComponent implements OnInit {
             sex: ['', Validators.required],
             nuc: [''],
             phone: ['', [Validators.pattern(/^\d{10}$/)]],
-            email: ['', [Validators.email]],
-            requestTarjeton: [false]
+            email: ['', [Validators.email]]
         });
     }
 

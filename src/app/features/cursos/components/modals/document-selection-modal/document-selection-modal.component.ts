@@ -1,6 +1,8 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ModalComponent, ModalConfig } from '../../../../../shared/components/modals/modal.component';
+import { InstitutionalButtonComponent } from '../../../../../shared/components/buttons/institutional-button.component';
 import { CourseType } from '../../../../../core/models/group.model';
 
 export interface DocumentOption {
@@ -14,19 +16,26 @@ export interface DocumentOption {
 @Component({
     selector: 'app-document-selection-modal',
     standalone: true,
-    imports: [CommonModule, FormsModule],
+    imports: [CommonModule, FormsModule, ModalComponent, InstitutionalButtonComponent],
     templateUrl: './document-selection-modal.component.html'
 })
 export class DocumentSelectionModalComponent {
     @Input() isOpen = false;
-    @Input() courseType: CourseType = 'LICENCIA'; // Default logic
-    @Input() customDocuments: any[] | null = null; // Accepting DocumentConfig
+    @Input() courseType: CourseType = 'LICENCIA'; // Lógica predeterminada
+    @Input() customDocuments: any[] | null = null; // Aceptando DocumentConfig
 
-    // Internal state of documents
+    // Estado interno de documentos
     documents: DocumentOption[] = [];
 
     @Output() modalClose = new EventEmitter<void>();
     @Output() confirm = new EventEmitter<DocumentOption[]>();
+
+    modalConfig: ModalConfig = {
+        title: 'Constancias',
+        size: 'lg',
+        showCloseButton: true,
+        padding: true
+    };
 
     ngOnChanges(): void {
         if (this.isOpen) {
@@ -36,18 +45,18 @@ export class DocumentSelectionModalComponent {
 
     initializeDocuments() {
         if (this.customDocuments && this.customDocuments.length > 0) {
-            // Use custom configuration
+            // Usar configuración personalizada
             this.documents = this.customDocuments.map(doc => ({
                 id: doc.id,
                 name: doc.name,
-                description: doc.name, // Use name as description if not provided
-                selected: true, // Auto-select by default or logic?
-                disabled: false // doc.required?
+                description: doc.name, // Usar nombre como descripción si no se proporciona
+                selected: false, // Por defecto no seleccionado
+                disabled: false // ¿doc.required?
             }));
             return;
         }
 
-        // Base documents
+        // Documentos base
         this.documents = [
             {
                 id: 'constancia',
@@ -58,7 +67,7 @@ export class DocumentSelectionModalComponent {
             }
         ];
 
-        // Conditional documents based on CourseType
+        // Documentos condicionales basados en Tipo de Curso
         if (this.courseType === 'LICENCIA') {
             this.documents.push({
                 id: 'tarjeton',
@@ -69,7 +78,7 @@ export class DocumentSelectionModalComponent {
             });
         }
 
-        // Add Reconocimiento for everyone?
+        // ¿Agregar Reconocimiento para todos?
         this.documents.push({
             id: 'reconocimiento',
             name: 'Reconocimiento',

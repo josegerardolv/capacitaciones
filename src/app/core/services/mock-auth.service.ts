@@ -33,7 +33,7 @@ export class MockAuthService {
         username: 'admin',
         name: 'Usuario Simulado',
         email: 'test@semovi.gob.mx',
-        role: 'ADMINISTRADOR',
+        role: 'ADMIN',
         role_id: '1',
         person: {
             id: '1',
@@ -50,7 +50,7 @@ export class MockAuthService {
      */
     login(credentials: LoginRequest): Observable<LoginResponse> {
         const username = credentials.username.toUpperCase();
-        let role = 'ADMINISTRADOR'; // Default
+        let role = 'ADMIN'; // Default
         let name = 'Administrador Sistema';
 
         // "Magic" login logic
@@ -58,7 +58,7 @@ export class MockAuthService {
         else if (username.includes('CAPTURISTA')) { role = 'CAPTURISTA'; name = 'Juan Capturista'; }
         else if (username.includes('CONSULTA')) { role = 'CONSULTA'; name = 'Maria Consulta'; }
         else if (username.includes('SUPERVISOR')) { role = 'SUPERVISOR'; name = 'Pedro Supervisor'; }
-        else if (username === 'ADMIN') { role = 'ADMINISTRADOR'; } // Exact match
+        else if (username === 'ADMIN') { role = 'ADMIN'; } // Exact match
         else {
             return throwError(() => new Error('Usuario no encontrado. Intente con: admin, capturista, super o consulta'));
         }
@@ -134,10 +134,10 @@ export class MockAuthService {
 
         // 1. Mock para /users (UsuariosService)
         if (url.includes('/users')) {
-             if (method === 'GET') {
-                 // Return list of mock users
-                 return of(this.getMockUsers() as unknown as T).pipe(delay(delayMs));
-             }
+            if (method === 'GET') {
+                // Return list of mock users
+                return of(this.getMockUsers() as unknown as T).pipe(delay(delayMs));
+            }
         }
 
         // 2. Mock Default para cualquier otra cosa (evita errores)

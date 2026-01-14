@@ -17,7 +17,9 @@ import { UniversalIconComponent } from "@/app/shared/components";
 import { Driver } from '../../../../core/models/driver.model';
 import { GroupsService } from '../../services/groups.service';
 import { DocumentSelectionModalComponent, DocumentOption } from '../../components/modals/document-selection-modal/document-selection-modal.component';
+import { LicenseSearchModalComponent } from '../../components/modals/license-search-modal/license-search-modal.component';
 import { Group } from '../../../../core/models/group.model';
+import { CourseTypeService } from '../../../../core/services/course-type.service';
 
 // ... existing code ...
 
@@ -39,7 +41,8 @@ import { Group } from '../../../../core/models/group.model';
         BreadcrumbComponent,
         FormsModule,
         UniversalIconComponent,
-        DocumentSelectionModalComponent
+        DocumentSelectionModalComponent,
+        LicenseSearchModalComponent
     ],
     templateUrl: './group-persons.component.html'
 })
@@ -100,8 +103,7 @@ export class GroupPersonsComponent implements OnInit {
 
     // --- BÚSQUEDA ---
     isSearchModalOpen = false;
-    searchLicense = '';
-    isSearching = false;
+
 
     // Breadcrumb items (se construyen en ngOnInit según params)
     breadcrumbItems: BreadcrumbItem[] = [];
@@ -110,7 +112,8 @@ export class GroupPersonsComponent implements OnInit {
         private router: Router,
         private route: ActivatedRoute,
         private notificationService: NotificationService,
-        private groupsService: GroupsService
+        private groupsService: GroupsService,
+        private courseTypeService: CourseTypeService
     ) { }
 
     ngOnInit(): void {
@@ -199,86 +202,63 @@ export class GroupPersonsComponent implements OnInit {
     }
 
     openNewDriverForm() {
-        // En lugar de navegar, abrimos el modal de búsqueda
-        this.isSearchModalOpen = true;
-        this.searchLicense = '';
-    }
+        // Verificar configuración del Tipo de Curso
+        if (this.currentGroup && this.currentGroup.courseTypeId) {
+            this.courseTypeService.getCourseTypeById(this.currentGroup.courseTypeId).subscribe(config => {
+                if (config) {
+                    // Buscar configuración del campo 'license'
+                    const licenseField = config.registrationFields.find(f => f.fieldName === 'license');
 
-    closeSearchModal() {
-        this.isSearchModalOpen = false;
-        this.searchLicense = '';
-    }
-
-    searchDriver() {
-        if (!this.searchLicense.trim()) return;
-
-        this.isSearching = true;
-        this.groupsService.searchDriverByLicense(this.searchLicense).subscribe({
-            next: (driver) => {
-                this.isSearching = false;
-                this.closeSearchModal();
-
-                if (driver) {
-                    // SI SE ENCUENTRA: Navegar con datos precargados
-                    console.log('Conductor encontrado:', driver);
-                    this.router.navigate(['nuevo'], {
-                        relativeTo: this.route,
-                        queryParams: {
-                            found: 'true',
-                            name: driver.name,
-                            firstSurname: driver.firstSurname,
-                            secondSurname: driver.secondSurname,
-                            license: driver.license,
-                            curp: driver.curp,
-                            sex: driver.sex,
-                            address: driver.address
-                        }
-                    });
+                    // Si la licencia es visible, usamos el modal de búsqueda (flujo original)
+                    if (licenseField && licenseField.visible) {
+                        this.isSearchModalOpen = true;
+                    } else {
+                        // Si NO es visible, saltamos la búsqueda y vamos directo al formulario manual
+                        console.log('Licencia no requerida para este curso, saltando búsqueda...');
+                        this.router.navigate(['nuevo'], { relativeTo: this.route });
+                    }
                 } else {
-                    // NO SE ENCUENTRA: Mostrar modal de error/advertencia
-                    this.showNotFoundAlert();
+                    // Fallback si no hay config
+                    this.isSearchModalOpen = true;
                 }
-            },
-            error: (err) => {
-                this.isSearching = false;
-                console.error('Error buscando conductor:', err);
-                this.notificationService.showError('Error', 'Error en el servicio de búsqueda.');
+            });
+        } else {
+            // Fallback si no hay grupo cargado
+            this.isSearchModalOpen = true;
+        }
+    }
+
+    onDriverFound(driver: Driver) {
+        // SI SE ENCUENTRA: Navegar con datos precargados
+        console.log('Conductor encontrado (vía modal):', driver);
+        this.router.navigate(['nuevo'], {
+            relativeTo: this.route,
+            queryParams: {
+                found: 'true',
+                name: driver.name,
+                firstSurname: driver.firstSurname,
+                secondSurname: driver.secondSurname,
+                license: driver.license,
+                curp: driver.curp,
+                sex: driver.sex,
+                address: driver.address
             }
         });
+        this.isSearchModalOpen = false;
     }
 
-    showNotFoundAlert() {
-        this.alertConfig = {
-            title: 'Error',
-            message: 'Ha ocurrido un error al procesar la solicitud (no encontrado). Por favor, ingrese manualmente la información.',
-            type: 'danger',
-            actions: [
-                {
-                    label: 'Reintentar',
-                    variant: 'secondary',
-                    action: () => {
-                        this.isAlertOpen = false;
-                        this.isSearchModalOpen = true; // Volver a abrir búsqueda
-                    }
-                },
-                {
-                    label: 'Continuar', // Ir a manual
-                    variant: 'primary',
-                    action: () => {
-                        this.isAlertOpen = false;
-                        // Navegar solo con la licencia para llenado manual
-                        this.router.navigate(['nuevo'], {
-                            relativeTo: this.route,
-                            queryParams: {
-                                license: this.searchLicense
-                            }
-                        });
-                    }
-                }
-            ]
-        };
-        this.isAlertOpen = true;
+    onManualRegistration(license: string) {
+        // NO SE ENCUENTRA o FALLBACK: Navegar solo con licencia
+        this.router.navigate(['nuevo'], {
+            relativeTo: this.route,
+            queryParams: {
+                license: license
+            }
+        });
+        this.isSearchModalOpen = false;
     }
+
+
 
     // --- HELPERS PARA MODALES ---
     openConfirm(config: ConfirmationConfig, action: () => void) {

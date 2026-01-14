@@ -75,7 +75,16 @@ export const SIDEBAR_MENU_CONFIG: MenuItem[] = [
         iconType: 'bootstrap',
         route: '/config/tipos-cursos',
         roles: ['ADMIN', 'SUPER_ADMINISTRADOR']
+      },
+      {
+        id: 'concepto',
+        label: 'Concepto',
+        icon: 'file-text',
+        iconType: 'bootstrap',
+        route: '/config/concepto',
+        roles: ['ADMIN', 'SUPER_ADMINISTRADOR']
       }
+
 
     ]
   }

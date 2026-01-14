@@ -152,20 +152,22 @@ export class GroupListComponent implements OnInit {
                 { label: 'Grupos', url: `/cursos/${this.cursoId}/grupos` }
             ];
 
-            // Load Course Details to get courseTypeId
+            // Load Course Details to get courseTypeId, THEN load groups
             this.coursesService.getCourses().subscribe(courses => {
-                // In real app use getById
                 this.currentCourse = courses.find(c => c.id === +this.cursoId!);
+                this.loadGroups(); // Call AFTER currentCourse is set
             });
+        } else {
+            // If no course context, load all groups immediately
+            this.loadGroups();
         }
-        this.loadGroups();
     }
 
     // Inicialización del formulario con los campos requeridos por diseño
     initForms() {
         this.groupModalForm = this.fb.group({
             name: ['', [Validators.required]],
-            duration: ['', [Validators.required]],
+            // duration removed, inherited from course
             location: ['', [Validators.required]],
             date: ['', [Validators.required]], // Separated date
             time: ['', [Validators.required]], // Separated time
@@ -199,7 +201,11 @@ export class GroupListComponent implements OnInit {
         this.tableConfig.loading = true;
         this.groupsService.getGroups().subscribe({
             next: (data) => {
-                this.groups = data;
+                if (this.currentCourse) {
+                    this.groups = data.filter(g => g.courseTypeId === this.currentCourse.courseTypeId);
+                } else {
+                    this.groups = data;
+                }
                 this.selectedGroups = []; // Limpiar selección al recargar
                 this.paginationConfig.totalItems = data.length;
                 this.tableConfig.loading = false;
@@ -300,6 +306,8 @@ export class GroupListComponent implements OnInit {
         if (this.modalMode === 'create') {
             const payload = {
                 ...formValue,
+                dateTime: `${formValue.date}, ${formValue.time}`,
+                duration: this.formatDuration(this.currentCourse?.duration), // Inherit duration
                 courseTypeId: this.currentCourse?.courseTypeId,
                 courseType: 'LICENCIA' // Fallback or map from ID if needed
             };
@@ -325,7 +333,8 @@ export class GroupListComponent implements OnInit {
             }
             const payload = {
                 id: this.editingGroupId,
-                ...formValue
+                ...formValue,
+                dateTime: `${formValue.date}, ${formValue.time}`
             };
             this.groupsService.updateGroup(this.editingGroupId, payload).subscribe({
                 next: () => {
@@ -438,5 +447,11 @@ export class GroupListComponent implements OnInit {
 
     exportData() {
         this.notificationService.info('Exportar', 'Descargando reporte de grupos...');
+    }
+
+    private formatDuration(minutes: number | undefined): string {
+        if (!minutes) return '0 Horas';
+        const hours = Math.floor(minutes / 60);
+        return `${hours} ${hours === 1 ? 'Hora' : 'Horas'}`;
     }
 }
