@@ -19,7 +19,7 @@
 
 
     <!-- Selección del curso -->
-    <div class="mb-6">
+    <div class="mb-6 mt-6">
       <h3 class="text-lg font-semibold text-gray-900 mb-4">
           Experiencia de satisfacción del curso:
       </h3>
@@ -101,7 +101,7 @@
         </h3>
       </div>
 
-      <!-- Si es de opción múltiple, mostrar select -->
+      <!-- Si es de opción múltiple (una respuesta) -->
       <app-select
           *ngIf="pregunta.tipo === 'multiple'"
           [controlName]="pregunta.id"
@@ -109,6 +109,17 @@
           [placeholder]="'Selecciona una opción...'"
           [required]="true">
       </app-select>
+
+      <!-- Si es de opción múltiple (múltiples respuestas) -->
+      <app-select-multi
+          *ngIf="pregunta.tipo === 'multiple_multi'"
+          [controlName]="pregunta.id"
+          [options]="pregunta.opciones!"
+          [placeholder]="'Selecciona una o más opciones...'"
+          [required]="true"
+          [showCounter]="false"
+          [helperText]="'Puedes seleccionar múltiples opciones'">
+      </app-select-multi>
 
       <!-- Si es de texto libre, mostrar textarea -->
       <app-input-enhanced
@@ -144,7 +155,8 @@
       </app-button-group>
     </div>
   </form>
-    <app-alert-modal
+  
+  <app-alert-modal
     [isOpen]="showSuccessModal"
     [config]="successModalConfig"
     (modalClose)="onModalClose()">
@@ -181,16 +193,42 @@
       </app-input-enhanced>
     </div>
 
-    <!-- Opciones de respuesta (solo para opción múltiple) -->
+    <!-- Opciones de respuesta (para opción múltiple) -->
     <div *ngIf="mostrarOpciones" class="mb-6">
       <app-input-enhanced
         controlName="opciones"
         [validationMap]="newQuestionValidationMap"
         type="textarea"
         [rows]="4"
-        placeholder="Opción 1, Opción 2, Opción 3, Opción 4"
+        placeholder="Escríbelas de la siguiente manera: Opción 1, Opción 2, Opción 3, Opción 4"
         label="Opciones de respuesta">
       </app-input-enhanced>
+    </div>
+  </app-modal-form>
+
+  <!-- Modal para seleccionar fecha -->
+  <app-modal-form
+    [formGroup]="datePickerForm"
+    [isOpen]="showDatePickerModal"
+    title="Seleccionar Fecha de Envío"
+    size="md"
+    (modalClose)="onDatePickerModalClose()"
+    (formSubmit)="onDatePickerModalSubmit($event)">
+    
+    <div class="flex justify-center p-4">
+      <app-daypicker
+        [selected]="selectedSendDate"
+        [initialDate]="today"
+        [locale]="'es-MX'"
+        [maxDate]="today"
+        [firstDayOfWeek]="1"
+        [showMonthYearSelector]="true"
+        [monthYearSelectAsDropdown]="true"
+        [showFooter]="true"
+        [ariaLabel]="'Seleccionar fecha de envío de encuesta'"
+        [onlyCurrentMonth]="false"
+        (dateChange)="onDateSelected($event)">
+      </app-daypicker>
     </div>
   </app-modal-form>
 </div>

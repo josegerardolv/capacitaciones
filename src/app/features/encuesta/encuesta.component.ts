@@ -10,15 +10,18 @@ import { SelectOption } from '@/app/shared/services/select-data.service';
 import { InputComponent } from "@/app/shared/components/inputs/input.component";
 import { ButtonGroupComponent, ButtonGroupButton } from '@/app/shared/components/buttons';
 import { AlertModalComponent } from '@/app/shared/components/modals';
-import { ModalFormComponent } from '@/app/shared/components'; 
+import { ModalFormComponent } from '@/app/shared/components';
+import { SelectMultiComponent } from '@/app/shared/components/inputs/select-multi.component';
+import { DayPickerComponent } from '@/app/shared/components';
 
 @Component({
   selector: 'app-encuesta',
-  imports: [CommonModule, ReactiveFormsModule, InstitutionalCardComponent, UniversalIconComponent, BreadcrumbComponent, SelectComponent, InputComponent, ButtonGroupComponent, AlertModalComponent, ModalFormComponent],
+  imports: [CommonModule, ReactiveFormsModule, InstitutionalCardComponent, UniversalIconComponent, BreadcrumbComponent, SelectComponent, InputComponent, ButtonGroupComponent, AlertModalComponent, ModalFormComponent, SelectMultiComponent, DayPickerComponent],
   templateUrl: './encuesta.component.html'
 })
 export class EncuestaComponent implements OnInit {
   private readonly STORAGE_KEY = 'encuesta_preguntas_dinamicas';
+  
   // Breadcrumb
   breadcrumbItems: BreadcrumbItem[] = [
     { label: 'Encuesta' }
@@ -29,6 +32,10 @@ export class EncuestaComponent implements OnInit {
   showAddQuestionModal = false;
   newQuestionForm!: FormGroup;
   hasPendingChanges = false;
+  datePickerForm!: FormGroup;
+  selectedSendDate: Date | null = null;
+  showDatePickerModal = false;
+  today: Date = new Date();
 
 
   //Opciones de la primer pregunta
@@ -74,10 +81,17 @@ export class EncuestaComponent implements OnInit {
   constructor(private fb: FormBuilder) {}
 
   ngOnInit(): void {
-  this.initForm();
-  this.initNewQuestionForm();
-  this.loadPreguntasDinamicas();
-  this.updateConfirmButton();
+    this.initForm();
+    this.initNewQuestionForm();
+    this.loadPreguntasDinamicas();
+    this.updateConfirmButton();
+    this.initDatePickerForm();
+  }
+
+  private initDatePickerForm(): void {
+    this.datePickerForm = this.fb.group({
+      selectedDate: [this.selectedSendDate, Validators.required]
+    });
   }
 
   private initForm(): void {
@@ -98,16 +112,16 @@ export class EncuestaComponent implements OnInit {
       opciones: ['']
     });
 
-  this.newQuestionForm.get('tipoPregunta')?.valueChanges.subscribe(tipo => {
-    const opcionesControl = this.newQuestionForm.get('opciones');
-    if (tipo === 'multiple'){
-      opcionesControl?.setValidators([Validators.required])
-    } else {
-      opcionesControl?.clearValidators();
-      opcionesControl?.setValue('');
-    }
-    opcionesControl?.updateValueAndValidity();
-  });
+    this.newQuestionForm.get('tipoPregunta')?.valueChanges.subscribe(tipo => {
+      const opcionesControl = this.newQuestionForm.get('opciones');
+      if (tipo === 'multiple' || tipo === 'multiple_multi'){
+        opcionesControl?.setValidators([Validators.required])
+      } else {
+        opcionesControl?.clearValidators();
+        opcionesControl?.setValue('');
+      }
+      opcionesControl?.updateValueAndValidity();
+    });
   }
 
   private loadPreguntasDinamicas(): void {
@@ -118,6 +132,8 @@ export class EncuestaComponent implements OnInit {
 
         this.preguntasDinamicas.forEach(pregunta => {
           if (pregunta.tipo === 'multiple') {
+            this.encuestaForm.addControl(pregunta.id, this.fb.control([]));
+          } else if (pregunta.tipo === 'multiple_multi') {
             this.encuestaForm.addControl(pregunta.id, this.fb.control([]));
           } else {
             this.encuestaForm.addControl(pregunta.id, this.fb.control(''));
@@ -136,7 +152,8 @@ export class EncuestaComponent implements OnInit {
   }
 
   tipoPreguntaOptions: SelectOption[] = [
-    { value: 'multiple', label: 'Pregunta de opción multiple (una respuesta )' },
+    { value: 'multiple', label: 'Pregunta de opción multiple (una respuesta)' },
+    { value: 'multiple_multi', label: 'Pregunta de opción multiple (múltiples respuestas)' },
     { value: 'texto', label: 'Pregunta abierta' }
   ]
 
@@ -162,9 +179,9 @@ export class EncuestaComponent implements OnInit {
     }
   };
 
-
   get mostrarOpciones(): boolean {
-    return this.newQuestionForm.get('tipoPregunta')?.value === 'multiple';
+    const tipo = this.newQuestionForm.get('tipoPregunta')?.value;
+    return tipo === 'multiple' || tipo === 'multiple_multi';
   }
 
   onSubmit(): void {
@@ -204,6 +221,14 @@ export class EncuestaComponent implements OnInit {
         variant: 'light',
         size: 'medium',
       }
+    },
+    {
+      id: 'sendDate',
+      label: 'Fecha de envio',
+      config: {
+        variant: 'primary',
+        size: 'medium',
+      }
     }
   ];
 
@@ -216,7 +241,7 @@ export class EncuestaComponent implements OnInit {
     alignment: 'start' as const
   };
 
-// Configuracion del modal para añadir las preguntas
+  // Configuracion del modal para añadir las preguntas
   addQuestionModalConfig = {
     title: 'Añadir Nueva Pregunta',
     size: 'lg' as const
@@ -240,6 +265,32 @@ export class EncuestaComponent implements OnInit {
       case 'cancel':
         this.onCancelar(event.event);
         break;
+      case 'sendDate':
+        this.onSelectSendDate();
+        break;
+    }
+  }
+
+  private onSelectSendDate(): void {
+    this.showDatePickerModal = true;
+  }
+
+  onDatePickerModalClose(): void {
+    this.showDatePickerModal = false;
+  }
+
+  onDateSelected(date: Date): void {
+    this.selectedSendDate = date;
+    this.datePickerForm.patchValue({ selectedDate: date });
+    console.log('Fecha de envío seleccionada:', date);
+  }
+
+  onDatePickerModalSubmit(event: any): void {
+    if (this.selectedSendDate) {
+      console.log('Fecha confirmada para envío:', this.selectedSendDate);
+      this.showDatePickerModal = false;
+    } else {
+      console.warn('No se ha seleccionado ninguna fecha');
     }
   }
 
@@ -277,7 +328,7 @@ export class EncuestaComponent implements OnInit {
       pregunta: pregunta
     };
 
-    if (tipoPregunta === 'multiple'){
+    if (tipoPregunta === 'multiple' || tipoPregunta === 'multiple_multi'){
       nuevaPregunta.opciones = opciones.split(',').map((opcion: string, index: number) =>({
         value: `opcion_${index + 1}`, label: opcion.trim()
       })).filter((opt: SelectOption) => opt.label !== '');
@@ -288,7 +339,7 @@ export class EncuestaComponent implements OnInit {
     this.updateConfirmButton();
     this.savePreguntasDinamicas();
 
-    if (tipoPregunta === 'multiple'){
+    if (tipoPregunta === 'multiple' || tipoPregunta === 'multiple_multi'){
       this.encuestaForm.addControl(preguntaId, this.fb.control([]));
     } else {
       this.encuestaForm.addControl(preguntaId, this.fb.control(''));
@@ -301,9 +352,8 @@ export class EncuestaComponent implements OnInit {
 
   preguntasDinamicas: Array<{
     id: string;
-    tipo: 'multiple' | 'texto';
+    tipo: 'multiple' | 'multiple_multi' | 'texto';
     pregunta: string;
     opciones?: SelectOption[];
   }> = [];
-
 }
