@@ -27,7 +27,7 @@ export const SIDEBAR_MENU_CONFIG: MenuItem[] = [
     icon: 'house',
     iconType: 'bootstrap',
     route: '/dashboard',
-    roles: ['ADMINISTRADOR', 'SUPER_ADMINISTRADOR', 'CAPTURISTA', 'CONSULTA', 'SUPERVISOR']
+    roles: ['ADMIN', 'SUPER_ADMINISTRADOR', 'CAPTURISTA', 'CONSULTA', 'SUPERVISOR']
   },
   {
     id: 'cursos',
@@ -35,7 +35,7 @@ export const SIDEBAR_MENU_CONFIG: MenuItem[] = [
     icon: 'people',
     iconType: 'bootstrap',
     route: '/cursos',
-    roles: ['ADMINISTRADOR', 'SUPER_ADMINISTRADOR', 'CAPTURISTA', 'SUPERVISOR']
+    roles: ['ADMIN', 'SUPER_ADMINISTRADOR', 'CAPTURISTA', 'SUPERVISOR']
   },
   {
     id: 'busqueda',
@@ -43,7 +43,7 @@ export const SIDEBAR_MENU_CONFIG: MenuItem[] = [
     icon: 'search',
     iconType: 'bootstrap',
     route: '/busqueda',
-    roles: ['ADMINISTRADOR', 'SUPER_ADMINISTRADOR', 'CAPTURISTA', 'CONSULTA', 'SUPERVISOR']
+    roles: ['ADMIN', 'SUPER_ADMINISTRADOR', 'CAPTURISTA', 'CONSULTA', 'SUPERVISOR']
   },
   {
     id: 'templates',
@@ -51,15 +51,43 @@ export const SIDEBAR_MENU_CONFIG: MenuItem[] = [
     icon: 'file-text',
     iconType: 'bootstrap',
     route: '/documentos/templates',
-    roles: ['ADMINISTRADOR', 'SUPER_ADMINISTRADOR', 'SUPERVISOR']
+    roles: ['ADMIN', 'SUPER_ADMINISTRADOR', 'SUPERVISOR']
   },
   {
-    id: 'encuesta',
-    label: 'Encuesta',
+    id: 'configuracion',
+    label: 'Configuración',
     icon: 'clipboard-data',
     iconType: 'bootstrap',
-    route: '/encuesta',
-    roles: ['ADMINISTRADOR', 'SUPER_ADMINISTRADOR'],
+    route: 'config',
+    roles: ['ADMIN', 'SUPER_ADMINISTRADOR'],
+    children: [
+      {
+        id: 'encuesta',
+        label: 'Encuesta',
+        icon: 'clipboard-data',
+        iconType: 'bootstrap',
+        route: '/config/encuesta',
+        roles: ['ADMIN', 'SUPER_ADMINISTRADOR']
+      },
+      {
+        id: 'cursos',
+        label: 'Tipo de curso',
+        icon: 'person',
+        iconType: 'bootstrap',
+        route: '/config/tipos-cursos',
+        roles: ['ADMIN', 'SUPER_ADMINISTRADOR']
+      },
+      {
+        id: 'concepto',
+        label: 'Concepto',
+        icon: 'file-text',
+        iconType: 'bootstrap',
+        route: '/config/concepto',
+        roles: ['ADMIN', 'SUPER_ADMINISTRADOR']
+      }
+
+
+    ]
   }
 ];
 

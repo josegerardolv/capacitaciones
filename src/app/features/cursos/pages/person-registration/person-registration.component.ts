@@ -3,11 +3,18 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterModule, ActivatedRoute } from '@angular/router';
 import { PersonFormComponent } from '../../components/person-form/person-form.component';
 import { AlertModalComponent, AlertConfig } from '../../../../shared/components/modals/alert-modal.component';
-import { NotificationService } from '../../../../shared/services/notification.service';
+import { DocumentSelectionModalComponent, DocumentOption } from '../../components/modals/document-selection-modal/document-selection-modal.component';
+import { NotificationService } from '../../../../core/services/notification.service';
+import { GroupsService } from '../../services/groups.service';
+import { Group } from '../../../../core/models/group.model';
 import { InstitutionalCardComponent } from '../../../../shared/components/institutional-card/institutional-card.component';
 import { BreadcrumbComponent } from '../../../../shared/components/breadcrumb/breadcrumb.component';
 import { BreadcrumbItem } from '../../../../shared/components/breadcrumb/breadcrumb.model';
 import { UniversalIconComponent } from '../../../../shared/components/universal-icon/universal-icon.component';
+
+import { CourseType } from '../../../../core/models/group.model';
+import { CourseTypeService } from '../../../../core/services/course-type.service';
+import { CourseTypeConfig, DocumentConfig } from '../../../../core/models/course-type-config.model';
 
 @Component({
     selector: 'app-person-registration',
@@ -19,7 +26,8 @@ import { UniversalIconComponent } from '../../../../shared/components/universal-
         AlertModalComponent,
         InstitutionalCardComponent,
         BreadcrumbComponent,
-        UniversalIconComponent
+        UniversalIconComponent,
+        DocumentSelectionModalComponent
     ],
     templateUrl: './person-registration.component.html'
 })
@@ -28,6 +36,10 @@ export class PersonRegistrationComponent implements OnInit {
     cursoId: string | null = null;
     groupId: string | null = null;
     breadcrumbItems: BreadcrumbItem[] = [];
+    prefilledData: any = null;
+
+    // Configuración de campos del formulario
+    fieldsConfig: Record<string, { visible?: boolean; required?: boolean }> = {};
 
     // Configuración del Modal
     isAlertOpen = false;
@@ -37,16 +49,23 @@ export class PersonRegistrationComponent implements OnInit {
         type: 'success'
     };
 
+    currentAvailableDocuments: DocumentConfig[] = [];
+
     constructor(
         private router: Router,
-        private notificationService: NotificationService
+        private route: ActivatedRoute,
+        private notificationService: NotificationService,
+        private groupsService: GroupsService,
+        private courseTypeService: CourseTypeService
     ) { }
 
     ngOnInit(): void {
-        const root = this.router.routerState.root;
-        this.cursoId = root.firstChild?.snapshot.paramMap.get('cursoId') || null;
-        // groupId puede estar en la siguiente ruta segment
-        this.groupId = root.firstChild?.firstChild?.snapshot.paramMap.get('groupId') || root.firstChild?.snapshot.paramMap.get('groupId') || null;
+        let route = this.route;
+        while (route) {
+            if (route.snapshot.paramMap.has('cursoId')) this.cursoId = route.snapshot.paramMap.get('cursoId');
+            if (route.snapshot.paramMap.has('groupId')) this.groupId = route.snapshot.paramMap.get('groupId');
+            route = route.parent!;
+        }
 
         this.breadcrumbItems = [
             { label: 'Cursos', url: '/cursos' },
@@ -58,9 +77,98 @@ export class PersonRegistrationComponent implements OnInit {
         }
         this.breadcrumbItems.push({ label: 'Personas', url: this.cursoId && this.groupId ? `/cursos/${this.cursoId}/grupos/${this.groupId}/conductores` : '/cursos' });
         this.breadcrumbItems.push({ label: 'Agregar' });
+
+        this.route.queryParams.subscribe(params => {
+            if (Object.keys(params).length > 0) {
+                this.prefilledData = { ...params };
+            }
+        });
+
+        if (this.groupId) {
+            this.groupsService.getGroupById(+this.groupId).subscribe((group: Group | undefined) => {
+                if (group) {
+                    this.currentCourseType = group.courseType;
+
+                    // NEW DYNAMIC LOGIC
+                    if (group.courseTypeId) {
+                        this.courseTypeService.getCourseTypeById(group.courseTypeId).subscribe(config => {
+                            if (config) {
+                                this.setupFormFields(config);
+                            } else {
+                                // Fallback if config not found but we have type string
+                                this.setupFallbackFields(group.courseType);
+                            }
+                        });
+                    } else {
+                        // Fallback logic
+                        this.setupFallbackFields(group.courseType);
+                    }
+                }
+            });
+        }
     }
 
+    setupFormFields(config: CourseTypeConfig) {
+        this.fieldsConfig = {};
+        config.registrationFields.forEach(field => {
+            this.fieldsConfig[field.fieldName] = {
+                visible: field.visible,
+                required: field.required
+            };
+        });
+
+        // Setup Documents
+        this.currentAvailableDocuments = config.availableDocuments;
+    }
+
+    setupFallbackFields(courseType: string) {
+        if (courseType === 'LICENCIA') {
+            this.fieldsConfig = {
+                license: { visible: true, required: true },
+                nuc: { visible: true },
+                requestTarjeton: { visible: false }
+            };
+        } else {
+            this.fieldsConfig = {
+                license: { visible: false, required: false },
+                nuc: { visible: false },
+                requestTarjeton: { visible: false }
+            };
+        }
+    }
+
+    // Modal State
+    isDocumentsModalOpen = false;
+    tempDriverData: any = null;
+    currentCourseType: 'LICENCIA' | 'GENERICO' | 'CAPACITACION_ESCOLAR' = 'LICENCIA'; // Default
+
     onDriverSaved(driverData: any) {
+        this.tempDriverData = driverData;
+
+        // Determine course type for the modal
+        // We can get it from the group call in ngOnInit, but let's ensure we have it stored.
+        // We'll update the class property in the subscription.
+
+        this.isDocumentsModalOpen = true;
+    }
+
+    onDocumentsConfirmed(documents: DocumentOption[]) {
+        this.isDocumentsModalOpen = false;
+
+        // Map selected documents to driver data
+        const wantsTarjeton = documents.some(d => d.id === 'tarjeton' && d.selected);
+
+        // Merge with temp data
+        const finalDriverData = {
+            ...this.tempDriverData,
+            requestTarjeton: wantsTarjeton,
+            // We could store other docs if the backend supported it, e.g. requestedDocuments: documents.map(...)
+        };
+
+        this.finalizeRegistration(finalDriverData);
+    }
+
+    finalizeRegistration(driverData: any) {
         // Simulamos guardado exitoso
         console.log('Guardando conductor:', driverData);
 
@@ -111,12 +219,12 @@ export class PersonRegistrationComponent implements OnInit {
 
     // Acciones del Modal
     downloadPaymentOrder() {
-        this.notificationService.success('Descarga iniciada', 'La orden de pago se está descargando.');
+        this.notificationService.showSuccess('Descarga iniciada', 'La orden de pago se está descargando.');
         this.closeAndRedirect();
     }
 
     sendEmail() {
-        this.notificationService.success('Correo enviado', 'Se ha enviado la orden de pago al conductor.');
+        this.notificationService.showSuccess('Correo enviado', 'Se ha enviado la orden de pago al conductor.');
         this.closeAndRedirect();
     }
 

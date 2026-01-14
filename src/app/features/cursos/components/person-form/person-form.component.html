@@ -2,25 +2,37 @@
     <form [formGroup]="form" (ngSubmit)="onSubmit()" class="grid grid-cols-1 md:grid-cols-3 gap-6">
 
         <!-- Fila 1 -->
-        <app-input-enhanced [control]="getControl('name')" label="Nombre" [floating]="true" [required]="true"></app-input-enhanced>
-        <app-input-enhanced *ngIf="isVisible('firstSurname')" [control]="getControl('firstSurname')" label="Primer Apellido" [floating]="true" [required]="isRequired('firstSurname')"></app-input-enhanced>
-        <app-input-enhanced *ngIf="isVisible('secondSurname')" [control]="getControl('secondSurname')" label="Segundo Apellido" [floating]="true" [required]="isRequired('secondSurname')"></app-input-enhanced>
+        <app-input-enhanced [control]="getControl('name')" label="Nombre" [floating]="true"
+            [required]="true"></app-input-enhanced>
+        <app-input-enhanced *ngIf="isVisible('firstSurname')" [control]="getControl('firstSurname')"
+            label="Primer Apellido" [floating]="true" [required]="isRequired('firstSurname')"></app-input-enhanced>
+        <app-input-enhanced *ngIf="isVisible('secondSurname')" [control]="getControl('secondSurname')"
+            label="Segundo Apellido" [floating]="true" [required]="isRequired('secondSurname')"></app-input-enhanced>
 
-        <app-input-enhanced *ngIf="isVisible('license')" [control]="getControl('license')" label="Número de licencia" [floating]="true" [required]="isRequired('license')"></app-input-enhanced>
+        <app-input-enhanced *ngIf="isVisible('license')" [control]="getControl('license')" label="Número de licencia"
+            [floating]="true" [required]="isRequired('license')"></app-input-enhanced>
 
-        <app-input-enhanced *ngIf="isVisible('curp')" [control]="getControl('curp')" label="CURP" [floating]="true" [required]="isRequired('curp')"></app-input-enhanced>
-        <app-select *ngIf="isVisible('sex')" [control]="getControl('sex')" [size]="'md'" [options]="sexOptions" label="Sexo" [placeholder]="''" [floating]="true" [required]="isRequired('sex')"></app-select>
+        <app-input-enhanced *ngIf="isVisible('curp')" [control]="getControl('curp')" label="CURP" [floating]="true"
+            [required]="isRequired('curp')"></app-input-enhanced>
+        <app-select *ngIf="isVisible('sex')" [control]="getControl('sex')" [size]="'md'" [options]="sexOptions"
+            label="Sexo" [placeholder]="''" [floating]="true" [required]="isRequired('sex')"></app-select>
         <!-- Fila 2 -->
-        <app-input-enhanced *ngIf="isVisible('address')" type="textarea" [control]="getControl('address')" label="Dirección" [floating]="true" [required]="isRequired('address')"></app-input-enhanced>
+        <app-input-enhanced *ngIf="isVisible('address')" type="textarea" [control]="getControl('address')"
+            label="Dirección" [floating]="true" [required]="isRequired('address')"></app-input-enhanced>
 
-        <app-input-enhanced *ngIf="isVisible('nuc')" [control]="getControl('nuc')" label="NUC" placeholder="Ingresa el número único de Concesión" [floating]="false"></app-input-enhanced>
+        <app-input-enhanced *ngIf="isVisible('nuc')" [control]="getControl('nuc')" label="NUC"
+            placeholder="Ingresa el número único de Concesión" [floating]="false"></app-input-enhanced>
 
         <!-- Fila 3 -->
-        <app-input-enhanced *ngIf="isVisible('phone')" [control]="getControl('phone')" label="Número de teléfono" placeholder="Ingresa número de teléfono" [floating]="false" [required]="isRequired('phone')"></app-input-enhanced>
+        <app-input-enhanced *ngIf="isVisible('phone')" [control]="getControl('phone')" label="Número de teléfono"
+            placeholder="Ingresa número de teléfono" [floating]="false"
+            [required]="isRequired('phone')"></app-input-enhanced>
 
-        <app-input-enhanced *ngIf="isVisible('email')" [control]="getControl('email')" label="Correo electrónico" placeholder="Ingresa Correo electrónico" [type]="'email'" [floating]="false" [required]="isRequired('email')"></app-input-enhanced>
+        <app-input-enhanced *ngIf="isVisible('email')" [control]="getControl('email')" label="Correo electrónico"
+            placeholder="Ingresa Correo electrónico" [type]="'email'" [floating]="false"
+            [required]="isRequired('email')"></app-input-enhanced>
 
-        <app-select *ngIf="isVisible('requestTarjeton')" [control]="getControl('requestTarjeton')" [options]="tarjetonOptions" label="¿Desea solicitar tarjetón?" [floating]="false"></app-select>
+
 
         <!-- Footer Buttons -->
         <div class="col-span-1 md:col-span-3 flex justify-end gap-3 mt-6 pt-6 border-t border-gray-100">

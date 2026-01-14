@@ -1,8 +1,8 @@
-
 <!-- Main Content -->
 <div class="w-full px-12 py-4">
 
-    <app-institutional-card [config]="{ variant: 'standard', size: 'auto', showFooter: false, showShadow: true }" class="w-full max-w-3xl">
+    <app-institutional-card [config]="{ variant: 'standard', size: 'auto', showFooter: false, showShadow: true }"
+        class="w-full max-w-3xl">
 
         <!-- Header de la carta (slot) -->
         <div slot="header" class="card-institucional-header p-6">
@@ -24,15 +24,35 @@
         <!-- Body: formulario -->
         <div>
             <div class="p-6 md:p-8">
-                <app-person-form [submitLabel]="'Solicitar registro'" [showCancel]="false" (saved)="onDriverRegistered($event)">
+                <!-- Mostramos el formulario solo si showForm es true -->
+                <app-person-form *ngIf="showForm" [submitLabel]="'Solicitar registro'" [fieldsConfig]="fieldsConfig"
+                    [initialData]="prefilledData" [showCancel]="false" (saved)="onDriverRegistered($event)">
                 </app-person-form>
+
+                <!-- Mensaje de carga o estado inicial si no hay form ni modal -->
+                <div *ngIf="!showForm && !isSearchModalOpen" class="text-center text-gray-500 py-8">
+                    <p>Iniciando registro, favor de esperar...</p>
+                </div>
             </div>
         </div>
 
     </app-institutional-card>
 
+    <!-- Modal de Búsqueda de Licencia (Flujo Previo) -->
+    <app-license-search-modal [isOpen]="isSearchModalOpen" (modalClose)="isSearchModalOpen = false"
+        (driverFound)="onDriverFound($event)" (manualRegistration)="onManualRegistration($event)">
+    </app-license-search-modal>
+
+
+
     <!-- Modal de Feedback -->
     <app-alert-modal [isOpen]="isAlertOpen" [config]="alertConfig" (modalClose)="close()" (actionClick)="close()">
     </app-alert-modal>
+
+    <!-- Modal de Selección de Documentos -->
+    <app-document-selection-modal [isOpen]="isDocumentsModalOpen" [courseType]="currentCourseType"
+        [customDocuments]="availableDocuments" (modalClose)="isDocumentsModalOpen = false"
+        (confirm)="onDocumentsConfirmed($event)">
+    </app-document-selection-modal>
 
 </div>

@@ -27,10 +27,7 @@ export class PersonFormComponent implements OnInit {
         { value: 'M', label: 'Mujer' }
     ];
 
-    tarjetonOptions: SelectOption[] = [
-        { value: false, label: 'No' },
-        { value: true, label: 'Sí' }
-    ];
+
 
     getControl(key: string): FormControl {
         return this.form.get(key) as FormControl;
@@ -47,8 +44,7 @@ export class PersonFormComponent implements OnInit {
             sex: ['', Validators.required],
             nuc: [''],
             phone: ['', [Validators.pattern(/^\d{10}$/)]],
-            email: ['', [Validators.email]],
-            requestTarjeton: [false]
+            email: ['', [Validators.email]]
         });
     }
 
@@ -57,11 +53,48 @@ export class PersonFormComponent implements OnInit {
             this.form.patchValue(this.initialData);
         }
         this.applyFieldsConfig();
+        this.setupCurpListener();
+    }
+
+    private setupCurpListener(): void {
+        const curpControl = this.form.get('curp');
+        if (!curpControl) return;
+
+        // escucha cambios en el campo curp
+        curpControl.valueChanges.subscribe((value: string) => {
+            this.extractAndSetSex(value);
+        });
+
+        // inicializa el campo sex con el valor extraído de curp
+        if (curpControl.value) {
+            this.extractAndSetSex(curpControl.value);
+        }
+    }
+
+    private extractAndSetSex(curp: string): void {
+        if (!curp || curp.length < 11) return;
+
+        const sexChar = curp.charAt(10).toUpperCase();
+        let mappedSex = '';
+
+        // Mapeo según los valores esperados por el SelectComponent
+        if (sexChar === 'H') mappedSex = 'H';
+        else if (sexChar === 'M') mappedSex = 'M';
+
+        if (mappedSex) {
+            const currentSex = this.form.get('sex')?.value;
+            if (currentSex !== mappedSex) {
+                this.form.patchValue({ sex: mappedSex });
+            }
+        }
     }
 
     ngOnChanges(changes: SimpleChanges): void {
         if (changes['fieldsConfig'] && !changes['fieldsConfig'].firstChange) {
             this.applyFieldsConfig();
+        }
+        if (changes['initialData'] && changes['initialData'].currentValue) {
+            this.form.patchValue(changes['initialData'].currentValue);
         }
     }
 

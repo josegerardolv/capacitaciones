@@ -8,7 +8,7 @@ export interface ModalConfig {
   showCloseButton?: boolean;
   backgroundColor?: string;
   padding?: boolean;
-  size?: 'sm' | 'md' | 'lg' | 'xl' | 'fullscreen';
+  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'fullscreen';
 }
 
 @Component({
@@ -62,6 +62,13 @@ export interface ModalConfig {
     :host {
       display: block;
     }
+    /* Estilo explícito para 2xl si no está en globales */
+    .size-2xl {
+      width: 100%;
+      max-width: 1536px; /* Equivalente a max-w-7xl */
+      margin-left: auto;
+      margin-right: auto;
+    }
   `]
 })
 export class ModalComponent {
@@ -114,6 +121,8 @@ export class ModalComponent {
         return 'size-md';
       case 'xl':
         return 'size-xl';
+      case '2xl':
+        return 'size-2xl'; // New size
       case 'lg':
         return 'size-lg';
       case 'fullscreen':

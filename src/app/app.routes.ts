@@ -56,7 +56,11 @@ export const routes: Routes = [
         path: 'documentos',
         loadChildren: () => import('./features/templates/documents.routes').then(m => m.DOCUMENTS_ROUTES)
       },
-      // --- EDITOR VISUAL EN PANTALLA COMPLETA (Sin Layout) ---
+      {
+        path: 'config',
+        loadChildren: () => import('./features/configurations/configuration.routes').then(m => m.CONFIGURATION_ROUTES),
+        // canActivate: [authGuard] - inherited from parent
+      },
       {
         path: 'documentos/templates/editor/:id',
         canActivate: [authGuard],

@@ -4,4 +4,5 @@ export interface Course {
     description: string;
     duration: number; // "3 horas"
     created_at?: string;
+    courseTypeId?: number; // Relación con CourseTypeConfig
 }

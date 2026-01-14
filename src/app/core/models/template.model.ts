@@ -76,7 +76,7 @@ export interface CanvasElement {
   visualStyle?: VisualStyle;
   locked?: boolean;
   visible?: boolean;
-  
+
   // Configuraciones específicas por tipo
   textConfig?: TextConfig;
   imageConfig?: ImageConfig;
@@ -120,12 +120,21 @@ export interface CertificateTemplate {
   id: number;
   name: string;
   claveConcepto: string;
+  conceptId?: number;
+  conceptName?: string;
+  conceptClave?: string;
+  conceptCosto?: number;
   description?: string;
   category?: string;
   pageConfig: PageConfig;
   elements: CanvasElement[];
   variables: TemplateVariable[];
   thumbnail?: string;
+  /** 
+   * Conteo de certificados que han sido oficialmente 'Entregados'.
+   * No debe contar borradores ni pendientes de aprobación.
+   */
+  usageCount?: number;
   created_at?: string;
   updated_at?: string;
 }
@@ -137,6 +146,17 @@ export interface CertificateData {
 }
 
 // Certificado generado
+// Concept Interface (Merged to reduce files)
+export interface Concept {
+  id: number;
+  concepto: string;
+  clave: string;
+  costo: number;
+  deprecated: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface GeneratedCertificate {
   id: number;
   templateId: number;
@@ -144,5 +164,8 @@ export interface GeneratedCertificate {
   recipientName?: string;
   data: { [key: string]: any };
   pdfUrl?: string;
+  // Estado del proceso de certificación
+  status: 'Pendiente' | 'Aprobado' | 'Impreso' | 'Entregado';
   generatedAt: string;
+  deliveredAt?: string; // Fecha de entrega real
 }

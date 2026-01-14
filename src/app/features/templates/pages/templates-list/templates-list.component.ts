@@ -3,7 +3,8 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { CertificateTemplate } from '../../../../core/models/template.model';
 import { TemplateService } from '../../services/template.service';
-import { UniversalIconComponent } from '../../../../shared/components/universal-icon/universal-icon.component';
+import { Concept } from '../../../../core/models/template.model';
+// ConceptService removed, logic integrated in TemplateService
 import { InstitutionalTableComponent, TableColumn, TableConfig } from '../../../../shared/components/institutional-table/institutional-table.component';
 import { TablePaginationComponent, PaginationConfig, PageChangeEvent } from '../../../../shared/components/table-pagination/table-pagination.component';
 import { TooltipDirective } from '../../../../shared/components/tooltip/tooltip.directive';
@@ -15,7 +16,11 @@ import { InputComponent } from '../../../../shared/components/inputs/input.compo
 import { InstitutionalCardComponent } from '../../../../shared/components/institutional-card/institutional-card.component';
 import { InstitutionalButtonComponent } from '../../../../shared/components/buttons/institutional-button.component';
 import { PageHeaderComponent } from '../../../../shared/components/page-header/page-header.component';
-import { SelectComponent } from '@/app/shared/components';
+import { SelectComponent, SelectOption } from '../../../../shared/components/inputs/select.component';
+// import { SelectComponent } from '@/app/shared/components'; // Duplicate import removed
+// SelectSearchComponent removed to respect shared component constraints
+// import { SelectSearchComponent, SelectSearchOption } from '../../../../shared/components/inputs/select-search.component';
+
 @Component({
     selector: 'app-templates-list',
     standalone: true,
@@ -25,6 +30,7 @@ import { SelectComponent } from '@/app/shared/components';
         PageHeaderComponent,
         ReactiveFormsModule,
         ModalFormComponent,
+        InputComponent,
         InputComponent,
         SelectComponent,
         InstitutionalTableComponent,
@@ -40,12 +46,12 @@ import { SelectComponent } from '@/app/shared/components';
 export class TemplatesListComponent implements OnInit {
     @ViewChild('actionsTemplate', { static: true }) actionsTemplate!: TemplateRef<any>;
     @ViewChild('categoryTemplate', { static: true }) categoryTemplate!: TemplateRef<any>;
+    @ViewChild('conceptTemplate', { static: true }) conceptTemplate!: TemplateRef<any>;
+    @ViewChild('costTemplate', { static: true }) costTemplate!: TemplateRef<any>;
 
     templates: CertificateTemplate[] = [];
-    // Alias para la plantilla HTML que espera "certificates"
-    get certificates(): CertificateTemplate[] {
-        return this.templates;
-    }
+    concepts: Concept[] = [];
+    conceptOptions: SelectOption[] = [];
 
     // Form & modal state (adaptado desde CertificatesListComponent)
     form!: FormGroup;
@@ -92,24 +98,28 @@ export class TemplatesListComponent implements OnInit {
         private templateService: TemplateService,
         private router: Router,
         private fb: FormBuilder
-    ) {}
+    ) { }
 
     ngOnInit(): void {
         this.initColumns();
         this.loadTemplates();
+        this.loadConcepts();
     }
 
     initColumns() {
         this.tableColumns = [
             { key: 'name', label: 'Nombre', sortable: true, minWidth: '200px' },
-            { key: 'description', label: 'Descripción', sortable: true, minWidth: '250px' },
-            { 
-                key: 'category', 
-                label: 'Categoría', 
-                sortable: true, 
+            { key: 'conceptName', label: 'Concepto', sortable: true, minWidth: '200px', template: this.conceptTemplate },
+            { key: 'claveConcepto', label: 'Clave', sortable: true, minWidth: '120px' },
+            { key: 'conceptCosto', label: 'Costo', sortable: true, minWidth: '100px', align: 'right', template: this.costTemplate },
+            {
+                key: 'category',
+                label: 'Categoría',
+                sortable: true,
                 minWidth: '150px',
                 template: this.categoryTemplate
             },
+            { key: 'description', label: 'Descripción', sortable: true, minWidth: '250px' },
             {
                 key: 'actions',
                 label: 'Acciones',
@@ -134,6 +144,16 @@ export class TemplatesListComponent implements OnInit {
         });
     }
 
+    loadConcepts() {
+        this.templateService.getConcepts().subscribe(data => {
+            this.concepts = data;
+            this.conceptOptions = data.map(c => ({
+                value: c.id,
+                label: `${c.clave} - ${c.concepto}`
+            }));
+        });
+    }
+
     // Form helpers and CRUD adapted to certificates-style UI
     private defaultTemplate() {
         return {
@@ -146,8 +166,8 @@ export class TemplatesListComponent implements OnInit {
     openForm() {
         this.form = this.fb.group({
             name: ['', Validators.required],
-            claveConcepto: ['', Validators.required],
-            tipo: [''],
+            conceptId: [null, Validators.required],
+            tipo: [''], // Category
             description: ['']
         });
         this.createModalOpen = true;
@@ -157,32 +177,37 @@ export class TemplatesListComponent implements OnInit {
         this.selectedTemplate = template;
         this.form = this.fb.group({
             name: [template.name, Validators.required],
-            claveConcepto: [template.claveConcepto, Validators.required],
-            tipo: [(template as any)['tipo'] || ''],
+            conceptId: [template.conceptId || null, Validators.required],
+            tipo: [template.category || ''],
             description: [template.description || '']
         });
         this.editModalOpen = true;
     }
 
-    get nameControl(): FormControl | undefined {
-        return this.form ? (this.form.get('name') as FormControl) : undefined;
-    }
-
-    get claveConceptoControl(): FormControl | undefined {
-        return this.form ? (this.form.get('claveConcepto') as FormControl) : undefined;
-    }
-
-    get descriptionControl(): FormControl | undefined {
-        return this.form ? (this.form.get('description') as FormControl) : undefined;
-    }
-
-    get tipoControl(): FormControl | undefined {
-        return this.form ? (this.form.get('tipo') as FormControl) : undefined;
-    }
+    get nameControl(): FormControl { return this.form.get('name') as FormControl; }
+    get conceptIdControl(): FormControl { return this.form.get('conceptId') as FormControl; }
+    get descriptionControl(): FormControl { return this.form.get('description') as FormControl; }
+    get tipoControl(): FormControl { return this.form.get('tipo') as FormControl; }
 
     onCreateSubmit(value: any) {
+        if (this.form.invalid) return;
         this.isSaving = true;
-        const payload: any = { ...value, pageConfig: this.defaultTemplate().pageConfig, elements: [], variables: [] };
+
+        // Find selected concept to populate extra fields
+        const selectedConcept = this.concepts.find(c => c.id === value.conceptId);
+
+        const payload: any = {
+            ...value,
+            claveConcepto: selectedConcept?.clave || '',
+            conceptName: selectedConcept?.concepto || '',
+            conceptClave: selectedConcept?.clave || '',
+            conceptCosto: selectedConcept?.costo || 0,
+            category: value.tipo,
+            pageConfig: this.defaultTemplate().pageConfig,
+            elements: [],
+            variables: []
+        };
+
         this.templateService.createTemplate(payload).subscribe({
             next: () => {
                 this.isSaving = false;
@@ -197,9 +222,21 @@ export class TemplatesListComponent implements OnInit {
     }
 
     onEditSubmit(value: any) {
-        if (!this.selectedTemplate) return;
+        if (!this.selectedTemplate || this.form.invalid) return;
         this.isSaving = true;
-        this.templateService.updateTemplate(this.selectedTemplate.id, value).subscribe({
+
+        const selectedConcept = this.concepts.find(c => c.id === value.conceptId);
+
+        const payload: any = {
+            ...value,
+            claveConcepto: selectedConcept?.clave || '',
+            conceptName: selectedConcept?.concepto || '',
+            conceptClave: selectedConcept?.clave || '',
+            conceptCosto: selectedConcept?.costo || 0,
+            category: value.tipo
+        };
+
+        this.templateService.updateTemplate(this.selectedTemplate.id, payload).subscribe({
             next: () => {
                 this.isSaving = false;
                 this.editModalOpen = false;
@@ -210,22 +247,6 @@ export class TemplatesListComponent implements OnInit {
             error: () => {
                 this.isSaving = false;
             }
-        });
-    }
-
-    // Método para eliminar templates por id si es necesario (no expuesto en UI)
-    private deleteTemplateById(id: number) {
-        this.openConfirm({
-            title: 'Eliminar Template',
-            message: '¿Estás seguro de eliminar este template?',
-            type: 'danger',
-            confirmText: 'Eliminar',
-            cancelText: 'Cancelar'
-        }, () => {
-            this.templateService.deleteTemplate(id).subscribe(() => {
-                this.loadTemplates();
-                this.openAlert('Eliminado', 'Template eliminado correctamente.', 'success');
-            });
         });
     }
 
@@ -303,6 +324,4 @@ export class TemplatesListComponent implements OnInit {
             });
         });
     }
-
-    // Navegación a editor/preview se maneja vía rutas de templates
 }

@@ -11,20 +11,15 @@ import { TooltipDirective } from '../../../../shared/components/tooltip/tooltip.
 import { TablePaginationComponent, PaginationConfig, PageChangeEvent } from '../../../../shared/components/table-pagination/table-pagination.component';
 import { ConfirmationModalComponent, ConfirmationConfig } from '../../../../shared/components/modals/confirmation-modal.component';
 import { AlertModalComponent, AlertConfig } from '../../../../shared/components/modals/alert-modal.component';
-import { NotificationService } from '../../../../shared/services/notification.service';
+import { NotificationService } from '../../../../core/services/notification.service';
 import { FormsModule } from '@angular/forms';
 import { UniversalIconComponent } from "@/app/shared/components";
-
-interface Driver {
-    id: number;
-    name: string;
-    license: string;
-    curp: string;
-    status: 'Pendiente' | 'Aprobado' | 'No Aprobado';
-    wantsTarjeton: boolean; // Intención original del usuario
-    paymentStatus?: 'Pendiente' | 'Pagado'; // Para Tarjetón
-    coursePaymentStatus?: 'Pendiente' | 'Pagado'; // Para el Curso
-}
+import { Driver } from '../../../../core/models/driver.model';
+import { GroupsService } from '../../services/groups.service';
+import { DocumentSelectionModalComponent, DocumentOption } from '../../components/modals/document-selection-modal/document-selection-modal.component';
+import { LicenseSearchModalComponent } from '../../components/modals/license-search-modal/license-search-modal.component';
+import { Group } from '../../../../core/models/group.model';
+import { CourseTypeService } from '../../../../core/services/course-type.service';
 
 // ... existing code ...
 
@@ -33,20 +28,22 @@ interface Driver {
     selector: 'app-group-drivers',
     standalone: true,
     imports: [
-    CommonModule,
-    InstitutionalBadgeComponent,
-    InstitutionalTableComponent,
-    InstitutionalCardComponent,
-    InstitutionalButtonComponent,
-    TablePaginationComponent,
-    RouterModule,
-    TooltipDirective,
-    ConfirmationModalComponent,
-    AlertModalComponent,
-    BreadcrumbComponent,
-    FormsModule,
-    UniversalIconComponent
-],
+        CommonModule,
+        InstitutionalBadgeComponent,
+        InstitutionalTableComponent,
+        InstitutionalCardComponent,
+        InstitutionalButtonComponent,
+        TablePaginationComponent,
+        RouterModule,
+        TooltipDirective,
+        ConfirmationModalComponent,
+        AlertModalComponent,
+        BreadcrumbComponent,
+        FormsModule,
+        UniversalIconComponent,
+        DocumentSelectionModalComponent,
+        LicenseSearchModalComponent
+    ],
     templateUrl: './group-persons.component.html'
 })
 export class GroupPersonsComponent implements OnInit {
@@ -54,6 +51,7 @@ export class GroupPersonsComponent implements OnInit {
 
     cursoId: string | null = null;
     currentGroupId: string | null = null;
+    currentGroup: Group | null = null; // Store full group details
     courseLabel: string = '';
     groupLabel: string = '';
 
@@ -96,12 +94,16 @@ export class GroupPersonsComponent implements OnInit {
         type: 'info'
     };
 
-    // Datos Mock
-    drivers: Driver[] = [
-        { id: 1, name: 'Juan Pérez', license: 'A123456789', curp: 'AAAA000000HDFXXX00', status: 'Pendiente', wantsTarjeton: false, coursePaymentStatus: 'Pagado' },
-        { id: 2, name: 'María López', license: 'B987654321', curp: 'BBBB000000MDFXXX00', status: 'Pendiente', wantsTarjeton: true, coursePaymentStatus: 'Pendiente' },
-        { id: 3, name: 'Carlos Ruiz', license: 'C123123123', curp: 'CCCC000000HDFXXX00', status: 'Aprobado', wantsTarjeton: true, paymentStatus: 'Pendiente', coursePaymentStatus: 'Pagado' },
-    ];
+    // 3. Modal de Selección de Documentos
+    isDocumentsModalOpen = false;
+    selectedDriverForDocs: Driver | null = null;
+
+    // Datos de Conductores
+    drivers: Driver[] = [];
+
+    // --- BÚSQUEDA ---
+    isSearchModalOpen = false;
+
 
     // Breadcrumb items (se construyen en ngOnInit según params)
     breadcrumbItems: BreadcrumbItem[] = [];
@@ -109,7 +111,9 @@ export class GroupPersonsComponent implements OnInit {
     constructor(
         private router: Router,
         private route: ActivatedRoute,
-        private notificationService: NotificationService
+        private notificationService: NotificationService,
+        private groupsService: GroupsService,
+        private courseTypeService: CourseTypeService
     ) { }
 
     ngOnInit(): void {
@@ -148,16 +152,36 @@ export class GroupPersonsComponent implements OnInit {
         this.breadcrumbItems.push({ label: 'Personas' });
 
         this.initColumns();
+        this.loadGroupDetails();
         this.loadDrivers();
     }
 
+    loadGroupDetails() {
+        if (!this.currentGroupId) return;
+        this.groupsService.getGroupById(+this.currentGroupId).subscribe(group => {
+            if (group) {
+                this.currentGroup = group;
+                // Update label if available
+                if (group.name) this.groupLabel = `Grupo ${group.name}`;
+            }
+        });
+    }
+
     loadDrivers() {
+        if (!this.currentGroupId) return;
         this.tableConfig.loading = true;
-        // Simulación de carga de datos
-        setTimeout(() => {
-            this.paginationConfig.totalItems = this.drivers.length;
-            this.tableConfig.loading = false;
-        }, 800);
+        this.groupsService.getDriversByGroupId(+this.currentGroupId).subscribe({
+            next: (data) => {
+                this.drivers = data;
+                this.paginationConfig.totalItems = data.length;
+                this.tableConfig.loading = false;
+            },
+            error: (err) => {
+                console.error('Error loading drivers', err);
+                this.notificationService.showError('Error', 'No se pudieron cargar los conductores.');
+                this.tableConfig.loading = false;
+            }
+        });
     }
 
     onPageChange(event: PageChangeEvent) {
@@ -178,8 +202,63 @@ export class GroupPersonsComponent implements OnInit {
     }
 
     openNewDriverForm() {
-        this.router.navigate(['nuevo'], { relativeTo: this.route });
+        // Verificar configuración del Tipo de Curso
+        if (this.currentGroup && this.currentGroup.courseTypeId) {
+            this.courseTypeService.getCourseTypeById(this.currentGroup.courseTypeId).subscribe(config => {
+                if (config) {
+                    // Buscar configuración del campo 'license'
+                    const licenseField = config.registrationFields.find(f => f.fieldName === 'license');
+
+                    // Si la licencia es visible, usamos el modal de búsqueda (flujo original)
+                    if (licenseField && licenseField.visible) {
+                        this.isSearchModalOpen = true;
+                    } else {
+                        // Si NO es visible, saltamos la búsqueda y vamos directo al formulario manual
+                        console.log('Licencia no requerida para este curso, saltando búsqueda...');
+                        this.router.navigate(['nuevo'], { relativeTo: this.route });
+                    }
+                } else {
+                    // Fallback si no hay config
+                    this.isSearchModalOpen = true;
+                }
+            });
+        } else {
+            // Fallback si no hay grupo cargado
+            this.isSearchModalOpen = true;
+        }
     }
+
+    onDriverFound(driver: Driver) {
+        // SI SE ENCUENTRA: Navegar con datos precargados
+        console.log('Conductor encontrado (vía modal):', driver);
+        this.router.navigate(['nuevo'], {
+            relativeTo: this.route,
+            queryParams: {
+                found: 'true',
+                name: driver.name,
+                firstSurname: driver.firstSurname,
+                secondSurname: driver.secondSurname,
+                license: driver.license,
+                curp: driver.curp,
+                sex: driver.sex,
+                address: driver.address
+            }
+        });
+        this.isSearchModalOpen = false;
+    }
+
+    onManualRegistration(license: string) {
+        // NO SE ENCUENTRA o FALLBACK: Navegar solo con licencia
+        this.router.navigate(['nuevo'], {
+            relativeTo: this.route,
+            queryParams: {
+                license: license
+            }
+        });
+        this.isSearchModalOpen = false;
+    }
+
+
 
     // --- HELPERS PARA MODALES ---
     openConfirm(config: ConfirmationConfig, action: () => void) {
@@ -205,7 +284,7 @@ export class GroupPersonsComponent implements OnInit {
         this.isAlertOpen = true;
     }
 
-    // --- LÓGICA DE NEGOCIO ---
+    // LOGICA DE NEGOCIO 
 
     setExamResult(driver: Driver, result: 'Aprobado' | 'No Aprobado') {
         if (result === 'Aprobado') {
@@ -217,7 +296,7 @@ export class GroupPersonsComponent implements OnInit {
                 cancelText: 'Cancelar'
             }, () => {
                 driver.status = 'Aprobado';
-                this.notificationService.success('Aprobado', `El conductor ${driver.name} ha sido aprobado exitosamente.`);
+                this.notificationService.showSuccess('Aprobado', `El conductor ${driver.name} ha sido aprobado exitosamente.`);
             });
         } else {
             this.openConfirm({
@@ -254,7 +333,7 @@ export class GroupPersonsComponent implements OnInit {
 
         // 3. Generación de Orden
         // CASO ESPECIAL: Si NO solicitó tarjetón, preguntar primero (Upsell)
-        if (!driver.wantsTarjeton) {
+        if (!driver.requestTarjeton) {
             this.openConfirm({
                 title: 'Solicitud Adicional',
                 message: `El conductor ${driver.name} NO solicitó tarjetón originalmente.\n\n¿Desea generar una orden de pago de todas formas?`,
@@ -262,20 +341,46 @@ export class GroupPersonsComponent implements OnInit {
                 confirmText: 'Sí, Generar Orden',
                 cancelText: 'Cancelar'
             }, () => {
-                // Si acepta, procedemos a mostrar las opciones de generación
-                this.showGenerationOptions(driver);
+                // Si acepta, procedemos a mostrar las opciones de generación (ahora vía el selector de documentos)
+                driver.requestTarjeton = true; // Asumimos que si dijo que sí, ahora lo quiere
+                this.openDocumentSelection(driver);
             });
             return;
         }
 
-        // Si SÍ lo solicitó, pasar directo a las opciones
-        this.showGenerationOptions(driver);
+        // Si SÍ lo solicitó (o es el flujo nuevo), abrir el selector
+        this.openDocumentSelection(driver);
     }
 
-    showGenerationOptions(driver: Driver) {
+    // --- NUEVO FLUJO DE DOCUMENTOS ---
+    openDocumentSelection(driver: Driver) {
+        this.selectedDriverForDocs = driver;
+        this.isDocumentsModalOpen = true;
+    }
+
+    closeDocumentsModal() {
+        this.isDocumentsModalOpen = false;
+        this.selectedDriverForDocs = null;
+    }
+
+    onDocumentsConfirmed(documents: DocumentOption[]) {
+        if (!this.selectedDriverForDocs) return;
+
+        const driver = this.selectedDriverForDocs;
+        const documentNames = documents.map(d => d.name).join(', ');
+
+        console.log(`Generando orden para ${driver.name} con: ${documentNames}`);
+
+        this.closeDocumentsModal();
+
+        // Proceder a generación (usando el método existente)
+        this.showGenerationOptions(driver, documentNames);
+    }
+
+    showGenerationOptions(driver: Driver, details: string = '') {
         this.alertConfig = {
             title: 'Generar Orden de Pago',
-            message: `Seleccione cómo desea entregar la Línea de Captura a ${driver.name}:`,
+            message: `Conceptos: ${details || 'Tarjetón'}\n\nSeleccione cómo desea entregar la Línea de Captura a ${driver.name}:`,
             type: 'info',
             actions: [
                 {
@@ -297,17 +402,17 @@ export class GroupPersonsComponent implements OnInit {
 
     generatePaymentOrder(driver: Driver, mode: 'download' | 'email') {
         console.log(`>> GENERANDO ORDEN (${mode})...`);
-        driver.wantsTarjeton = true;
+        driver.requestTarjeton = true; // Actualizado a requestTarjeton
         driver.paymentStatus = 'Pendiente';
 
         setTimeout(() => {
             if (mode === 'email') {
-                this.notificationService.success(
+                this.notificationService.showSuccess(
                     'Orden Enviada',
                     `Se ha enviado la Línea de Captura al correo de ${driver.name}.`
                 );
             } else {
-                this.notificationService.success(
+                this.notificationService.showSuccess(
                     'Orden Descargada',
                     `Se ha descargado la Línea de Captura correctamente.`
                 );
@@ -322,7 +427,7 @@ export class GroupPersonsComponent implements OnInit {
 
         setTimeout(() => {
             driver.paymentStatus = 'Pagado'; // Marcamos como pagado
-            this.notificationService.success(
+            this.notificationService.showSuccess(
                 'Pago Confirmado',
                 `El pago de ${driver.name} ha sido validado correctamente.`
             );
@@ -331,7 +436,7 @@ export class GroupPersonsComponent implements OnInit {
 
     downloadFinalTarjeton(driver: Driver) {
         console.log('Descargando Tarjetón Final para:', driver.name);
-        this.notificationService.success('Descargando', 'Generando PDF del Tarjetón Oficial...');
+        this.notificationService.showSuccess('Descargando', 'Generando PDF del Tarjetón Oficial...');
     }
 
 
@@ -348,7 +453,7 @@ export class GroupPersonsComponent implements OnInit {
                 this.openAlert('Verificando', 'Validando pago del curso...', 'info');
                 setTimeout(() => {
                     driver.coursePaymentStatus = 'Pagado';
-                    this.notificationService.success('Pago Validado', 'El pago ha sido registrado. Descargando constancia...');
+                    this.notificationService.showSuccess('Pago Validado', 'El pago ha sido registrado. Descargando constancia...');
                 }, 1000);
             });
             return;

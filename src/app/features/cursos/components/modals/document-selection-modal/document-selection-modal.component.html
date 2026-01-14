@@ -1,0 +1,71 @@
+<app-modal [isOpen]="isOpen" [config]="modalConfig" (modalClose)="onClose()">
+
+    <div class="sm:flex sm:items-start flex-col w-full">
+        <h4 class="text-[#8B1538] text-lg font-semibold mb-6 w-full text-center">
+            Seleccione las Constancias que deseé obtener
+        </h4>
+
+        <!-- Table Controls -->
+        <div class="flex items-center mb-4 text-sm text-gray-600">
+            <span class="mr-2">Mostrar</span>
+            <select
+                class="border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                <option>10</option>
+            </select>
+            <span class="ml-2">registros por página</span>
+        </div>
+
+        <!-- Table -->
+        <div class="overflow-x-auto w-full border rounded-lg">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-[#551829] text-white">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider w-10">
+                            <!-- Header Checkbox (optional logic) -->
+                            <div class="flex items-center justify-center">
+                                <div class="w-4 h-1 bg-white rounded-sm"></div>
+                            </div>
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
+                            Template <span class="ml-1">↓</span>
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider">
+                            Descripción <span class="ml-1">↓</span>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    <tr *ngFor="let doc of documents">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex items-center justify-center">
+                                <input type="checkbox" [disabled]="!!doc.disabled" [(ngModel)]="doc.selected"
+                                    class="h-4 w-4 text-[#8B1538] focus:ring-[#8B1538] border-gray-300 rounded cursor-pointer disabled:opacity-50">
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {{ doc.name }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
+                            {{ doc.description }}
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <!-- SIMULACION  DE DATOS EN LA TABLA-->
+        <div *ngIf="documents.length === 0" class="w-full text-center py-4 text-gray-500">
+            No hay documentos disponibles.
+        </div>
+
+    </div>
+
+    <!-- Footer Slot -->
+    <div slot="footer" class="flex flex-row-reverse">
+        <app-institutional-button (buttonClick)="onConfirm()" [config]="{
+            variant: 'primary'
+        }">
+            Aceptar
+        </app-institutional-button>
+    </div>
+
+</app-modal>

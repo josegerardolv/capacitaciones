@@ -1,0 +1,69 @@
+<div class="min-h-screen bg-gray-50/50 p-6 md:p-8">
+  <div class="max-w-7xl mx-auto space-y-6">
+
+    <!-- Header Card -->
+    <app-institutional-card [config]="{ showHeader: false, showFooter: false, showShadow: true, showBorder: true }">
+      <div class="flex items-center gap-4">
+        <div class="p-3 rounded-lg bg-[#8B1538] flex items-center justify-center shadow-md">
+          <app-universal-icon name="bookmark" type="material" class="w-6 h-6 text-white"></app-universal-icon>
+        </div>
+        <div class="min-w-0">
+          <h1 class="text-2xl md:text-3xl font-extrabold text-gray-900">Lista de Tipo de Curso</h1>
+          <p class="text-sm text-gray-500 mt-1">Gestiona los cursos, duración y grupos asociados</p>
+        </div>
+      </div>
+      <div class="mt-2 ml-4">
+        <app-breadcrumb [items]="breadcrumbItems"></app-breadcrumb>
+      </div>
+    </app-institutional-card>
+
+    <!-- Table Card -->
+    <app-institutional-card [config]="{ showHeader: false, showFooter: false, showShadow: true, showBorder: true }">
+
+      <!-- Toolbar -->
+      <div class="flex justify-between items-center mb-6">
+        <div>
+          <p class="text-sm text-gray-500">Administra los tipos de cursos disponibles en el sistema.</p>
+        </div>
+        <app-institutional-button [config]="{variant: 'primary', icon: 'add', customClass: '!bg-[#8B1538]'}"
+          (buttonClick)="openCreateModal()">
+          Nuevo Tipo Curso
+        </app-institutional-button>
+      </div>
+
+      <!-- Table -->
+      <app-institutional-table [data]="courseTypes" [columns]="tableColumns" [config]="tableConfig">
+      </app-institutional-table>
+
+    </app-institutional-card>
+
+    <!-- Templates -->
+    <ng-template #statusTemplate let-item>
+      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" [ngClass]="{
+            'bg-green-100 text-green-800': item.paymentType === 'Pagado' || item.status === 'Activo',
+            'bg-gray-100 text-gray-800': item.paymentType === 'Gratuito' || item.status === 'Inactivo'
+        }">
+        {{ item.paymentType || item.status }}
+      </span>
+    </ng-template>
+
+
+    <ng-template #actionsTemplate let-item>
+      <div class="flex items-center justify-center gap-2">
+        <button (click)="openEditModal(item)"
+          class="p-1.5 text-orange-500 hover:bg-orange-50 rounded-full transition-colors" title="Editar">
+          <app-universal-icon name="pencil" type="bootstrap" [size]="18"></app-universal-icon>
+        </button>
+        <button (click)="onDelete(item)" class="p-1.5 text-red-500 hover:bg-red-50 rounded-full transition-colors"
+          title="Eliminar">
+          <app-universal-icon name="trash" type="bootstrap" [size]="18"></app-universal-icon>
+        </button>
+      </div>
+    </ng-template>
+
+    <app-course-type-form-modal [isOpen]="showFormModal" [courseTypeToEdit]="selectedCourseType"
+      (close)="showFormModal = false" (save)="onFormSave($event)">
+    </app-course-type-form-modal>
+
+  </div>
+</div>

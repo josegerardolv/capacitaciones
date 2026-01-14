@@ -1,13 +1,18 @@
+export type CourseType = 'LICENCIA' | 'GENERICO' | 'CAPACITACION_ESCOLAR';
+
 export interface Group {
     id: number;
     name: string; // e.g., "A05"
-    description: string; // e.g., "Regular text column"
+    description?: string; // Opcional, puede mapearse a duración o notas internas
+    duration: string; // e.g., "3 horas" - Requerido por diseño
     location: string; // e.g., "Carlos Gracida"
-    dateTime: string; // e.g., "12/07/2026, 14:30" - Could be Date object, using string for mock simplicity
-    quantity: number; // e.g., 55
-    autoRegisterLimit: string; // e.g., "s" or number
-    url: string; // e.g., "https://example.com"
-    requests: number; // For the "Solicitudes" badge/button
+    dateTime: string; // e.g., "12/07/2026, 14:30" - Could be Date object
+    quantity: number; // Cupo máximo de conductores
+    autoRegisterLimit: number; // Días para límite de auto-registro (Vigencia del link)
+    url: string; // Link público generado
+    requests: number; // Cantidad de solicitudes pendientes
     status: 'Activo' | 'Inactivo';
-    selected?: boolean; // For checkbox logic
+    selected?: boolean; // Para lógica de selección en tabla
+    courseType: CourseType; // Nuevo campo para distinguir lógica
+    courseTypeId?: number; // ID de la configuración dinámica
 }
