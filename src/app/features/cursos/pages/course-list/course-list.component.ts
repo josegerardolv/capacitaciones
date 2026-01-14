@@ -104,8 +104,7 @@ export class CourseListComponent implements OnInit {
     ngOnInit(): void {
         this.initForms();
         this.initColumns();
-        this.loadCourses();
-        this.loadCourseTypes(); // Load types
+        this.loadCourseTypes(); // Primero cargar tipos, luego cursos
     }
 
     initForms() {
@@ -123,12 +122,14 @@ export class CourseListComponent implements OnInit {
                 value: t.id,
                 label: t.name
             }));
+            this.loadCourses(); // Cargar cursos después de tener los tipos
         });
     }
 
     initColumns() {
         this.tableColumns = [
             { key: 'name', label: 'Nombre', sortable: true, minWidth: '120px' },
+            { key: 'courseTypeName', label: 'Tipo de Curso', sortable: true, minWidth: '150px' },
             { key: 'description', label: 'Descripción', sortable: true, minWidth: '250px' },
             {
                 key: 'duration',
@@ -157,7 +158,14 @@ export class CourseListComponent implements OnInit {
         this.tableConfig.loading = true;
         this.coursesService.getCourses().subscribe({
             next: (data) => {
-                this.courses = data;
+                // Map courses to include the type name
+                this.courses = data.map(course => {
+                    const type = this.courseTypeOptions.find(t => t.value === course.courseTypeId);
+                    return {
+                        ...course,
+                        courseTypeName: type ? type.label : 'Sin Tipo'
+                    };
+                });
                 this.paginationConfig.totalItems = data.length;
                 this.tableConfig.loading = false;
             },

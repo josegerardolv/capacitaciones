@@ -66,13 +66,15 @@ export class CourseTypeFormModalComponent implements OnInit {
   };
 
   @ViewChild('actionsTemplate') actionsTemplate!: any;
+  @ViewChild('costTemplate') costTemplate!: any;
 
   tableColumns: TableColumn[] = [
-    { key: 'name', label: 'Nombre', sortable: true, width: '200px' },
-    { key: 'conceptName', label: 'Concepto', sortable: true, width: '200px' }, // Show full concept name
-    { key: 'category', label: 'Tipo', sortable: true, width: '120px' },
-    { key: 'conceptCosto', label: 'Costo', sortable: true, width: '100px', align: 'right' }, // Added Cost column
-    { key: 'actions', label: 'Documento', align: 'center', width: '80px' } // Renamed to Documento for clarity
+    { key: 'name', label: 'Nombre', sortable: true, width: '220px' },
+    { key: 'category', label: 'Tipo', sortable: true, width: '150px' },
+    { key: 'claveConcepto', label: 'Clave', sortable: true, width: '220px' },
+    { key: 'conceptName', label: 'Concepto', sortable: true, minWidth: '300px' },
+    { key: 'conceptCosto', label: 'Costo', sortable: true, width: '130px', align: 'right' },
+    { key: 'actions', label: 'Documento', align: 'center', width: '120px' }
   ];
 
   // Modal de Vista Previa
@@ -115,6 +117,10 @@ export class CourseTypeFormModalComponent implements OnInit {
     const actionsCol = this.tableColumns.find(c => c.key === 'actions');
     if (actionsCol) {
       actionsCol.template = this.actionsTemplate;
+    }
+    const costCol = this.tableColumns.find(c => c.key === 'conceptCosto');
+    if (costCol) {
+      costCol.template = this.costTemplate;
     }
   }
 

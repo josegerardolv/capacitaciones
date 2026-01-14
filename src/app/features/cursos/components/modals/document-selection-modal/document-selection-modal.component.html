@@ -44,6 +44,11 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                             {{ doc.name }}
+                            <!-- Badge de Precio -->
+                            <span *ngIf="doc.cost"
+                                class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 border border-green-200">
+                                {{ doc.cost | currency:'MXN':'symbol-narrow':'1.2-2' }}
+                            </span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
                             {{ doc.description }}

@@ -26,9 +26,9 @@ export class CourseTypeService {
                 sex: { visible: true, required: true }
             }),
             availableDocuments: [
-                { id: 'doc_constancia', name: 'Constancia de Capacitación', templateId: 1, cost: 0, requiresApproval: true },
-                { id: 'doc_tarjeton', name: 'Tarjetón de Identidad', templateId: 4, cost: 253, requiresApproval: true },
-                { id: 'doc_manejo', name: 'Constancia de Curso de Manejo', templateId: 6, cost: 150, requiresApproval: true }
+                { id: 'doc_constancia', name: 'Constancia Básica', templateId: 1, cost: 473, requiresApproval: true },
+                { id: 'doc_tarjeton', name: 'Tarjetón de Identidad', templateId: 4, cost: 473, requiresApproval: true },
+                { id: 'doc_manejo', name: 'Constancia de Curso de Manejo', templateId: 6, cost: 340, requiresApproval: true }
             ]
         },
         {
@@ -49,7 +49,7 @@ export class CourseTypeService {
             }),
             availableDocuments: [
                 { id: 'doc_diploma', name: 'Diploma de Participación', templateId: 5, cost: 0, requiresApproval: false },
-                { id: 'doc_honor', name: 'Diploma de Honor', templateId: 3, cost: 0, requiresApproval: true }
+                { id: 'doc_honor', name: 'Diploma de Honor', templateId: 3, cost: 340, requiresApproval: true } // Confirmamos que Honor tiene costo
             ]
         },
         // MOCK: Curso Simple solicitado por usuario
@@ -77,7 +77,7 @@ export class CourseTypeService {
             }),
             availableDocuments: [
                 // "Solo certificado de aprobación" (templateId 2 es el real para 'Certificado de Aprobación' en TemplateService)
-                { id: 'doc_constancia', name: 'Certificado de Aprobación', templateId: 2, cost: 0, requiresApproval: false }
+                { id: 'doc_aprobacion', name: 'Certificado de Aprobación', templateId: 2, cost: 340, requiresApproval: true }
             ]
         }
     ];

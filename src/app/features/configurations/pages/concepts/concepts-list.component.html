@@ -35,7 +35,11 @@
 
 <!-- Templates for Table -->
 <ng-template #costoTemplate let-item>
-    <span class="font-medium text-gray-900">{{ item.costo | currency:'MXN' }}</span>
+    <span *ngIf="item.costo > 0" class="font-medium text-gray-900">{{ item.costo | currency:'MXN' }}</span>
+    <span *ngIf="item.costo === 0"
+        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+        Gratuito
+    </span>
 </ng-template>
 
 <ng-template #actionsTemplate let-item>
