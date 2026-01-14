@@ -14,6 +14,11 @@ export const CONFIGURATION_ROUTES: Routes = [
         title: 'Configuración - Conceptos'
     },
     {
+        path: 'encuesta',
+        loadComponent: () => import('../encuesta/encuesta.component').then(m => m.EncuestaComponent),
+        title: 'Configuración - Encuesta'
+    },
+    {
         path: '',
         redirectTo: 'tipos-cursos',
         pathMatch: 'full'

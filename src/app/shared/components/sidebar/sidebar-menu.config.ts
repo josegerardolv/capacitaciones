@@ -81,8 +81,8 @@ export const SIDEBAR_MENU_CONFIG: MenuItem[] = [
         label: 'Encuesta',
         icon: 'clipboard-data',
         iconType: 'bootstrap',
-        route: '/encuesta',
-        roles: ['ADMINISTRADOR', 'SUPER_ADMINISTRADOR']
+        route: '/config/encuesta',
+        roles: ['ADMIN', 'SUPER_ADMINISTRADOR']
       }
 
 
