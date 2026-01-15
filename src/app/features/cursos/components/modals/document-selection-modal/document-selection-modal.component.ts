@@ -9,6 +9,7 @@ export interface DocumentOption {
     id: string;
     name: string;
     description: string;
+    cost?: number; // agregar costo
     selected: boolean;
     disabled?: boolean;
 }
@@ -49,9 +50,10 @@ export class DocumentSelectionModalComponent {
             this.documents = this.customDocuments.map(doc => ({
                 id: doc.id,
                 name: doc.name,
-                description: doc.name, // Usar nombre como descripción si no se proporciona
-                selected: false, // Por defecto no seleccionado
-                disabled: false // ¿doc.required?
+                description: doc.description || doc.name, // Usar descripción si existe, sino nombre
+                cost: doc.cost, // Map cost
+                selected: doc.isMandatory || !doc.cost ? true : false, // Si es obligatorio o GRATIS (!cost), pre-seleccionar
+                disabled: doc.isMandatory || !doc.cost || false // Si es obligatorio O gratis, bloquear
             }));
             return;
         }
@@ -62,6 +64,7 @@ export class DocumentSelectionModalComponent {
                 id: 'constancia',
                 name: 'Constancia Básica',
                 description: 'Constancia de acreditación de capacitación',
+                cost: 0,
                 selected: true,
                 disabled: false
             }
@@ -73,6 +76,7 @@ export class DocumentSelectionModalComponent {
                 id: 'tarjeton',
                 name: 'Tarjetón',
                 description: 'Tarjetón del conductor',
+                cost: 253, // Costo aproximado por defecto
                 selected: false,
                 disabled: false
             });
@@ -83,6 +87,7 @@ export class DocumentSelectionModalComponent {
             id: 'reconocimiento',
             name: 'Reconocimiento',
             description: 'Reconocimiento por buen desempeño',
+            cost: 0,
             selected: true,
             disabled: false
         });

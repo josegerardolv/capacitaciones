@@ -82,11 +82,11 @@ export class TemplateService {
     {
       id: 5,
       name: 'Diploma de Participación',
-      claveConcepto: '3IFAAA065',
-      conceptId: 2,
-      conceptName: 'PERMISO PROVISIONAL (SERVICIO PÚBLICO)',
-      conceptClave: '3IFAAA065',
-      conceptCosto: 340,
+      claveConcepto: '',
+      conceptId: undefined, // Sin concepto = Gratuito
+      conceptName: '',
+      conceptClave: '',
+      conceptCosto: 0,
       description: 'Diploma general de participación',
       category: 'Reconocimiento',
       usageCount: 45,
@@ -127,12 +127,33 @@ export class TemplateService {
 
   // ===== TEMPLATES =====
   getTemplates(): Observable<CertificateTemplate[]> {
-    // TODO: Pendiente conectar con el backend cuando esté listo.
-    // Aquí es donde voy a cambiar la URL por la del API real.
-    // return this.http.get<CertificateTemplate[]>('http://localhost:3000/api/templates');
+    // Simular JOIN con conceptos para datos frescos
+    const templatesWithFreshConcepts = this.templatesData.map(tpl => {
+      if (tpl.conceptId) {
+        const freshConcept = this.concepts.find(c => c.id === tpl.conceptId);
+        if (freshConcept) {
+          return {
+            ...tpl,
+            conceptName: freshConcept.concepto,
+            conceptClave: freshConcept.clave,
+            claveConcepto: freshConcept.clave, // legacy support
+            conceptCosto: freshConcept.costo
+          };
+        }
+      } else {
+        // Si no tiene concepto, es GRATUITO
+        return {
+          ...tpl,
+          conceptName: 'Sin Concepto (Gratuito)',
+          conceptClave: '',
+          claveConcepto: '',
+          conceptCosto: 0
+        };
+      }
+      return tpl;
+    });
 
-    // Por ahora regreso los datos de prueba simulando un pequeño delay para ver el loading
-    return of([...this.templatesData]).pipe(delay(500));
+    return of(templatesWithFreshConcepts).pipe(delay(500));
   }
 
   getTemplate(id: number): Observable<CertificateTemplate | undefined> {

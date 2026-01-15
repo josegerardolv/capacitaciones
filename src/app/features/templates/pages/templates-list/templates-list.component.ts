@@ -109,8 +109,7 @@ export class TemplatesListComponent implements OnInit {
     initColumns() {
         this.tableColumns = [
             { key: 'name', label: 'Nombre', sortable: true, minWidth: '200px' },
-            { key: 'conceptName', label: 'Concepto', sortable: true, minWidth: '200px', template: this.conceptTemplate },
-            { key: 'claveConcepto', label: 'Clave', sortable: true, minWidth: '120px' },
+            { key: 'conceptName', label: 'Concepto (Siox)', sortable: true, minWidth: '200px', template: this.conceptTemplate },
             { key: 'conceptCosto', label: 'Costo', sortable: true, minWidth: '100px', align: 'right', template: this.costTemplate },
             {
                 key: 'category',
@@ -168,38 +167,61 @@ export class TemplatesListComponent implements OnInit {
             name: ['', Validators.required],
             conceptId: [null, Validators.required],
             tipo: [''], // Category
-            description: ['']
+            description: [''],
+            isFree: [false]
         });
+        this.setupValidatorLogic();
         this.createModalOpen = true;
     }
 
     openEditForm(template: CertificateTemplate) {
         this.selectedTemplate = template;
+        const isFree = !template.conceptId;
         this.form = this.fb.group({
             name: [template.name, Validators.required],
-            conceptId: [template.conceptId || null, Validators.required],
+            conceptId: [template.conceptId || null, isFree ? [] : Validators.required],
             tipo: [template.category || ''],
-            description: [template.description || '']
+            description: [template.description || ''],
+            isFree: [isFree]
         });
+        this.setupValidatorLogic();
         this.editModalOpen = true;
+    }
+
+    private setupValidatorLogic() {
+        this.form.get('isFree')?.valueChanges.subscribe(isFree => {
+            const conceptCtrl = this.form.get('conceptId');
+            if (isFree) {
+                conceptCtrl?.clearValidators();
+                conceptCtrl?.setValue(null);
+            } else {
+                conceptCtrl?.setValidators(Validators.required);
+            }
+            conceptCtrl?.updateValueAndValidity();
+        });
     }
 
     get nameControl(): FormControl { return this.form.get('name') as FormControl; }
     get conceptIdControl(): FormControl { return this.form.get('conceptId') as FormControl; }
     get descriptionControl(): FormControl { return this.form.get('description') as FormControl; }
     get tipoControl(): FormControl { return this.form.get('tipo') as FormControl; }
+    get isFreeControl(): FormControl { return this.form.get('isFree') as FormControl; }
 
     onCreateSubmit(value: any) {
         if (this.form.invalid) return;
         this.isSaving = true;
 
-        // Find selected concept to populate extra fields
-        const selectedConcept = this.concepts.find(c => c.id === value.conceptId);
+        let selectedConcept = null;
+        if (!value.isFree) {
+            selectedConcept = this.concepts.find(c => c.id === value.conceptId);
+        }
 
         const payload: any = {
             ...value,
+            // Si es gratuito, mandamos campos vacíos/null
             claveConcepto: selectedConcept?.clave || '',
-            conceptName: selectedConcept?.concepto || '',
+            conceptId: selectedConcept?.id || null,
+            conceptName: selectedConcept?.concepto || (value.isFree ? 'Gratuito' : ''),
             conceptClave: selectedConcept?.clave || '',
             conceptCosto: selectedConcept?.costo || 0,
             category: value.tipo,
@@ -207,6 +229,8 @@ export class TemplatesListComponent implements OnInit {
             elements: [],
             variables: []
         };
+        // Remove virtual field
+        delete payload.isFree;
 
         this.templateService.createTemplate(payload).subscribe({
             next: () => {
@@ -225,16 +249,21 @@ export class TemplatesListComponent implements OnInit {
         if (!this.selectedTemplate || this.form.invalid) return;
         this.isSaving = true;
 
-        const selectedConcept = this.concepts.find(c => c.id === value.conceptId);
+        let selectedConcept = null;
+        if (!value.isFree) {
+            selectedConcept = this.concepts.find(c => c.id === value.conceptId);
+        }
 
         const payload: any = {
             ...value,
             claveConcepto: selectedConcept?.clave || '',
-            conceptName: selectedConcept?.concepto || '',
+            conceptId: selectedConcept?.id || null,
+            conceptName: selectedConcept?.concepto || (value.isFree ? 'Gratuito' : ''),
             conceptClave: selectedConcept?.clave || '',
             conceptCosto: selectedConcept?.costo || 0,
             category: value.tipo
         };
+        delete payload.isFree;
 
         this.templateService.updateTemplate(this.selectedTemplate.id, payload).subscribe({
             next: () => {

@@ -12,6 +12,7 @@ export interface DocumentConfig {
     templateId?: number; // Linked Template ID from TemplateService
     cost?: number; // Costo del trámite
     requiresApproval?: boolean; // Si requiere aprobación del instructor/admin
+    isMandatory?: boolean; // Si es obligatorio seleccionar este documento
 }
 
 export interface CourseTypeConfig {
@@ -19,7 +20,7 @@ export interface CourseTypeConfig {
     name: string; // e.g. 'Capacitación Escolar', 'Licencia Tipo A'
     description: string;
     status: 'Activo' | 'Inactivo';
-    paymentType: 'Gratuito' | 'Pagado'; // Para mostrar en la tabla como en la imagen ('Gratuito'/'Pagado')
+    paymentType: 'Gratuito' | 'De Paga'; // Para mostrar en la tabla como en la imagen ('Gratuito'/'De Paga')
 
     // Configuración del Formulario de Registro
     registrationFields: RegistrationFieldConfig[];

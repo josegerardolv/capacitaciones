@@ -71,6 +71,31 @@
                             </button>
                         </ng-template>
 
+                        <ng-template #costTemplate let-item>
+                            <span *ngIf="item.conceptCosto > 0" class="font-medium">{{ item.conceptCosto |
+                                currency:'MXN' }}</span>
+                            <span *ngIf="item.conceptCosto === 0"
+                                class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                Gratuito
+                            </span>
+                        </ng-template>
+
+                        <ng-template #categoryTemplate let-item>
+                            <span
+                                class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                {{ item.category || 'General' }}
+                            </span>
+                        </ng-template>
+
+                        <ng-template #mandatoryTemplate let-item>
+                            <div class="flex justify-center" (click)="$event.stopPropagation()">
+                                <input type="checkbox" [checked]="isMandatory(item.id)"
+                                    (click)="toggleMandatory(item.id, $event)"
+                                    class="h-4 w-4 text-[#8B1538] border-gray-300 rounded focus:ring-[#8B1538] cursor-pointer"
+                                    [disabled]="false">
+                            </div>
+                        </ng-template>
+
                     </app-institutional-table>
                 </div>
 

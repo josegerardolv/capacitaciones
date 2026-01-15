@@ -49,10 +49,6 @@ export const routes: Routes = [
         loadComponent: () => import('./features/busqueda/busqueda.component').then(m => m.BusquedaComponent)
       },
       {
-        path: 'encuesta',
-        loadComponent: () => import('./features/encuesta/encuesta.component').then(m => m.EncuestaComponent)
-      },
-      {
         path: 'documentos',
         loadChildren: () => import('./features/templates/documents.routes').then(m => m.DOCUMENTS_ROUTES)
       },

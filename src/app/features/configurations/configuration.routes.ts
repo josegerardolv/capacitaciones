@@ -3,9 +3,9 @@ import { CourseTypeListComponent } from './pages/course-type-list/course-type-li
 
 export const CONFIGURATION_ROUTES: Routes = [
     {
-        path: 'tipos-cursos',
+        path: 'config-cursos',
         component: CourseTypeListComponent,
-        title: 'Configuración - Tipos de Curso'
+        title: 'Configuración - Crear Curso'
     },
     // Future: path: 'tipos-cursos/nuevo', component: CourseTypeFormComponent
     {
@@ -20,7 +20,7 @@ export const CONFIGURATION_ROUTES: Routes = [
     },
     {
         path: '',
-        redirectTo: 'tipos-cursos',
+        redirectTo: 'crear-cursos',
         pathMatch: 'full'
     }
 ];
