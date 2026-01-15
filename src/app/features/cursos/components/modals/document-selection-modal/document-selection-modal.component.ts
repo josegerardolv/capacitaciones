@@ -50,10 +50,10 @@ export class DocumentSelectionModalComponent {
             this.documents = this.customDocuments.map(doc => ({
                 id: doc.id,
                 name: doc.name,
-                description: doc.name, // Usar nombre como descripción si no se proporciona
+                description: doc.description || doc.name, // Usar descripción si existe, sino nombre
                 cost: doc.cost, // Map cost
-                selected: false, // Por defecto no seleccionado
-                disabled: false // ¿doc.required?
+                selected: doc.isMandatory || !doc.cost ? true : false, // Si es obligatorio o GRATIS (!cost), pre-seleccionar
+                disabled: doc.isMandatory || !doc.cost || false // Si es obligatorio O gratis, bloquear
             }));
             return;
         }

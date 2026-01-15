@@ -16,14 +16,14 @@ export class CoursesService {
         {
             id: 1,
             name: 'Curso para Licencia Tipo A',
-            description: 'Curso oficial para obtener la Licencia de Transporte Público (Tipo A). Incluye Tarjetón y Constancia.',
+            description: 'Curso oficial para obtener la Licencia de Transporte Público (Tipo A).',
             duration: 240,
             courseTypeId: 1 // Vinculado a 'Licencia Transporte Público'
         },
         {
             id: 2,
             name: 'Curso de Educación Vial Escolar',
-            description: 'Capacitación para escuelas primarias. Documentos gratuitos (Diploma).',
+            description: 'Capacitación para escuelas primaria.',
             duration: 120,
             courseTypeId: 2 // Vinculado a 'Capacitación Escolar'
         },
@@ -31,7 +31,7 @@ export class CoursesService {
         {
             id: 3,
             name: 'Curso Básico General',
-            description: 'Curso introductorio de prueba. Incluye documentos básicos.',
+            description: 'Curso introductorio de prueba.',
             duration: 60,
             courseTypeId: 3 // Vinculado a 'Curso Simple'
         }

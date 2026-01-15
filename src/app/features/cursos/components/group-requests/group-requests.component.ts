@@ -2,6 +2,7 @@ import { Component, EventEmitter, Input, Output, OnChanges, SimpleChanges, ViewC
 import { CommonModule } from '@angular/common';
 import { FormGroup, FormBuilder } from '@angular/forms'; // Added FormGroup and FormBuilder
 import { Group } from '../../../../core/models/group.model';
+import { Driver } from '../../../../core/models/driver.model';
 import { InstitutionalButtonComponent } from '../../../../shared/components/buttons/institutional-button.component';
 import {
     InstitutionalTableComponent,
@@ -12,24 +13,16 @@ import {
 import { TablePaginationComponent, PaginationConfig, PageChangeEvent } from '../../../../shared/components/table-pagination/table-pagination.component';
 import { ConfirmationModalComponent, ConfirmationConfig } from '../../../../shared/components/modals/confirmation-modal.component';
 import { ModalComponent } from '../../../../shared/components/modals/modal.component';
-
-interface Request {
-    id: number;
-    name: string;
-    curp: string;
-    sex: 'Hombre' | 'Mujer';
-    address: string;
-    nuc: string;
-}
+import { GroupsService } from '../../services/groups.service';
 
 @Component({
     selector: 'app-group-requests',
     standalone: true,
     imports: [
-        CommonModule, 
-        InstitutionalButtonComponent, 
-        InstitutionalTableComponent, 
-        ConfirmationModalComponent, 
+        CommonModule,
+        InstitutionalButtonComponent,
+        InstitutionalTableComponent,
+        ConfirmationModalComponent,
         TablePaginationComponent,
         ModalComponent],
     templateUrl: './group-requests.component.html'
@@ -41,8 +34,8 @@ export class GroupRequestsComponent implements OnChanges {
 
     @ViewChild('actionsTemplate', { static: true }) actionsTemplate!: TemplateRef<any>;
 
-    requests: Request[] = [];
-    selectedRequests: Request[] = [];
+    requests: Driver[] = [];
+    selectedRequests: Driver[] = [];
 
     tableConfig: TableConfig = {
         loading: false,
@@ -55,12 +48,12 @@ export class GroupRequestsComponent implements OnChanges {
 
     tableColumns: TableColumn[] = [];
     paginationConfig: PaginationConfig = {
-            pageSize: 10,
-            totalItems: 0,
-            currentPage: 1,
-            pageSizeOptions: [10, 20, 50],
-            showInfo: true
-        };
+        pageSize: 10,
+        totalItems: 0,
+        currentPage: 1,
+        pageSizeOptions: [10, 20, 50],
+        showInfo: true
+    };
 
     dummyFormGroup: FormGroup; // Declared dummy form group
 
@@ -75,26 +68,29 @@ export class GroupRequestsComponent implements OnChanges {
     };
     private pendingConfirmAction: (() => void) | null = null;
 
-    constructor(private fb: FormBuilder) { // Injected FormBuilder
-        this.dummyFormGroup = this.fb.group({}); // Initialized dummy form group
-    }
-
-    // Carga de datos iniciales
-    private loadRequests(): Request[] {
-        return [
-            { id: 1, name: 'Juan Perez', curp: 'EQPH100809MSPTPV34', sex: 'Hombre', address: 'Oaxaca, Centro', nuc: '01-191' },
-            { id: 2, name: 'Sergio Gonzalez', curp: 'VXCE910803MCCRCK34', sex: 'Hombre', address: 'Reforma, Centro', nuc: '25-545' },
-            { id: 3, name: 'Sofia Torres', curp: 'DVQU511101MYNHMF37', sex: 'Mujer', address: 'Oaxaca, Lomas del Bosque', nuc: '61-464' },
-        ];
+    constructor(
+        private fb: FormBuilder,
+        private groupsService: GroupsService
+    ) {
+        this.dummyFormGroup = this.fb.group({});
     }
 
     ngOnChanges(changes: SimpleChanges) {
-        if (changes['isOpen'] && this.isOpen) {
-            this.requests = this.loadRequests();
-            this.selectedRequests = [];
-            // Re-inicializamos columnas para asegurar que el template se vincule correctamente
-            this.initColumns();
+        if (changes['isOpen'] && this.isOpen && this.group) {
+            this.loadGroupRequests();
         }
+    }
+
+    loadGroupRequests() {
+        this.tableConfig.loading = true;
+        if (!this.group) return;
+
+        this.groupsService.getRequestsByGroupId(this.group.id).subscribe(data => {
+            this.requests = data;
+            this.selectedRequests = [];
+            this.initColumns(); // Re-vinculamos templates
+            this.tableConfig.loading = false;
+        });
     }
 
     initColumns() {
@@ -116,9 +112,9 @@ export class GroupRequestsComponent implements OnChanges {
         this.selectedRequests = event.selectedItems;
     }
     onPageChange(event: PageChangeEvent) {
-            this.paginationConfig.currentPage = event.page;
-            this.paginationConfig.pageSize = event.pageSize;
-        }
+        this.paginationConfig.currentPage = event.page;
+        this.paginationConfig.pageSize = event.pageSize;
+    }
 
     // --- HELPERS PARA MODALES ---
     openConfirm(config: ConfirmationConfig, action: () => void) {

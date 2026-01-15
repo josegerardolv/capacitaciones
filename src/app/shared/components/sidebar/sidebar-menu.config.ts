@@ -61,16 +61,16 @@ export const SIDEBAR_MENU_CONFIG: MenuItem[] = [
     roles: ['ADMIN', 'SUPER_ADMINISTRADOR'],
     children: [
       {
-        id: 'crear-cursos',
-        label: 'Crear curso',
+        id: 'config-cursos',
+        label: 'Configuración de Cursos',
         icon: 'person',
         iconType: 'bootstrap',
-        route: '/config/crear-cursos',
+        route: '/config/config-cursos',
         roles: ['ADMIN', 'SUPER_ADMINISTRADOR']
       },
       {
         id: 'concepto',
-        label: 'Concepto',
+        label: 'Configuración de Conceptos',
         icon: 'file-text',
         iconType: 'bootstrap',
         route: '/config/concepto',

@@ -78,10 +78,66 @@ El backend debe ser capaz de almacenar y devolver un objeto JSON para `registrat
 
 ---
 
-## 2. Consideraciones Generales
+### E. ConceptService (Catálogo de Conceptos SIOX)
+*   **Archivo:** `src/app/features/templates/services/template.service.ts`
+*   **Responsabilidad:** Gestionar el catálogo de conceptos de cobro (claves, costos, descripciones) que se usan en los templates y tipos de curso.
 
-1.  **Manejo de Fechas:** El frontend espera fechas en formato ISO string (`2026-10-15T09:00:00Z`) o formato string local consistente. Ideal estandarizar a ISO 8601.
-2.  **Paginación:** Actualmente las tablas del frontend soportan paginación en cliente. Para grandes volúmenes, se sugiere implementar paginación en servidor (parámetros `?page=1&limit=10`).
-3.  **Cors:** Asegurar que el backend permita peticiones desde el dominio donde se despliegue Angular (o `localhost:4200` para desarrollo).
+| Método Frontend | Endpoint Sugerido | Método HTTP | Descripción |
+| :--- | :--- | :--- | :--- |
+| `getConcepts()` | `/api/concepts` | `GET` | Listar catálogo de conceptos. |
+| `createConcept(data)` | `/api/concepts` | `POST` | Crear nuevo concepto de cobro. |
+| `updateConcept(id, data)` | `/api/concepts/{id}` | `PUT` | Actualizar costo o descripción. |
+| `deleteConcept(id)` | `/api/concepts/{id}` | `DELETE` | Eliminar concepto. |
 
-Cualquier duda sobre la estructura exacta de los objetos, favor de referirse a las interfaces en `src/app/core/models`.
+**Estructura JSON (Concept):**
+```json
+{
+  "id": 1,
+  "clave": "3IFBAC022",
+  "concepto": "CONSTANCIA DE NO EMPLACAMIENTO",
+  "costo": 473,
+  "deprecated": false
+}
+```
+
+---
+
+## 2. Actualizaciones de Estructura de Datos
+
+### CourseTypeConfig (Ajuste de Documentos)
+Se ha agregado la propiedad `isMandatory` para indicar documentos obligatorios, y `cost` para definir si es gratuito (cost=0).
+
+```json
+"availableDocuments": [
+  { 
+    "templateId": 2, 
+    "name": "Certificado Final", 
+    "cost": 100,
+    "isMandatory": true, // NUEVO: Si true, el usuario no puede desmarcarlo
+    "requiresApproval": true 
+  },
+  { 
+    "templateId": 5, 
+    "name": "Diploma Participación", 
+    "cost": 0,
+    "isMandatory": true, // Gratuitos suelen ser obligatorios por defecto
+    "requiresApproval": false 
+  }
+]
+```
+
+### Driver / Request (Unificación)
+Las "Solicitudes" ahora se manejan como un objeto `Driver` (Participante) con estado `Pendiente`.
+*   **Status Flow:** `Pendiente` -> `Aprobado` | `Rechazado`.
+*   El backend debe permitir POST de un Driver con status inicial `Pendiente`.
+
+---
+
+## 3. Consideraciones Generales
+
+1.  **Autenticación (JWT):** Todos los endpoints (excepto `/public/*`) requieren header `Authorization: Bearer <token>`.
+2.  **Manejo de Fechas:** El frontend espera fechas en formato ISO string (`2026-10-15T09:00:00Z`).
+3.  **Paginación:** Sugerida para listados grandes (`?page=1&limit=10`).
+4.  **Cors:** Asegurar que el backend permita peticiones desde el dominio donde se despliegue Angular.
+
+Cualquier duda, consultar `src/app/core/models` para las interfaces TypeScript definitivas.

@@ -109,8 +109,7 @@ export class TemplatesListComponent implements OnInit {
     initColumns() {
         this.tableColumns = [
             { key: 'name', label: 'Nombre', sortable: true, minWidth: '200px' },
-            { key: 'conceptName', label: 'Concepto', sortable: true, minWidth: '200px', template: this.conceptTemplate },
-            { key: 'claveConcepto', label: 'Clave', sortable: true, minWidth: '120px' },
+            { key: 'conceptName', label: 'Concepto (Siox)', sortable: true, minWidth: '200px', template: this.conceptTemplate },
             { key: 'conceptCosto', label: 'Costo', sortable: true, minWidth: '100px', align: 'right', template: this.costTemplate },
             {
                 key: 'category',

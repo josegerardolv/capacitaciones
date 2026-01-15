@@ -42,7 +42,7 @@ export class CourseTypeFormModalComponent implements OnInit {
   form!: FormGroup;
 
   modalConfig: ModalConfig = {
-    title: 'Registro Tipo de Curso',
+    title: 'Configuración Curso',
     size: 'fullscreen',
     showCloseButton: true,
     padding: true
@@ -67,21 +67,25 @@ export class CourseTypeFormModalComponent implements OnInit {
 
   @ViewChild('actionsTemplate') actionsTemplate!: any;
   @ViewChild('costTemplate') costTemplate!: any;
+  @ViewChild('categoryTemplate') categoryTemplate!: any;
+  @ViewChild('mandatoryTemplate') mandatoryTemplate!: any; // Nuevo Template para checkbox
 
   tableColumns: TableColumn[] = [
     { key: 'name', label: 'Nombre', sortable: true, width: '220px' },
-    { key: 'category', label: 'Tipo', sortable: true, width: '150px' },
-    { key: 'claveConcepto', label: 'Clave', sortable: true, width: '220px' },
-    { key: 'conceptName', label: 'Concepto', sortable: true, minWidth: '300px' },
+    { key: 'category', label: 'Tipo', sortable: true, width: '150px', template: this.categoryTemplate },
+    { key: 'conceptName', label: 'Concepto (Siox)', sortable: true, minWidth: '300px' },
+    { key: 'mandatory', label: 'Obligatorio', align: 'center', width: '100px', template: this.mandatoryTemplate }, // Nueva Columna
     { key: 'conceptCosto', label: 'Costo', sortable: true, width: '130px', align: 'right' },
     { key: 'actions', label: 'Documento', align: 'center', width: '120px' }
   ];
 
-  // Modal de Vista Previa
+  // Resto de propiedades...
   showPreviewModal = false;
   previewTemplate: CertificateTemplate | null = null;
-
   displayedTemplates: CertificateTemplate[] = [];
+
+  // Set para rastrear obligatorios por ID de template
+  mandatoryDocuments: Set<number> = new Set();
 
   constructor(
     private fb: FormBuilder,
@@ -95,33 +99,31 @@ export class CourseTypeFormModalComponent implements OnInit {
       if (this.courseTypeToEdit) {
         this.fillForm(this.courseTypeToEdit);
       } else {
-        this.form.reset(); // Removed default paymentType
+        this.form.reset();
         this.selectedTemplates = [];
+        this.mandatoryDocuments.clear(); // Limpiar obligatorios
         this.initFields();
       }
     }
   }
 
-  ngOnInit(): void {
-    this.initForm();
-    this.initFields();
-
-    // Lógica de búsqueda
-    this.searchControl.valueChanges.subscribe(val => {
-      this.filterTemplates(val || '');
-    });
-  }
+  // ... (ngOnInit, initForm, etc. ok)
 
   ngAfterViewInit() {
-    // Asignar el template a la configuración de la columna una vez que la vista se inicialice
-    const actionsCol = this.tableColumns.find(c => c.key === 'actions');
-    if (actionsCol) {
-      actionsCol.template = this.actionsTemplate;
-    }
-    const costCol = this.tableColumns.find(c => c.key === 'conceptCosto');
-    if (costCol) {
-      costCol.template = this.costTemplate;
-    }
+    setTimeout(() => {
+      // Asignar templates a columnas
+      const actionsCol = this.tableColumns.find(c => c.key === 'actions');
+      if (actionsCol) actionsCol.template = this.actionsTemplate;
+
+      const costCol = this.tableColumns.find(c => c.key === 'conceptCosto');
+      if (costCol) costCol.template = this.costTemplate;
+
+      const categoryCol = this.tableColumns.find(c => c.key === 'category');
+      if (categoryCol) categoryCol.template = this.categoryTemplate;
+
+      const mandatoryCol = this.tableColumns.find(c => c.key === 'mandatory');
+      if (mandatoryCol) mandatoryCol.template = this.mandatoryTemplate;
+    });
   }
 
   loadTemplates() {
@@ -129,19 +131,43 @@ export class CourseTypeFormModalComponent implements OnInit {
     this.templateService.getTemplates().subscribe({
       next: (data) => {
         this.templates = data;
-        // Ordenar por uso descendente por defecto ("Más usados")
         this.templates.sort((a, b) => (b.usageCount || 0) - (a.usageCount || 0));
 
         if (this.courseTypeToEdit && this.courseTypeToEdit.availableDocuments) {
           const selectedIds = this.courseTypeToEdit.availableDocuments.map(d => d.templateId);
           this.selectedTemplates = this.templates.filter(t => selectedIds.includes(t.id));
 
+          // Cargar estado de obligatorios
+          this.mandatoryDocuments.clear();
+          this.courseTypeToEdit.availableDocuments.forEach(doc => {
+            if (doc.isMandatory && doc.templateId) {
+              this.mandatoryDocuments.add(doc.templateId);
+            }
+          });
+
+          // Asegurar que los gratuitos sean obligatorios por defecto (si no se guardó explícitamente lo contrario, o siempre?)
+          // "todo lo que es gratuito ... debe de venir marcado por defecto"
+          this.templates.forEach(t => {
+            if (t.conceptCosto === 0) {
+              this.mandatoryDocuments.add(t.id);
+            }
+          });
+
+
           if (this.selectedTemplates.length > 0) {
             this.filteredTemplates = [...this.selectedTemplates];
           }
         } else {
-          // Modo Crear: Limpiar seleccion y mostrar todo
           this.selectedTemplates = [];
+          this.mandatoryDocuments.clear();
+
+          // Nuevos registros: Gratuitos son obligatorios por defecto
+          this.templates.forEach(t => {
+            if (t.conceptCosto === 0) {
+              this.mandatoryDocuments.add(t.id);
+            }
+          });
+
           this.filteredTemplates = [...this.templates];
         }
 
@@ -152,6 +178,16 @@ export class CourseTypeFormModalComponent implements OnInit {
         console.error('Error cargando templates', err);
         this.tableConfig.loading = false;
       }
+    });
+  }
+
+  ngOnInit(): void {
+    this.initForm();
+    this.initFields();
+
+    // Lógica de búsqueda
+    this.searchControl.valueChanges.subscribe(val => {
+      this.filterTemplates(val || '');
     });
   }
 
@@ -218,6 +254,19 @@ export class CourseTypeFormModalComponent implements OnInit {
     this.showPreviewModal = true;
   }
 
+  toggleMandatory(templateId: number, event: Event) {
+    event.stopPropagation(); // Evitar que seleccione la fila si es click en checkbox
+    if (this.mandatoryDocuments.has(templateId)) {
+      this.mandatoryDocuments.delete(templateId);
+    } else {
+      this.mandatoryDocuments.add(templateId);
+    }
+  }
+
+  isMandatory(templateId: number): boolean {
+    return this.mandatoryDocuments.has(templateId);
+  }
+
   onSave() {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
@@ -226,19 +275,23 @@ export class CourseTypeFormModalComponent implements OnInit {
 
     const formValue = this.form.value;
 
-    // Mapear templates seleccionados a DocumentConfigs
     const availableDocuments: DocumentConfig[] = this.selectedTemplates.map(t => ({
       id: `doc_temp_${t.id}`,
       name: t.name,
       description: t.description || t.name,
       templateId: t.id,
-      cost: t.conceptCosto || 0, // Inherit cost from template concept
-      requiresApproval: false
+      cost: t.conceptCosto || 0,
+      requiresApproval: false,
+      isMandatory: this.mandatoryDocuments.has(t.id) // Guardar estado
     }));
+
+    const hasPaidDocument = availableDocuments.some(doc => doc.cost && doc.cost > 0);
+    const paymentType = hasPaidDocument ? 'De Paga' : 'Gratuito';
 
     const config: Partial<CourseTypeConfig> = {
       ...formValue,
       status: 'Activo',
+      paymentType: paymentType,
       registrationFields: this.registrationFields,
       availableDocuments: availableDocuments
     };

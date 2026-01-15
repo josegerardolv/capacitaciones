@@ -53,10 +53,14 @@ export class PublicRegistrationComponent implements OnInit {
         private courseTypeService: CourseTypeService
     ) { }
 
+    currentGroupId: number | null = null;
+
     ngOnInit() {
-        const groupId = Number(this.route.snapshot.paramMap.get('id'));
-        if (groupId) {
-            this.loadGroupData(groupId);
+        const id = this.route.snapshot.paramMap.get('id');
+        this.currentGroupId = id ? Number(id) : null;
+
+        if (this.currentGroupId) {
+            this.loadGroupData(this.currentGroupId);
         }
     }
 
@@ -150,35 +154,50 @@ export class PublicRegistrationComponent implements OnInit {
         this.isDocumentsModalOpen = false;
 
         // Mapear documentos seleccionados
+        const selectedDocs = documents.filter(d => d.selected);
+
+        // Calcular costo total
+        const totalCost = selectedDocs.reduce((acc, doc) => acc + (doc.cost || 0), 0);
+
         // En el futuro, esto se guardaría como IDs de documentos solicitados en el backend
         // Por ahora mantenemos la compatibilidad con el campo "requestTarjeton" si existe
-        const wantsTarjeton = documents.some(d => d.name.toLowerCase().includes('tarjetón') && d.selected);
+        const wantsTarjeton = selectedDocs.some(d => d.name.toLowerCase().includes('tarjetón'));
 
         const finalDriverData = {
             ...this.tempDriverData,
             requestTarjeton: wantsTarjeton,
-            requestedDocuments: documents.filter(d => d.selected).map(d => d.id)
+            requestedDocuments: selectedDocs.map(d => d.id)
         };
 
-        this.finalizeRegistration(finalDriverData);
+        this.finalizeRegistration(finalDriverData, totalCost);
     }
 
-    finalizeRegistration(driverData: any) {
+    finalizeRegistration(driverData: any, totalCost: number) {
         console.log('Solicitud de registro pública:', driverData);
+        console.log('Costo total calculado:', totalCost);
 
-        let message = `Tu solicitud ha sido enviada correctamente.<br><br>
-                       La línea de captura para el <strong>${this.groupInfo.courseName}</strong> será enviada a tu correo electrónico una vez que el instructor acepte tu solicitud.`;
+        let message = '';
 
-        // Lógica visual para documentos con costo (ejemplo)
-        if (driverData.requestedDocuments && driverData.requestedDocuments.length > 0) {
-            message += `<br><br><span class="text-sm text-gray-600">
-                        Has solicitado documentos adicionales. Las líneas de pago correspondientes se generarán si apruebas el curso.
-                        </span>`;
+        if (totalCost === 0) {
+            // MENSAJE PARA TRÁMITE GRATUITO
+            message = `Tu solicitud ha sido enviada correctamente.<br><br>
+                       Una vez que el instructor acepte tu solicitud, recibirás una confirmación en tu correo electrónico con los detalles del curso. 
+                       <br><br><strong>Este trámite es gratuito.</strong>`;
+        } else {
+            // MENSAJE PARA TRÁMITE CON COSTO (PAGADO)
+            message = `Tu solicitud ha sido enviada correctamente.<br><br>
+                       La línea de captura para el pago será enviada a tu correo electrónico una vez que el instructor acepte tu solicitud.`;
+
+            if (driverData.requestedDocuments && driverData.requestedDocuments.length > 0) {
+                message += `<br><br><span class="text-sm text-gray-600">
+                            El costo total estimado es de <strong>$${totalCost} MXN</strong>.
+                            </span>`;
+            }
         }
 
         this.alertConfig = {
             title: '¡Solicitud Enviada!',
-            message: message, // AlertModal debe soportar HTML o usaremos texto plano
+            message: message,
             type: 'info',
             actions: [
                 {

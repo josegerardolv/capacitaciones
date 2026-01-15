@@ -77,19 +77,69 @@ export class GroupsService {
             { id: 2, name: 'María López', license: 'B987654321', curp: 'BBBB000000MDFXXX00', status: 'Pendiente', requestTarjeton: true, coursePaymentStatus: 'Pendiente', sex: 'Mujer', address: 'Av. Reforma 222' },
             { id: 3, name: 'Carlos Ruiz', license: 'C123123123', curp: 'CCCC000000HDFXXX00', status: 'Aprobado', requestTarjeton: true, paymentStatus: 'Pendiente', coursePaymentStatus: 'Pagado', sex: 'Hombre', address: 'Calle Sur 8' },
         ],
-        2: [], // Grupo vacío
-        3: []
+        2: [
+            { id: 4, name: 'Ana Estudiante', license: '', curp: 'ESTU000000MDFXXX00', status: 'Pendiente', requestTarjeton: false, coursePaymentStatus: 'Pendiente', sex: 'Mujer', address: 'Av. Escuela 123' },
+            { id: 5, name: 'Pedro Alumno', license: '', curp: 'ALUM000000HDFXXX00', status: 'Pendiente', requestTarjeton: false, coursePaymentStatus: 'Pendiente', sex: 'Hombre', address: 'Calle Tarea 456' }
+        ],
+        3: [
+            { id: 6, name: 'Luisa Interesada', license: '', curp: 'INTE000000MDFXXX00', status: 'Pendiente', requestTarjeton: false, coursePaymentStatus: 'Pendiente', sex: 'Mujer', address: 'Calle Curso 789' }
+        ]
     };
+
+    // Simulación de solicitudes por grupo (Mock DB)
+    // Se ha eliminado mockRequests, se usa mockDrivers con status 'Pendiente'
 
     constructor() { }
 
     getGroups(): Observable<Group[]> {
-        return of([...this.mockGroups]).pipe(delay(150));
+        // Calculamos dinámicamente el número de solicitudes pendientes para cada grupo
+        const groupsWithCounts = this.mockGroups.map(group => {
+            const drivers = this.mockDrivers[group.id] || [];
+            const pendingRequests = drivers.filter(d => d.status === 'Pendiente').length;
+            return {
+                ...group,
+                requests: pendingRequests
+            };
+        });
+        return of(groupsWithCounts).pipe(delay(150));
     }
 
     getDriversByGroupId(groupId: number): Observable<Driver[]> {
         const drivers = this.mockDrivers[groupId] || [];
         return of([...drivers]).pipe(delay(200)); // Simular carga de datos 
+    }
+
+    getRequestsByGroupId(groupId: number): Observable<Driver[]> {
+        // En lugar de una lista separada, filtramos los conductores con status 'Pendiente'
+        const drivers = this.mockDrivers[groupId] || [];
+        const requests = drivers.filter(d => d.status === 'Pendiente');
+        return of(requests).pipe(delay(200));
+    }
+
+    registerRequest(groupId: number, data: any): Observable<boolean> {
+        if (!this.mockDrivers[groupId]) {
+            this.mockDrivers[groupId] = [];
+        }
+
+        const newId = (this.mockDrivers[groupId].length + 1) * 1000 + Math.floor(Math.random() * 999);
+
+        // Agregamos a los conductores con estado 'Pendiente'
+        this.mockDrivers[groupId].push({
+            id: newId,
+            ...data,
+            status: 'Pendiente',
+            paymentStatus: 'Pendiente',
+            coursePaymentStatus: 'Pendiente'
+        });
+
+        // Actualizar contador de solicitudes en el grupo (requests = total - approved?)
+        // Dejaremos que 'requests' sea el contador de pendientes
+        const groupIndex = this.mockGroups.findIndex(g => g.id === groupId);
+        if (groupIndex > -1) {
+            this.mockGroups[groupIndex].requests = (this.mockGroups[groupIndex].requests || 0) + 1;
+        }
+
+        return of(true).pipe(delay(500));
     }
 
     deleteGroup(id: number): Observable<void> {

@@ -4,6 +4,7 @@ import { RouterModule } from '@angular/router';
 import { CourseTypeService } from '../../../../core/services/course-type.service';
 import { CourseTypeConfig } from '../../../../core/models/course-type-config.model';
 import { InstitutionalTableComponent, TableColumn, TableConfig } from '../../../../shared/components/institutional-table/institutional-table.component';
+import { PageHeaderComponent } from '../../../../shared/components/page-header/page-header.component';
 import { InstitutionalCardComponent } from '../../../../shared/components/institutional-card/institutional-card.component';
 import { InstitutionalButtonComponent } from '../../../../shared/components/buttons/institutional-button.component';
 import { UniversalIconComponent } from '../../../../shared/components/universal-icon/universal-icon.component';
@@ -19,9 +20,8 @@ import { CourseTypeFormModalComponent } from '../../components/modals/course-typ
     RouterModule,
     InstitutionalTableComponent,
     InstitutionalCardComponent,
-    InstitutionalButtonComponent,
     UniversalIconComponent,
-    BreadcrumbComponent,
+    PageHeaderComponent,
     CourseTypeFormModalComponent
   ],
   templateUrl: './course-type-list.component.html'
@@ -50,6 +50,12 @@ export class CourseTypeListComponent implements OnInit {
     { label: 'Tipos de Curso' }
   ];
 
+  actionButtonConfig = {
+    text: 'Configuración de Curso',
+    icon: 'add',
+    onClick: () => this.openCreateModal()
+  };
+
   constructor(private courseTypeService: CourseTypeService) { }
 
   ngOnInit(): void {
@@ -61,8 +67,8 @@ export class CourseTypeListComponent implements OnInit {
     this.tableColumns = [
       { key: 'name', label: 'Nombre', sortable: true, minWidth: '200px' },
       { key: 'description', label: 'Descripción', sortable: true, minWidth: '300px' },
-      { key: 'paymentType', label: 'Tipo', template: this.statusTemplate, align: 'center', minWidth: '100px' },
-      { key: 'actions', label: 'Acciones', template: this.actionsTemplate, align: 'center', minWidth: '100px' }
+      { key: 'paymentType', label: 'Tipo', template: this.statusTemplate, align: 'center', minWidth: '150px' },
+      { key: 'actions', label: 'Acciones', template: this.actionsTemplate, align: 'center', minWidth: '150px' }
     ];
   }
 
@@ -78,6 +84,12 @@ export class CourseTypeListComponent implements OnInit {
         this.tableConfig.loading = false;
       }
     });
+  }
+
+  getDisplayCost(item: CourseTypeConfig): number {
+    if (!item.availableDocuments || item.availableDocuments.length === 0) return 0;
+    // Retornamos el costo más alto como referencia
+    return Math.max(...item.availableDocuments.map(d => d.cost || 0));
   }
 
   openCreateModal() {

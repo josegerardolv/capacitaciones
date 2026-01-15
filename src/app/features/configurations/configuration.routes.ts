@@ -3,7 +3,7 @@ import { CourseTypeListComponent } from './pages/course-type-list/course-type-li
 
 export const CONFIGURATION_ROUTES: Routes = [
     {
-        path: 'crear-cursos',
+        path: 'config-cursos',
         component: CourseTypeListComponent,
         title: 'Configuración - Crear Curso'
     },
