@@ -29,7 +29,7 @@ export class TemplateService {
         { name: 'curso', label: 'Nombre del curso', type: 'text', required: true },
         { name: 'fecha', label: 'Fecha de emisión', type: 'date', required: true }
       ],
-      created_at: new Date().toISOString()
+      createdAt: new Date().toISOString()
     },
     {
       id: 2,
@@ -45,7 +45,7 @@ export class TemplateService {
       pageConfig: this.getDefaultPageConfig(),
       elements: [],
       variables: [],
-      created_at: new Date().toISOString()
+      createdAt: new Date().toISOString()
     },
     {
       id: 3,
@@ -61,7 +61,7 @@ export class TemplateService {
       pageConfig: this.getDefaultPageConfig(),
       elements: [],
       variables: [],
-      created_at: new Date().toISOString()
+      createdAt: new Date().toISOString()
     },
     {
       id: 4,
@@ -77,7 +77,7 @@ export class TemplateService {
       pageConfig: this.getDefaultPageConfig(),
       elements: [],
       variables: [],
-      created_at: new Date().toISOString()
+      createdAt: new Date().toISOString()
     },
     {
       id: 5,
@@ -93,7 +93,7 @@ export class TemplateService {
       pageConfig: this.getDefaultPageConfig(),
       elements: [],
       variables: [],
-      created_at: new Date().toISOString()
+      createdAt: new Date().toISOString()
     },
     {
       id: 6,
@@ -109,7 +109,7 @@ export class TemplateService {
       pageConfig: this.getDefaultPageConfig(),
       elements: [],
       variables: [],
-      created_at: new Date().toISOString()
+      createdAt: new Date().toISOString()
     }
   ];
 
@@ -165,8 +165,8 @@ export class TemplateService {
     const newTemplate: CertificateTemplate = {
       ...template,
       id: newId,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     };
     this.templatesData.push(newTemplate);
     return of(newTemplate).pipe(delay(800));
@@ -178,7 +178,7 @@ export class TemplateService {
       this.templatesData[index] = {
         ...this.templatesData[index],
         ...template,
-        updated_at: new Date().toISOString()
+        updatedAt: new Date().toISOString()
       };
       return of(this.templatesData[index]).pipe(delay(800));
     }
@@ -201,8 +201,8 @@ export class TemplateService {
       ...JSON.parse(JSON.stringify(template)), // Deep clone
       id: newId,
       name: `${template.name} (Copia)`,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     };
     this.templatesData.push(duplicated);
     return of(duplicated).pipe(delay(800));

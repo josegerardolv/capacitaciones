@@ -4,7 +4,7 @@ import { Certificate, Tarjeton, EmbeddedTemplate } from '../../../core/models/do
 
 @Injectable({ providedIn: 'root' })
 export class DocumentsService {
-  
+
   private getDefaultTemplate(): EmbeddedTemplate {
     return {
       pageConfig: {
@@ -26,47 +26,47 @@ export class DocumentsService {
   }
 
   private certificatesData: Certificate[] = [
-    { 
-      id: 1, 
-      name: 'Certificado de Participación', 
+    {
+      id: 1,
+      name: 'Certificado de Participación',
       description: 'Certificado para cursos básicos',
       template: this.getDefaultTemplate(),
-      created_at: new Date().toISOString() 
+      createdAt: new Date().toISOString()
     },
-    { 
-      id: 2, 
-      name: 'Certificado de Aprobación', 
+    {
+      id: 2,
+      name: 'Certificado de Aprobación',
       description: 'Certificado para cursos aprobados',
       template: this.getDefaultTemplate(),
-      created_at: new Date().toISOString() 
+      createdAt: new Date().toISOString()
     },
-    { 
-      id: 3, 
-      name: 'Certificado con Distinción', 
+    {
+      id: 3,
+      name: 'Certificado con Distinción',
       description: 'Certificado premium',
       template: this.getDefaultTemplate(),
-      created_at: new Date().toISOString() 
+      createdAt: new Date().toISOString()
     }
   ];
 
   private tarjetonesData: Tarjeton[] = [
-    { 
-      id: 1, 
-      name: 'Tarjetón Estándar', 
+    {
+      id: 1,
+      name: 'Tarjetón Estándar',
       description: 'Formato estándar para cursos',
       template: this.getDefaultTemplate(),
-      created_at: new Date().toISOString() 
+      createdAt: new Date().toISOString()
     },
-    { 
-      id: 2, 
-      name: 'Tarjetón Ejecutivo', 
+    {
+      id: 2,
+      name: 'Tarjetón Ejecutivo',
       description: 'Formato ejecutivo premium',
       template: this.getDefaultTemplate(),
-      created_at: new Date().toISOString() 
+      createdAt: new Date().toISOString()
     }
   ];
 
-  constructor() {}
+  constructor() { }
 
   // ===== CERTIFICADOS =====
   getCertificates(): Observable<Certificate[]> {
@@ -82,7 +82,7 @@ export class DocumentsService {
     const newCertificate: Certificate = {
       ...certificate,
       id: newId,
-      created_at: new Date().toISOString()
+      createdAt: new Date().toISOString()
     };
     this.certificatesData.push(newCertificate);
     return of(newCertificate).pipe(delay(800));
@@ -116,7 +116,7 @@ export class DocumentsService {
     const newTarjeton: Tarjeton = {
       ...tarjeton,
       id: newId,
-      created_at: new Date().toISOString()
+      createdAt: new Date().toISOString()
     };
     this.tarjetonesData.push(newTarjeton);
     return of(newTarjeton).pipe(delay(800));

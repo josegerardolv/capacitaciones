@@ -1,14 +1,12 @@
-# Especificaciones de Integración Backend - Módulo de Capacitaciones
-
-Este documento detalla los endpoints y estructuras de datos requeridos para integrar el Frontend (Angular) con el Backend. Actualmente, el frontend utiliza datos simulados (Mock Data) en los servicios que deben ser reemplazados por llamadas HTTP reales.
+# Guía de Integración Backend - Módulo de Capacitaciones
+Este documento contiene los endpoints y estructuras que necesitamos conectar para que el frontend funcione correctamente.
 
 ## 1. Servicios a Integrar
 
-Los siguientes servicios de Angular contienen la lógica de datos y deben ser conectados a la API:
+Aquí les detallo los servicios de Angular que necesitan conectarse a la API:
 
-### A. CourseTypeService (Tipos de Curso)
-*   **Archivo:** `src/app/core/services/course-type.service.ts`
-*   **Responsabilidad:** Gestionar las configuraciones de los tipos de cursos (reglas de negocio, campos visibles, documentos asociados).
+### A. Tipos de Curso / Configuración
+**Responsabilidad:** Manejar las reglas de la configuración de cursos (qué campos pedir y qué documentos entregar).
 
 | Método Frontend | Endpoint Sugerido | Método HTTP | Descripción |
 | :--- | :--- | :--- | :--- |
@@ -18,8 +16,8 @@ Los siguientes servicios de Angular contienen la lógica de datos y deben ser co
 | `updateCourseType(id, data)` | `/api/course-types/{id}` | `PUT` | Actualizar configuración existente. |
 | `deleteCourseType(id)` | `/api/course-types/{id}` | `DELETE` | Eliminar (o desactivar) un tipo de curso. |
 
-**Estructura Crítica (JSON de CourseTypeConfig):**
-El backend debe ser capaz de almacenar y devolver un objeto JSON para `registrationFields`, que define qué campos del formulario son visibles/requeridos.
+**Dato Importante (JSON de Configuración):**
+Necesitamos que el backend guarde y devuelva el objeto `registrationFields` para saber qué pintar en el formulario. Sería algo así:
 ```json
 {
   "id": 1,
@@ -27,7 +25,6 @@ El backend debe ser capaz de almacenar y devolver un objeto JSON para `registrat
   "registrationFields": [
     { "fieldName": "curp", "visible": true, "required": true },
     { "fieldName": "license", "visible": false, "required": false }
-    // ... otros campos
   ],
   "availableDocuments": [
     { "templateId": 2, "name": "Certificado Final", "cost": 100 }
@@ -37,9 +34,8 @@ El backend debe ser capaz de almacenar y devolver un objeto JSON para `registrat
 
 ---
 
-### B. CoursesService (Catálogo de Cursos)
-*   **Archivo:** `src/app/features/cursos/services/courses.service.ts`
-*   **Responsabilidad:** Gestionar el catálogo de cursos disponibles para programar (la "clase" del curso, no la instancia/grupo).
+### B. Catálogo de Cursos
+**Responsabilidad:** El catálogo de cursos disponibles para programar (la "materia").
 
 | Método Frontend | Endpoint Sugerido | Método HTTP | Descripción |
 | :--- | :--- | :--- | :--- |
@@ -48,13 +44,12 @@ El backend debe ser capaz de almacenar y devolver un objeto JSON para `registrat
 | `updateCourse(id, data)` | `/api/courses/{id}` | `PUT` | Modificar datos del curso. |
 | `deleteCourse(id)` | `/api/courses/{id}` | `DELETE` | Eliminar curso del catálogo. |
 
-**Relación:** `course.courseTypeId` debe ser una llave foránea válida hacia `CourseTypes`.
+**Nota:** El `course.courseTypeId` debe ser una llave foránea válida hacia la tabla de Tipos de Curso de arriba.
 
 ---
 
-### C. GroupsService (Grupos / Instancias)
-*   **Archivo:** `src/app/features/cursos/services/groups.service.ts`
-*   **Responsabilidad:** Gestionar los grupos abiertos donde se inscriben las personas.
+### C. Grupos / Instancias
+**Responsabilidad:** Los grupos abiertos donde la gente se inscribe.
 
 | Método Frontend | Endpoint Sugerido | Método HTTP | Descripción |
 | :--- | :--- | :--- | :--- |
@@ -63,13 +58,12 @@ El backend debe ser capaz de almacenar y devolver un objeto JSON para `registrat
 | `getDriversByGroupId(id)` | `/api/groups/{id}/drivers` | `GET` | Listar personas inscritas en el grupo. |
 | `createGroup(data)` | `/api/groups` | `POST` | Abrir un nuevo grupo. |
 
-**Nota Importante:** El endpoint `getGroupById` debe retornar el `courseTypeId` correcto para que el frontend sepa qué formulario pintar (la vista pública consume esto).
+**Ojo aquí:** Cuando pidamos un grupo por ID, es súper importante que venga el `courseTypeId` correcto para saber qué formulario mostrarle al usuario en la vista pública.
 
 ---
 
-### D. TemplateService (Formatos de Documentos)
-*   **Archivo:** `src/app/features/templates/services/template.service.ts`
-*   **Responsabilidad:** Gestionar los diseños de diplomas/certificados.
+### D. Templates y Documentos
+**Responsabilidad:** Gestionar los diseños de los diplomas.
 
 | Método Frontend | Endpoint Sugerido | Método HTTP | Descripción |
 | :--- | :--- | :--- | :--- |
@@ -78,9 +72,8 @@ El backend debe ser capaz de almacenar y devolver un objeto JSON para `registrat
 
 ---
 
-### E. ConceptService (Catálogo de Conceptos SIOX)
-*   **Archivo:** `src/app/features/templates/services/template.service.ts`
-*   **Responsabilidad:** Gestionar el catálogo de conceptos de cobro (claves, costos, descripciones) que se usan en los templates y tipos de curso.
+### E. Conceptos de Cobro (SIOX)
+**Responsabilidad:** El catálogo de costos y claves.
 
 | Método Frontend | Endpoint Sugerido | Método HTTP | Descripción |
 | :--- | :--- | :--- | :--- |
@@ -89,55 +82,42 @@ El backend debe ser capaz de almacenar y devolver un objeto JSON para `registrat
 | `updateConcept(id, data)` | `/api/concepts/{id}` | `PUT` | Actualizar costo o descripción. |
 | `deleteConcept(id)` | `/api/concepts/{id}` | `DELETE` | Eliminar concepto. |
 
-**Estructura JSON (Concept):**
-```json
-{
-  "id": 1,
-  "clave": "3IFBAC022",
-  "concepto": "CONSTANCIA DE NO EMPLACAMIENTO",
-  "costo": 473,
-  "deprecated": false
-}
-```
-
 ---
 
-## 2. Actualizaciones de Estructura de Datos
+## 2. Actualizaciones Recientes
 
-### CourseTypeConfig (Ajuste de Documentos)
-Se ha agregado la propiedad `isMandatory` para indicar documentos obligatorios, y `cost` para definir si es gratuito (cost=0).
+Les comparto unos ajustes que hicimos en la estructura de datos:
 
+### Documentos Obligatorios
+Agregamos `isMandatory` para documentos obligatorios y `cost` para los gratuitos.
 ```json
 "availableDocuments": [
   { 
     "templateId": 2, 
     "name": "Certificado Final", 
     "cost": 100,
-    "isMandatory": true, // NUEVO: Si true, el usuario no puede desmarcarlo
+    "isMandatory": true, // Si es true, el usuario no puede desmarcarlo
     "requiresApproval": true 
-  },
-  { 
-    "templateId": 5, 
-    "name": "Diploma Participación", 
-    "cost": 0,
-    "isMandatory": true, // Gratuitos suelen ser obligatorios por defecto
-    "requiresApproval": false 
   }
 ]
 ```
 
-### Driver / Request (Unificación)
-Las "Solicitudes" ahora se manejan como un objeto `Driver` (Participante) con estado `Pendiente`.
-*   **Status Flow:** `Pendiente` -> `Aprobado` | `Rechazado`.
-*   El backend debe permitir POST de un Driver con status inicial `Pendiente`.
+### Unificación de Solicitudes
+Las solicitudes ahora son simplemente un **Driver (Participante)** con status `Pendiente`.
+*   Flujo: `Pendiente` -> `Aprobado` | `Rechazado`.
+*   El backend debe permitir crear un Driver directamente con status `Pendiente`.
 
 ---
 
-## 3. Consideraciones Generales
+## 3. Puntos Generales
 
-1.  **Autenticación (JWT):** Todos los endpoints (excepto `/public/*`) requieren header `Authorization: Bearer <token>`.
-2.  **Manejo de Fechas:** El frontend espera fechas en formato ISO string (`2026-10-15T09:00:00Z`).
-3.  **Paginación:** Sugerida para listados grandes (`?page=1&limit=10`).
-4.  **Cors:** Asegurar que el backend permita peticiones desde el dominio donde se despliegue Angular.
+Para facilitar la integración:
 
-Cualquier duda, consultar `src/app/core/models` para las interfaces TypeScript definitivas.
+1.  **Fechas:** Idealmente en formato ISO (`2026-10-15T09:00:00Z`).
+2.  **Paginación:** Si pueden, soporte para `?page=1&limit=10`.
+3.  **Seguridad:** Todo con JWT (Bearer token).
+4.  **CORS:** Habilitar el dominio de Angular.
+5.  **Nombres de Variables (Case):**
+    *   **Legacy (Auth):** Mantenemos `snake_case` (`first_name`) como lo tienen actualmente.
+    *   **Nuevos Módulos:** Para todo lo nuevo (Cursos, Templates), usar **`camelCase`** (`firstName`, `createdAt`, `conceptId`) para alinearnos con el estándar de frontend.
+

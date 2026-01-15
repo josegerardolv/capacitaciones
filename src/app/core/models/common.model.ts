@@ -5,11 +5,11 @@ export interface ApiResponse<T = any> {
   errors?: any;
   pagination?: {
     page: number;
-    per_page: number;
+    perPage: number;
     total: number;
     pages: number;
-    has_prev: boolean;
-    has_next: boolean;
+    hasPrev: boolean;
+    hasNext: boolean;
   };
 }
 
@@ -17,23 +17,23 @@ export interface PaginatedResponse<T> {
   items: T[];
   pagination: {
     page: number;
-    per_page: number;
+    perPage: number;
     total: number;
     pages: number;
-    has_prev: boolean;
-    has_next: boolean;
+    hasPrev: boolean;
+    hasNext: boolean;
   };
 }
 
 export interface DashboardStats {
-  total_tickets: number;
-  new_tickets: number;
-  assigned_tickets: number;
-  in_progress_tickets: number;
-  resolved_tickets: number;
-  overdue_tickets: number;
-  my_tickets?: number;
-  avg_resolution_time?: number;
+  totalTickets: number;
+  newTickets: number;
+  assignedTickets: number;
+  inProgressTickets: number;
+  resolvedTickets: number;
+  overdueTickets: number;
+  myTickets?: number;
+  avgResolutionTime?: number;
 }
 
 export interface MetricData {
@@ -43,23 +43,23 @@ export interface MetricData {
 }
 
 export interface ReportParams {
-  start_date: string;
-  end_date: string;
-  report_type: string;
+  startDate: string;
+  endDate: string;
+  reportType: string;
   format: 'pdf' | 'excel' | 'csv';
   filters?: any;
 }
 
 export interface AuditLog {
   id: number;
-  user_id?: number;
+  userId?: number;
   action: string;
-  resource_type: string;
-  resource_id?: number;
+  resourceType: string;
+  resourceId?: number;
   details: string;
-  ip_address?: string;
-  user_agent?: string;
-  created_at: string;
+  ipAddress?: string;
+  userAgent?: string;
+  createdAt: string;
   user?: any;
 }
 
@@ -69,10 +69,10 @@ export interface ConfigItem {
   value: string;
   description?: string;
   category: string;
-  data_type: string;
-  is_public: boolean;
-  created_at: string;
-  updated_at: string;
+  dataType: string;
+  isPublic: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Notification {

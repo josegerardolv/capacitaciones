@@ -3,7 +3,7 @@ export interface Course {
     name: string; // Para "A05", "A06"
     description: string;
     duration: number; // "3 horas"
-    created_at?: string;
+    createdAt?: string;
     courseTypeId?: number; // Relación con CourseTypeConfig
     courseTypeName?: string; // Para mostrar en tabla
 }

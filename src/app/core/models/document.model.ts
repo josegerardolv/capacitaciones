@@ -12,7 +12,7 @@ export interface Certificate {
     name: string;
     description: string;
     template: EmbeddedTemplate; // Template embebido único para este certificado
-    created_at?: string;
+    createdAt?: string;
 }
 
 export interface Tarjeton {
@@ -20,5 +20,5 @@ export interface Tarjeton {
     name: string;
     description: string;
     template: EmbeddedTemplate; // Template embebido único para este tarjetón
-    created_at?: string;
+    createdAt?: string;
 }
