@@ -1,4 +1,4 @@
-export interface Driver {
+export interface Person {
     id: number;
     name: string;
     firstSurname?: string; // Apellido Paterno
@@ -11,5 +11,7 @@ export interface Driver {
     coursePaymentStatus?: 'Pendiente' | 'Pagado'; // Estatus de pago del Curso
     sex?: 'Hombre' | 'Mujer' | 'H' | 'M'; // Agregado para consistencia con formulario
     address?: string; // Agregado para consistencia con formulario
+    phone?: string;
+    email?: string;
     nuc?: string; // Agregado para consistencia con solicitudes
 }

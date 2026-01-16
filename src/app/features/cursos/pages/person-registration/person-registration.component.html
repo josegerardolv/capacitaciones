@@ -26,7 +26,7 @@
         <div class="p-6">
             <app-person-form [initialData]="prefilledData" [fieldsConfig]="fieldsConfig"
                 [submitLabel]="'Agregar Persona'" [showCancel]="true" (close)="onCancel()"
-                (saved)="onDriverSaved($event)">
+                (saved)="onPersonSaved($event)">
             </app-person-form>
         </div>
     </app-institutional-card>

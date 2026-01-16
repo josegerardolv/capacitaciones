@@ -139,11 +139,11 @@ export class PersonRegistrationComponent implements OnInit {
 
     // Modal State
     isDocumentsModalOpen = false;
-    tempDriverData: any = null;
+    tempPersonData: any = null;
     currentCourseType: 'LICENCIA' | 'GENERICO' | 'CAPACITACION_ESCOLAR' = 'LICENCIA'; // Default
 
-    onDriverSaved(driverData: any) {
-        this.tempDriverData = driverData;
+    onPersonSaved(personData: any) {
+        this.tempPersonData = personData;
 
         // Determine course type for the modal
         // We can get it from the group call in ngOnInit, but let's ensure we have it stored.
@@ -155,66 +155,80 @@ export class PersonRegistrationComponent implements OnInit {
     onDocumentsConfirmed(documents: DocumentOption[]) {
         this.isDocumentsModalOpen = false;
 
-        // Map selected documents to driver data
+        // Map selected documents to person data
         const wantsTarjeton = documents.some(d => d.id === 'tarjeton' && d.selected);
 
         // Merge with temp data
-        const finalDriverData = {
-            ...this.tempDriverData,
+        const finalPersonData = {
+            ...this.tempPersonData,
             requestTarjeton: wantsTarjeton,
             // We could store other docs if the backend supported it, e.g. requestedDocuments: documents.map(...)
         };
 
-        this.finalizeRegistration(finalDriverData);
+        this.finalizeRegistration(finalPersonData);
     }
 
-    finalizeRegistration(driverData: any) {
+    finalizeRegistration(personData: any) {
         // Simulamos guardado exitoso
-        console.log('Guardando conductor:', driverData);
+        console.log('Guardando persona:', personData);
 
-        // 1. Preparamos el mensaje base (Siempre incluye el curso)
-        let message = `El conductor <strong>${driverData.name}</strong> ha sido registrado correctamente.<br><br>
-                       La línea de captura del <strong>Curso de Capacitación</strong> está lista.`;
+        // 0. Guardamos en el servicio
+        const groupId = this.groupId ? +this.groupId : 1; // Fallback 1 si es null (no debería)
 
-        // 2. Agregamos nota sobre Tarjetón si fue solicitado
-        if (driverData.requestTarjeton) {
-            message += `<br><br>
-                        <span class="text-sm text-gray-600">
-                        * Solicitud de Tarjetón registrada. La línea de pago del Tarjetón se generará 
-                        automáticamente <strong>una vez que apruebe el curso</strong>.
-                        </span>`;
-        }
+        this.notificationService.showInfo('Guardando', 'Procesando registro...');
 
-        // 3. Configuramos el Modal con botones de acción (Descargar / Enviar)
-        this.alertConfig = {
-            title: '¡Registro Exitoso!',
-            message: '', // Usamos content projection o innerHTML si el componente lo permite, o simplemente texto.
-            // Nota: AlertModal usa {{ message }} string. Para HTML complejo mejor simplificar o usar componente custom.
-            // Simplificaremos para texto plano por seguridad si AlertModal no soporta HTML safe.
-            // Re-reading alert-modal: usa {{ config.message }}.
-            type: 'success',
-            actions: [
-                {
-                    label: 'Descargar Orden de Pago',
-                    variant: 'primary',
-                    action: () => this.downloadPaymentOrder()
-                },
-                {
-                    label: 'Enviar por Correo',
-                    variant: 'secondary',
-                    action: () => this.sendEmail()
+        this.groupsService.registerPerson(groupId, personData).subscribe({
+            next: (success) => {
+                // Loading finished
+
+                // 1. Preparamos el mensaje base (Siempre incluye el curso)
+                let message = `La persona <strong>${personData.name}</strong> ha sido registrada correctamente.<br><br>
+                            La línea de captura del <strong>Curso de Capacitación</strong> está lista.`;
+
+                // 2. Agregamos nota sobre Tarjetón si fue solicitado
+                if (personData.requestTarjeton) {
+                    message += `<br><br>
+                                <span class="text-sm text-gray-600">
+                                * Solicitud de Tarjetón registrada. La línea de pago del Tarjetón se generará 
+                                automáticamente <strong>una vez que apruebe el curso</strong>.
+                                </span>`;
                 }
-            ]
-        };
 
-        // Ajuste para mensaje con saltos de linea (simulado)
-        if (driverData.requestTarjeton) {
-            this.alertConfig.message = `Conductor registrado.\n\nLa línea del CURSO está lista.\n\n(Nota: La línea del Tarjetón se generará y enviará al correo del conductor al aprobar el curso).`;
-        } else {
-            this.alertConfig.message = `Conductor registrado.\n\nLa línea de pago del CURSO está lista para entrega.`;
-        }
+                // 3. Configuramos el Modal con botones de acción
+                this.alertConfig = {
+                    title: '¡Registro Exitoso!',
+                    message: message, // AlertModal might not check type safely, but we kept string logic below
+                    type: 'success',
+                    actions: [
+                        {
+                            label: 'Descargar Orden de Pago',
+                            variant: 'primary',
+                            action: () => this.downloadPaymentOrder()
+                        },
+                        {
+                            label: 'Enviar por Correo',
+                            variant: 'secondary',
+                            action: () => this.sendEmail()
+                        }
+                    ]
+                };
 
-        this.isAlertOpen = true;
+                // Sobreescribimos el mensaje con texto plano si el modal no soporta HTML (según código previo y comentarios)
+                // Usamos la lógica de texto que había antes
+                if (personData.requestTarjeton) {
+                    this.alertConfig.message = `Persona registrada.\n\nLa línea del CURSO está lista.\n\n(Nota: La línea del Tarjetón se generará y enviará al correo de la persona al aprobar el curso).`;
+                } else {
+                    this.alertConfig.message = `Persona registrada.\n\nLa línea de pago del CURSO está lista para entrega.`;
+                }
+
+                this.isAlertOpen = true;
+            },
+            error: (err) => {
+                // Loading finished
+                this.notificationService.showError('Error', 'No se pudo guardar el registro.');
+                console.error(err);
+            }
+        });
     }
 
     // Acciones del Modal
@@ -231,13 +245,8 @@ export class PersonRegistrationComponent implements OnInit {
     closeAndRedirect() {
         this.isAlertOpen = false;
         // Redirigir a la lista de conductores
-        this.router.navigate(['../../'], { relativeTo: this.router.routerState.root.firstChild?.firstChild });
-        // Fix simple de ruta:
-        // Estamos en /cursos/grupos/ID/conductores/nuevo
-        // Queremos ir a /cursos/grupos/ID/conductores
-        // Mejor usamos Location o History, pero router es más seguro.
-        // Asumiendo ruta relativa:
-        window.history.back();
+        // Redirigir a la lista de conductores (../ relativa a la ruta actual 'nuevo')
+        this.router.navigate(['../'], { relativeTo: this.route });
     }
 
     onCancel() {

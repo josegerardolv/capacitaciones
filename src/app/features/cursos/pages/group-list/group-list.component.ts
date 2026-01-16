@@ -379,14 +379,14 @@ export class GroupListComponent implements OnInit {
         this.isRequestsModalOpen = true;
     }
 
-    viewDrivers(group: Group) {
-        // Navegamos a la vista completa de conductores del grupo
+    viewPersons(group: Group) {
+        // Navegamos a la vista completa de personas del grupo
         if (this.cursoId) {
             this.router.navigate(['/cursos', this.cursoId, 'grupos', group.id, 'conductores'], { queryParams: { courseName: this.courseNameFromQuery ?? undefined, groupLabel: group.name } });
             return;
         }
         // No existe ruta global /cursos/grupos; redirigimos a la lista de cursos
-        this.notificationService.info('Selecciona un curso', 'Para ver los conductores del grupo, primero selecciona el curso asociado.');
+        this.notificationService.info('Selecciona un curso', 'Para ver las personas del grupo, primero selecciona el curso asociado.');
         this.router.navigate(['/cursos']);
     }
 

@@ -42,7 +42,7 @@ export class PublicRegistrationComponent implements OnInit {
     isDocumentsModalOpen = false;
     isSearchModalOpen = false; // Nuevo estado para el modal de búsqueda
     showForm = false; // Nuevo estado para controlar cuándo mostrar el formulario
-    tempDriverData: any = null;
+    tempPersonData: any = null; // Renamed from tempDriverData
     currentCourseType: CourseType = 'LICENCIA'; // Fallback
     prefilledData: any = null; // Datos precargados de la búsqueda
 
@@ -145,8 +145,8 @@ export class PublicRegistrationComponent implements OnInit {
         }
     }
 
-    onDriverRegistered(driverData: any) {
-        this.tempDriverData = driverData;
+    onPersonRegistered(personData: any) {
+        this.tempPersonData = personData;
         this.isDocumentsModalOpen = true;
     }
 
@@ -163,17 +163,17 @@ export class PublicRegistrationComponent implements OnInit {
         // Por ahora mantenemos la compatibilidad con el campo "requestTarjeton" si existe
         const wantsTarjeton = selectedDocs.some(d => d.name.toLowerCase().includes('tarjetón'));
 
-        const finalDriverData = {
-            ...this.tempDriverData,
+        const finalPersonData = {
+            ...this.tempPersonData,
             requestTarjeton: wantsTarjeton,
             requestedDocuments: selectedDocs.map(d => d.id)
         };
 
-        this.finalizeRegistration(finalDriverData, totalCost);
+        this.finalizeRegistration(finalPersonData, totalCost);
     }
 
-    finalizeRegistration(driverData: any, totalCost: number) {
-        console.log('Solicitud de registro pública:', driverData);
+    finalizeRegistration(personData: any, totalCost: number) {
+        console.log('Solicitud de registro pública:', personData);
         console.log('Costo total calculado:', totalCost);
 
         let message = '';
@@ -188,7 +188,7 @@ export class PublicRegistrationComponent implements OnInit {
             message = `Tu solicitud ha sido enviada correctamente.<br><br>
                        La línea de captura para el pago será enviada a tu correo electrónico una vez que el instructor acepte tu solicitud.`;
 
-            if (driverData.requestedDocuments && driverData.requestedDocuments.length > 0) {
+            if (personData.requestedDocuments && personData.requestedDocuments.length > 0) {
                 message += `<br><br><span class="text-sm text-gray-600">
                             El costo total estimado es de <strong>$${totalCost} MXN</strong>.
                             </span>`;
@@ -218,16 +218,16 @@ export class PublicRegistrationComponent implements OnInit {
     }
 
     // --- MANEJO DEL MODAL DE BÚSQUEDA ---
-    onDriverFound(driver: any) {
-        console.log('Conductor encontrado en registro público:', driver);
+    onPersonFound(person: any) {
+        console.log('Persona encontrada en registro público:', person);
         this.prefilledData = {
-            name: driver.name,
-            firstSurname: driver.firstSurname,
-            secondSurname: driver.secondSurname,
-            license: driver.license,
-            curp: driver.curp,
-            sex: driver.sex,
-            address: driver.address,
+            name: person.name,
+            firstSurname: person.firstSurname,
+            secondSurname: person.secondSurname,
+            license: person.license,
+            curp: person.curp,
+            sex: person.sex,
+            address: person.address,
             found: true
         };
         this.isSearchModalOpen = false;

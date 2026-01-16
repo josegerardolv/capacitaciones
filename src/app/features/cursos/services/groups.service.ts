@@ -1,7 +1,9 @@
 import { Injectable } from '@angular/core';
-import { Observable, of, delay } from 'rxjs';
+import { Observable, of, delay, map, catchError } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+import { environment } from 'src/environments/environment';
 import { Group } from '../../../core/models/group.model';
-import { Driver } from '../../../core/models/driver.model'; // Importamos el nuevo modelo
+import { Person } from '../../../core/models/person.model';
 
 @Injectable({
     providedIn: 'root'
@@ -71,31 +73,29 @@ export class GroupsService {
     ];
 
     // Simulación de conductores por grupo (Mock DB)
-    private mockDrivers: { [groupId: number]: Driver[] } = {
+    private mockPersons: { [groupId: number]: Person[] } = {
         1: [
-            { id: 1, name: 'Juan Pérez', license: 'A123456789', curp: 'AAAA000000HDFXXX00', status: 'Pendiente', requestTarjeton: false, coursePaymentStatus: 'Pagado', sex: 'Hombre', address: 'Calle 1, Col. Centro' },
-            { id: 2, name: 'María López', license: 'B987654321', curp: 'BBBB000000MDFXXX00', status: 'Pendiente', requestTarjeton: true, coursePaymentStatus: 'Pendiente', sex: 'Mujer', address: 'Av. Reforma 222' },
-            { id: 3, name: 'Carlos Ruiz', license: 'C123123123', curp: 'CCCC000000HDFXXX00', status: 'Aprobado', requestTarjeton: true, paymentStatus: 'Pendiente', coursePaymentStatus: 'Pagado', sex: 'Hombre', address: 'Calle Sur 8' },
+            { id: 1, name: 'Juan', firstSurname: 'Pérez', secondSurname: 'Gómez', license: 'A123456789', curp: 'AAAA000000HDFXXX00', status: 'Pendiente', requestTarjeton: false, coursePaymentStatus: 'Pagado', sex: 'Hombre', address: 'Calle 1, Col. Centro', phone: '5512345678', email: 'juan.perez@example.com' },
+            { id: 2, name: 'María', firstSurname: 'López', secondSurname: 'Hernández', license: 'B987654321', curp: 'BBBB000000MDFXXX00', status: 'Pendiente', requestTarjeton: true, coursePaymentStatus: 'Pendiente', sex: 'Mujer', address: 'Av. Reforma 222', phone: '5587654321', email: 'maria.lopez@example.com' },
+            { id: 3, name: 'Carlos', firstSurname: 'Ruiz', secondSurname: 'Díaz', license: 'C123123123', curp: 'CCCC000000HDFXXX00', status: 'Aprobado', requestTarjeton: true, paymentStatus: 'Pendiente', coursePaymentStatus: 'Pagado', sex: 'Hombre', address: 'Calle Sur 8', phone: '5511223344', email: 'carlos.ruiz@example.com' },
         ],
         2: [
-            { id: 4, name: 'Ana Estudiante', license: '', curp: 'ESTU000000MDFXXX00', status: 'Pendiente', requestTarjeton: false, coursePaymentStatus: 'Pendiente', sex: 'Mujer', address: 'Av. Escuela 123' },
-            { id: 5, name: 'Pedro Alumno', license: '', curp: 'ALUM000000HDFXXX00', status: 'Pendiente', requestTarjeton: false, coursePaymentStatus: 'Pendiente', sex: 'Hombre', address: 'Calle Tarea 456' }
+            { id: 4, name: 'Ana', firstSurname: 'Martínez', secondSurname: 'López', license: '', curp: 'MALA000000MDFXXX00', status: 'Pendiente', requestTarjeton: false, coursePaymentStatus: 'Pendiente', sex: 'Mujer', address: 'Av. Escuela 123', phone: '5599887766', email: 'ana.mtz@escuela.edu.mx' },
+            { id: 5, name: 'Pedro', firstSurname: 'Sánchez', secondSurname: 'Ruiz', license: '', curp: 'SARP000000HDFXXX00', status: 'Pendiente', requestTarjeton: false, coursePaymentStatus: 'Pendiente', sex: 'Hombre', address: 'Calle Tarea 456', phone: '5544332211', email: 'pedro.sanchez@escuela.edu.mx' },
         ],
         3: [
-            { id: 6, name: 'Luisa Interesada', license: '', curp: 'INTE000000MDFXXX00', status: 'Pendiente', requestTarjeton: false, coursePaymentStatus: 'Pendiente', sex: 'Mujer', address: 'Calle Curso 789' }
+            { id: 6, name: 'Luisa', firstSurname: 'García', secondSurname: 'Torres', license: '', curp: 'GATL000000MDFXXX00', status: 'Pendiente', requestTarjeton: false, coursePaymentStatus: 'Pendiente', sex: 'Mujer', address: 'Calle Curso 789', phone: '5566778899', email: 'luisa.garcia@gmail.com' },
+            { id: 7, name: 'Jorge', firstSurname: 'Ramírez', secondSurname: 'Flores', license: '', curp: 'RAFJ000000HDFXXX00', status: 'Pendiente', requestTarjeton: false, coursePaymentStatus: 'Pendiente', sex: 'Hombre', address: 'Av. Educación 101', phone: '5500112233', email: 'jorge.ramirez@outlook.com' }
         ]
     };
 
-    // Simulación de solicitudes por grupo (Mock DB)
-    // Se ha eliminado mockRequests, se usa mockDrivers con status 'Pendiente'
-
-    constructor() { }
+    constructor(private http: HttpClient) { }
 
     getGroups(): Observable<Group[]> {
         // Calculamos dinámicamente el número de solicitudes pendientes para cada grupo
         const groupsWithCounts = this.mockGroups.map(group => {
-            const drivers = this.mockDrivers[group.id] || [];
-            const pendingRequests = drivers.filter(d => d.status === 'Pendiente').length;
+            const persons = this.mockPersons[group.id] || [];
+            const pendingRequests = persons.filter(d => d.status === 'Pendiente').length;
             return {
                 ...group,
                 requests: pendingRequests
@@ -104,36 +104,40 @@ export class GroupsService {
         return of(groupsWithCounts).pipe(delay(150));
     }
 
-    getDriversByGroupId(groupId: number): Observable<Driver[]> {
-        const drivers = this.mockDrivers[groupId] || [];
-        return of([...drivers]).pipe(delay(200)); // Simular carga de datos 
+    getPersonsByGroupId(groupId: number): Observable<Person[]> {
+        // MOCK: Consulta local mientras arreglan CORS
+        const persons = this.mockPersons[groupId] || [];
+        return of(persons).pipe(delay(200));
     }
 
-    getRequestsByGroupId(groupId: number): Observable<Driver[]> {
+    getRequestsByGroupId(groupId: number): Observable<Person[]> {
         // En lugar de una lista separada, filtramos los conductores con status 'Pendiente'
-        const drivers = this.mockDrivers[groupId] || [];
-        const requests = drivers.filter(d => d.status === 'Pendiente');
+        const persons = this.mockPersons[groupId] || [];
+        const requests = persons.filter(d => d.status === 'Pendiente');
         return of(requests).pipe(delay(200));
     }
 
-    registerRequest(groupId: number, data: any): Observable<boolean> {
-        if (!this.mockDrivers[groupId]) {
-            this.mockDrivers[groupId] = [];
+    registerPerson(groupId: number, data: Person): Observable<boolean> {
+        // MOCK: Guardado local temporal hasta que el Backend arregle CORS
+        if (!this.mockPersons[groupId]) {
+            this.mockPersons[groupId] = [];
         }
 
-        const newId = (this.mockDrivers[groupId].length + 1) * 1000 + Math.floor(Math.random() * 999);
+        const newId = (this.mockPersons[groupId].length + 1) * 1000 + Math.floor(Math.random() * 999);
 
         // Agregamos a los conductores con estado 'Pendiente'
-        this.mockDrivers[groupId].push({
+        // Usamos destructuring para evitar conflicto de ID y conservamos los datos del modelo Person
+        const { id, ...personData } = data;
+
+        this.mockPersons[groupId].push({
+            ...personData,
             id: newId,
-            ...data,
-            status: 'Pendiente',
+            status: 'Pendiente', // Default status
             paymentStatus: 'Pendiente',
             coursePaymentStatus: 'Pendiente'
         });
 
-        // Actualizar contador de solicitudes en el grupo (requests = total - approved?)
-        // Dejaremos que 'requests' sea el contador de pendientes
+        // Actualizar contador de solicitudes en el grupo localmente
         const groupIndex = this.mockGroups.findIndex(g => g.id === groupId);
         if (groupIndex > -1) {
             this.mockGroups[groupIndex].requests = (this.mockGroups[groupIndex].requests || 0) + 1;
@@ -148,26 +152,25 @@ export class GroupsService {
     }
 
     // Nueva función para búsqueda simulada de conductores
-    searchDriverByLicense(license: string): Observable<Driver | null> {
+    searchPersonByLicense(license: string): Observable<Person | null> {
         // Simulamos que si la licencia empieza por "EXIST", la encuentra
         // Si no, retorna null
         if (license.toUpperCase().startsWith('EXIST')) {
-            const mockDriver: Driver = {
+            const mockPerson: Person = {
                 id: 999,
                 name: 'Juan',
                 firstSurname: 'Pérez',
                 secondSurname: 'Encontrado',
                 license: license.toUpperCase(),
                 curp: 'PEHJ901212HDFR05',
-                // rfc: 'PEHJ901212', // Removed as it is not in Driver interface
-                sex: 'H', // Added for consistency
-                address: 'Calle Conocida 123, Centro', // Added for consistency
+                sex: 'H',
+                address: 'Calle Conocida 123, Centro',
                 status: 'Pendiente',
                 paymentStatus: 'Pendiente',
                 coursePaymentStatus: 'Pendiente',
                 requestTarjeton: false
             };
-            return of(mockDriver).pipe(delay(800));
+            return of(mockPerson).pipe(delay(800));
         }
         return of(null).pipe(delay(800));
     }

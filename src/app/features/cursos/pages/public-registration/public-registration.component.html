@@ -26,7 +26,7 @@
             <div class="p-6 md:p-8">
                 <!-- Mostramos el formulario solo si showForm es true -->
                 <app-person-form *ngIf="showForm" [submitLabel]="'Solicitar registro'" [fieldsConfig]="fieldsConfig"
-                    [initialData]="prefilledData" [showCancel]="false" (saved)="onDriverRegistered($event)">
+                    [initialData]="prefilledData" [showCancel]="false" (saved)="onPersonRegistered($event)">
                 </app-person-form>
 
                 <!-- Mensaje de carga o estado inicial si no hay form ni modal -->
@@ -40,7 +40,7 @@
 
     <!-- Modal de Búsqueda de Licencia (Flujo Previo) -->
     <app-license-search-modal [isOpen]="isSearchModalOpen" (modalClose)="isSearchModalOpen = false"
-        (driverFound)="onDriverFound($event)" (manualRegistration)="onManualRegistration($event)">
+        (personFound)="onPersonFound($event)" (manualRegistration)="onManualRegistration($event)">
     </app-license-search-modal>
 
 

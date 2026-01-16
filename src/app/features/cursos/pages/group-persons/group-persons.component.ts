@@ -14,7 +14,8 @@ import { AlertModalComponent, AlertConfig } from '../../../../shared/components/
 import { NotificationService } from '../../../../core/services/notification.service';
 import { FormsModule } from '@angular/forms';
 import { UniversalIconComponent } from "@/app/shared/components";
-import { Driver } from '../../../../core/models/driver.model';
+// ... (imports)
+import { Person } from '../../../../core/models/person.model';
 import { GroupsService } from '../../services/groups.service';
 import { DocumentSelectionModalComponent, DocumentOption } from '../../components/modals/document-selection-modal/document-selection-modal.component';
 import { LicenseSearchModalComponent } from '../../components/modals/license-search-modal/license-search-modal.component';
@@ -25,7 +26,7 @@ import { CourseTypeService } from '../../../../core/services/course-type.service
 
 
 @Component({
-    selector: 'app-group-drivers',
+    selector: 'app-group-persons', // Updated selector
     standalone: true,
     imports: [
         CommonModule,
@@ -56,6 +57,7 @@ export class GroupPersonsComponent implements OnInit {
     groupLabel: string = '';
 
     // Referencias a Templates del HTML
+    @ViewChild('nameTemplate', { static: true }) nameTemplate!: TemplateRef<any>;
     @ViewChild('statusTemplate', { static: true }) statusTemplate!: TemplateRef<any>;
     @ViewChild('actionsTemplate', { static: true }) actionsTemplate!: TemplateRef<any>;
 
@@ -64,7 +66,7 @@ export class GroupPersonsComponent implements OnInit {
     tableConfig: TableConfig = {
         loading: false,
         localSort: true,
-        emptyMessage: 'No hay conductores registrados en este grupo.'
+        emptyMessage: 'No hay personas registradas en este grupo.'
     };
 
     paginationConfig: PaginationConfig = {
@@ -96,10 +98,10 @@ export class GroupPersonsComponent implements OnInit {
 
     // 3. Modal de Selección de Documentos
     isDocumentsModalOpen = false;
-    selectedDriverForDocs: Driver | null = null;
+    selectedPersonForDocs: Person | null = null;
 
-    // Datos de Conductores
-    drivers: Driver[] = [];
+    // Datos de Personas
+    persons: Person[] = [];
 
     // --- BÚSQUEDA ---
     isSearchModalOpen = false;
@@ -117,7 +119,7 @@ export class GroupPersonsComponent implements OnInit {
     ) { }
 
     ngOnInit(): void {
-        console.log('GroupDriversComponent initialized for Group:', this.groupId);
+        console.log('GroupPersonsComponent initialized for Group:', this.groupId);
         // Leer parámetros de ruta para construir breadcrumbs y contexto
         this.cursoId = this.route.snapshot.paramMap.get('cursoId');
         this.currentGroupId = this.route.snapshot.paramMap.get('groupId') || this.groupId || null;
@@ -153,7 +155,7 @@ export class GroupPersonsComponent implements OnInit {
 
         this.initColumns();
         this.loadGroupDetails();
-        this.loadDrivers();
+        this.loadPersons();
     }
 
     loadGroupDetails() {
@@ -163,22 +165,34 @@ export class GroupPersonsComponent implements OnInit {
                 this.currentGroup = group;
                 // Update label if available
                 if (group.name) this.groupLabel = `Grupo ${group.name}`;
+
+                // Cargar configuración de columnas dinámica
+                if (group.courseTypeId) {
+                    this.courseTypeService.getCourseTypeById(group.courseTypeId).subscribe(config => {
+                        if (config) {
+                            this.updateColumns(config);
+                        }
+                    });
+                } else {
+                    // Fallback si no hay configuración
+                    this.initColumns();
+                }
             }
         });
     }
 
-    loadDrivers() {
+    loadPersons() {
         if (!this.currentGroupId) return;
         this.tableConfig.loading = true;
-        this.groupsService.getDriversByGroupId(+this.currentGroupId).subscribe({
+        this.groupsService.getPersonsByGroupId(+this.currentGroupId).subscribe({
             next: (data) => {
-                this.drivers = data;
+                this.persons = data;
                 this.paginationConfig.totalItems = data.length;
                 this.tableConfig.loading = false;
             },
             error: (err) => {
-                console.error('Error loading drivers', err);
-                this.notificationService.showError('Error', 'No se pudieron cargar los conductores.');
+                console.error('Error loading persons', err);
+                this.notificationService.showError('Error', 'No se pudieron cargar las personas.');
                 this.tableConfig.loading = false;
             }
         });
@@ -192,8 +206,9 @@ export class GroupPersonsComponent implements OnInit {
     }
 
     initColumns() {
+        // Columnas por defecto (Fallback)
         this.tableColumns = [
-            { key: 'name', label: 'Nombre' },
+            { key: 'name', label: 'Nombre Completo', template: this.nameTemplate },
             { key: 'license', label: 'Licencia' },
             { key: 'curp', label: 'CURP' },
             { key: 'status', label: 'Estatus', template: this.statusTemplate, align: 'center' },
@@ -201,7 +216,36 @@ export class GroupPersonsComponent implements OnInit {
         ];
     }
 
-    openNewDriverForm() {
+    updateColumns(config: any) {
+        const dynamicColumns: TableColumn[] = [];
+
+        // 1. Siempre mostrar nombre combinado
+        dynamicColumns.push({ key: 'name', label: 'Nombre Completo', template: this.nameTemplate });
+
+        // 2. Mapear campos visibles de la configuración
+        // Campos que queremos ordernar/mostrar si son visibles
+        // EXCLUIMOS 'firstSurname' y 'secondSurname' porque ya van en nombre
+        const possibleFields = ['license', 'curp', 'nuc', 'phone', 'email', 'address'];
+
+        // Iteramos los campos registrados en el config
+        config.registrationFields.forEach((field: any) => {
+            if (field.visible && possibleFields.includes(field.fieldName)) {
+                // Evitamos duplicar si ya está (aunque el array base solo tiene name/firstSurname)
+                dynamicColumns.push({
+                    key: field.fieldName,
+                    label: field.label
+                });
+            }
+        });
+
+        // 3. Columnas fijas de sistema al final
+        dynamicColumns.push({ key: 'status', label: 'Estatus', template: this.statusTemplate, align: 'center' });
+        dynamicColumns.push({ key: 'actions', label: 'Acciones', template: this.actionsTemplate, align: 'center' });
+
+        this.tableColumns = dynamicColumns;
+    }
+
+    openNewPersonForm() {
         // Verificar configuración del Tipo de Curso
         if (this.currentGroup && this.currentGroup.courseTypeId) {
             this.courseTypeService.getCourseTypeById(this.currentGroup.courseTypeId).subscribe(config => {
@@ -228,20 +272,20 @@ export class GroupPersonsComponent implements OnInit {
         }
     }
 
-    onDriverFound(driver: Driver) {
+    onPersonFound(person: Person) {
         // SI SE ENCUENTRA: Navegar con datos precargados
-        console.log('Conductor encontrado (vía modal):', driver);
+        console.log('Persona encontrada (vía modal):', person);
         this.router.navigate(['nuevo'], {
             relativeTo: this.route,
             queryParams: {
                 found: 'true',
-                name: driver.name,
-                firstSurname: driver.firstSurname,
-                secondSurname: driver.secondSurname,
-                license: driver.license,
-                curp: driver.curp,
-                sex: driver.sex,
-                address: driver.address
+                name: person.name,
+                firstSurname: person.firstSurname,
+                secondSurname: person.secondSurname,
+                license: person.license,
+                curp: person.curp,
+                sex: person.sex,
+                address: person.address
             }
         });
         this.isSearchModalOpen = false;
@@ -286,130 +330,130 @@ export class GroupPersonsComponent implements OnInit {
 
     // LOGICA DE NEGOCIO 
 
-    setExamResult(driver: Driver, result: 'Aprobado' | 'No Aprobado') {
+    setExamResult(person: Person, result: 'Aprobado' | 'No Aprobado') {
         if (result === 'Aprobado') {
             this.openConfirm({
-                title: 'Aprobar Conductor',
-                message: `¿Está seguro de que desea APROBAR a ${driver.name}?\nEsta acción habilitará la gestión del Tarjetón.`,
+                title: 'Aprobar Persona',
+                message: `¿Está seguro de que desea APROBAR a ${person.name}?\nEsta acción habilitará la gestión del Tarjetón.`,
                 type: 'success',
                 confirmText: 'Sí, Aprobar',
                 cancelText: 'Cancelar'
             }, () => {
-                driver.status = 'Aprobado';
-                this.notificationService.showSuccess('Aprobado', `El conductor ${driver.name} ha sido aprobado exitosamente.`);
+                person.status = 'Aprobado';
+                this.notificationService.showSuccess('Aprobado', `La persona ${person.name} ha sido aprobada exitosamente.`);
             });
         } else {
             this.openConfirm({
-                title: 'Reprobar Conductor',
-                message: `¿Está seguro de que desea REPROBAR a ${driver.name}?`,
+                title: 'Reprobar Persona',
+                message: `¿Está seguro de que desea REPROBAR a ${person.name}?`,
                 type: 'danger',
                 confirmText: 'Sí, Reprobar',
                 cancelText: 'Cancelar'
             }, () => {
-                driver.status = 'No Aprobado';
-                console.log(`Conductor ${driver.name} reprobado.`);
+                person.status = 'No Aprobado';
+                console.log(`Persona ${person.name} reprobada.`);
             });
         }
     }
 
-    requestTarjeton(driver: Driver) {
+    requestTarjeton(person: Person) {
         // 1. Ya pagado -> Descargar Final
-        if (driver.paymentStatus === 'Pagado') {
-            this.downloadFinalTarjeton(driver);
+        if (person.paymentStatus === 'Pagado') {
+            this.downloadFinalTarjeton(person);
             return;
         }
 
         // 2. Pago Pendiente -> Verificar
-        if (driver.paymentStatus === 'Pendiente') {
+        if (person.paymentStatus === 'Pendiente') {
             this.openConfirm({
                 title: 'Verificar Pago',
-                message: `Existe una orden de pago pendiente para ${driver.name}.\n¿Desea verificar el estatus del pago ahora?`,
+                message: `Existe una orden de pago pendiente para ${person.name}.\n¿Desea verificar el estatus del pago ahora?`,
                 type: 'info',
                 confirmText: 'Verificar Pago',
                 cancelText: 'Cerrar'
-            }, () => this.simulatePaymentVerification(driver));
+            }, () => this.simulatePaymentVerification(person));
             return;
         }
 
         // 3. Generación de Orden
         // CASO ESPECIAL: Si NO solicitó tarjetón, preguntar primero (Upsell)
-        if (!driver.requestTarjeton) {
+        if (!person.requestTarjeton) {
             this.openConfirm({
                 title: 'Solicitud Adicional',
-                message: `El conductor ${driver.name} NO solicitó tarjetón originalmente.\n\n¿Desea generar una orden de pago de todas formas?`,
+                message: `La persona ${person.name} NO solicitó tarjetón originalmente.\n\n¿Desea generar una orden de pago de todas formas?`,
                 type: 'warning',
                 confirmText: 'Sí, Generar Orden',
                 cancelText: 'Cancelar'
             }, () => {
                 // Si acepta, procedemos a mostrar las opciones de generación (ahora vía el selector de documentos)
-                driver.requestTarjeton = true; // Asumimos que si dijo que sí, ahora lo quiere
-                this.openDocumentSelection(driver);
+                person.requestTarjeton = true; // Asumimos que si dijo que sí, ahora lo quiere
+                this.openDocumentSelection(person);
             });
             return;
         }
 
         // Si SÍ lo solicitó (o es el flujo nuevo), abrir el selector
-        this.openDocumentSelection(driver);
+        this.openDocumentSelection(person);
     }
 
     // --- NUEVO FLUJO DE DOCUMENTOS ---
-    openDocumentSelection(driver: Driver) {
-        this.selectedDriverForDocs = driver;
+    openDocumentSelection(person: Person) {
+        this.selectedPersonForDocs = person;
         this.isDocumentsModalOpen = true;
     }
 
     closeDocumentsModal() {
         this.isDocumentsModalOpen = false;
-        this.selectedDriverForDocs = null;
+        this.selectedPersonForDocs = null;
     }
 
     onDocumentsConfirmed(documents: DocumentOption[]) {
-        if (!this.selectedDriverForDocs) return;
+        if (!this.selectedPersonForDocs) return;
 
-        const driver = this.selectedDriverForDocs;
+        const person = this.selectedPersonForDocs;
         const documentNames = documents.map(d => d.name).join(', ');
 
-        console.log(`Generando orden para ${driver.name} con: ${documentNames}`);
+        console.log(`Generando orden para ${person.name} con: ${documentNames}`);
 
         this.closeDocumentsModal();
 
         // Proceder a generación (usando el método existente)
-        this.showGenerationOptions(driver, documentNames);
+        this.showGenerationOptions(person, documentNames);
     }
 
-    showGenerationOptions(driver: Driver, details: string = '') {
+    showGenerationOptions(person: Person, details: string = '') {
         this.alertConfig = {
             title: 'Generar Orden de Pago',
-            message: `Conceptos: ${details || 'Tarjetón'}\n\nSeleccione cómo desea entregar la Línea de Captura a ${driver.name}:`,
+            message: `Conceptos: ${details || 'Tarjetón'}\n\nSeleccione cómo desea entregar la Línea de Captura a ${person.name}:`,
             type: 'info',
             actions: [
                 {
                     label: 'Descargar PDF',
                     variant: 'primary',
                     icon: 'download',
-                    action: () => this.generatePaymentOrder(driver, 'download')
+                    action: () => this.generatePaymentOrder(person, 'download')
                 },
                 {
                     label: 'Enviar por Correo',
                     variant: 'secondary',
                     icon: 'send',
-                    action: () => this.generatePaymentOrder(driver, 'email')
+                    action: () => this.generatePaymentOrder(person, 'email')
                 }
             ]
         };
         this.isAlertOpen = true;
     }
 
-    generatePaymentOrder(driver: Driver, mode: 'download' | 'email') {
+    generatePaymentOrder(person: Person, mode: 'download' | 'email') {
         console.log(`>> GENERANDO ORDEN (${mode})...`);
-        driver.requestTarjeton = true; // Actualizado a requestTarjeton
-        driver.paymentStatus = 'Pendiente';
+        person.requestTarjeton = true; // Actualizado a requestTarjeton
+        person.paymentStatus = 'Pendiente';
 
         setTimeout(() => {
             if (mode === 'email') {
                 this.notificationService.showSuccess(
                     'Orden Enviada',
-                    `Se ha enviado la Línea de Captura al correo de ${driver.name}.`
+                    `Se ha enviado la Línea de Captura al correo de ${person.name}.`
                 );
             } else {
                 this.notificationService.showSuccess(
@@ -421,38 +465,38 @@ export class GroupPersonsComponent implements OnInit {
     }
 
 
-    simulatePaymentVerification(driver: Driver) {
+    simulatePaymentVerification(person: Person) {
         // Simulamos que el sistema busca el pago
         this.openAlert('Verificando', 'Consultando estatus de pago...', 'info');
 
         setTimeout(() => {
-            driver.paymentStatus = 'Pagado'; // Marcamos como pagado
+            person.paymentStatus = 'Pagado'; // Marcamos como pagado
             this.notificationService.showSuccess(
                 'Pago Confirmado',
-                `El pago de ${driver.name} ha sido validado correctamente.`
+                `El pago de ${person.name} ha sido validado correctamente.`
             );
         }, 1500);
     }
 
-    downloadFinalTarjeton(driver: Driver) {
-        console.log('Descargando Tarjetón Final para:', driver.name);
+    downloadFinalTarjeton(person: Person) {
+        console.log('Descargando Tarjetón Final para:', person.name);
         this.notificationService.showSuccess('Descargando', 'Generando PDF del Tarjetón Oficial...');
     }
 
 
-    viewCertificate(driver: Driver) {
+    viewCertificate(person: Person) {
         // Validación: El curso debe estar pagado para descargar constancia
-        if (driver.coursePaymentStatus !== 'Pagado') {
+        if (person.coursePaymentStatus !== 'Pagado') {
             this.openConfirm({
                 title: 'Pago de Curso Pendiente',
-                message: `El conductor ${driver.name} no ha pagado el curso.\n¿Desea validar el pago ahora?`,
+                message: `La persona ${person.name} no ha pagado el curso.\n¿Desea validar el pago ahora?`,
                 type: 'warning',
                 confirmText: 'Validar Pago',
                 cancelText: 'Cancelar'
             }, () => {
                 this.openAlert('Verificando', 'Validando pago del curso...', 'info');
                 setTimeout(() => {
-                    driver.coursePaymentStatus = 'Pagado';
+                    person.coursePaymentStatus = 'Pagado';
                     this.notificationService.showSuccess('Pago Validado', 'El pago ha sido registrado. Descargando constancia...');
                 }, 1000);
             });
@@ -462,15 +506,15 @@ export class GroupPersonsComponent implements OnInit {
         this.openAlert('Visualizando', 'Simulando vista de Constancia...', 'info');
     }
 
-    deleteDriver(driver: Driver) {
+    deletePerson(person: Person) {
         this.openConfirm({
-            title: 'Eliminar Conductor',
-            message: `¿Está seguro de que desea eliminar a ${driver.name} del grupo?`,
+            title: 'Eliminar Persona',
+            message: `¿Está seguro de que desea eliminar a ${person.name} del grupo?`,
             type: 'danger',
             confirmText: 'Eliminar',
             cancelText: 'Cancelar'
         }, () => {
-            this.drivers = this.drivers.filter(d => d.id !== driver.id);
+            this.persons = this.persons.filter(d => d.id !== person.id);
         });
     }
 }

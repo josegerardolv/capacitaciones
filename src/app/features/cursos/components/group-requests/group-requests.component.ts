@@ -2,7 +2,7 @@ import { Component, EventEmitter, Input, Output, OnChanges, SimpleChanges, ViewC
 import { CommonModule } from '@angular/common';
 import { FormGroup, FormBuilder } from '@angular/forms'; // Added FormGroup and FormBuilder
 import { Group } from '../../../../core/models/group.model';
-import { Driver } from '../../../../core/models/driver.model';
+import { Person } from '../../../../core/models/person.model';
 import { InstitutionalButtonComponent } from '../../../../shared/components/buttons/institutional-button.component';
 import {
     InstitutionalTableComponent,
@@ -34,8 +34,8 @@ export class GroupRequestsComponent implements OnChanges {
 
     @ViewChild('actionsTemplate', { static: true }) actionsTemplate!: TemplateRef<any>;
 
-    requests: Driver[] = [];
-    selectedRequests: Driver[] = [];
+    requests: Person[] = [];
+    selectedRequests: Person[] = [];
 
     tableConfig: TableConfig = {
         loading: false,

@@ -30,7 +30,7 @@
             </app-table-pagination>
 
             <div class="flex flex-col md:flex-row md:items-center gap-2">
-                <app-institutional-button (buttonClick)="openNewDriverForm()" [config]="{
+                <app-institutional-button (buttonClick)="openNewPersonForm()" [config]="{
                     variant: 'primary',
                     icon: 'add'
                 }">
@@ -40,7 +40,7 @@
         </div>
 
         <!-- Tabla -->
-        <app-institutional-table [data]="drivers" [columns]="tableColumns" [config]="tableConfig">
+        <app-institutional-table [data]="persons" [columns]="tableColumns" [config]="tableConfig">
         </app-institutional-table>
 
         <!-- Paginación inferior -->
@@ -54,10 +54,17 @@
 
     <!-- MODAL DE BÚSQUEDA (NUEVO REUTILIZABLE) -->
     <app-license-search-modal [isOpen]="isSearchModalOpen" (modalClose)="isSearchModalOpen = false"
-        (driverFound)="onDriverFound($event)" (manualRegistration)="onManualRegistration($event)">
+        (personFound)="onPersonFound($event)" (manualRegistration)="onManualRegistration($event)">
     </app-license-search-modal>
 
     <!-- Templates -->
+    <!-- Nombre Completo: Combina Nombre + Apellidos -->
+    <ng-template #nameTemplate let-item>
+        <div class="flex flex-col">
+            <span class="font-bold text-gray-900">{{ item.name }} {{ item.firstSurname }} {{ item.secondSurname }}</span>
+        </div>
+    </ng-template>
+
     <!-- Estatus: Badge Aprobado/No Aprobado o Botones de Calificación -->
     <ng-template #statusTemplate let-item>
         <!-- Estado ya calificado: usar badge institucional -->
@@ -112,7 +119,7 @@
                     variant: 'danger',
                     icon: 'delete',
                     iconPosition: 'only',
-                }" (buttonClick)="deleteDriver(item)" [appTooltip]="'Eliminar Conductor'" tooltipPosition="top">
+                }" (buttonClick)="deletePerson(item)" [appTooltip]="'Eliminar Persona'" tooltipPosition="top">
             </app-institutional-button>
         </div>
     </ng-template>

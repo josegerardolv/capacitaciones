@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { InstitutionalButtonComponent } from '../../../../../shared/components/buttons/institutional-button.component';
 import { NotificationService } from '../../../../../core/services/notification.service';
 import { GroupsService } from '../../../services/groups.service';
-import { Driver } from '../../../../../core/models/driver.model';
+import { Person } from '../../../../../core/models/person.model';
 import { AlertModalComponent, AlertConfig } from '../../../../../shared/components/modals/alert-modal.component';
 import { ModalComponent, ModalConfig } from '../../../../../shared/components/modals/modal.component';
 import { Router, ActivatedRoute } from '@angular/router';
@@ -24,7 +24,7 @@ import { Router, ActivatedRoute } from '@angular/router';
 export class LicenseSearchModalComponent {
     @Input() isOpen = false;
     @Output() modalClose = new EventEmitter<void>();
-    @Output() driverFound = new EventEmitter<Driver>();
+    @Output() personFound = new EventEmitter<Person>();
     @Output() manualRegistration = new EventEmitter<string>(); // Emite la licencia buscada para registro manual
 
     searchLicense = '';
@@ -55,17 +55,17 @@ export class LicenseSearchModalComponent {
         this.modalClose.emit();
     }
 
-    searchDriver() {
+    searchPerson() {
         if (!this.searchLicense.trim()) return;
 
         this.isSearching = true;
-        this.groupsService.searchDriverByLicense(this.searchLicense).subscribe({
-            next: (driver) => {
+        this.groupsService.searchPersonByLicense(this.searchLicense).subscribe({
+            next: (person) => {
                 this.isSearching = false;
 
-                if (driver) {
+                if (person) {
                     // ENCONTRADO: Emitir datos del conductor
-                    this.driverFound.emit(driver);
+                    this.personFound.emit(person);
                     this.close();
                 } else {
                     // NO ENCONTRADO: Mostrar alerta
