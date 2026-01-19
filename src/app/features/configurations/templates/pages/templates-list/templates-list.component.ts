@@ -1,25 +1,25 @@
 import { Component, OnInit, ViewChild, TemplateRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
-import { CertificateTemplate } from '../../../../core/models/template.model';
+import { CertificateTemplate } from '../../../../../core/models/template.model';
 import { TemplateService } from '../../services/template.service';
-import { Concept } from '../../../../core/models/template.model';
+import { Concept } from '../../../../../core/models/template.model';
 // ConceptService removed, logic integrated in TemplateService
-import { InstitutionalTableComponent, TableColumn, TableConfig } from '../../../../shared/components/institutional-table/institutional-table.component';
-import { TablePaginationComponent, PaginationConfig, PageChangeEvent } from '../../../../shared/components/table-pagination/table-pagination.component';
-import { TooltipDirective } from '../../../../shared/components/tooltip/tooltip.directive';
-import { ConfirmationModalComponent, ConfirmationConfig } from '../../../../shared/components/modals/confirmation-modal.component';
-import { AlertModalComponent, AlertConfig } from '../../../../shared/components/modals/alert-modal.component';
+import { InstitutionalTableComponent, TableColumn, TableConfig } from '../../../../../shared/components/institutional-table/institutional-table.component';
+import { TablePaginationComponent, PaginationConfig, PageChangeEvent } from '../../../../../shared/components/table-pagination/table-pagination.component';
+import { TooltipDirective } from '../../../../../shared/components/tooltip/tooltip.directive';
+import { ConfirmationModalComponent, ConfirmationConfig } from '../../../../../shared/components/modals/confirmation-modal.component';
+import { AlertModalComponent, AlertConfig } from '../../../../../shared/components/modals/alert-modal.component';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormControl } from '@angular/forms';
-import { ModalFormComponent } from '../../../../shared/components/forms/modal-form.component';
-import { InputComponent } from '../../../../shared/components/inputs/input.component';
-import { InstitutionalCardComponent } from '../../../../shared/components/institutional-card/institutional-card.component';
-import { InstitutionalButtonComponent } from '../../../../shared/components/buttons/institutional-button.component';
-import { PageHeaderComponent } from '../../../../shared/components/page-header/page-header.component';
-import { SelectComponent, SelectOption } from '../../../../shared/components/inputs/select.component';
+import { ModalFormComponent } from '../../../../../shared/components/forms/modal-form.component';
+import { InputComponent } from '../../../../../shared/components/inputs/input.component';
+import { InstitutionalCardComponent } from '../../../../../shared/components/institutional-card/institutional-card.component';
+import { InstitutionalButtonComponent } from '../../../../../shared/components/buttons/institutional-button.component';
+import { PageHeaderComponent } from '../../../../../shared/components/page-header/page-header.component';
+import { SelectComponent, SelectOption } from '../../../../../shared/components/inputs/select.component';
 // import { SelectComponent } from '@/app/shared/components'; // Duplicate import removed
 // SelectSearchComponent removed to respect shared component constraints
-// import { SelectSearchComponent, SelectSearchOption } from '../../../../shared/components/inputs/select-search.component';
+// import { SelectSearchComponent, SelectSearchOption } from '../../../../../shared/components/inputs/select-search.component';
 
 @Component({
     selector: 'app-templates-list',
@@ -280,7 +280,7 @@ export class TemplatesListComponent implements OnInit {
     }
 
     editTemplateDesign(template: CertificateTemplate) {
-        this.router.navigate(['/documentos/templates/editor', template.id]);
+        this.router.navigate(['/config/templates/editor', template.id]);
     }
 
     onPageChange(event: PageChangeEvent) {
@@ -313,11 +313,11 @@ export class TemplatesListComponent implements OnInit {
     }
 
     createNewTemplate() {
-        this.router.navigate(['/documentos/templates/editor']);
+        this.router.navigate(['/config/templates/editor']);
     }
 
     editTemplate(template: CertificateTemplate) {
-        this.router.navigate(['/documentos/templates/editor', template.id]);
+        this.router.navigate(['/config/templates/editor', template.id]);
     }
 
     duplicateTemplate(template: CertificateTemplate) {
@@ -336,7 +336,7 @@ export class TemplatesListComponent implements OnInit {
     }
 
     previewTemplate(template: CertificateTemplate) {
-        this.router.navigate(['/documentos/templates/preview', template.id]);
+        this.router.navigate(['/config/templates/preview', template.id]);
     }
 
     deleteTemplate(template: CertificateTemplate) {

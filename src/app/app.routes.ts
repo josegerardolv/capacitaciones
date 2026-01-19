@@ -48,20 +48,16 @@ export const routes: Routes = [
         path: 'busqueda',
         loadComponent: () => import('./features/busqueda/busqueda.component').then(m => m.BusquedaComponent)
       },
-      {
-        path: 'documentos',
-        loadChildren: () => import('./features/templates/documents.routes').then(m => m.DOCUMENTS_ROUTES)
-      },
+      // {
+      //   path: 'documentos',
+      //   loadChildren: () => import('./features/templates/documents.routes').then(m => m.DOCUMENTS_ROUTES)
+      // },
       {
         path: 'config',
         loadChildren: () => import('./features/configurations/configuration.routes').then(m => m.CONFIGURATION_ROUTES),
         // canActivate: [authGuard] - inherited from parent
       },
-      {
-        path: 'documentos/templates/editor/:id',
-        canActivate: [authGuard],
-        loadComponent: () => import('./features/templates/pages/template-editor/template-editor.component').then(m => m.TemplateEditorComponent)
-      },
+
 
 
     ]

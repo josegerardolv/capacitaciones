@@ -4,7 +4,7 @@ import { RouterModule } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormControl } from '@angular/forms';
 
 import { Concept } from '../../../../core/models/template.model';
-import { TemplateService } from '../../../../features/templates/services/template.service';
+import { TemplateService } from '../../templates/services/template.service';
 
 import { PageHeaderComponent } from '../../../../shared/components/page-header/page-header.component';
 import { InstitutionalCardComponent } from '../../../../shared/components/institutional-card/institutional-card.component';

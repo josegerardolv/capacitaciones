@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Observable, of, delay } from 'rxjs';
-import { CertificateTemplate, GeneratedCertificate, CertificateData, TemplateVariable, PageConfig, Concept } from '../../../core/models/template.model';
+import { CertificateTemplate, GeneratedCertificate, CertificateData, TemplateVariable, PageConfig, Concept } from '../../../../core/models/template.model';
 
 @Injectable({ providedIn: 'root' })
 export class TemplateService {

@@ -6,9 +6,9 @@ import { Router } from '@angular/router';
   template: `<!-- Componente obsoleto: redirigiendo a templates -->`,
 })
 export class TarjetonesListComponent implements OnInit {
-  constructor(private router: Router) {}
+  constructor(private router: Router) { }
   ngOnInit(): void {
     // Redirigir a la lista de templates
-    this.router.navigate(['/documentos/templates']);
+    this.router.navigate(['/config/templates']);
   }
 }

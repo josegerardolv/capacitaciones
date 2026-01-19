@@ -1,9 +1,9 @@
-import { 
-    Component, 
-    OnInit, 
-    ViewChild, 
-    ElementRef, 
-    AfterViewInit, 
+import {
+    Component,
+    OnInit,
+    ViewChild,
+    ElementRef,
+    AfterViewInit,
     OnDestroy,
     HostListener,
     ChangeDetectorRef,
@@ -15,12 +15,12 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormBuilder, FormGroup, FormControl, ReactiveFormsModule, Validators, FormsModule } from '@angular/forms';
 import { TemplateService } from '../../services/template.service';
-import { CertificateTemplate } from '../../../../core/models/template.model';
-import { CanvasElement, ElementType, TemplateVariable, PageConfig } from '../../../../core/models/template.model';
-import { InstitutionalButtonComponent } from '../../../../shared/components/buttons/institutional-button.component';
-import { PDFGeneratorService, PDFGeneratorInput } from '../../../../core/services/pdf-generator.service';
-import { InputEnhancedComponent } from '../../../../shared/components/inputs/input-enhanced.component';
-import { SelectComponent, SelectOption } from '../../../../shared/components/inputs/select.component';
+import { CertificateTemplate } from '../../../../../core/models/template.model';
+import { CanvasElement, ElementType, TemplateVariable, PageConfig } from '../../../../../core/models/template.model';
+import { InstitutionalButtonComponent } from '../../../../../shared/components/buttons/institutional-button.component';
+import { PDFGeneratorService, PDFGeneratorInput } from '../../../../../core/services/pdf-generator.service';
+import { InputEnhancedComponent } from '../../../../../shared/components/inputs/input-enhanced.component';
+import { SelectComponent, SelectOption } from '../../../../../shared/components/inputs/select.component';
 import * as fabric from 'fabric';
 
 // Tipos para propiedades personalizadas de Fabric
@@ -54,40 +54,40 @@ interface CustomFabricObject extends fabric.FabricObject {
 export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     @ViewChild('fabricCanvas', { static: false }) canvasRef!: ElementRef<HTMLCanvasElement>;
     @ViewChild('canvasScrollContainer', { static: false }) canvasScrollRef!: ElementRef<HTMLDivElement>;
-    
+
     // Document / Template state
     documentId: number | null = null;
     // Usamos directamente plantillas (templates)
     template: CertificateTemplate | null = null;
-    
+
     // Fabric.js canvas
     private canvas!: fabric.Canvas;
     private isCanvasInitialized = false;
-    
+
     // Canvas dimensions (modifiable for page configuration)
     canvasWidth = 1122;
     canvasHeight = 794;
     readonly displayDpi = 96; // DPI for mm to px conversion
-    
+
     // Margin guides
     private marginGuides: fabric.FabricObject[] = [];
-    
+
     // Grid
     private gridLines: fabric.FabricObject[] = [];
     showGrid = false;
     gridSize = 20; // pixels
     snapToGrid = false; // snap elements to grid when moving
-    
+
     // Pan mode (navigation) - moves the scroll container, not the canvas content
     isPanMode = false;
     private isPanning = false;
     private lastPanPoint = { x: 0, y: 0 }; // client coordinates for scroll panning
-    
+
     // Smart alignment guides
     private alignmentGuides: fabric.Line[] = [];
     showSmartGuides = true;
     snapThreshold = 8; // pixels for snapping
-    
+
     // Standard page sizes (in mm)
     readonly standardPageSizes: Record<string, { width: number; height: number }> = {
         'A4': { width: 210, height: 297 },
@@ -96,28 +96,28 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
         'A5': { width: 148, height: 210 },
         'A3': { width: 297, height: 420 }
     };
-    
+
     // Background
     backgroundImageSrc: string = '';
     backgroundFit: 'cover' | 'contain' | 'fill' = 'cover';
-    
+
     // UI state
     showToolPanel = true;
     showPropertiesPanel = true;
     isSaving = false;
     activeTab: 'page' | 'elements' | 'variables' | 'layers' = 'elements';
-    
+
     // Variables search and filter
     variableSearchTerm = '';
     selectedVariableCategory: 'all' | 'participante' | 'curso' | 'institucion' | 'media' | 'otro' = 'all';
     filteredVariables: TemplateVariable[] = [];
-    
+
     // PDF Preview
     showPDFPreview = false;
     isGeneratingPDF = false;
     pdfPreviewUrl: SafeResourceUrl | null = null;
     private pdfBlob: Blob | null = null;
-    
+
     // Selection
     selectedObject: CustomFabricObject | null = null;
     private _pageSettingsSub?: Subscription;
@@ -139,7 +139,7 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
         pentagono: 0,
         hexagono: 0
     };
-    
+
     // Panel resizing
     leftPanelWidth = 300;
     rightPanelWidth = 320;
@@ -147,19 +147,19 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
     private resizingSide: 'left' | 'right' | null = null;
     private sidebarStartX = 0;
     private sidebarStartWidth = 0;
-    
+
     // Zoom
     zoomLevel = 100;
     readonly zoomLevels = [25, 50, 75, 100, 125, 150, 200];
-    
+
     // History (undo/redo)
     private history: string[] = [];
     private historyIndex = -1;
     private isHistoryAction = false;
-    
+
     // Clipboard
     private clipboard: fabric.FabricObject | null = null;
-    
+
     // Color palettes (institutional colors)
     readonly institutionalColors = [
         '#8B1538', '#6B1028', '#A61E42', // Guinda
@@ -167,7 +167,7 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
         '#722F37', '#5A252A', '#8F3C45', // Vino
         '#000000', '#333333', '#666666', '#999999', '#CCCCCC', '#FFFFFF'
     ];
-    
+
     // Font families
     readonly fontFamilies = [
         'Montserrat',
@@ -179,7 +179,7 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
         'Palatino Linotype',
         'Trebuchet MS'
     ];
-    
+
     // Font sizes
     readonly fontSizes = [8, 9, 10, 11, 12, 14, 16, 18, 20, 24, 28, 32, 36, 40, 48, 56, 64, 72];
 
@@ -203,15 +203,15 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
 
     readonly fontFamilyOptions: SelectOption[] = this.fontFamilies.map(f => ({ value: f, label: f }));
     readonly fontSizeOptions: SelectOption[] = this.fontSizes.map(s => ({ value: s, label: `${s}px` }));
-    
+
     // FormControl for grid size (used with app-select outside of form groups)
     gridSizeControl = new FormControl(20);
-    
+
     // Forms
     documentForm: FormGroup;
     elementPropertiesForm: FormGroup;
     pageSettingsForm: FormGroup;
-    
+
     constructor(
         private route: ActivatedRoute,
         private router: Router,
@@ -226,7 +226,7 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
             name: ['', Validators.required],
             description: ['']
         });
-        
+
         this.elementPropertiesForm = this.fb.group({
             // Common properties
             name: [''],
@@ -237,7 +237,7 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
             rotation: [0],
             opacity: [100],
             locked: [false],
-            
+
             // Text properties
             content: [''],
             fontSize: [16],
@@ -249,31 +249,31 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
             textAlign: ['left'],
             lineHeight: [1.2],
             charSpacing: [0],
-            
+
             // Shape properties
             fill: ['#E5E7EB'],
             stroke: ['#6B7280'],
             strokeWidth: [2],
             strokeDashArray: ['solid'], // solid, dashed, dotted, dashdot
             borderRadius: [0],
-            
+
             // Transform properties
             flipX: [false],
             flipY: [false],
-            
+
             // Image properties
             imageSrc: [''],
             imageFit: ['contain'],
-            
+
             // QR properties
             qrContent: [''],
             qrSize: [150],
-            
+
             // Variable binding
             isDynamic: [false],
             variableName: ['']
         });
-        
+
         // Page settings form
         this.pageSettingsForm = this.fb.group({
             pageSize: ['A4'],
@@ -294,7 +294,7 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
             this.loadDocument(this.documentId);
         }
     }
-    
+
     ngAfterViewInit(): void {
         setTimeout(() => this.initFabricCanvas(), 0);
 
@@ -309,14 +309,14 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
             }
         });
     }
-    
+
     ngOnDestroy(): void {
         if (this.canvas) {
             this.canvas.dispose();
         }
         this._pageSettingsSub?.unsubscribe();
     }
-    
+
     // ===== KEYBOARD SHORTCUTS =====
     @HostListener('document:keydown', ['$event'])
     handleKeyboardEvent(event: KeyboardEvent): void {
@@ -325,15 +325,15 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
         if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
             return;
         }
-        
+
         const isCtrl = event.ctrlKey || event.metaKey;
-        
+
         // Delete
         if (event.key === 'Delete' || event.key === 'Backspace') {
             event.preventDefault();
             this.deleteSelected();
         }
-        
+
         // Escape - deselect
         if (event.key === 'Escape') {
             this.canvas?.discardActiveObject();
@@ -341,43 +341,43 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
             this.selectedObject = null;
             this.cdr.detectChanges();
         }
-        
+
         // Ctrl+C - Copy
         if (isCtrl && event.key === 'c') {
             event.preventDefault();
             this.copySelected();
         }
-        
+
         // Ctrl+V - Paste
         if (isCtrl && event.key === 'v') {
             event.preventDefault();
             this.paste();
         }
-        
+
         // Ctrl+X - Cut
         if (isCtrl && event.key === 'x') {
             event.preventDefault();
             this.cutSelected();
         }
-        
+
         // Ctrl+D - Duplicate
         if (isCtrl && event.key === 'd') {
             event.preventDefault();
             this.duplicateSelected();
         }
-        
+
         // Ctrl+Z - Undo
         if (isCtrl && event.key === 'z' && !event.shiftKey) {
             event.preventDefault();
             this.undo();
         }
-        
+
         // Ctrl+Shift+Z or Ctrl+Y - Redo
         if ((isCtrl && event.shiftKey && event.key === 'z') || (isCtrl && event.key === 'y')) {
             event.preventDefault();
             this.redo();
         }
-        
+
         // Arrow keys - nudge
         if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) {
             const activeObject = this.canvas?.getActiveObject();
@@ -401,7 +401,7 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
     // ===== CANVAS INITIALIZATION =====
     private initFabricCanvas(): void {
         if (!this.canvasRef?.nativeElement) return;
-        
+
         this.canvas = new fabric.Canvas(this.canvasRef.nativeElement, {
             width: this.canvasWidth,
             height: this.canvasHeight,
@@ -411,7 +411,7 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
             stopContextMenu: true,
             uniformScaling: false
         });
-        
+
         // Configure selection style
         fabric.FabricObject.prototype.set({
             transparentCorners: false,
@@ -425,19 +425,19 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
             snapAngle: 15,
             snapThreshold: 10
         });
-        
+
         // Note: Rotation control offset is set per-object in Fabric.js 6.x
         // Setup event listeners
         this.setupCanvasEvents();
-        
+
         this.isCanvasInitialized = true;
-        
+
         // Apply initial page settings and draw margin guides
         this.applyPageSettings();
-        
+
         this.saveHistory();
     }
-    
+
     private setupCanvasEvents(): void {
         // Selection events - wrapped in NgZone.run() for Angular change detection
         this.canvas.on('selection:created', (e) => {
@@ -445,13 +445,13 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
                 this.onObjectSelected(e.selected?.[0] as CustomFabricObject);
             });
         });
-        
+
         this.canvas.on('selection:updated', (e) => {
             this.ngZone.run(() => {
                 this.onObjectSelected(e.selected?.[0] as CustomFabricObject);
             });
         });
-        
+
         this.canvas.on('selection:cleared', () => {
             this.ngZone.run(() => {
                 this.selectedObject = null;
@@ -460,7 +460,7 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
                 this.cdr.detectChanges();
             });
         });
-        
+
         // Modification events - wrapped in NgZone for Angular change detection
         this.canvas.on('object:modified', (e) => {
             this.ngZone.run(() => {
@@ -471,40 +471,40 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
                 this.saveHistory();
             });
         });
-        
+
         this.canvas.on('object:moving', (e) => {
             this.ngZone.run(() => {
                 const obj = e.target as CustomFabricObject;
-                
+
                 // Snap to grid if enabled
                 if (this.snapToGrid && this.showGrid) {
                     this.snapObjectToGrid(obj);
                 }
-                
+
                 // Show smart alignment guides
                 if (this.showSmartGuides) {
                     this.showAlignmentGuides(obj);
                 }
-                
+
                 // Constrain to margin boundaries during move
                 this.constrainToMargins(obj);
-                
+
                 this.updatePropertiesFromObject(obj);
             });
         });
-        
+
         this.canvas.on('object:scaling', (e) => {
             this.ngZone.run(() => {
                 this.updatePropertiesFromObject(e.target as CustomFabricObject);
             });
         });
-        
+
         this.canvas.on('object:rotating', (e) => {
             this.ngZone.run(() => {
                 this.updatePropertiesFromObject(e.target as CustomFabricObject);
             });
         });
-        
+
         // Pan mode events - moves the scroll container, not the canvas viewport
         this.canvas.on('mouse:down', (opt) => {
             if (this.isPanMode) {
@@ -517,23 +517,23 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
                 this.canvas.renderAll();
             }
         });
-        
+
         this.canvas.on('mouse:move', (opt) => {
             if (this.isPanMode && this.isPanning && this.canvasScrollRef?.nativeElement) {
                 const evt = opt.e as MouseEvent;
                 const container = this.canvasScrollRef.nativeElement;
-                
+
                 // Calculate delta and scroll the container
                 const deltaX = this.lastPanPoint.x - evt.clientX;
                 const deltaY = this.lastPanPoint.y - evt.clientY;
-                
+
                 container.scrollLeft += deltaX;
                 container.scrollTop += deltaY;
-                
+
                 this.lastPanPoint = { x: evt.clientX, y: evt.clientY };
             }
         });
-        
+
         this.canvas.on('mouse:up', () => {
             if (this.isPanMode) {
                 this.isPanning = false;
@@ -543,18 +543,18 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
             // Clear alignment guides when mouse is released
             this.clearAlignmentGuides();
         });
-        
+
         // Text editing
         this.canvas.on('text:editing:entered', () => {
             // Text is being edited inline
         });
-        
+
         this.canvas.on('text:editing:exited', () => {
             this.ngZone.run(() => {
                 this.saveHistory();
             });
         });
-        
+
         this.canvas.on('text:changed', () => {
             this.ngZone.run(() => {
                 const activeObject = this.canvas.getActiveObject();
@@ -566,10 +566,10 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
             });
         });
     }
-    
+
     private onObjectSelected(obj: CustomFabricObject | undefined): void {
         if (!obj) return;
-        
+
         this.selectedObject = obj;
         this.showPropertiesPanel = true;
         this.updatePropertiesFromObject(obj);
@@ -597,18 +597,18 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
             }
         });
     }
-    
+
     private loadTemplateToCanvas(): void {
         if (!this.template || !this.canvas) return;
-        
+
         // Set background color
         this.canvas.backgroundColor = this.template.pageConfig.backgroundColor || '#ffffff';
-        
+
         // Load background image if exists
         if (this.template.pageConfig.backgroundImage) {
             this.loadBackgroundImage(this.template.pageConfig.backgroundImage, this.template.pageConfig.backgroundFit);
         }
-        
+
         // Load elements
         this.template.elements.forEach(element => {
             this.createFabricObject(element);
@@ -616,14 +616,14 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
 
         // Initialize filtered variables for search
         this.initFilteredVariables();
-        
+
         this.canvas.renderAll();
         this.saveHistory();
     }
-    
+
     private createFabricObject(element: CanvasElement): void {
         let obj: CustomFabricObject | null = null;
-        
+
         switch (element.type) {
             case 'text':
                 obj = this.createTextObject(element);
@@ -638,7 +638,7 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
                 this.createQRObject(element);
                 return; // async
         }
-        
+
         if (obj) {
             obj.elementId = element.id;
             obj.elementType = element.type;
@@ -646,7 +646,7 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
             this.canvas.add(obj);
         }
     }
-    
+
     private createTextObject(element: CanvasElement): CustomFabricObject {
         const config = element.textConfig;
         const textbox = new fabric.Textbox(config?.content || 'Texto', {
@@ -662,20 +662,20 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
             lineHeight: config?.lineHeight || 1.2,
             charSpacing: config?.letterSpacing || 0
         }) as CustomFabricObject;
-        
+
         textbox.elementId = element.id;
         textbox.elementType = 'text';
         textbox.elementName = element.name;
         textbox.isDynamic = config?.isDynamic;
         textbox.variableName = config?.variableName;
-        
+
         return textbox;
     }
-    
+
     private createShapeObject(element: CanvasElement): CustomFabricObject | null {
         const config = element.shapeConfig;
         let shape: CustomFabricObject;
-        
+
         const baseConfig = {
             left: element.transform.x,
             top: element.transform.y,
@@ -685,7 +685,7 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
             stroke: config?.stroke || '#6B7280',
             strokeWidth: config?.strokeWidth || 2
         };
-        
+
         switch (config?.type) {
             case 'rectangle':
                 shape = new fabric.Rect(baseConfig) as CustomFabricObject;
@@ -718,14 +718,14 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
             default:
                 shape = new fabric.Rect(baseConfig) as CustomFabricObject;
         }
-        
+
         shape.elementId = element.id;
         shape.elementType = 'shape';
         shape.elementName = element.name;
-        
+
         return shape;
     }
-    
+
     /**
      * Carga un elemento de imagen desde un template existente.
      * Si no tiene src, crea un placeholder visual.
@@ -734,55 +734,55 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
         const src = element.imageConfig?.src;
         const isDynamic = element.imageConfig?.isDynamic || false;
         const variableName = element.imageConfig?.variableName || '';
-        
+
         if (!src || isDynamic) {
             // Crear placeholder visual usando el helper
             const placeholderDataUrl = this.generateImagePlaceholder(
                 element.transform.width || 200,
                 element.transform.height || 132
             );
-            
+
             fabric.FabricImage.fromURL(placeholderDataUrl).then((img) => {
                 img.set({
                     left: element.transform.x,
                     top: element.transform.y
                 });
-                
+
                 const scaleX = (element.transform.width || 200) / (img.width || 1);
                 const scaleY = (element.transform.height || 132) / (img.height || 1);
                 img.scaleX = scaleX;
                 img.scaleY = scaleY;
-                
+
                 const customImg = img as CustomFabricObject;
                 customImg.elementId = element.id;
                 customImg.elementType = 'image';
                 customImg.elementName = element.name || 'Imagen';
                 customImg.isDynamic = isDynamic;
                 customImg.variableName = variableName;
-                
+
                 this.canvas.add(customImg);
                 this.canvas.renderAll();
             });
             return;
         }
-        
+
         fabric.FabricImage.fromURL(src, { crossOrigin: 'anonymous' }).then((img) => {
             img.set({
                 left: element.transform.x,
                 top: element.transform.y
             });
-            
+
             const scaleX = element.transform.width / (img.width || 1);
             const scaleY = element.transform.height / (img.height || 1);
             img.scaleX = scaleX;
             img.scaleY = scaleY;
-            
+
             const customImg = img as CustomFabricObject;
             customImg.elementId = element.id;
             customImg.elementType = 'image';
             customImg.elementName = element.name;
             customImg.isDynamic = false;
-            
+
             this.canvas.add(customImg);
             this.canvas.renderAll();
         }).catch(() => {
@@ -791,31 +791,31 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
                 element.transform.width || 200,
                 element.transform.height || 132
             );
-            
+
             fabric.FabricImage.fromURL(placeholderDataUrl).then((img) => {
                 img.set({
                     left: element.transform.x,
                     top: element.transform.y
                 });
-                
+
                 const customImg = img as CustomFabricObject;
                 customImg.elementId = element.id;
                 customImg.elementType = 'image';
                 customImg.elementName = element.name || 'Imagen';
-                
+
                 this.canvas.add(customImg);
                 this.canvas.renderAll();
             });
         });
     }
-    
+
     private createQRObject(element: CanvasElement): void {
         const content = element.qrConfig?.content || 'https://example.com';
         const size = element.qrConfig?.size || 150;
-        
+
         // Generate QR using qrcode library
         import('qrcode').then(QRCode => {
-            QRCode.toDataURL(content, { 
+            QRCode.toDataURL(content, {
                 width: size,
                 margin: 1,
                 errorCorrectionLevel: element.qrConfig?.errorCorrectionLevel || 'M'
@@ -825,14 +825,14 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
                         left: element.transform.x,
                         top: element.transform.y
                     });
-                    
+
                     const customImg = img as CustomFabricObject;
                     customImg.elementId = element.id;
                     customImg.elementType = 'qr';
                     customImg.elementName = element.name || 'Código QR';
                     customImg.isDynamic = element.qrConfig?.isDynamic;
                     customImg.variableName = element.qrConfig?.variableName;
-                    
+
                     this.canvas.add(customImg);
                     this.canvas.renderAll();
                 });
@@ -844,19 +844,19 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
     loadBackgroundImage(src: string, fit?: 'cover' | 'contain' | 'fill'): void {
         this.backgroundImageSrc = src;
         this.backgroundFit = fit || 'cover';
-        
+
         fabric.FabricImage.fromURL(src, { crossOrigin: 'anonymous' }).then((img) => {
             this.applyBackgroundFit(img, this.backgroundFit);
         });
     }
-    
+
     private applyBackgroundFit(img: fabric.FabricImage, fit: 'cover' | 'contain' | 'fill'): void {
         const imgWidth = img.width || 1;
         const imgHeight = img.height || 1;
-        
+
         let scaleX = this.canvasWidth / imgWidth;
         let scaleY = this.canvasHeight / imgHeight;
-        
+
         switch (fit) {
             case 'cover':
                 const coverScale = Math.max(scaleX, scaleY);
@@ -879,31 +879,31 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
                 img.top = 0;
                 break;
         }
-        
+
         this.canvas.backgroundImage = img;
         this.canvas.renderAll();
     }
-    
+
     onBackgroundImageChange(event: Event): void {
         const input = event.target as HTMLInputElement;
         if (input.files && input.files[0]) {
             const file = input.files[0];
             const reader = new FileReader();
-            
+
             reader.onload = (e) => {
                 const result = e.target?.result as string;
                 this.loadBackgroundImage(result, this.backgroundFit);
-                
+
                 if (this.template) {
                     this.template.pageConfig.backgroundImage = result;
                 }
                 this.saveHistory();
             };
-            
+
             reader.readAsDataURL(file);
         }
     }
-    
+
     updateBackgroundFit(fit: 'cover' | 'contain' | 'fill'): void {
         this.backgroundFit = fit;
         if (this.canvas.backgroundImage) {
@@ -914,7 +914,7 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
         }
         this.saveHistory();
     }
-    
+
     removeBackgroundImage(): void {
         this.canvas.backgroundImage = undefined;
         this.backgroundImageSrc = '';
@@ -937,18 +937,18 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
             fill: '#000000',
             textAlign: 'left'
         }) as CustomFabricObject;
-        
+
         textbox.elementId = `text-${Date.now()}`;
         textbox.elementType = 'text';
         this.elementCounters['texto']++;
         textbox.elementName = `Texto${this.elementCounters['texto']}`;
-        
+
         this.canvas.add(textbox);
         this.canvas.setActiveObject(textbox);
         this.canvas.renderAll();
         this.saveHistory();
     }
-    
+
     addHeadingElement(): void {
         const textbox = new fabric.Textbox('TÍTULO', {
             left: 100,
@@ -960,18 +960,18 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
             fill: '#8B1538',
             textAlign: 'center'
         }) as CustomFabricObject;
-        
+
         textbox.elementId = `heading-${Date.now()}`;
         textbox.elementType = 'text';
         this.elementCounters['titulo']++;
         textbox.elementName = `Titulo${this.elementCounters['titulo']}`;
-        
+
         this.canvas.add(textbox);
         this.canvas.setActiveObject(textbox);
         this.canvas.renderAll();
         this.saveHistory();
     }
-    
+
 
 
 
@@ -1024,10 +1024,10 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
             this.saveHistory();
         });
     }
-    
+
     addShapeElement(type: 'rectangle' | 'circle' | 'ellipse' | 'triangle' | 'line' | 'arrow' | 'diamond' | 'star' | 'pentagon' | 'hexagon'): void {
         let shape: CustomFabricObject;
-        
+
         const baseConfig = {
             left: 150,
             top: 150,
@@ -1035,7 +1035,7 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
             stroke: '#8B1538',
             strokeWidth: 2
         };
-        
+
         switch (type) {
             case 'rectangle':
                 shape = new fabric.Rect({
@@ -1092,17 +1092,17 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
             default:
                 return;
         }
-        
+
         shape.elementId = `shape-${Date.now()}`;
         shape.elementType = 'shape';
         shape.elementName = this.getShapeName(type);
-        
+
         this.canvas.add(shape);
         this.canvas.setActiveObject(shape);
         this.canvas.renderAll();
         this.saveHistory();
     }
-    
+
     private getShapeName(type: string): string {
         const counterKeys: Record<string, string> = {
             'rectangle': 'rectangulo',
@@ -1192,7 +1192,7 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
         const outerRadius = 60;
         const innerRadius = 25;
         const numPoints = 5;
-        
+
         for (let i = 0; i < numPoints * 2; i++) {
             const radius = i % 2 === 0 ? outerRadius : innerRadius;
             const angle = (Math.PI / numPoints) * i - Math.PI / 2;
@@ -1201,7 +1201,7 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
                 y: Math.sin(angle) * radius
             });
         }
-        
+
         return new fabric.Polygon(points, {
             ...baseConfig,
             originX: 'center',
@@ -1214,7 +1214,7 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
      */
     private createPolygonShape(type: 'diamond' | 'pentagon' | 'hexagon', baseConfig: any): CustomFabricObject {
         let points: { x: number; y: number }[] = [];
-        
+
         switch (type) {
             case 'diamond':
                 points = [
@@ -1231,7 +1231,7 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
                 points = this.createRegularPolygonPoints(6, 60);
                 break;
         }
-        
+
         return new fabric.Polygon(points, {
             ...baseConfig,
             originX: 'center',
@@ -1246,7 +1246,7 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
         const points: { x: number; y: number }[] = [];
         const angleStep = (2 * Math.PI) / sides;
         const startAngle = -Math.PI / 2; // Empezar desde arriba
-        
+
         for (let i = 0; i < sides; i++) {
             const angle = startAngle + i * angleStep;
             points.push({
@@ -1254,16 +1254,16 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
                 y: Math.sin(angle) * radius
             });
         }
-        
+
         return points;
     }
-    
+
     addQRElement(): void {
         const qrContent = 'https://oaxaca.gob.mx';
         const size = 150;
-        
+
         import('qrcode').then(QRCode => {
-            QRCode.toDataURL(qrContent, { 
+            QRCode.toDataURL(qrContent, {
                 width: size,
                 margin: 1,
                 errorCorrectionLevel: 'M'
@@ -1273,13 +1273,13 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
                         left: 100,
                         top: 100
                     });
-                    
+
                     const customImg = img as CustomFabricObject;
                     customImg.elementId = `qr-${Date.now()}`;
                     customImg.elementType = 'qr';
                     this.elementCounters['qr']++;
                     customImg.elementName = `CodigoQR${this.elementCounters['qr']}`;
-                    
+
                     this.canvas.add(customImg);
                     this.canvas.setActiveObject(customImg);
                     this.canvas.renderAll();
@@ -1314,29 +1314,29 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
         canvas.width = width;
         canvas.height = height;
         const ctx = canvas.getContext('2d');
-        
+
         if (ctx) {
             // Fondo
             ctx.fillStyle = '#F3F4F6';
             ctx.fillRect(0, 0, width, height);
-            
+
             // Borde
             ctx.strokeStyle = '#D1D5DB';
             ctx.lineWidth = 2;
             ctx.strokeRect(1, 1, width - 2, height - 2);
-            
+
             // Icono
             ctx.fillStyle = '#6B7280';
             ctx.font = '40px sans-serif';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillText('🖼️', width / 2, height / 2 - 10);
-            
+
             // Etiqueta
             ctx.font = 'bold 14px Montserrat, sans-serif';
             ctx.fillText('Imagen', width / 2, height / 2 + 30);
         }
-        
+
         return canvas.toDataURL('image/png');
     }
 
@@ -1350,27 +1350,27 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
             this.saveHistory();
         }
     }
-    
+
     duplicateSelected(): void {
         const activeObject = this.canvas.getActiveObject();
         if (!activeObject) return;
-        
+
         activeObject.clone().then((cloned: fabric.FabricObject) => {
             cloned.left = (cloned.left || 0) + 20;
             cloned.top = (cloned.top || 0) + 20;
-            
+
             const customCloned = cloned as CustomFabricObject;
             customCloned.elementId = `${(activeObject as CustomFabricObject).elementType}-${Date.now()}`;
             customCloned.elementType = (activeObject as CustomFabricObject).elementType;
             customCloned.elementName = (activeObject as CustomFabricObject).elementName;
-            
+
             this.canvas.add(customCloned);
             this.canvas.setActiveObject(customCloned);
             this.canvas.renderAll();
             this.saveHistory();
         });
     }
-    
+
     copySelected(): void {
         const activeObject = this.canvas.getActiveObject();
         if (activeObject) {
@@ -1379,29 +1379,29 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
             });
         }
     }
-    
+
     cutSelected(): void {
         this.copySelected();
         this.deleteSelected();
     }
-    
+
     paste(): void {
         if (!this.clipboard) return;
-        
+
         this.clipboard.clone().then((cloned: fabric.FabricObject) => {
             cloned.left = (cloned.left || 0) + 20;
             cloned.top = (cloned.top || 0) + 20;
-            
+
             const customCloned = cloned as CustomFabricObject;
             customCloned.elementId = `element-${Date.now()}`;
-            
+
             this.canvas.add(customCloned);
             this.canvas.setActiveObject(customCloned);
             this.canvas.renderAll();
             this.saveHistory();
         });
     }
-    
+
     lockSelected(): void {
         const activeObject = this.canvas.getActiveObject();
         if (activeObject) {
@@ -1413,7 +1413,7 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
             activeObject.lockRotation = isLocked;
             activeObject.selectable = !isLocked;
             activeObject.hasControls = !isLocked;
-            
+
             this.elementPropertiesForm.patchValue({ locked: isLocked }, { emitEvent: false });
             this.canvas.renderAll();
             this.saveHistory();
@@ -1424,15 +1424,15 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
     alignSelected(alignment: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom'): void {
         const activeObject = this.canvas.getActiveObject();
         if (!activeObject) return;
-        
+
         const objWidth = activeObject.getScaledWidth();
         const objHeight = activeObject.getScaledHeight();
-        
+
         // Obtener límites de los márgenes
         const bounds = this.getMarginBoundaries();
         const printableWidth = bounds.right - bounds.left;
         const printableHeight = bounds.bottom - bounds.top;
-        
+
         switch (alignment) {
             case 'left':
                 activeObject.left = bounds.left;
@@ -1453,7 +1453,7 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
                 activeObject.top = bounds.bottom - objHeight;
                 break;
         }
-        
+
         activeObject.setCoords();
         this.canvas.renderAll();
         this.updatePropertiesFromObject(activeObject as CustomFabricObject);
@@ -1469,7 +1469,7 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
             this.saveHistory();
         }
     }
-    
+
     sendToBack(): void {
         const activeObject = this.canvas.getActiveObject();
         if (activeObject) {
@@ -1478,7 +1478,7 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
             this.saveHistory();
         }
     }
-    
+
     bringForward(): void {
         const activeObject = this.canvas.getActiveObject();
         if (activeObject) {
@@ -1487,7 +1487,7 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
             this.saveHistory();
         }
     }
-    
+
     sendBackward(): void {
         const activeObject = this.canvas.getActiveObject();
         if (activeObject) {
@@ -1504,155 +1504,155 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
             const textbox = activeObject as fabric.Textbox;
             const currentWeight = textbox.fontWeight;
             const newWeight = currentWeight === 'bold' ? 'normal' : 'bold';
-            
+
             // Exit editing mode if active
             if (textbox.isEditing) {
                 textbox.exitEditing();
             }
-            
+
             textbox.set('fontWeight', newWeight);
             textbox.dirty = true;
             textbox.initDimensions();
             textbox.setCoords();
-            
+
             this.elementPropertiesForm.patchValue({ fontWeight: newWeight }, { emitEvent: false });
             this.canvas.requestRenderAll();
             this.saveHistory();
         }
     }
-    
+
     toggleItalic(): void {
         const activeObject = this.canvas.getActiveObject();
         if (activeObject && activeObject.type === 'textbox') {
             const textbox = activeObject as fabric.Textbox;
             const currentStyle = textbox.fontStyle;
             const newStyle = currentStyle === 'italic' ? 'normal' : 'italic';
-            
+
             // Exit editing mode if active
             if (textbox.isEditing) {
                 textbox.exitEditing();
             }
-            
+
             textbox.set('fontStyle', newStyle);
             textbox.dirty = true;
             textbox.initDimensions();
             textbox.setCoords();
-            
+
             this.elementPropertiesForm.patchValue({ fontStyle: newStyle }, { emitEvent: false });
             this.canvas.requestRenderAll();
             this.saveHistory();
         }
     }
-    
+
     toggleUnderline(): void {
         const activeObject = this.canvas.getActiveObject();
         if (activeObject && activeObject.type === 'textbox') {
             const textbox = activeObject as fabric.Textbox;
             const newUnderline = !textbox.underline;
-            
+
             // Exit editing mode if active
             if (textbox.isEditing) {
                 textbox.exitEditing();
             }
-            
+
             textbox.set('underline', newUnderline);
             textbox.dirty = true;
             textbox.initDimensions();
             textbox.setCoords();
-            
-            this.elementPropertiesForm.patchValue({ 
-                textDecoration: newUnderline ? 'underline' : '' 
+
+            this.elementPropertiesForm.patchValue({
+                textDecoration: newUnderline ? 'underline' : ''
             }, { emitEvent: false });
             this.canvas.requestRenderAll();
             this.saveHistory();
         }
     }
-    
+
     setTextAlign(align: 'left' | 'center' | 'right' | 'justify'): void {
         const activeObject = this.canvas.getActiveObject();
         if (activeObject && activeObject.type === 'textbox') {
             const textbox = activeObject as fabric.Textbox;
-            
+
             // Store current state
             const currentText = textbox.text || '';
             const wasEditing = textbox.isEditing;
-            
+
             // Exit editing mode if active
             if (wasEditing) {
                 textbox.exitEditing();
             }
-            
+
             // Apply new alignment
             textbox.set('textAlign', align);
-            
+
             // Force text re-render by setting dirty flag
             textbox.dirty = true;
-            
+
             // Trigger internal layout recalculation
             textbox.initDimensions();
             textbox.setCoords();
-            
+
             // Update form
             this.elementPropertiesForm.patchValue({ textAlign: align }, { emitEvent: false });
-            
+
             // Force canvas re-render
             this.canvas.requestRenderAll();
             this.saveHistory();
         }
     }
-    
+
     setFontSize(size: number): void {
         const activeObject = this.canvas.getActiveObject();
         if (activeObject && activeObject.type === 'textbox') {
             const textbox = activeObject as fabric.Textbox;
-            
+
             if (textbox.isEditing) {
                 textbox.exitEditing();
             }
-            
+
             textbox.set('fontSize', size);
             textbox.dirty = true;
             textbox.initDimensions();
             textbox.setCoords();
-            
+
             this.elementPropertiesForm.patchValue({ fontSize: size }, { emitEvent: false });
             this.canvas.requestRenderAll();
             this.saveHistory();
         }
     }
-    
+
     setFontFamily(family: string): void {
         const activeObject = this.canvas.getActiveObject();
         if (activeObject && activeObject.type === 'textbox') {
             const textbox = activeObject as fabric.Textbox;
-            
+
             if (textbox.isEditing) {
                 textbox.exitEditing();
             }
-            
+
             textbox.set('fontFamily', family);
             textbox.dirty = true;
             textbox.initDimensions();
             textbox.setCoords();
-            
+
             this.elementPropertiesForm.patchValue({ fontFamily: family }, { emitEvent: false });
             this.canvas.requestRenderAll();
             this.saveHistory();
         }
     }
-    
+
     setTextColor(color: string): void {
         const activeObject = this.canvas.getActiveObject();
         if (activeObject && activeObject.type === 'textbox') {
             const textbox = activeObject as fabric.Textbox;
-            
+
             if (textbox.isEditing) {
                 textbox.exitEditing();
             }
-            
+
             textbox.set('fill', color);
             textbox.dirty = true;
-            
+
             this.elementPropertiesForm.patchValue({ color }, { emitEvent: false });
             this.canvas.requestRenderAll();
             this.saveHistory();
@@ -1727,7 +1727,7 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
 
         return false;
     }
-    
+
     insertVariable(variable: TemplateVariable): void {
         const activeObject = this.canvas.getActiveObject() as CustomFabricObject;
         if (!activeObject) return;
@@ -1736,17 +1736,17 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
         if ((variable.type === 'text' || variable.type === 'date' || variable.type === 'number') && activeObject.type === 'textbox') {
             const textbox = activeObject as fabric.Textbox;
             const varTag = `{{${variable.name}}}`;
-            
+
             const currentText = textbox.text || '';
             if (currentText === 'Texto de ejemplo' || currentText.trim() === '') {
                 textbox.text = varTag;
             } else {
                 textbox.text = currentText + ' ' + varTag;
             }
-            
+
             activeObject.isDynamic = true;
             activeObject.variableName = variable.name;
-            
+
             this.elementPropertiesForm.patchValue({
                 content: textbox.text,
                 isDynamic: true,
@@ -1773,7 +1773,7 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
             activeObject.isDynamic = true;
             activeObject.variableName = variable.name;
             activeObject.elementName = variable.label;
-            
+
             this.elementPropertiesForm.patchValue({
                 isDynamic: true,
                 variableName: variable.name,
@@ -1781,7 +1781,7 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
                 qrContent: `{{${variable.name}}}`
             }, { emitEvent: false });
         }
-        
+
         this.canvas.renderAll();
         this.saveHistory();
     }
@@ -1789,22 +1789,22 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
     // ===== PROPERTIES SYNC =====
     private updatePropertiesFromObject(obj: CustomFabricObject): void {
         if (!obj) return;
-        
+
         // Get margin boundaries to constrain displayed values
         const bounds = this.getMarginBoundaries();
         const objWidth = obj.getScaledWidth();
         const objHeight = obj.getScaledHeight();
-        
+
         // Constrain displayed position to margin boundaries
         let displayX = Math.round(obj.left || 0);
         let displayY = Math.round(obj.top || 0);
-        
+
         // Only constrain if not a margin guide
         if (!(obj as any).isMarginGuide) {
             displayX = Math.max(bounds.left, Math.min(bounds.right - objWidth, displayX));
             displayY = Math.max(bounds.top, Math.min(bounds.bottom - objHeight, displayY));
         }
-        
+
         const values: any = {
             name: obj.elementName || '',
             x: displayX,
@@ -1817,7 +1817,7 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
             isDynamic: obj.isDynamic || false,
             variableName: obj.variableName || ''
         };
-        
+
         // Text specific
         if (obj.type === 'textbox') {
             const textbox = obj as fabric.Textbox;
@@ -1832,7 +1832,7 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
             values.lineHeight = textbox.lineHeight || 1.2;
             values.charSpacing = textbox.charSpacing || 0;
         }
-        
+
         // Shape specific
         if (['rect', 'circle', 'ellipse', 'triangle', 'line', 'polygon'].includes(obj.type || '') || obj.elementType === 'shape') {
             values.fill = obj.fill as string || '#E5E7EB';
@@ -1860,14 +1860,14 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
             values.isDynamic = obj.isDynamic || false;
             values.variableName = obj.variableName || '';
         }
-        
+
         this.elementPropertiesForm.patchValue(values, { emitEvent: false });
     }
-    
+
     onPropertyChange(property: string, value: any): void {
         const activeObject = this.canvas.getActiveObject();
         if (!activeObject) return;
-        
+
         switch (property) {
             case 'x':
                 // Validate and clamp to margin boundaries
@@ -2098,7 +2098,7 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
                 break;
             case 'isDynamic': {
                 const oldObj = activeObject as CustomFabricObject;
-                
+
                 // Toggle dynamic mode for images
                 if (oldObj.elementType === 'image') {
                     if (value) {
@@ -2110,7 +2110,7 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
                             Math.round(oldObj.getScaledWidth()) || 200,
                             Math.round(oldObj.getScaledHeight()) || 132
                         );
-                        
+
                         fabric.FabricImage.fromURL(dataUrl).then((img) => {
                             img.set({
                                 left: oldObj.left,
@@ -2169,7 +2169,7 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
                         }, { emitEvent: false });
                     } else {
                         // default behavior for QR and other types
-                        this.elementPropertiesForm.patchValue({ 
+                        this.elementPropertiesForm.patchValue({
                             isDynamic: true,
                             qrContent: `{{${value}}}`
                         }, { emitEvent: false });
@@ -2184,7 +2184,7 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
                 }
                 break;
         }
-        
+
         activeObject.setCoords();
         this.canvas.requestRenderAll();
         this.saveHistory();
@@ -2195,11 +2195,11 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
         this.zoomLevel = level;
         const zoom = level / 100;
         this.canvas.setZoom(zoom);
-        
+
         // Adjust canvas size for viewport
         this.canvas.setWidth(this.canvasWidth * zoom);
         this.canvas.setHeight(this.canvasHeight * zoom);
-        
+
         this.canvas.renderAll();
 
         // Recalcular guías de margen al cambiar zoom
@@ -2207,21 +2207,21 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
             this.drawMarginGuides();
         }
     }
-    
+
     zoomIn(): void {
         const currentIndex = this.zoomLevels.indexOf(this.zoomLevel);
         if (currentIndex < this.zoomLevels.length - 1) {
             this.setZoom(this.zoomLevels[currentIndex + 1]);
         }
     }
-    
+
     zoomOut(): void {
         const currentIndex = this.zoomLevels.indexOf(this.zoomLevel);
         if (currentIndex > 0) {
             this.setZoom(this.zoomLevels[currentIndex - 1]);
         }
     }
-    
+
     resetZoom(): void {
         this.setZoom(100);
     }
@@ -2229,24 +2229,24 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
     // ===== HISTORY (UNDO/REDO) =====
     private saveHistory(): void {
         if (this.isHistoryAction) return;
-        
+
         const json = JSON.stringify(this.canvas.toJSON());
-        
+
         // Remove future history if we're not at the end
         if (this.historyIndex < this.history.length - 1) {
             this.history = this.history.slice(0, this.historyIndex + 1);
         }
-        
+
         this.history.push(json);
         this.historyIndex = this.history.length - 1;
-        
+
         // Limit history size
         if (this.history.length > 50) {
             this.history.shift();
             this.historyIndex--;
         }
     }
-    
+
     undo(): void {
         if (this.historyIndex > 0) {
             this.isHistoryAction = true;
@@ -2257,7 +2257,7 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
             });
         }
     }
-    
+
     redo(): void {
         if (this.historyIndex < this.history.length - 1) {
             this.isHistoryAction = true;
@@ -2268,11 +2268,11 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
             });
         }
     }
-    
+
     get canUndo(): boolean {
         return this.historyIndex > 0;
     }
-    
+
     get canRedo(): boolean {
         return this.historyIndex < this.history.length - 1;
     }
@@ -2285,17 +2285,17 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
         this.resizingSide = side;
         this.sidebarStartX = event.clientX;
         this.sidebarStartWidth = side === 'left' ? this.leftPanelWidth : this.rightPanelWidth;
-        
+
         document.addEventListener('pointermove', this.onSidebarPointerMove);
         document.addEventListener('pointerup', this.onSidebarPointerUp);
     }
-    
+
     private onSidebarPointerMove = (event: PointerEvent): void => {
         if (!this.isResizingSidebar || !this.resizingSide) return;
-        
+
         const minWidth = 200;
         const maxWidth = 450;
-        
+
         if (this.resizingSide === 'left') {
             const dx = event.clientX - this.sidebarStartX;
             let newWidth = Math.round(this.sidebarStartWidth + dx);
@@ -2305,10 +2305,10 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
             let newWidth = Math.round(this.sidebarStartWidth + dx);
             this.rightPanelWidth = Math.max(minWidth, Math.min(maxWidth, newWidth));
         }
-        
+
         this.cdr.detectChanges();
     };
-    
+
     private onSidebarPointerUp = (): void => {
         this.isResizingSidebar = false;
         this.resizingSide = null;
@@ -2323,19 +2323,19 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
         return (this.canvas.getObjects() as CustomFabricObject[])
             .filter(obj => {
                 const anyObj = obj as any;
-                return !anyObj.isMarginGuide && 
-                       !anyObj.isGridLine && 
-                       !anyObj.isAlignmentGuide;
+                return !anyObj.isMarginGuide &&
+                    !anyObj.isGridLine &&
+                    !anyObj.isAlignmentGuide;
             })
             .slice()
             .reverse();
     }
-    
+
     selectLayer(obj: CustomFabricObject): void {
         this.canvas.setActiveObject(obj);
         this.canvas.renderAll();
     }
-    
+
     toggleLayerVisibility(obj: CustomFabricObject): void {
         obj.visible = !obj.visible;
         this.canvas.renderAll();
@@ -2348,12 +2348,12 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
             this.documentForm.markAllAsTouched();
             return;
         }
-        
+
         this.isSaving = true;
-        
+
         // Convert canvas objects back to CanvasElement format
         const elements: CanvasElement[] = this.canvasObjects.map(obj => this.fabricObjectToElement(obj)).filter(e => e !== null) as CanvasElement[];
-        
+
         const updatedTemplatePayload = {
             name: this.documentForm.value.name,
             description: this.documentForm.value.description,
@@ -2376,10 +2376,10 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
             }
         });
     }
-    
+
     private fabricObjectToElement(obj: CustomFabricObject): CanvasElement | null {
         if (!obj.elementId) return null;
-        
+
         const element: CanvasElement = {
             id: obj.elementId,
             type: obj.elementType || 'shape',
@@ -2395,7 +2395,7 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
             visible: obj.visible,
             locked: obj.lockMovementX
         };
-        
+
         // Add type-specific config
         if (obj.type === 'textbox') {
             const textbox = obj as fabric.Textbox;
@@ -2413,7 +2413,7 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
                 variableName: obj.variableName
             };
         }
-        
+
         if (['rect', 'circle', 'ellipse', 'triangle', 'line'].includes(obj.type || '')) {
             element.shapeConfig = {
                 type: this.getShapeType(obj.type || ''),
@@ -2422,14 +2422,14 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
                 strokeWidth: obj.strokeWidth
             };
         }
-        
+
         if (obj.elementType === 'image') {
             element.imageConfig = {
                 src: (obj as fabric.FabricImage).getSrc?.() || '',
                 fit: 'contain'
             };
         }
-        
+
         if (obj.elementType === 'qr') {
             element.qrConfig = {
                 content: obj.variableName ? `{{${obj.variableName}}}` : 'https://example.com',
@@ -2437,10 +2437,10 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
                 variableName: obj.variableName
             };
         }
-        
+
         return element;
     }
-    
+
     private getShapeType(fabricType: string): 'rectangle' | 'circle' | 'ellipse' | 'triangle' | 'line' | 'polygon' {
         const map: Record<string, 'rectangle' | 'circle' | 'ellipse' | 'triangle' | 'line'> = {
             'rect': 'rectangle',
@@ -2451,9 +2451,9 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
         };
         return map[fabricType] || 'rectangle';
     }
-    
+
     cancel(): void {
-        this.router.navigate(['/documentos/templates']);
+        this.router.navigate(['/config/templates']);
     }
 
     // ===== HELPERS =====
@@ -2472,11 +2472,11 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
         };
         return icons[type || ''] || 'widgets';
     }
-    
+
     isTextSelected(): boolean {
         return this.selectedObject?.type === 'textbox';
     }
-    
+
     isShapeSelected(): boolean {
         const type = this.selectedObject?.type;
         const elementType = this.selectedObject?.elementType;
@@ -2502,12 +2502,12 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
         reader.onload = (e) => {
             const dataUrl = e.target?.result as string;
             const activeObject = this.canvas.getActiveObject();
-            
+
             if (activeObject && (activeObject as CustomFabricObject).elementType === 'image') {
                 // Replace existing image
                 fabric.FabricImage.fromURL(dataUrl).then((img) => {
                     const oldObj = activeObject as CustomFabricObject;
-                    
+
                     // Preserve position and size
                     img.set({
                         left: oldObj.left,
@@ -2517,17 +2517,17 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
                         angle: oldObj.angle,
                         opacity: oldObj.opacity
                     });
-                    
+
                     const customImg = img as CustomFabricObject;
                     customImg.elementId = oldObj.elementId;
                     customImg.elementType = 'image';
                     customImg.elementName = oldObj.elementName;
-                    
+
                     this.canvas.remove(activeObject);
                     this.canvas.add(customImg);
                     this.canvas.setActiveObject(customImg);
                     this.canvas.renderAll();
-                    
+
                     this.selectedObject = customImg;
                     // When replacing with an uploaded image, clear any variable binding
                     customImg.isDynamic = false;
@@ -2554,35 +2554,35 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
 
         // Generate new QR code
         const displayContent = isDynamic && variableName ? `{{${variableName}}}` : qrContent;
-        
+
         this.generateQRCode(displayContent, qrSize).then((dataUrl) => {
             fabric.FabricImage.fromURL(dataUrl).then((img) => {
                 const oldObj = activeObject;
-                
+
                 img.set({
                     left: oldObj.left,
                     top: oldObj.top,
                     angle: oldObj.angle,
                     opacity: oldObj.opacity
                 });
-                
+
                 // Scale to match qrSize
                 const scale = qrSize / (img.width || qrSize);
                 img.scaleX = scale;
                 img.scaleY = scale;
-                
+
                 const customImg = img as CustomFabricObject;
                 customImg.elementId = oldObj.elementId;
                 customImg.elementType = 'qr';
                 customImg.elementName = oldObj.elementName || 'Código QR';
                 customImg.isDynamic = isDynamic;
                 customImg.variableName = variableName;
-                
+
                 this.canvas.remove(activeObject);
                 this.canvas.add(customImg);
                 this.canvas.setActiveObject(customImg);
                 this.canvas.renderAll();
-                
+
                 this.selectedObject = customImg;
                 this.saveHistory();
             });
@@ -2603,7 +2603,7 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
         } catch (e) {
             console.warn('QRCode library not available, using placeholder');
         }
-        
+
         // Fallback: create a simple placeholder canvas
         const canvas = document.createElement('canvas');
         canvas.width = size;
@@ -2980,7 +2980,7 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
      */
     togglePanMode(): void {
         this.isPanMode = !this.isPanMode;
-        
+
         if (this.isPanMode) {
             this.canvas.defaultCursor = 'grab';
             this.canvas.hoverCursor = 'grab';
@@ -2990,7 +2990,7 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
             this.canvas.defaultCursor = 'default';
             this.canvas.hoverCursor = 'move';
         }
-        
+
         this.cdr.detectChanges();
     }
 
@@ -3017,13 +3017,13 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
      */
     toggleGrid(): void {
         this.showGrid = !this.showGrid;
-        
+
         if (this.showGrid) {
             this.drawGrid();
         } else {
             this.removeGrid();
         }
-        
+
         this.cdr.detectChanges();
     }
 
@@ -3049,13 +3049,13 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
      */
     private drawGrid(): void {
         this.removeGrid();
-        
+
         const settings = this.pageSettingsForm.value;
         const marginTop = this.mmToPx(settings.marginTopMm || 0);
         const marginBottom = this.mmToPx(settings.marginBottomMm || 0);
         const marginLeft = this.mmToPx(settings.marginLeftMm || 0);
         const marginRight = this.mmToPx(settings.marginRightMm || 0);
-        
+
         const startX = marginLeft;
         const startY = marginTop;
         const endX = this.canvasWidth - marginRight;
@@ -3165,7 +3165,7 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
         const bounds = this.getMarginBoundaries();
         const objWidth = obj.getScaledWidth();
         const objHeight = obj.getScaledHeight();
-        
+
         let left = obj.left || 0;
         let top = obj.top || 0;
 
@@ -3200,7 +3200,7 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
         const bounds = this.getMarginBoundaries();
         const objWidth = obj.getScaledWidth();
         const objHeight = obj.getScaledHeight();
-        
+
         let left = obj.left || 0;
         let top = obj.top || 0;
         let modified = false;
@@ -3368,10 +3368,10 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
         }
 
         // Check alignment with other objects
-        const objects = this.canvas.getObjects().filter(obj => 
-            obj !== movingObj && 
-            !(obj as any).isMarginGuide && 
-            !(obj as any).isGridLine && 
+        const objects = this.canvas.getObjects().filter(obj =>
+            obj !== movingObj &&
+            !(obj as any).isMarginGuide &&
+            !(obj as any).isGridLine &&
             !(obj as any).isAlignmentGuide
         );
 
@@ -3467,7 +3467,7 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
 
         const selection = activeSelection as fabric.ActiveSelection;
         const objects = selection.getObjects().slice();
-        
+
         if (objects.length < 3) return;
 
         // Obtener límites de los márgenes
@@ -3513,7 +3513,7 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
 
         const selection = activeSelection as fabric.ActiveSelection;
         const objects = selection.getObjects().slice();
-        
+
         if (objects.length < 3) return;
 
         // Obtener límites de los márgenes

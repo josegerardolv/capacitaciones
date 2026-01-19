@@ -5,7 +5,7 @@ import { UniversalIconComponent } from '../../../../../shared/components/univers
 import { InstitutionalButtonComponent } from '../../../../../shared/components/buttons/institutional-button.component';
 import { InputEnhancedComponent } from '../../../../../shared/components/inputs/input-enhanced.component';
 import { CourseTypeConfig, DocumentConfig, RegistrationFieldConfig, DEFAULT_REGISTRATION_FIELDS } from '../../../../../core/models/course-type-config.model';
-import { TemplateService } from '../../../../templates/services/template.service';
+import { TemplateService } from '../../../templates/services/template.service';
 import { CertificateTemplate } from '../../../../../core/models/template.model';
 import { InstitutionalTableComponent, TableColumn, TableConfig } from '../../../../../shared/components/institutional-table/institutional-table.component';
 import { ModalComponent, ModalConfig } from '../../../../../shared/components/modals/modal.component';

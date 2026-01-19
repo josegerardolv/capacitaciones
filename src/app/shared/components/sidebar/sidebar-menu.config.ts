@@ -46,14 +46,6 @@ export const SIDEBAR_MENU_CONFIG: MenuItem[] = [
     roles: ['ADMIN', 'SUPER_ADMINISTRADOR', 'CAPTURISTA', 'CONSULTA', 'SUPERVISOR']
   },
   {
-    id: 'templates',
-    label: 'Templates',
-    icon: 'file-text',
-    iconType: 'bootstrap',
-    route: '/documentos/templates',
-    roles: ['ADMIN', 'SUPER_ADMINISTRADOR', 'SUPERVISOR']
-  },
-  {
     id: 'configuracion',
     label: 'Configuración',
     icon: 'gear',
@@ -77,6 +69,14 @@ export const SIDEBAR_MENU_CONFIG: MenuItem[] = [
         roles: ['ADMIN', 'SUPER_ADMINISTRADOR']
       },
       {
+        id: 'templates',
+        label: 'Templates',
+        icon: 'file-text',
+        iconType: 'bootstrap',
+        route: '/config/templates',
+        roles: ['ADMIN', 'SUPER_ADMINISTRADOR', 'SUPERVISOR']
+      },
+      {
         id: 'encuesta',
         label: 'Encuesta',
         icon: 'clipboard-data',
@@ -84,8 +84,6 @@ export const SIDEBAR_MENU_CONFIG: MenuItem[] = [
         route: '/config/encuesta',
         roles: ['ADMIN', 'SUPER_ADMINISTRADOR']
       }
-
-
     ]
   }
 ];

@@ -2,8 +2,8 @@ import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TemplateService } from '../../services/template.service';
-import { CertificateTemplate } from '../../../../core/models/template.model';
-import { InstitutionalButtonComponent } from '../../../../shared/components/buttons/institutional-button.component';
+import { CertificateTemplate } from '../../../../../core/models/template.model';
+import { InstitutionalButtonComponent } from '../../../../../shared/components/buttons/institutional-button.component';
 
 @Component({
     selector: 'app-template-preview',
@@ -58,7 +58,7 @@ export class TemplatePreviewComponent implements OnInit {
         private route: ActivatedRoute,
         private router: Router,
         private templateService: TemplateService
-    ) {}
+    ) { }
 
     ngOnInit(): void {
         this.templateId = +this.route.snapshot.params['id'];
@@ -74,10 +74,10 @@ export class TemplatePreviewComponent implements OnInit {
     }
 
     goBack() {
-        this.router.navigate(['/documentos/templates']);
+        this.router.navigate(['/config/templates']);
     }
 
     editTemplate() {
-        this.router.navigate(['/documentos/templates/editor', this.templateId]);
+        this.router.navigate(['/config/templates/editor', this.templateId]);
     }
 }

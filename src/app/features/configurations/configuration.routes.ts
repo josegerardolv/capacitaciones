@@ -19,8 +19,28 @@ export const CONFIGURATION_ROUTES: Routes = [
         title: 'Configuración - Encuesta'
     },
     {
+        path: 'templates',
+        loadComponent: () => import('./templates/pages/templates-list/templates-list.component').then(m => m.TemplatesListComponent),
+        title: 'Configuración - Templates'
+    },
+    {
+        path: 'templates/editor',
+        loadComponent: () => import('./templates/pages/template-editor/template-editor.component').then(m => m.TemplateEditorComponent),
+        title: 'Configuración - Nuevo Template'
+    },
+    {
+        path: 'templates/editor/:id',
+        loadComponent: () => import('./templates/pages/template-editor/template-editor.component').then(m => m.TemplateEditorComponent),
+        title: 'Configuración - Editar Template'
+    },
+    {
+        path: 'templates/preview/:id',
+        loadComponent: () => import('./components/modals/template-preview-modal/template-preview-modal.component').then(m => m.TemplatePreviewModalComponent),
+        title: 'Configuración - Vista Previa'
+    },
+    {
         path: '',
-        redirectTo: 'crear-cursos',
+        redirectTo: 'config-cursos',
         pathMatch: 'full'
     }
 ];
