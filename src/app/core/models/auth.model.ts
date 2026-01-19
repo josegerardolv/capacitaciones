@@ -16,6 +16,15 @@ export interface User {
   role_id?: string | null;
 }
 
+export interface BackendLoginResponse {
+  token: string;
+  user: {
+    usuario_id: string | number;
+    rol: number;
+    person?: Person; // Usamos la interfaz Person para obligar a que venga con esta estructura
+  };
+}
+
 export interface Person {
   id: string;
   first_name: string;
@@ -91,8 +100,8 @@ export interface AuthTokens {
   user: {
     id: number;
     email: string;
-  role: string;
-  role_id?: string | null;
+    role: string;
+    role_id?: string | null;
   };
   person: {
     id: number;

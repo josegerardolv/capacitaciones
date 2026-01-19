@@ -27,7 +27,7 @@ export const SIDEBAR_MENU_CONFIG: MenuItem[] = [
     icon: 'house',
     iconType: 'bootstrap',
     route: '/dashboard',
-    roles: ['ADMIN', 'SUPER_ADMINISTRADOR', 'CAPTURISTA', 'CONSULTA', 'SUPERVISOR']
+    roles: ['admin', 'SUPER_ADMINISTRADOR', 'CAPTURISTA', 'CONSULTA', 'SUPERVISOR']
   },
   {
     id: 'cursos',
@@ -35,7 +35,7 @@ export const SIDEBAR_MENU_CONFIG: MenuItem[] = [
     icon: 'people',
     iconType: 'bootstrap',
     route: '/cursos',
-    roles: ['ADMIN', 'SUPER_ADMINISTRADOR', 'CAPTURISTA', 'SUPERVISOR']
+    roles: ['admin', 'SUPER_ADMINISTRADOR', 'CAPTURISTA', 'SUPERVISOR']
   },
   {
     id: 'busqueda',
@@ -43,14 +43,14 @@ export const SIDEBAR_MENU_CONFIG: MenuItem[] = [
     icon: 'search',
     iconType: 'bootstrap',
     route: '/busqueda',
-    roles: ['ADMIN', 'SUPER_ADMINISTRADOR', 'CAPTURISTA', 'CONSULTA', 'SUPERVISOR']
+    roles: ['admin', 'SUPER_ADMINISTRADOR', 'CAPTURISTA', 'CONSULTA', 'SUPERVISOR']
   },
   {
     id: 'configuracion',
     label: 'Configuración',
     icon: 'gear',
     iconType: 'bootstrap',
-    roles: ['ADMIN', 'SUPER_ADMINISTRADOR'],
+    roles: ['admin', 'SUPER_ADMINISTRADOR'],
     children: [
       {
         id: 'config-cursos',
@@ -58,7 +58,7 @@ export const SIDEBAR_MENU_CONFIG: MenuItem[] = [
         icon: 'person',
         iconType: 'bootstrap',
         route: '/config/config-cursos',
-        roles: ['ADMIN', 'SUPER_ADMINISTRADOR']
+        roles: ['admin', 'SUPER_ADMINISTRADOR']
       },
       {
         id: 'concepto',
@@ -66,7 +66,7 @@ export const SIDEBAR_MENU_CONFIG: MenuItem[] = [
         icon: 'file-text',
         iconType: 'bootstrap',
         route: '/config/concepto',
-        roles: ['ADMIN', 'SUPER_ADMINISTRADOR']
+        roles: ['admin', 'SUPER_ADMINISTRADOR']
       },
       {
         id: 'templates',
@@ -74,7 +74,7 @@ export const SIDEBAR_MENU_CONFIG: MenuItem[] = [
         icon: 'file-text',
         iconType: 'bootstrap',
         route: '/config/templates',
-        roles: ['ADMIN', 'SUPER_ADMINISTRADOR', 'SUPERVISOR']
+        roles: ['admin', 'SUPER_ADMINISTRADOR', 'SUPERVISOR']
       },
       {
         id: 'encuesta',
@@ -82,7 +82,7 @@ export const SIDEBAR_MENU_CONFIG: MenuItem[] = [
         icon: 'clipboard-data',
         iconType: 'bootstrap',
         route: '/config/encuesta',
-        roles: ['ADMIN', 'SUPER_ADMINISTRADOR']
+        roles: ['admin', 'SUPER_ADMINISTRADOR']
       }
     ]
   }

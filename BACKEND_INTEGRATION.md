@@ -1,5 +1,16 @@
-# Guía de Integración Backend - Módulo de Capacitaciones
-Este documento contiene los endpoints y estructuras que necesitamos conectar para que el frontend funcione correctamente.
+## 0. Autenticación (Paso Obligatorio)
+
+Todas las rutas de la API están protegidas. Antes de consumir cualquier endpoint es necesario autenticarse.
+
+### Endpoint de Login
+*   **URL:** `/auth/login`
+*   **Método:** `POST`
+*   **Body (JSON):**
+    ```json
+    {
+      "email": "administrador@semovioaxaca.gob.mx",
+      "password": "123456"
+    }
 
 ## 1. Servicios a Integrar
 
@@ -120,4 +131,34 @@ Para facilitar la integración:
 5.  **Nombres de Variables (Case):**
     *   **Legacy (Auth):** Mantenemos `snake_case` (`first_name`) como lo tienen actualmente.
     *   **Nuevos Módulos:** Para todo lo nuevo (Cursos, Templates), usar **`camelCase`** (`firstName`, `createdAt`, `conceptId`) para alinearnos con el estándar de frontend.
+    *   **Roles:** Usar minúsculas (`admin`, `instructor`).
+
+---
+
+### Estado Actual de Autenticación (Reporte Técnico)
+
+Actualmente, el Frontend implementa un **"Adaptador de Autenticación"** temporal.
+
+**Situación Actual:**
+*   El endpoint `/auth/login` devuelve Token, ID y Rol.
+*   **Dato Clave:** La información del perfil (`person`) proviene de un **Servidor Externo** y actualmente no se está reenviando al login de Capacitaciones.
+
+**Estrategia de Código (Frontend):**
+Se ha implementado un bloque de código temporal identificado claramente (`// --- DATOS TEMPORALES ---`) en `AuthService`.
+Este bloque rellena los datos faltantes manualmente.
+
+**Acción Futura (Manual):**
+Cuando el Backend integre el servicio externo y envíe el objeto `person`:
+1.  El desarrollador frontend eliminará el bloque temporal.
+2.  El código pasará a mapear directamente los datos reales recibidos.
+
+**Acción Requerida para Backend:**
+Cuando se integre el servicio externo, el objeto `person` debe cumplir con la estructura estándar de nuestra interfaz `Person` (camelCase: `first_name`, `last_name`, etc.) para que el mapeo sea automático conforma a nuestros modelos (`User`).
+
+**Nota:**
+Usamos `BackendLoginResponse` como un "puente" porque el login nos entrega `usuario_id` y `rol` (nombres de base de datos legacy), pero nuestra aplicación Angular trabaja internamente con modelos limpios (`id`, `role`, `Person`).
+
+**Sobre otros endpoints:**
+Los demás servicios (Cursos, Grupos) funcionan con la base de datos local y su estructura es estándar.
+---
 

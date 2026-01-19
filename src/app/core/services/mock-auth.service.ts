@@ -33,7 +33,7 @@ export class MockAuthService {
         username: 'admin',
         name: 'Usuario Simulado',
         email: 'test@semovi.gob.mx',
-        role: 'ADMIN',
+        role: 'admin',
         role_id: '1',
         person: {
             id: '1',
@@ -49,16 +49,17 @@ export class MockAuthService {
      * Simulates login process with role detection based on username
      */
     login(credentials: LoginRequest): Observable<LoginResponse> {
-        const username = credentials.username.toUpperCase();
-        let role = 'ADMIN'; // Default
+        const username = credentials.username; // Remove forced uppercase
+        const upperUser = username.toUpperCase();
+        let role = 'admin'; // Default
         let name = 'Administrador Sistema';
 
         // "Magic" login logic
-        if (username.includes('SUPER')) role = 'SUPER_ADMINISTRADOR';
-        else if (username.includes('CAPTURISTA')) { role = 'CAPTURISTA'; name = 'Juan Capturista'; }
-        else if (username.includes('CONSULTA')) { role = 'CONSULTA'; name = 'Maria Consulta'; }
-        else if (username.includes('SUPERVISOR')) { role = 'SUPERVISOR'; name = 'Pedro Supervisor'; }
-        else if (username === 'ADMIN') { role = 'ADMIN'; } // Exact match
+        if (upperUser.includes('SUPER')) role = 'SUPER_ADMINISTRADOR';
+        else if (upperUser.includes('CAPTURISTA')) { role = 'CAPTURISTA'; name = 'Juan Capturista'; }
+        else if (upperUser.includes('CONSULTA')) { role = 'CONSULTA'; name = 'Maria Consulta'; }
+        else if (upperUser.includes('SUPERVISOR')) { role = 'SUPERVISOR'; name = 'Pedro Supervisor'; }
+        else if (username.toLowerCase() === 'admin') { role = 'admin'; } // Exact match check lowercase
         else {
             return throwError(() => new Error('Usuario no encontrado. Intente con: admin, capturista, super o consulta'));
         }
