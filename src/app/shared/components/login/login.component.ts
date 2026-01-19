@@ -46,6 +46,7 @@ import { LoginRequest } from '../../../core/models/auth.model';
                     id="username"
                     name="username"
                     type="text"
+                    autocomplete="username"
                     required
                     formControlName="username"
                     class="block w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-institucional-guinda focus:border-institucional-guinda transition-all duration-200 bg-white hover:bg-gray-50 focus:bg-white"
@@ -76,6 +77,7 @@ import { LoginRequest } from '../../../core/models/auth.model';
                     id="password"
                     name="password"
                     type="password"
+                    autocomplete="current-password"
                     required
                     formControlName="password"
                     class="block w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-institucional-guinda focus:border-institucional-guinda transition-all duration-200 bg-white hover:bg-gray-50 focus:bg-white"

@@ -212,6 +212,36 @@ import { ValidatorSpec, ValidationErrorMessages } from '../../interfaces/validat
                  (keydown)="onKeyDown($event)"
                  (keyup)="onKeyUp($event)">
             </textarea>
+
+            <!-- File Input -->
+            <div *ngIf="type === 'file'" class="file-picker w-full">
+              <label [for]="controlId" class="file-btn cursor-pointer flex items-center">
+                <app-universal-icon name="upload_file" type="material" [size]="20" customClass="mr-2"></app-universal-icon>
+                Seleccionar archivo
+              </label>
+              <input 
+                  [id]="controlId"
+                  type="file" 
+                  class="hidden"
+                  [accept]="accept"
+                  [multiple]="multiple"
+                  (change)="onFileChange($event)"
+                  (blur)="onBlur()">
+               <span class="file-name text-sm ml-2">{{ lastFileName || 'Ningún archivo seleccionado' }}</span>
+            </div>
+
+            <!-- Range Input -->
+            <input *ngIf="type === 'range'"
+                 [id]="controlId"
+                 type="range"
+                 class="range-input w-full"
+                 [min]="min" 
+                 [max]="max" 
+                 [step]="step"
+                 [value]="value || 0"
+                 (input)="onInput($event)"
+                 (change)="onInput($event)"
+                 (blur)="onBlur()">
           </ng-container>
 
           <!-- Botón clear -->
