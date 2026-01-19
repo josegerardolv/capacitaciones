@@ -4,12 +4,12 @@ import { RouterModule } from '@angular/router';
 import { CourseTypeService } from '../../../../core/services/course-type.service';
 import { CourseTypeConfig } from '../../../../core/models/course-type-config.model';
 import { InstitutionalTableComponent, TableColumn, TableConfig } from '../../../../shared/components/institutional-table/institutional-table.component';
-import { PageHeaderComponent } from '../../../../shared/components/page-header/page-header.component';
 import { InstitutionalCardComponent } from '../../../../shared/components/institutional-card/institutional-card.component';
 import { InstitutionalButtonComponent } from '../../../../shared/components/buttons/institutional-button.component';
 import { UniversalIconComponent } from '../../../../shared/components/universal-icon/universal-icon.component';
 import { BreadcrumbComponent } from '../../../../shared/components/breadcrumb/breadcrumb.component';
 import { BreadcrumbItem } from '../../../../shared/components/breadcrumb/breadcrumb.model';
+import { TablePaginationComponent, PaginationConfig, PageChangeEvent } from '../../../../shared/components/table-pagination/table-pagination.component';
 import { CourseTypeFormModalComponent } from '../../components/modals/course-type-form-modal/course-type-form-modal.component';
 
 @Component({
@@ -20,8 +20,10 @@ import { CourseTypeFormModalComponent } from '../../components/modals/course-typ
     RouterModule,
     InstitutionalTableComponent,
     InstitutionalCardComponent,
+    InstitutionalButtonComponent,
     UniversalIconComponent,
-    PageHeaderComponent,
+    BreadcrumbComponent,
+    TablePaginationComponent,
     CourseTypeFormModalComponent
   ],
   templateUrl: './course-type-list.component.html'
@@ -30,6 +32,7 @@ export class CourseTypeListComponent implements OnInit {
   @ViewChild('actionsTemplate', { static: true }) actionsTemplate!: TemplateRef<any>;
   @ViewChild('statusTemplate', { static: true }) statusTemplate!: TemplateRef<any>;
 
+  allCourseTypes: CourseTypeConfig[] = []; // Almacena todos los datos
   courseTypes: CourseTypeConfig[] = [];
 
   // Modal states
@@ -41,7 +44,14 @@ export class CourseTypeListComponent implements OnInit {
   tableConfig: TableConfig = {
     selectable: false,
     loading: true
-    // Pagination moved to external component or handled differently as it's not in TableConfig interface
+  };
+
+  paginationConfig: PaginationConfig = {
+    pageSize: 10,
+    totalItems: 0,
+    currentPage: 1,
+    pageSizeOptions: [5, 10, 20, 50],
+    showInfo: true
   };
 
   breadcrumbItems: BreadcrumbItem[] = [
@@ -49,12 +59,6 @@ export class CourseTypeListComponent implements OnInit {
     { label: 'Configuración' },
     { label: 'Tipos de Curso' }
   ];
-
-  actionButtonConfig = {
-    text: 'Configuración de Curso',
-    icon: 'add',
-    onClick: () => this.openCreateModal()
-  };
 
   constructor(private courseTypeService: CourseTypeService) { }
 
@@ -76,7 +80,9 @@ export class CourseTypeListComponent implements OnInit {
     this.tableConfig.loading = true;
     this.courseTypeService.getCourseTypes().subscribe({
       next: (data) => {
-        this.courseTypes = data;
+        this.allCourseTypes = data;
+        this.paginationConfig.totalItems = data.length;
+        this.updatePaginatedData();
         this.tableConfig.loading = false;
       },
       error: (err) => {
@@ -84,6 +90,18 @@ export class CourseTypeListComponent implements OnInit {
         this.tableConfig.loading = false;
       }
     });
+  }
+
+  onPageChange(event: PageChangeEvent) {
+    this.paginationConfig.currentPage = event.page;
+    this.paginationConfig.pageSize = event.pageSize;
+    this.updatePaginatedData();
+  }
+
+  updatePaginatedData() {
+    const start = (this.paginationConfig.currentPage - 1) * this.paginationConfig.pageSize;
+    const end = start + this.paginationConfig.pageSize;
+    this.courseTypes = this.allCourseTypes.slice(start, end);
   }
 
   getDisplayCost(item: CourseTypeConfig): number {

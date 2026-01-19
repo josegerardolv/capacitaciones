@@ -6,16 +6,22 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormControl } 
 import { Concept } from '../../../../core/models/template.model';
 import { TemplateService } from '../../templates/services/template.service';
 
-import { PageHeaderComponent } from '../../../../shared/components/page-header/page-header.component';
 import { InstitutionalCardComponent } from '../../../../shared/components/institutional-card/institutional-card.component';
 import { InstitutionalTableComponent, TableColumn, TableConfig } from '../../../../shared/components/institutional-table/institutional-table.component';
 import { TablePaginationComponent, PaginationConfig, PageChangeEvent } from '../../../../shared/components/table-pagination/table-pagination.component';
 import { InstitutionalButtonComponent } from '../../../../shared/components/buttons/institutional-button.component';
 import { ModalFormComponent } from '../../../../shared/components/forms/modal-form.component';
-import { InputComponent } from '../../../../shared/components/inputs/input.component';
+import { InputEnhancedComponent } from '@/app/shared/components';
 import { AlertModalComponent, AlertConfig } from '../../../../shared/components/modals/alert-modal.component';
 import { ConfirmationModalComponent, ConfirmationConfig } from '../../../../shared/components/modals/confirmation-modal.component';
 import { TooltipDirective } from '../../../../shared/components/tooltip/tooltip.directive';
+import { UniversalIconComponent } from '../../../../shared/components/universal-icon/universal-icon.component';
+import { BreadcrumbComponent } from '../../../../shared/components/breadcrumb/breadcrumb.component';
+import { BreadcrumbItem } from '../../../../shared/components/breadcrumb/breadcrumb.model';
+
+
+
+
 
 @Component({
     selector: 'app-concepts-list',
@@ -24,16 +30,17 @@ import { TooltipDirective } from '../../../../shared/components/tooltip/tooltip.
         CommonModule,
         RouterModule,
         ReactiveFormsModule,
-        PageHeaderComponent,
         InstitutionalCardComponent,
         InstitutionalTableComponent,
         TablePaginationComponent,
         InstitutionalButtonComponent,
         ModalFormComponent,
-        InputComponent,
+        InputEnhancedComponent,
         AlertModalComponent,
         ConfirmationModalComponent,
-        TooltipDirective
+        TooltipDirective,
+        UniversalIconComponent,
+        BreadcrumbComponent
     ],
     templateUrl: './concepts-list.component.html'
 })
@@ -41,6 +48,7 @@ export class ConceptsListComponent implements OnInit {
     @ViewChild('actionsTemplate', { static: true }) actionsTemplate!: TemplateRef<any>;
     @ViewChild('costoTemplate', { static: true }) costoTemplate!: TemplateRef<any>;
 
+    allConcepts: Concept[] = [];
     concepts: Concept[] = [];
 
     // Table Config
@@ -75,11 +83,11 @@ export class ConceptsListComponent implements OnInit {
     };
     private pendingAction: (() => void) | null = null;
 
-    actionButtonConfig = {
-        text: 'Nuevo Concepto',
-        icon: 'add',
-        onClick: () => this.openForm()
-    };
+    breadcrumbItems: BreadcrumbItem[] = [
+        { label: 'Inicio', url: '/dashboard' },
+        { label: 'Configuración' },
+        { label: 'Gestión de Conceptos' }
+    ];
 
     constructor(
         private templateService: TemplateService,
@@ -117,8 +125,9 @@ export class ConceptsListComponent implements OnInit {
         this.tableConfig.loading = true;
         this.templateService.getConcepts().subscribe({
             next: (data) => {
-                this.concepts = data;
+                this.allConcepts = data;
                 this.paginationConfig.totalItems = data.length;
+                this.updatePaginatedData();
                 this.tableConfig.loading = false;
             },
             error: (err) => {
@@ -132,8 +141,13 @@ export class ConceptsListComponent implements OnInit {
     onPageChange(event: PageChangeEvent) {
         this.paginationConfig.currentPage = event.page;
         this.paginationConfig.pageSize = event.pageSize;
-        // Client-side pagination logic could go here if needed, 
-        // but institutional-table handles local data display usually.
+        this.updatePaginatedData();
+    }
+
+    updatePaginatedData() {
+        const start = (this.paginationConfig.currentPage - 1) * this.paginationConfig.pageSize;
+        const end = start + this.paginationConfig.pageSize;
+        this.concepts = this.allConcepts.slice(start, end);
     }
 
     // CRUD Actions

@@ -1,12 +1,39 @@
 <div class="min-h-screen">
-    <app-page-header title="Gestión de Conceptos" subtitle="Administra el catálogo de conceptos, claves y costos"
-        [actionButton]="actionButtonConfig">
-    </app-page-header>
+    <!-- Tarjeta superior: título y breadcrumb -->
+    <app-institutional-card [config]="{ showHeader: false, showFooter: false, showShadow: true, showBorder: true }"
+        class="mb-6">
+        <div class="flex items-center gap-4">
+            <div class="p-3 rounded-lg bg-institucional-primario bg-opacity-10 flex items-center justify-center">
+                <app-universal-icon name="attach_money" type="material" class="w-6 h-6 text-white"></app-universal-icon>
+            </div>
 
+            <div class="min-w-0">
+                <h1 class="text-2xl md:text-3xl font-extrabold text-gray-900">Gestión de Conceptos</h1>
+                <p class="text-sm text-gray-500 mt-1">Administra el catálogo de conceptos, claves y costos</p>
+            </div>
+        </div>
+
+        <div class="mt-2 ml-4">
+            <app-breadcrumb [items]="breadcrumbItems"></app-breadcrumb>
+        </div>
+    </app-institutional-card>
+
+    <br>
     <app-institutional-card [config]="{ showHeader: false, showFooter: false, showShadow: true, showBorder: true }">
-        <app-table-pagination [config]="paginationConfig" [showPageSizeSelector]="true" [showPaginationControls]="false"
-            (pageChange)="onPageChange($event)">
-        </app-table-pagination>
+        <div class="flex flex-col-reverse md:flex-row md:justify-between md:items-center gap-4 mb-4">
+            <app-table-pagination [config]="paginationConfig" [showPageSizeSelector]="true"
+                [showPaginationControls]="false" (pageChange)="onPageChange($event)">
+            </app-table-pagination>
+
+            <div class="flex flex-col md:flex-row md:items-center gap-2">
+                <app-institutional-button (buttonClick)="openForm()" [config]="{
+                    variant: 'primary',
+                    icon: 'add'
+                }">
+                    Nuevo Concepto
+                </app-institutional-button>
+            </div>
+        </div>
 
         <app-institutional-table [data]="concepts" [columns]="tableColumns" [config]="tableConfig">
         </app-institutional-table>
