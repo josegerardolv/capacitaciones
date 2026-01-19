@@ -211,7 +211,8 @@ export class CourseTypeFormModalComponent implements OnInit {
   initForm() {
     this.form = this.fb.group({
       name: ['', Validators.required],
-      description: ['', Validators.required]
+      description: ['', Validators.required],
+      category: ['', Validators.required]
       // paymentType removed as it depends on template cost
     });
   }
@@ -225,7 +226,8 @@ export class CourseTypeFormModalComponent implements OnInit {
   fillForm(data: CourseTypeConfig) {
     this.form.patchValue({
       name: data.name,
-      description: data.description
+      description: data.description,
+      category: (data as any).category // Se asume que vendrá en el objeto o se manejará como extra
       // paymentType removed
     });
 
