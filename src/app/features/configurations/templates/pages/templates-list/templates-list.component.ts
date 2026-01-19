@@ -15,8 +15,10 @@ import { ModalFormComponent } from '../../../../../shared/components/forms/modal
 import { InputComponent } from '../../../../../shared/components/inputs/input.component';
 import { InstitutionalCardComponent } from '../../../../../shared/components/institutional-card/institutional-card.component';
 import { InstitutionalButtonComponent } from '../../../../../shared/components/buttons/institutional-button.component';
-import { PageHeaderComponent } from '../../../../../shared/components/page-header/page-header.component';
 import { SelectComponent, SelectOption } from '../../../../../shared/components/inputs/select.component';
+import { UniversalIconComponent } from '../../../../../shared/components/universal-icon/universal-icon.component';
+import { BreadcrumbComponent } from '../../../../../shared/components/breadcrumb/breadcrumb.component';
+import { BreadcrumbItem } from '../../../../../shared/components/breadcrumb/breadcrumb.model';
 // import { SelectComponent } from '@/app/shared/components'; // Duplicate import removed
 // SelectSearchComponent removed to respect shared component constraints
 // import { SelectSearchComponent, SelectSearchOption } from '../../../../../shared/components/inputs/select-search.component';
@@ -27,7 +29,6 @@ import { SelectComponent, SelectOption } from '../../../../../shared/components/
     imports: [
         CommonModule,
         RouterModule,
-        PageHeaderComponent,
         ReactiveFormsModule,
         ModalFormComponent,
         InputComponent,
@@ -39,7 +40,9 @@ import { SelectComponent, SelectOption } from '../../../../../shared/components/
         TooltipDirective,
         ConfirmationModalComponent,
         AlertModalComponent,
-        InstitutionalButtonComponent
+        InstitutionalButtonComponent,
+        UniversalIconComponent,
+        BreadcrumbComponent
     ],
     templateUrl: './templates-list.component.html'
 })
@@ -59,7 +62,6 @@ export class TemplatesListComponent implements OnInit {
     createModalOpen = false;
     editModalOpen = false;
     selectedTemplate: CertificateTemplate | null = null;
-    actionButtonConfig: any = { text: 'Nuevo Template', icon: 'add', onClick: () => this.openForm() };
 
     tableConfig: TableConfig = {
         loading: true,
@@ -76,6 +78,12 @@ export class TemplatesListComponent implements OnInit {
         pageSizeOptions: [10, 20, 50],
         showInfo: true
     };
+
+    breadcrumbItems: BreadcrumbItem[] = [
+        { label: 'Inicio', url: '/dashboard' },
+        { label: 'Configuración' },
+        { label: 'Formatos de Templates' }
+    ];
 
     isConfirmOpen = false;
     confirmConfig: ConfirmationConfig = {
@@ -162,7 +170,7 @@ export class TemplatesListComponent implements OnInit {
         };
     }
 
-    openForm() {
+    openCreateForm() {
         this.form = this.fb.group({
             name: ['', Validators.required],
             conceptId: [null, Validators.required],

@@ -1,48 +1,51 @@
-<app-modal [isOpen]="isOpen" [config]="modalConfig" (modalClose)="onClose()">
+x<app-modal [isOpen]="isOpen" [config]="modalConfig" (modalClose)="onClose()">
     <!-- Body Content handled by app-modal projection -->
     <div class="space-y-6">
         <form [formGroup]="form" class="space-y-6">
 
-            <!-- Row 1: Basic Info -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div class="col-span-1">
-                    <app-input-enhanced controlName="name" [control]="form.get('name')" label="Nombre del tipo de curso"
-                        placeholder="Ingresa el nombre del tipo de curso" [required]="true">
-                    </app-input-enhanced>
+            <!-- Split Layout: Basic Info (Left) & Fields (Right) -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                
+                <!-- Left Side: Basic Info -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                    <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">DATOS TIPO CURSO</h3>
+                    <div class="space-y-4">
+                        <app-input-enhanced controlName="name" [control]="form.get('name')" label="Nombre del tipo de curso"
+                            placeholder="Ingresa el nombre del tipo de curso" [required]="true">
+                        </app-input-enhanced>
+
+                        <app-input-enhanced controlName="description" [control]="form.get('description')"
+                            label="Descripción del tipo de curso" placeholder="Ingresa la descripción del tipo de curso"
+                            [required]="true">
+                        </app-input-enhanced>
+
+                        <app-input-enhanced controlName="category" [control]="form.get('category')" label="Tipo de curso"
+                            placeholder="Ingresa el tipo de curso" [required]="true">
+                        </app-input-enhanced>
+                    </div>
                 </div>
-                <div class="col-span-1">
-                    <app-input-enhanced controlName="description" [control]="form.get('description')"
-                        label="Descripción del tipo de curso" placeholder="Ingresa la descripción del tipo de curso"
-                        [required]="true">
-                    </app-input-enhanced>
-                </div>
-                <!-- Payment Type removed as cost is inherited from Template -->
-            </div>
 
-            <div class="divider"></div>
+                <!-- Right Side: Fields Selection -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                    <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">SELECCIONE LOS CAMPOS</h3>
 
-            <!-- Row 2: Fields Selection -->
-            <div>
-                <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">SELECCIONE LOS CAMPOS</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div *ngFor="let field of registrationFields"
+                            class="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer"
+                            (click)="toggleField(field)">
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-                    <div *ngFor="let field of registrationFields"
-                        class="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer"
-                        (click)="toggleField(field)">
-
-                        <div class="relative flex items-center justify-center h-5 w-5">
-                            <input type="checkbox" [checked]="field.visible"
-                                class="h-5 w-5 text-[#8B1538] border-gray-300 rounded focus:ring-[#8B1538] cursor-pointer">
+                            <div class="relative flex items-center justify-center h-5 w-5">
+                                <input type="checkbox" [checked]="field.visible"
+                                    class="h-5 w-5 text-[#8B1538] border-gray-300 rounded focus:ring-[#8B1538] cursor-pointer">
+                            </div>
+                            <span class="text-sm font-medium text-gray-700 select-none">{{ field.label }}</span>
                         </div>
-                        <span class="text-sm font-medium text-gray-700 select-none">{{ field.label }}</span>
                     </div>
                 </div>
             </div>
 
-            <div class="divider"></div>
-
             <!-- Template Selection Section -->
-            <div>
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
                 <div class="flex items-center justify-between mb-4">
                     <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">SELECCIONE LOS TEMPLATES
                     </h3>
