@@ -52,7 +52,11 @@ export class TemplatesListComponent implements OnInit {
     @ViewChild('conceptTemplate', { static: true }) conceptTemplate!: TemplateRef<any>;
     @ViewChild('costTemplate', { static: true }) costTemplate!: TemplateRef<any>;
 
+    allTemplates: CertificateTemplate[] = [];
+    filteredTemplates: CertificateTemplate[] = [];
     templates: CertificateTemplate[] = [];
+
+    searchControl = new FormControl('');
     concepts: Concept[] = [];
     conceptOptions: SelectOption[] = [];
 
@@ -112,6 +116,11 @@ export class TemplatesListComponent implements OnInit {
         this.initColumns();
         this.loadTemplates();
         this.loadConcepts();
+
+        this.searchControl.valueChanges.subscribe(val => {
+            this.paginationConfig.currentPage = 1;
+            this.filterData(val || '');
+        });
     }
 
     initColumns() {
@@ -141,8 +150,8 @@ export class TemplatesListComponent implements OnInit {
         this.tableConfig.loading = true;
         this.templateService.getTemplates().subscribe({
             next: (data) => {
-                this.templates = data;
-                this.paginationConfig.totalItems = data.length;
+                this.allTemplates = data;
+                this.filterData(this.searchControl.value || '');
                 this.tableConfig.loading = false;
             },
             error: () => {
@@ -294,6 +303,28 @@ export class TemplatesListComponent implements OnInit {
     onPageChange(event: PageChangeEvent) {
         this.paginationConfig.currentPage = event.page;
         this.paginationConfig.pageSize = event.pageSize;
+        this.updatePaginatedData();
+    }
+
+    filterData(query: string) {
+        const term = query.toLowerCase().trim();
+        if (!term) {
+            this.filteredTemplates = [...this.allTemplates];
+        } else {
+            this.filteredTemplates = this.allTemplates.filter(t =>
+                t.name.toLowerCase().includes(term) ||
+                (t.conceptName || '').toLowerCase().includes(term) ||
+                (t.description || '').toLowerCase().includes(term)
+            );
+        }
+        this.paginationConfig.totalItems = this.filteredTemplates.length;
+        this.updatePaginatedData();
+    }
+
+    updatePaginatedData() {
+        const start = (this.paginationConfig.currentPage - 1) * this.paginationConfig.pageSize;
+        const end = start + this.paginationConfig.pageSize;
+        this.templates = this.filteredTemplates.slice(start, end);
     }
 
     openConfirm(config: ConfirmationConfig, action: () => void) {

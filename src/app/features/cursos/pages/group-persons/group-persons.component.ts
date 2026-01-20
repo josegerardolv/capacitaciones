@@ -12,7 +12,7 @@ import { TablePaginationComponent, PaginationConfig, PageChangeEvent } from '../
 import { ConfirmationModalComponent, ConfirmationConfig } from '../../../../shared/components/modals/confirmation-modal.component';
 import { AlertModalComponent, AlertConfig } from '../../../../shared/components/modals/alert-modal.component';
 import { NotificationService } from '../../../../core/services/notification.service';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule, FormControl } from '@angular/forms';
 import { UniversalIconComponent } from "@/app/shared/components";
 // ... (imports)
 import { Person } from '../../../../core/models/person.model';
@@ -40,7 +40,9 @@ import { CourseTypeService } from '../../../../core/services/course-type.service
         ConfirmationModalComponent,
         AlertModalComponent,
         BreadcrumbComponent,
+        BreadcrumbComponent,
         FormsModule,
+        ReactiveFormsModule,
         UniversalIconComponent,
         DocumentSelectionModalComponent,
         LicenseSearchModalComponent
@@ -101,7 +103,11 @@ export class GroupPersonsComponent implements OnInit {
     selectedPersonForDocs: Person | null = null;
 
     // Datos de Personas
+    allPersons: Person[] = [];
+    filteredPersons: Person[] = [];
     persons: Person[] = [];
+
+    searchControl = new FormControl('');
 
     // --- BÚSQUEDA ---
     isSearchModalOpen = false;
@@ -156,6 +162,11 @@ export class GroupPersonsComponent implements OnInit {
         this.initColumns();
         this.loadGroupDetails();
         this.loadPersons();
+
+        this.searchControl.valueChanges.subscribe(val => {
+            this.paginationConfig.currentPage = 1;
+            this.filterData(val || '');
+        });
     }
 
     loadGroupDetails() {
@@ -186,8 +197,8 @@ export class GroupPersonsComponent implements OnInit {
         this.tableConfig.loading = true;
         this.groupsService.getPersonsByGroupId(+this.currentGroupId).subscribe({
             next: (data) => {
-                this.persons = data;
-                this.paginationConfig.totalItems = data.length;
+                this.allPersons = data;
+                this.filterData(this.searchControl.value || '');
                 this.tableConfig.loading = false;
             },
             error: (err) => {
@@ -201,8 +212,30 @@ export class GroupPersonsComponent implements OnInit {
     onPageChange(event: PageChangeEvent) {
         this.paginationConfig.currentPage = event.page;
         this.paginationConfig.pageSize = event.pageSize;
-        // Aquí llamaríamos al backend con (page, pageSize)
-        console.log('Paginación:', event);
+        this.updatePaginatedData();
+    }
+
+    filterData(query: string) {
+        const term = query.toLowerCase().trim();
+        if (!term) {
+            this.filteredPersons = [...this.allPersons];
+        } else {
+            this.filteredPersons = this.allPersons.filter(p =>
+                p.name.toLowerCase().includes(term) ||
+                (p.firstSurname || '').toLowerCase().includes(term) ||
+                (p.secondSurname || '').toLowerCase().includes(term) ||
+                (p.license || '').toLowerCase().includes(term) ||
+                (p.curp || '').toLowerCase().includes(term)
+            );
+        }
+        this.paginationConfig.totalItems = this.filteredPersons.length;
+        this.updatePaginatedData();
+    }
+
+    updatePaginatedData() {
+        const start = (this.paginationConfig.currentPage - 1) * this.paginationConfig.pageSize;
+        const end = start + this.paginationConfig.pageSize;
+        this.persons = this.filteredPersons.slice(start, end);
     }
 
     initColumns() {

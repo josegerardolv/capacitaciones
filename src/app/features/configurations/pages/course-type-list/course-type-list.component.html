@@ -1,81 +1,91 @@
 <div class="min-h-screen">
 
-    <!-- Tarjeta superior: título y breadcrumb -->
-    <app-institutional-card [config]="{ showHeader: false, showFooter: false, showShadow: true, showBorder: true }"
-        class="mb-6">
-        <div class="flex items-center gap-4">
-            <div class="p-3 rounded-lg bg-institucional-primario bg-opacity-10 flex items-center justify-center">
-                <app-universal-icon name="book" type="material" class="w-6 h-6 text-white"></app-universal-icon>
-            </div>
-
-            <div class="min-w-0">
-                <h1 class="text-2xl md:text-3xl font-extrabold text-gray-900">Configuración de Cursos</h1>
-                <p class="text-sm text-gray-500 mt-1">Gestiona los cursos, duración y grupos asociados</p>
-            </div>
-        </div>
-
-        <div class="mt-2 ml-4">
-            <app-breadcrumb [items]="breadcrumbItems"></app-breadcrumb>
-        </div>
-    </app-institutional-card>
-
-    <br>
-    <!-- Table Card -->
-    <app-institutional-card [config]="{ showHeader: false, showFooter: false, showShadow: true, showBorder: true }">
-
-      <div class="flex flex-col-reverse md:flex-row md:justify-between md:items-center gap-4 mb-4">
-        <app-table-pagination [config]="paginationConfig" [showPageSizeSelector]="true"
-            [showPaginationControls]="false" (pageChange)="onPageChange($event)">
-        </app-table-pagination>
-
-        <div class="flex flex-col md:flex-row md:items-center gap-2">
-            <app-institutional-button (buttonClick)="openCreateModal()" [config]="{
-                variant: 'primary',
-                icon: 'add'
-            }">
-                Nuevo Tipo de Curso
-            </app-institutional-button>
-        </div>
+  <!-- Tarjeta superior: título y breadcrumb -->
+  <app-institutional-card [config]="{ showHeader: false, showFooter: false, showShadow: true, showBorder: true }"
+    class="mb-6">
+    <div class="flex items-center gap-4">
+      <div class="p-3 rounded-lg bg-institucional-primario bg-opacity-10 flex items-center justify-center">
+        <app-universal-icon name="book" type="material" class="w-6 h-6 text-white"></app-universal-icon>
       </div>
 
-      <!-- Table -->
-      <app-institutional-table [data]="courseTypes" [columns]="tableColumns" [config]="tableConfig">
-      </app-institutional-table>
+      <div class="min-w-0">
+        <h1 class="text-2xl md:text-3xl font-extrabold text-gray-900">Configuración de Cursos</h1>
+        <p class="text-sm text-gray-500 mt-1">Gestiona los cursos, duración y grupos asociados</p>
+      </div>
+    </div>
 
-      <app-table-pagination [config]="paginationConfig" [showPageSizeSelector]="false" [showPaginationControls]="true"
-          (pageChange)="onPageChange($event)">
+    <div class="mt-2 ml-4">
+      <app-breadcrumb [items]="breadcrumbItems"></app-breadcrumb>
+    </div>
+  </app-institutional-card>
+
+  <br>
+  <!-- Table Card -->
+  <app-institutional-card [config]="{ showHeader: false, showFooter: false, showShadow: true, showBorder: true }">
+
+    <div class="flex flex-col-reverse md:flex-row md:justify-between md:items-center gap-4 mb-4">
+      <app-table-pagination [config]="paginationConfig" [showPageSizeSelector]="true" [showPaginationControls]="false"
+        (pageChange)="onPageChange($event)">
       </app-table-pagination>
 
-    </app-institutional-card>
-
-    <!-- Templates -->
-    <ng-template #statusTemplate let-item>
-      <span *ngIf="getDisplayCost(item) === 0"
-        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-        Gratuito
-      </span>
-      <span *ngIf="getDisplayCost(item) > 0"
-        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-        De Paga
-      </span>
-    </ng-template>
-
-
-    <ng-template #actionsTemplate let-item>
-      <div class="flex items-center justify-center gap-2">
-        <button (click)="openEditModal(item)"
-          class="p-1.5 text-orange-500 hover:bg-orange-50 rounded-full transition-colors" title="Editar">
-          <app-universal-icon name="pencil" type="bootstrap" [size]="18"></app-universal-icon>
-        </button>
-        <button (click)="onDelete(item)" class="p-1.5 text-red-500 hover:bg-red-50 rounded-full transition-colors"
-          title="Eliminar">
-          <app-universal-icon name="trash" type="bootstrap" [size]="18"></app-universal-icon>
-        </button>
+      <div class="flex flex-col md:flex-row md:items-center gap-2">
+        <app-institutional-button (buttonClick)="openCreateModal()" [config]="{
+                        variant: 'primary',
+                        icon: 'add'
+                    }">
+          Nuevo Tipo de Curso
+        </app-institutional-button>
       </div>
-    </ng-template>
+    </div>
 
-    <app-course-type-form-modal [isOpen]="showFormModal" [courseTypeToEdit]="selectedCourseType"
-      (close)="showFormModal = false" (save)="onFormSave($event)">
-    </app-course-type-form-modal>
+    <!-- Search Bar -->
+    <div class="relative w-full md:w-96 mb-6">
+      <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+        <span class="material-symbols-outlined text-gray-400">search</span>
+      </div>
+      <input [formControl]="searchControl" type="text" placeholder="Buscar tipo de curso..."
+        class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-institucional-primario focus:border-institucional-primario sm:text-sm transition duration-150 ease-in-out"
+        autocomplete="off">
+    </div>
+
+    <!-- Table -->
+    <app-institutional-table [data]="courseTypes" [columns]="tableColumns" [config]="tableConfig">
+    </app-institutional-table>
+
+    <app-table-pagination [config]="paginationConfig" [showPageSizeSelector]="false" [showPaginationControls]="true"
+      (pageChange)="onPageChange($event)">
+    </app-table-pagination>
+
+  </app-institutional-card>
+
+  <!-- Templates -->
+  <ng-template #statusTemplate let-item>
+    <span *ngIf="getDisplayCost(item) === 0"
+      class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+      Gratuito
+    </span>
+    <span *ngIf="getDisplayCost(item) > 0"
+      class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+      De Paga
+    </span>
+  </ng-template>
+
+
+  <ng-template #actionsTemplate let-item>
+    <div class="flex items-center justify-center gap-2">
+      <button (click)="openEditModal(item)"
+        class="p-1.5 text-orange-500 hover:bg-orange-50 rounded-full transition-colors" title="Editar">
+        <app-universal-icon name="pencil" type="bootstrap" [size]="18"></app-universal-icon>
+      </button>
+      <button (click)="onDelete(item)" class="p-1.5 text-red-500 hover:bg-red-50 rounded-full transition-colors"
+        title="Eliminar">
+        <app-universal-icon name="trash" type="bootstrap" [size]="18"></app-universal-icon>
+      </button>
+    </div>
+  </ng-template>
+
+  <app-course-type-form-modal [isOpen]="showFormModal" [courseTypeToEdit]="selectedCourseType"
+    (close)="showFormModal = false" (save)="onFormSave($event)">
+  </app-course-type-form-modal>
 
 </div>

@@ -1,164 +1,242 @@
-## 0. Autenticación (Paso Obligatorio)
+# Especificación Técnica de Backend - Proyecto Capacitaciones
 
-Todas las rutas de la API están protegidas. Antes de consumir cualquier endpoint es necesario autenticarse.
+Este documento define **oficialmente** los endpoints y estructuras de datos requeridos para que el Backend soporte el flujo completo de la aplicación Angular (Frontend).
+**Esta versión es la definitiva para la reestructuración de la Base de Datos.**
 
-### Endpoint de Login
-*   **URL:** `/auth/login`
+## 0. Estándares Generales (Backend Structure)
+
+Para mantener la compatibilidad con el trabajo previo:
+1.  **Protección:** Todos los endpoints (excepto los marcados como PÚBLICOS) requieren `Bearer Token` (JWT).
+2.  **Formato de Respuesta:** JSON estándar.
+3.  **Convención de Nombres:**
+    *   **Módulos Legacy (Auth):** Mantener `snake_case` (`usuario_id`) si la base de datos lo requiere.
+    *   **Nuevos Módulos (Cursos, Templates, Personas):** Usar **`camelCase`** (`firstName`, `courseId`) en las respuestas JSON para alinearse con el Frontend.
+4.  **Búsqueda y Paginación (NUEVO REQUERIMIENTO):**
+    *   Todas las tablas (Grupos, Solicitudes, Cursos) manejarán altos volúmenes de datos.
+    *   **Estándar:** Todos los endpoints `GET` de listas deben soportar:
+        *   `?q=termino` (Búsqueda general por nombre, folio, etc.)
+        *   `?page=1&limit=10` (Paginación estándar)
+
+---
+
+## 1. Módulos de Inscripción (Flujo Crítico)
+
+### A. Registro Público (Nuevo Endpoint)
+*   **Caso de Uso:** Un ciudadano se inscribe desde su casa sin estar logueado.
+*   **Seguridad:** Endpoint **PÚBLICO** (Sin Token).
 *   **Método:** `POST`
-*   **Body (JSON):**
+*   **Ruta:** `/api/public/register`
+*   **Payload (JSON):**
     ```json
     {
-      "email": "administrador@semovioaxaca.gob.mx",
-      "password": "123456"
+      "groupId": 123,
+      "person": {
+        "name": "Juan",
+        "firstSurname": "Perez",
+        "secondSurname": "Lopez",
+        "curp": "PELJ900101HDFR05",
+        "license": "A12345678",
+        "email": "juan@mail.com",
+        "phone": "5544332211",
+        "address": "Calle Reforma 1, Centro",
+        "sex": "H",
+        "nuc": "12345678" // Opcional
+      },
+      "requestedDocuments": ["doc_tarjeton", "doc_constancia"] // IDs de documentos marcados
     }
+    ```
+*   **Comportamiento Backend:**
+    1.  Validar cupo del grupo.
+    2.  Crear registro en tabla `persons` (o `personas_inscritas`) con status **`Pendiente`**.
+    3.  Responder `200 OK` con mensaje de éxito.
 
-## 1. Servicios a Integrar
+### B. Registro Administrativo (Privado)
+*   **Caso de Uso:** Un funcionario inscribe a alguien desde el panel.
+*   **Seguridad:** Requiere Token.
+*   **Método:** `POST`
+*   **Ruta:** `/api/groups/{id}/persons`
+*   **Payload:** Mismo objeto `person` completo que el registro público.
+*   **Comportamiento:**
+    1.  Crear registro con status `Pendiente` (o `Aprobado` si el admin lo decide).
 
-Aquí les detallo los servicios de Angular que necesitan conectarse a la API:
+---
 
-### A. Tipos de Curso / Configuración
-**Responsabilidad:** Manejar las reglas de la configuración de cursos (qué campos pedir y qué documentos entregar).
+## 2. Gestión de Aceptación y Estatus
 
-| Método Frontend | Endpoint Sugerido | Método HTTP | Descripción |
+El frontend maneja una máquina de estados estricta. El backend debe soportar actualizar estos estados.
+
+### A. Aprobar/Reprobar Persona
+*   **Ruta:** `/api/persons/{id}/status`
+*   **Método:** `PUT` (o `PATCH`)
+*   **Payload:** `{ "status": "Aprobado" }` o `{ "status": "No Aprobado" }`
+*   **Efecto:** Desbloquea las acciones de certificados en el frontend.
+
+### B. Listar Personas (Con Filtros)
+*   **Ruta:** `/api/groups/{id}/persons`
+*   **Método:** `GET`
+*   **Respuesta Esperada:** Array de objetos.
+    *   **Importante:** Incluir campos `status` (Pendiente/Aprobado), `paymentStatus` (Pagado/Pendiente) y `coursePaymentStatus`.
+
+---
+
+## 3. Integración con Pagos y SIOX
+
+El frontend necesita validar pagos antes de entregar documentos.
+
+### A. Validar Pago (Simulación SIOX)
+*   **Ruta:** `/api/payments/check` (o `/api/siox/check`)
+*   **Método:** `GET`
+*   **Params:** `?reference=LINEA_CAPTURA` o `?curp=XYZ`
+*   **Comportamiento Backend:**
+    1.  Consultar servicio de Finanzas/SIOX.
+    2.  Si está pagado, actualizar el `paymentStatus` local de la `person` a `Pagado`.
+    3.  Devolver `{ "paymentStatus": "Pagado", "date": "2026-02-15T10:00:00Z" }`.
+
+---
+
+## 4. Requerimientos de Base de Datos (JSON Fields)
+
+**¡ATENCIÓN!** Para que el frontend funcione como se demostró, la Base de Datos **TIENE** que soportar guardar estructuras JSON completas en estas dos tablas. Si intentan normalizar estos campos en tablas relacionales rígidas, el sistema perderá la flexibilidad dinámica.
+
+### A. Tabla `templates` (Certificados)
+Debe tener una columna tipo **JSON** (o TEXT/LONGTEXT si es MySQL antiguo) para guardar el diseño visual.
+*   **Columna sugerida:** `elements` (JSON) o `canvas_json` (JSON).
+*   **Qué guarda:** Un array de objetos con coordenadas X, Y, fuente, tamaño, color.
+    *   *Si no guardan esto tal cual, el editor visual no podrá volver a cargar el diseño después de guardarlo.*
+
+### B. Tabla `course_types` (Configuración)
+Debe tener columnas **JSON** para la configuración de campos y documentos.
+*   **Columna 1:** `registration_fields` (JSON). Guarda qué campos ("Curp", "Licencia") se muestran en el formulario.
+*   **Columna 2:** `available_documents` (JSON). Guarda qué diplomas se pueden entregar y su costo.
+
+---
+
+## 5. Resumen de Endpoints (API Contract)
+
+| Acción | Método | Ruta | Nota |
 | :--- | :--- | :--- | :--- |
-| `getCourseTypes()` | `/api/course-types` | `GET` | Obtener lista de todos los tipos de curso configurados. |
-| `getCourseTypeById(id)` | `/api/course-types/{id}` | `GET` | Obtener detalle de una configuración específica. |
-| `createCourseType(data)` | `/api/course-types` | `POST` | Crear nueva configuración de tipo de curso. |
-| `updateCourseType(id, data)` | `/api/course-types/{id}` | `PUT` | Actualizar configuración existente. |
-| `deleteCourseType(id)` | `/api/course-types/{id}` | `DELETE` | Eliminar (o desactivar) un tipo de curso. |
+| **Auth** | `POST` | `/auth/login` | **Debe devolver objeto `person` completo.** |
+| **Lista Cursos** | `GET` | `/api/courses` | Catálogo general. |
+| **Público** | `GET` | `/api/courses/public` | Lista reducida para la web pública (sin token). |
+| **Inscripción** | `POST` | `/api/public/register` | **Nuevo:** Registro externo. |
+| **Grupos** | `GET` | `/api/groups?q=...` | Gestión de grupos (Soporte búsqueda). |
+| **Personas** | `GET` | `/api/groups/{id}/persons?q=...` | Lista de inscritos (Soporte búsqueda). |
+| **Aprobar** | `PUT` | `/api/persons/{id}/status` | Cambio de estatus. |
+| **Validar Pago**| `GET` | `/api/payments/check` | Conexión a SIOX. |
+| **Certificados**| `POST` | `/api/certificates/generate` | Generador de PDF. |
 
-**Dato Importante (JSON de Configuración):**
-Necesitamos que el backend guarde y devuelva el objeto `registrationFields` para saber qué pintar en el formulario. Sería algo así:
+---
+
+## 6. Ejemplos de JSON (Payloads Reales)
+
+Para facilitar el desarrollo, aquí están los ejemplos exactos de lo que el Frontend envía y espera recibir.
+
+### A. Tipos de Curso (`POST /api/course-types`)
+Aquí configuramos qué campos preguntar en el formulario.
+
 ```json
 {
-  "id": 1,
-  "name": "Licencia Tipo A",
+  "name": "Curso de Manejo Tipo A",
+  "description": "Curso para transporte público",
+  "paymentType": "De Paga",
+  "status": "Activo",
   "registrationFields": [
-    { "fieldName": "curp", "visible": true, "required": true },
-    { "fieldName": "license", "visible": false, "required": false }
+    {
+      "fieldName": "license",
+      "label": "Número de Licencia",
+      "visible": true,
+      "required": true
+    },
+    {
+      "fieldName": "curp",
+      "label": "CURP",
+      "visible": true,
+      "required": true
+    },
+    {
+      "fieldName": "schoolKey",
+      "label": "CCT Escuela",
+      "visible": false,
+      "required": false
+    }
   ],
   "availableDocuments": [
-    { "templateId": 2, "name": "Certificado Final", "cost": 100 }
+    {
+      "id": "doc_constancia",
+      "name": "Constancia de Aprobación",
+      "templateId": 10,
+      "isMandatory": true,
+      "cost": 0
+    },
+    {
+      "id": "doc_tarjeton",
+      "name": "Tarjetón Tipo A",
+      "templateId": 12,
+      "isMandatory": false,
+      "cost": 300
+    }
   ]
 }
 ```
 
----
+### B. Template / Diploma (`POST /api/templates`)
+Este JSON define el diseño gráfico. El Backend debe guardarlo TEXTUALMENTE (string o blob JSON) para poder regenerarlo luego.
 
-### B. Catálogo de Cursos
-**Responsabilidad:** El catálogo de cursos disponibles para programar (la "materia").
-
-| Método Frontend | Endpoint Sugerido | Método HTTP | Descripción |
-| :--- | :--- | :--- | :--- |
-| `getCourses()` | `/api/courses` | `GET` | Listar cursos del catálogo. |
-| `createCourse(data)` | `/api/courses` | `POST` | Registrar nuevo curso en el catálogo. |
-| `updateCourse(id, data)` | `/api/courses/{id}` | `PUT` | Modificar datos del curso. |
-| `deleteCourse(id)` | `/api/courses/{id}` | `DELETE` | Eliminar curso del catálogo. |
-
-**Nota:** El `course.courseTypeId` debe ser una llave foránea válida hacia la tabla de Tipos de Curso de arriba.
-
----
-
-### C. Grupos / Instancias
-**Responsabilidad:** Los grupos abiertos donde la gente se inscribe.
-
-| Método Frontend | Endpoint Sugerido | Método HTTP | Descripción |
-| :--- | :--- | :--- | :--- |
-| `getGroups()` | `/api/groups` | `GET` | Listar grupos activos o históricos. |
-| `getGroupById(id)` | `/api/groups/{id}` | `GET` | Detalle del grupo y configuración. |
-| `getDriversByGroupId(id)` | `/api/groups/{id}/drivers` | `GET` | Listar personas inscritas en el grupo. |
-| `createGroup(data)` | `/api/groups` | `POST` | Abrir un nuevo grupo. |
-
-**Ojo aquí:** Cuando pidamos un grupo por ID, es súper importante que venga el `courseTypeId` correcto para saber qué formulario mostrarle al usuario en la vista pública.
-
----
-
-### D. Templates y Documentos
-**Responsabilidad:** Gestionar los diseños de los diplomas.
-
-| Método Frontend | Endpoint Sugerido | Método HTTP | Descripción |
-| :--- | :--- | :--- | :--- |
-| `getTemplates()` | `/api/templates` | `GET` | Listado de formatos disponibles. |
-| `generateCertificate(data)` | `/api/certificates/generate` | `POST` | Solicitar generación de PDF. **Debe retornar URL del PDF.** |
-
----
-
-### E. Conceptos de Cobro (SIOX)
-**Responsabilidad:** El catálogo de costos y claves.
-
-| Método Frontend | Endpoint Sugerido | Método HTTP | Descripción |
-| :--- | :--- | :--- | :--- |
-| `getConcepts()` | `/api/concepts` | `GET` | Listar catálogo de conceptos. |
-| `createConcept(data)` | `/api/concepts` | `POST` | Crear nuevo concepto de cobro. |
-| `updateConcept(id, data)` | `/api/concepts/{id}` | `PUT` | Actualizar costo o descripción. |
-| `deleteConcept(id)` | `/api/concepts/{id}` | `DELETE` | Eliminar concepto. |
-
----
-
-## 2. Actualizaciones Recientes
-
-Les comparto unos ajustes que hicimos en la estructura de datos:
-
-### Documentos Obligatorios
-Agregamos `isMandatory` para documentos obligatorios y `cost` para los gratuitos.
 ```json
-"availableDocuments": [
-  { 
-    "templateId": 2, 
-    "name": "Certificado Final", 
-    "cost": 100,
-    "isMandatory": true, // Si es true, el usuario no puede desmarcarlo
-    "requiresApproval": true 
-  }
-]
+{
+  "name": "Diploma Estándar 2026",
+  "claveConcepto": "4001",
+  "pageConfig": {
+    "width": 297,
+    "height": 210,
+    "orientation": "landscape",
+    "margins": { "top": 10, "right": 10, "bottom": 10, "left": 10 }
+  },
+  "elements": [
+    {
+      "id": "el_1",
+      "type": "text",
+      "name": "Nombre Participante",
+      "transform": { "x": 50, "y": 100, "width": 200, "height": 20 },
+      "textConfig": {
+        "content": "{{name}} {{firstSurname}}",
+        "isDynamic": true,
+        "fontSize": 24,
+        "fontFamily": "Roboto",
+        "textAlign": "center"
+      }
+    },
+    {
+      "id": "el_2",
+      "type": "qr",
+      "name": "QR Validación",
+      "transform": { "x": 10, "y": 10, "width": 30, "height": 30 },
+      "qrConfig": {
+        "content": "https://valida.semovi.oaxaca.gob.mx/{{curp}}",
+        "isDynamic": true
+      }
+    }
+  ]
+}
 ```
 
-### Unificación de Solicitudes
-Las solicitudes ahora son simplemente un **Driver (Participante)** con status `Pendiente`.
-*   Flujo: `Pendiente` -> `Aprobado` | `Rechazado`.
-*   El backend debe permitir crear un Driver directamente con status `Pendiente`.
+### C. Persona (`POST /api/public/register`)
+Datos que envía el formulario de registro.
 
----
-
-## 3. Puntos Generales
-
-Para facilitar la integración:
-
-1.  **Fechas:** Idealmente en formato ISO (`2026-10-15T09:00:00Z`).
-2.  **Paginación:** Si pueden, soporte para `?page=1&limit=10`.
-3.  **Seguridad:** Todo con JWT (Bearer token).
-4.  **CORS:** Habilitar el dominio de Angular.
-5.  **Nombres de Variables (Case):**
-    *   **Legacy (Auth):** Mantenemos `snake_case` (`first_name`) como lo tienen actualmente.
-    *   **Nuevos Módulos:** Para todo lo nuevo (Cursos, Templates), usar **`camelCase`** (`firstName`, `createdAt`, `conceptId`) para alinearnos con el estándar de frontend.
-    *   **Roles:** Usar minúsculas (`admin`, `instructor`).
-
----
-
-### Estado Actual de Autenticación (Reporte Técnico)
-
-Actualmente, el Frontend implementa un **"Adaptador de Autenticación"** temporal.
-
-**Situación Actual:**
-*   El endpoint `/auth/login` devuelve Token, ID y Rol.
-*   **Dato Clave:** La información del perfil (`person`) proviene de un **Servidor Externo** y actualmente no se está reenviando al login de Capacitaciones.
-
-**Estrategia de Código (Frontend):**
-Se ha implementado un bloque de código temporal identificado claramente (`// --- DATOS TEMPORALES ---`) en `AuthService`.
-Este bloque rellena los datos faltantes manualmente.
-
-**Acción Futura (Manual):**
-Cuando el Backend integre el servicio externo y envíe el objeto `person`:
-1.  El desarrollador frontend eliminará el bloque temporal.
-2.  El código pasará a mapear directamente los datos reales recibidos.
-
-**Acción Requerida para Backend:**
-Cuando se integre el servicio externo, el objeto `person` debe cumplir con la estructura estándar de nuestra interfaz `Person` (camelCase: `first_name`, `last_name`, etc.) para que el mapeo sea automático conforma a nuestros modelos (`User`).
-
-**Nota:**
-Usamos `BackendLoginResponse` como un "puente" porque el login nos entrega `usuario_id` y `rol` (nombres de base de datos legacy), pero nuestra aplicación Angular trabaja internamente con modelos limpios (`id`, `role`, `Person`).
-
-**Sobre otros endpoints:**
-Los demás servicios (Cursos, Grupos) funcionan con la base de datos local y su estructura es estándar.
----
-
+```json
+{
+  "groupId": 55,
+  "person": {
+    "name": "María",
+    "firstSurname": "López",
+    "secondSurname": "Sánchez",
+    "curp": "LOSM900101HDFR05",
+    "license": "A00123456",
+    "email": "maria@example.com",
+    "phone": "5512345678",
+    "sex": "Mujer",
+    "address": "Calle Reforma 222, Centro"
+  },
+  "requestedDocuments": ["doc_tarjeton"]
+}
+```

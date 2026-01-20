@@ -19,7 +19,7 @@ import { LoginRequest } from '../../../core/models/auth.model';
           <!-- Header -->
           <div class="text-center">
             <div class="mx-auto h-20 w-20 bg-guinda-600 rounded-2xl flex items-center justify-center shadow-lg mb-6 transform hover:scale-105 transition-all duration-300">
-              <img src="assets/images/icons/Icon_vino.svg" alt="SEMOVI Logo" class="h-12 w-12">
+              <img src="assets/images/icons/Icon_vino1.svg" alt="SEMOVI Logo" class="h-12 w-12">
             </div>
             <h2 class="text-2xl sm:text-3xl font-bold text-guinda-900 mb-2">
               <!-- TODO: Cambiar por el nombre del sistema -->

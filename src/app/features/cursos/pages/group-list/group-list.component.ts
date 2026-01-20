@@ -1,7 +1,7 @@
 import { Component, OnInit, ViewChild, TemplateRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router, ActivatedRoute } from '@angular/router';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormControl } from '@angular/forms';
 import { Group } from '../../../../core/models/group.model';
 import { GroupsService } from '../../services/groups.service';
 import { CoursesService } from '../../services/courses.service';
@@ -53,8 +53,12 @@ export class GroupListComponent implements OnInit {
     @ViewChild('dateTemplate', { static: true }) dateTemplate!: TemplateRef<any>; // Template para Fecha
     @ViewChild('timeTemplate', { static: true }) timeTemplate!: TemplateRef<any>; // Template para Hora
 
+    allGroups: Group[] = [];
+    filteredGroups: Group[] = [];
     groups: Group[] = [];
     selectedGroups: Group[] = []; // Array de grupos seleccionados (para la tabla institucional)
+
+    searchControl = new FormControl('');
 
     groupModalForm!: FormGroup;
     modalMode: 'create' | 'edit' = 'create';
@@ -161,6 +165,11 @@ export class GroupListComponent implements OnInit {
             // If no course context, load all groups immediately
             this.loadGroups();
         }
+
+        this.searchControl.valueChanges.subscribe(val => {
+            this.paginationConfig.currentPage = 1;
+            this.filterData(val || '');
+        });
     }
 
     // Inicialización del formulario con los campos requeridos por diseño
@@ -202,12 +211,12 @@ export class GroupListComponent implements OnInit {
         this.groupsService.getGroups().subscribe({
             next: (data) => {
                 if (this.currentCourse) {
-                    this.groups = data.filter(g => g.courseTypeId === this.currentCourse.courseTypeId);
+                    this.allGroups = data.filter(g => g.courseTypeId === this.currentCourse.courseTypeId);
                 } else {
-                    this.groups = data;
+                    this.allGroups = data;
                 }
                 this.selectedGroups = []; // Limpiar selección al recargar
-                this.paginationConfig.totalItems = data.length;
+                this.filterData(this.searchControl.value || '');
                 this.tableConfig.loading = false;
             },
             error: (err) => {
@@ -221,6 +230,28 @@ export class GroupListComponent implements OnInit {
     onPageChange(event: PageChangeEvent) {
         this.paginationConfig.currentPage = event.page;
         this.paginationConfig.pageSize = event.pageSize;
+        this.updatePaginatedData();
+    }
+
+    filterData(query: string) {
+        const term = query.toLowerCase().trim();
+        if (!term) {
+            this.filteredGroups = [...this.allGroups];
+        } else {
+            this.filteredGroups = this.allGroups.filter(g =>
+                g.name.toLowerCase().includes(term) ||
+                (g.location || '').toLowerCase().includes(term) ||
+                (g.status || '').toLowerCase().includes(term)
+            );
+        }
+        this.paginationConfig.totalItems = this.filteredGroups.length;
+        this.updatePaginatedData();
+    }
+
+    updatePaginatedData() {
+        const start = (this.paginationConfig.currentPage - 1) * this.paginationConfig.pageSize;
+        const end = start + this.paginationConfig.pageSize;
+        this.groups = this.filteredGroups.slice(start, end);
     }
 
     // --- HELPERS PARA MODALES ---

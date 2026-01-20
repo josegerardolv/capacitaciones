@@ -47,7 +47,11 @@ import { UniversalIconComponent } from '../../../../shared/components/universal-
 export class CourseListComponent implements OnInit {
     @ViewChild('actionsTemplate', { static: true }) actionsTemplate!: TemplateRef<any>;
 
+    allCourses: Course[] = [];
+    filteredCourses: Course[] = [];
     courses: Course[] = [];
+
+    searchControl = new FormControl('');
     courseModalForm!: FormGroup;
     modalMode: 'create' | 'edit' = 'create';
     editingCourseId: number | null = null;
@@ -104,7 +108,12 @@ export class CourseListComponent implements OnInit {
     ngOnInit(): void {
         this.initForms();
         this.initColumns();
-        this.loadCourseTypes(); // Primero cargar tipos, luego cursos
+        this.loadCourseTypes();
+
+        this.searchControl.valueChanges.subscribe(val => {
+            this.paginationConfig.currentPage = 1;
+            this.filterData(val || '');
+        });
     }
 
     initForms() {
@@ -159,14 +168,14 @@ export class CourseListComponent implements OnInit {
         this.coursesService.getCourses().subscribe({
             next: (data) => {
                 // Map courses to include the type name
-                this.courses = data.map(course => {
+                this.allCourses = data.map(course => { // Store in allCourses
                     const type = this.courseTypeOptions.find(t => t.value === course.courseTypeId);
                     return {
                         ...course,
                         courseTypeName: type ? type.label : 'Sin Tipo'
                     };
                 });
-                this.paginationConfig.totalItems = data.length;
+                this.filterData(this.searchControl.value || '');
                 this.tableConfig.loading = false;
             },
             error: (err: HttpErrorResponse) => { // Explicitly type err
@@ -180,6 +189,28 @@ export class CourseListComponent implements OnInit {
     onPageChange(event: PageChangeEvent) {
         this.paginationConfig.currentPage = event.page;
         this.paginationConfig.pageSize = event.pageSize;
+        this.updatePaginatedData();
+    }
+
+    filterData(query: string) {
+        const term = query.toLowerCase().trim();
+        if (!term) {
+            this.filteredCourses = [...this.allCourses];
+        } else {
+            this.filteredCourses = this.allCourses.filter(c =>
+                c.name.toLowerCase().includes(term) ||
+                c.description.toLowerCase().includes(term) ||
+                (c as any).courseTypeName?.toLowerCase().includes(term)
+            );
+        }
+        this.paginationConfig.totalItems = this.filteredCourses.length;
+        this.updatePaginatedData();
+    }
+
+    updatePaginatedData() {
+        const start = (this.paginationConfig.currentPage - 1) * this.paginationConfig.pageSize;
+        const end = start + this.paginationConfig.pageSize;
+        this.courses = this.filteredCourses.slice(start, end);
     }
 
     // --- HELPERS PARA MODALES ---
