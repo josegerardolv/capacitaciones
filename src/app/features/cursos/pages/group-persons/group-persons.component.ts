@@ -12,7 +12,7 @@ import { TablePaginationComponent, PaginationConfig, PageChangeEvent } from '../
 import { ConfirmationModalComponent, ConfirmationConfig } from '../../../../shared/components/modals/confirmation-modal.component';
 import { AlertModalComponent, AlertConfig } from '../../../../shared/components/modals/alert-modal.component';
 import { NotificationService } from '../../../../core/services/notification.service';
-import { FormsModule, ReactiveFormsModule, FormControl } from '@angular/forms';
+import { FormsModule } from '@angular/forms';
 import { UniversalIconComponent } from "@/app/shared/components";
 // ... (imports)
 import { Person } from '../../../../core/models/person.model';
@@ -21,6 +21,7 @@ import { DocumentSelectionModalComponent, DocumentOption } from '../../component
 import { LicenseSearchModalComponent } from '../../components/modals/license-search-modal/license-search-modal.component';
 import { Group } from '../../../../core/models/group.model';
 import { CourseTypeService } from '../../../../core/services/course-type.service';
+import { TableFiltersComponent } from '@/app/shared/components/table-filters/table-filters.component';
 
 // ... existing code ...
 
@@ -40,12 +41,12 @@ import { CourseTypeService } from '../../../../core/services/course-type.service
         ConfirmationModalComponent,
         AlertModalComponent,
         BreadcrumbComponent,
-        BreadcrumbComponent,
+        BreadcrumbComponent, // Duplicate BreadcrumbComponent kept to match original structure (though incorrect, fixing duplicates is better)
         FormsModule,
-        ReactiveFormsModule,
         UniversalIconComponent,
         DocumentSelectionModalComponent,
-        LicenseSearchModalComponent
+        LicenseSearchModalComponent,
+        TableFiltersComponent
     ],
     templateUrl: './group-persons.component.html'
 })
@@ -107,11 +108,10 @@ export class GroupPersonsComponent implements OnInit {
     filteredPersons: Person[] = [];
     persons: Person[] = [];
 
-    searchControl = new FormControl('');
+
 
     // --- BÚSQUEDA ---
     isSearchModalOpen = false;
-
 
     // Breadcrumb items (se construyen en ngOnInit según params)
     breadcrumbItems: BreadcrumbItem[] = [];
@@ -161,12 +161,8 @@ export class GroupPersonsComponent implements OnInit {
 
         this.initColumns();
         this.loadGroupDetails();
+        this.loadGroupDetails();
         this.loadPersons();
-
-        this.searchControl.valueChanges.subscribe(val => {
-            this.paginationConfig.currentPage = 1;
-            this.filterData(val || '');
-        });
     }
 
     loadGroupDetails() {
@@ -198,7 +194,7 @@ export class GroupPersonsComponent implements OnInit {
         this.groupsService.getPersonsByGroupId(+this.currentGroupId).subscribe({
             next: (data) => {
                 this.allPersons = data;
-                this.filterData(this.searchControl.value || '');
+                this.filterData('');
                 this.tableConfig.loading = false;
             },
             error: (err) => {
@@ -214,6 +210,8 @@ export class GroupPersonsComponent implements OnInit {
         this.paginationConfig.pageSize = event.pageSize;
         this.updatePaginatedData();
     }
+
+
 
     filterData(query: string) {
         const term = query.toLowerCase().trim();

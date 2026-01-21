@@ -38,14 +38,9 @@
         </div>
 
         <!-- Search Bar -->
-        <div class="relative w-full md:w-96 mb-6">
-            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <span class="material-symbols-outlined text-gray-400">search</span>
-            </div>
-            <input [formControl]="searchControl" type="text" placeholder="Buscar por nombre, concepto..."
-                class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-institucional-primario focus:border-institucional-primario sm:text-sm transition duration-150 ease-in-out"
-                autocomplete="off">
-        </div>
+        <app-table-filters [showGlobalSearch]="true" [globalSearchPlaceholder]="'Buscar por nombre, concepto...'"
+            (globalSearchChange)="filterData($event)">
+        </app-table-filters>
 
         <app-institutional-table [data]="templates" [columns]="tableColumns" [config]="tableConfig">
         </app-institutional-table>
@@ -55,7 +50,6 @@
     </app-institutional-card>
 </div>
 
-<!-- Modal de creación -->
 <!-- Modal unificado (crear / editar) -->
 <app-modal-form *ngIf="(createModalOpen || editModalOpen) && form" [formGroup]="form"
     [isOpen]="createModalOpen || editModalOpen" [title]="editModalOpen ? 'Editar Template' : 'Nuevo Template'"

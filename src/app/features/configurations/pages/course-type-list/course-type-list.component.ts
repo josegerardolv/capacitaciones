@@ -11,7 +11,9 @@ import { UniversalIconComponent } from '../../../../shared/components/universal-
 import { BreadcrumbComponent } from '../../../../shared/components/breadcrumb/breadcrumb.component';
 import { BreadcrumbItem } from '../../../../shared/components/breadcrumb/breadcrumb.model';
 import { TablePaginationComponent, PaginationConfig, PageChangeEvent } from '../../../../shared/components/table-pagination/table-pagination.component';
+
 import { CourseTypeFormModalComponent } from '../../components/modals/course-type-form-modal/course-type-form-modal.component';
+import { TableFiltersComponent } from '@/app/shared/components/table-filters/table-filters.component';
 
 @Component({
   selector: 'app-course-type-list',
@@ -26,7 +28,10 @@ import { CourseTypeFormModalComponent } from '../../components/modals/course-typ
     BreadcrumbComponent,
     TablePaginationComponent,
     CourseTypeFormModalComponent,
-    ReactiveFormsModule
+    TablePaginationComponent,
+    CourseTypeFormModalComponent,
+    ReactiveFormsModule,
+    TableFiltersComponent
   ],
   templateUrl: './course-type-list.component.html'
 })
@@ -38,7 +43,7 @@ export class CourseTypeListComponent implements OnInit {
   filteredCourseTypes: CourseTypeConfig[] = []; // Datos filtrados
   courseTypes: CourseTypeConfig[] = [];
 
-  searchControl = new FormControl('');
+
 
   // Modal states
   showFormModal = false;
@@ -70,12 +75,6 @@ export class CourseTypeListComponent implements OnInit {
   ngOnInit(): void {
     this.initColumns();
     this.loadData();
-
-    // Suscribirse a cambios en el buscador
-    this.searchControl.valueChanges.subscribe(value => {
-      this.paginationConfig.currentPage = 1; // Resetear a página 1
-      this.filterData(value || '');
-    });
   }
 
   initColumns() {
@@ -92,7 +91,7 @@ export class CourseTypeListComponent implements OnInit {
     this.courseTypeService.getCourseTypes().subscribe({
       next: (data) => {
         this.allCourseTypes = data;
-        this.filterData(this.searchControl.value || '');
+        this.filterData('');
         this.tableConfig.loading = false;
       },
       error: (err) => {

@@ -14,6 +14,7 @@ import { TablePaginationComponent, PaginationConfig, PageChangeEvent } from '../
 import { ConfirmationModalComponent, ConfirmationConfig } from '../../../../shared/components/modals/confirmation-modal.component';
 import { ModalComponent } from '../../../../shared/components/modals/modal.component';
 import { GroupsService } from '../../services/groups.service';
+import { TableFiltersComponent } from '@/app/shared/components/table-filters/table-filters.component';
 
 @Component({
     selector: 'app-group-requests',
@@ -25,7 +26,9 @@ import { GroupsService } from '../../services/groups.service';
         ConfirmationModalComponent,
         TablePaginationComponent,
         ReactiveFormsModule,
-        ModalComponent],
+        ReactiveFormsModule,
+        ModalComponent,
+        TableFiltersComponent],
     templateUrl: './group-requests.component.html'
 })
 export class GroupRequestsComponent implements OnChanges {
@@ -40,7 +43,7 @@ export class GroupRequestsComponent implements OnChanges {
     requests: Person[] = [];
     selectedRequests: Person[] = [];
 
-    searchControl = new FormControl('');
+
 
     tableConfig: TableConfig = {
         loading: false,
@@ -78,10 +81,6 @@ export class GroupRequestsComponent implements OnChanges {
         private groupsService: GroupsService
     ) {
         this.dummyFormGroup = this.fb.group({});
-        this.searchControl.valueChanges.subscribe(val => {
-            this.paginationConfig.currentPage = 1;
-            this.filterData(val || '');
-        });
     }
 
     ngOnChanges(changes: SimpleChanges) {
@@ -98,7 +97,7 @@ export class GroupRequestsComponent implements OnChanges {
             this.allRequests = data;
             this.selectedRequests = [];
             this.initColumns(); // Re-vinculamos templates
-            this.filterData(this.searchControl.value || '');
+            this.filterData('');
             this.tableConfig.loading = false;
         });
     }
@@ -151,7 +150,7 @@ export class GroupRequestsComponent implements OnChanges {
             cancelText: 'Cancelar'
         }, () => {
             this.allRequests = this.allRequests.filter(r => r.id !== id);
-            this.filterData(this.searchControl.value || '');
+            this.filterData('');
             this.clearSelection();
         });
     }
@@ -165,7 +164,7 @@ export class GroupRequestsComponent implements OnChanges {
             cancelText: 'Cancelar'
         }, () => {
             this.allRequests = this.allRequests.filter(r => r.id !== id);
-            this.filterData(this.searchControl.value || '');
+            this.filterData('');
             this.clearSelection();
         });
     }
@@ -183,14 +182,14 @@ export class GroupRequestsComponent implements OnChanges {
         }, () => {
             const selectedIds = this.selectedRequests.map(r => r.id);
             this.allRequests = this.allRequests.filter(r => !selectedIds.includes(r.id));
-            this.filterData(this.searchControl.value || ''); // Re-filter
+            this.filterData(''); // Re-filter
             this.clearSelection();
         });
     }
 
     private clearSelection() {
         this.selectedRequests = [];
-        this.filterData(this.searchControl.value || '');
+        this.filterData('');
     }
 
     // onPageChange removed (duplicate)

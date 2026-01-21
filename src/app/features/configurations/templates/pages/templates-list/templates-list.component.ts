@@ -22,6 +22,7 @@ import { BreadcrumbItem } from '../../../../../shared/components/breadcrumb/brea
 // import { SelectComponent } from '@/app/shared/components'; // Duplicate import removed
 // SelectSearchComponent removed to respect shared component constraints
 // import { SelectSearchComponent, SelectSearchOption } from '../../../../../shared/components/inputs/select-search.component';
+import { TableFiltersComponent } from '@/app/shared/components/table-filters/table-filters.component';
 
 @Component({
     selector: 'app-templates-list',
@@ -42,7 +43,9 @@ import { BreadcrumbItem } from '../../../../../shared/components/breadcrumb/brea
         AlertModalComponent,
         InstitutionalButtonComponent,
         UniversalIconComponent,
-        BreadcrumbComponent
+        UniversalIconComponent,
+        BreadcrumbComponent,
+        TableFiltersComponent
     ],
     templateUrl: './templates-list.component.html'
 })
@@ -56,7 +59,7 @@ export class TemplatesListComponent implements OnInit {
     filteredTemplates: CertificateTemplate[] = [];
     templates: CertificateTemplate[] = [];
 
-    searchControl = new FormControl('');
+
     concepts: Concept[] = [];
     conceptOptions: SelectOption[] = [];
 
@@ -117,10 +120,7 @@ export class TemplatesListComponent implements OnInit {
         this.loadTemplates();
         this.loadConcepts();
 
-        this.searchControl.valueChanges.subscribe(val => {
-            this.paginationConfig.currentPage = 1;
-            this.filterData(val || '');
-        });
+
     }
 
     initColumns() {
@@ -151,7 +151,7 @@ export class TemplatesListComponent implements OnInit {
         this.templateService.getTemplates().subscribe({
             next: (data) => {
                 this.allTemplates = data;
-                this.filterData(this.searchControl.value || '');
+                this.filterData('');
                 this.tableConfig.loading = false;
             },
             error: () => {

@@ -19,7 +19,8 @@ import { GroupRequestsComponent } from '../../components/group-requests/group-re
 import { BreadcrumbComponent } from '../../../../shared/components/breadcrumb/breadcrumb.component';
 import { BreadcrumbItem } from '../../../../shared/components/breadcrumb/breadcrumb.model';
 import { UniversalIconComponent } from '@/app/shared/components';
-import { HttpErrorResponse } from '@angular/common/http'; // Import HttpErrorResponse
+import { HttpErrorResponse } from '@angular/common/http';
+import { TableFiltersComponent } from '@/app/shared/components/table-filters/table-filters.component';
 
 @Component({
     selector: 'app-group-list',
@@ -39,7 +40,10 @@ import { HttpErrorResponse } from '@angular/common/http'; // Import HttpErrorRes
         GroupRequestsComponent,
         BreadcrumbComponent,
         UniversalIconComponent,
-        AlertModalComponent
+        BreadcrumbComponent,
+        UniversalIconComponent,
+        AlertModalComponent,
+        TableFiltersComponent
     ],
     templateUrl: './group-list.component.html'
 })
@@ -58,7 +62,7 @@ export class GroupListComponent implements OnInit {
     groups: Group[] = [];
     selectedGroups: Group[] = []; // Array de grupos seleccionados (para la tabla institucional)
 
-    searchControl = new FormControl('');
+
 
     groupModalForm!: FormGroup;
     modalMode: 'create' | 'edit' = 'create';
@@ -166,10 +170,6 @@ export class GroupListComponent implements OnInit {
             this.loadGroups();
         }
 
-        this.searchControl.valueChanges.subscribe(val => {
-            this.paginationConfig.currentPage = 1;
-            this.filterData(val || '');
-        });
     }
 
     // Inicialización del formulario con los campos requeridos por diseño
@@ -216,7 +216,7 @@ export class GroupListComponent implements OnInit {
                     this.allGroups = data;
                 }
                 this.selectedGroups = []; // Limpiar selección al recargar
-                this.filterData(this.searchControl.value || '');
+                this.filterData('');
                 this.tableConfig.loading = false;
             },
             error: (err) => {
@@ -247,6 +247,7 @@ export class GroupListComponent implements OnInit {
         this.paginationConfig.totalItems = this.filteredGroups.length;
         this.updatePaginatedData();
     }
+
 
     updatePaginatedData() {
         const start = (this.paginationConfig.currentPage - 1) * this.paginationConfig.pageSize;

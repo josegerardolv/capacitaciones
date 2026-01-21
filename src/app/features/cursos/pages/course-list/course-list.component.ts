@@ -15,6 +15,7 @@ import { NotificationService } from '../../../../shared/services/notification.se
 import { InstitutionalCardComponent } from '../../../../shared/components/institutional-card/institutional-card.component';
 import { ModalFormComponent } from '../../../../shared/components/forms/modal-form.component';
 import { InputEnhancedComponent } from '@/app/shared/components';
+import { TableFiltersComponent } from '@/app/shared/components/table-filters/table-filters.component';
 import { HttpErrorResponse } from '@angular/common/http';
 import { BreadcrumbComponent } from '../../../../shared/components/breadcrumb/breadcrumb.component';
 import { BreadcrumbItem } from '../../../../shared/components/breadcrumb/breadcrumb.model';
@@ -39,8 +40,10 @@ import { UniversalIconComponent } from '../../../../shared/components/universal-
         UniversalIconComponent,
         InputEnhancedComponent,
         InputEnhancedComponent,
+        InputEnhancedComponent,
         BreadcrumbComponent,
-        SelectComponent
+        SelectComponent,
+        TableFiltersComponent
     ],
     templateUrl: './course-list.component.html'
 })
@@ -51,7 +54,7 @@ export class CourseListComponent implements OnInit {
     filteredCourses: Course[] = [];
     courses: Course[] = [];
 
-    searchControl = new FormControl('');
+
     courseModalForm!: FormGroup;
     modalMode: 'create' | 'edit' = 'create';
     editingCourseId: number | null = null;
@@ -110,10 +113,7 @@ export class CourseListComponent implements OnInit {
         this.initColumns();
         this.loadCourseTypes();
 
-        this.searchControl.valueChanges.subscribe(val => {
-            this.paginationConfig.currentPage = 1;
-            this.filterData(val || '');
-        });
+        this.loadCourseTypes();
     }
 
     initForms() {
@@ -175,7 +175,7 @@ export class CourseListComponent implements OnInit {
                         courseTypeName: type ? type.label : 'Sin Tipo'
                     };
                 });
-                this.filterData(this.searchControl.value || '');
+                this.filterData('');
                 this.tableConfig.loading = false;
             },
             error: (err: HttpErrorResponse) => { // Explicitly type err
