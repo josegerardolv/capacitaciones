@@ -4,8 +4,8 @@ import { RouterModule, Router } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormControl } from '@angular/forms';
 import { Course } from '../../../../core/models/course.model';
 import { CoursesService } from '../../services/courses.service';
-import { CourseTypeService } from '../../../../core/services/course-type.service'; // Import service
-import { CourseTypeConfig } from '../../../../core/models/course-type-config.model'; // Import model
+import { CourseTypeService } from '../../../../core/services/course-type.service'; // Importar servicio
+import { CourseTypeConfig } from '../../../../core/models/course-type-config.model'; // Importar modelo
 import { InstitutionalTableComponent, TableColumn, TableConfig } from '../../../../shared/components/institutional-table/institutional-table.component';
 import { TablePaginationComponent, PaginationConfig, PageChangeEvent } from '../../../../shared/components/table-pagination/table-pagination.component';
 import { TooltipDirective } from '../../../../shared/components/tooltip/tooltip.directive';
@@ -59,7 +59,7 @@ export class CourseListComponent implements OnInit {
     modalMode: 'create' | 'edit' = 'create';
     editingCourseId: number | null = null;
 
-    courseTypeOptions: { value: number, label: string }[] = []; // Update type
+    courseTypeOptions: { value: number, label: string }[] = []; // Actualizar tipo
 
     // Estado de los Modales
     showModal = false;
@@ -82,7 +82,7 @@ export class CourseListComponent implements OnInit {
         showInfo: true
     };
 
-    // Breadcrumb items
+    // Elementos de migas de pan
     breadcrumbItems: BreadcrumbItem[] = [
         { label: 'Cursos' }
     ];
@@ -102,7 +102,7 @@ export class CourseListComponent implements OnInit {
 
     constructor(
         private coursesService: CoursesService,
-        private courseTypeService: CourseTypeService, // Inject
+        private courseTypeService: CourseTypeService, // Inyectar
         private router: Router,
         private notificationService: NotificationService,
         private fb: FormBuilder
@@ -121,7 +121,7 @@ export class CourseListComponent implements OnInit {
             name: ['', [Validators.required]],
             description: ['', [Validators.required]],
             duration: ['', [Validators.required]],
-            courseTypeId: [null, [Validators.required]] // Rename to courseTypeId
+            courseTypeId: [null, [Validators.required]] // Renombrar a courseTypeId
         });
     }
 
@@ -167,8 +167,8 @@ export class CourseListComponent implements OnInit {
         this.tableConfig.loading = true;
         this.coursesService.getCourses().subscribe({
             next: (data) => {
-                // Map courses to include the type name
-                this.allCourses = data.map(course => { // Store in allCourses
+                // Mapear cursos para incluir el nombre del tipo
+                this.allCourses = data.map(course => { // Almacenar en allCourses
                     const type = this.courseTypeOptions.find(t => t.value === course.courseTypeId);
                     return {
                         ...course,
@@ -178,10 +178,10 @@ export class CourseListComponent implements OnInit {
                 this.filterData('');
                 this.tableConfig.loading = false;
             },
-            error: (err: HttpErrorResponse) => { // Explicitly type err
+            error: (err: HttpErrorResponse) => { // Tipar explícitamente err
                 this.tableConfig.loading = false;
                 this.notificationService.error('Error', 'No se pudieron cargar los cursos.');
-                console.error('Error loading courses:', err); // Add logging for debugging
+                console.error('Error loading courses:', err); // Agregar registro para depuración
             }
         });
     }
@@ -243,9 +243,9 @@ export class CourseListComponent implements OnInit {
                     this.loadCourses();
                     this.notificationService.success('Eliminado', 'Curso eliminado correctamente.');
                 },
-                error: (err: HttpErrorResponse) => { // Explicitly type err
+                error: (err: HttpErrorResponse) => { // Tipar explícitamente err
                     this.notificationService.error('Error', 'No se pudo eliminar el curso.');
-                    console.error('Error deleting course:', err); // Add logging for debugging
+                    console.error('Error deleting course:', err); // Agregar registro para depuración
                 }
             });
         });
@@ -294,13 +294,13 @@ export class CourseListComponent implements OnInit {
                     this.loadCourses();
                     this.notificationService.success('Guardado', 'Curso guardado exitosamente.');
                 },
-                error: (err: HttpErrorResponse) => { // Explicitly type err
+                error: (err: HttpErrorResponse) => { // Tipar explícitamente err
                     this.isSaving = false;
                     console.error('Error saving course:', err);
                     this.notificationService.error('Error', 'No se pudo guardar el curso.');
                 }
             });
-        } else { // edit mode
+        } else { // modo edición
             if (!this.editingCourseId) {
                 this.notificationService.error('Error', 'ID de curso no definido para la edición.');
                 this.isSaving = false;
@@ -318,7 +318,7 @@ export class CourseListComponent implements OnInit {
                     this.loadCourses();
                     this.notificationService.success('Actualizado', 'Curso actualizado correctamente.');
                 },
-                error: (err: HttpErrorResponse) => { // Explicitly type err
+                error: (err: HttpErrorResponse) => { // Tipar explícitamente err
                     this.isSaving = false;
                     console.error('Error updating course:', err);
                     this.notificationService.error('Error', 'No se pudo actualizar el curso.');

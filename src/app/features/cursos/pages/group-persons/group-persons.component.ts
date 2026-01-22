@@ -27,7 +27,7 @@ import { TableFiltersComponent } from '@/app/shared/components/table-filters/tab
 
 
 @Component({
-    selector: 'app-group-persons', // Updated selector
+    selector: 'app-group-persons', // Selector actualizado
     standalone: true,
     imports: [
         CommonModule,
@@ -41,7 +41,7 @@ import { TableFiltersComponent } from '@/app/shared/components/table-filters/tab
         ConfirmationModalComponent,
         AlertModalComponent,
         BreadcrumbComponent,
-        BreadcrumbComponent, // Duplicate BreadcrumbComponent kept to match original structure (though incorrect, fixing duplicates is better)
+        BreadcrumbComponent, // Duplicado de BreadcrumbComponent mantenido para coincidir con la estructura original
         FormsModule,
         UniversalIconComponent,
         DocumentSelectionModalComponent,
@@ -55,7 +55,7 @@ export class GroupPersonsComponent implements OnInit {
 
     cursoId: string | null = null;
     currentGroupId: string | null = null;
-    currentGroup: Group | null = null; // Store full group details
+    currentGroup: Group | null = null; // Almacenar detalles completos del grupo
     courseLabel: string = '';
     groupLabel: string = '';
 
@@ -170,7 +170,7 @@ export class GroupPersonsComponent implements OnInit {
         this.groupsService.getGroupById(+this.currentGroupId).subscribe(group => {
             if (group) {
                 this.currentGroup = group;
-                // Update label if available
+                // Actualizar etiqueta si está disponible
                 if (group.name) this.groupLabel = `Grupo ${group.name}`;
 
                 // Cargar configuración de columnas dinámica
@@ -181,7 +181,7 @@ export class GroupPersonsComponent implements OnInit {
                         }
                     });
                 } else {
-                    // Fallback si no hay configuración
+                    // Respaldo si no hay configuración
                     this.initColumns();
                 }
             }
@@ -237,7 +237,7 @@ export class GroupPersonsComponent implements OnInit {
     }
 
     initColumns() {
-        // Columnas por defecto (Fallback)
+        // Columnas por defecto (Respaldo)
         this.tableColumns = [
             { key: 'name', label: 'Nombre Completo', template: this.nameTemplate },
             { key: 'license', label: 'Licencia' },
@@ -293,12 +293,12 @@ export class GroupPersonsComponent implements OnInit {
                         this.router.navigate(['nuevo'], { relativeTo: this.route });
                     }
                 } else {
-                    // Fallback si no hay config
+                    // Respaldo si no hay config
                     this.isSearchModalOpen = true;
                 }
             });
         } else {
-            // Fallback si no hay grupo cargado
+            // Respaldo si no hay grupo cargado
             this.isSearchModalOpen = true;
         }
     }
@@ -323,7 +323,7 @@ export class GroupPersonsComponent implements OnInit {
     }
 
     onManualRegistration(license: string) {
-        // NO SE ENCUENTRA o FALLBACK: Navegar solo con licencia
+        // NO SE ENCUENTRA o RESPALDO: Navegar solo con licencia
         this.router.navigate(['nuevo'], {
             relativeTo: this.route,
             queryParams: {
@@ -359,7 +359,7 @@ export class GroupPersonsComponent implements OnInit {
         this.isAlertOpen = true;
     }
 
-    // LOGICA DE NEGOCIO 
+    // LÓGICA DE NEGOCIO 
 
     setExamResult(person: Person, result: 'Aprobado' | 'No Aprobado') {
         if (result === 'Aprobado') {

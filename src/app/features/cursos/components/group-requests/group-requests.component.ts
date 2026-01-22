@@ -1,6 +1,6 @@
 import { Component, EventEmitter, Input, Output, OnChanges, SimpleChanges, ViewChild, TemplateRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormGroup, FormBuilder, FormControl, ReactiveFormsModule } from '@angular/forms'; // Added FormControl
+import { FormGroup, FormBuilder, FormControl, ReactiveFormsModule } from '@angular/forms'; // FormControl agregado
 import { Group } from '../../../../core/models/group.model';
 import { Person } from '../../../../core/models/person.model';
 import { InstitutionalButtonComponent } from '../../../../shared/components/buttons/institutional-button.component';
@@ -63,7 +63,7 @@ export class GroupRequestsComponent implements OnChanges {
         showInfo: true
     };
 
-    dummyFormGroup: FormGroup; // Declared dummy form group
+    dummyFormGroup: FormGroup; // Grupo de formulario ficticio declarado
 
     // --- MODALES GENÉRICOS ---
     isConfirmOpen = false;
@@ -182,7 +182,7 @@ export class GroupRequestsComponent implements OnChanges {
         }, () => {
             const selectedIds = this.selectedRequests.map(r => r.id);
             this.allRequests = this.allRequests.filter(r => !selectedIds.includes(r.id));
-            this.filterData(''); // Re-filter
+            this.filterData(''); // Re-filtrar
             this.clearSelection();
         });
     }
@@ -192,7 +192,7 @@ export class GroupRequestsComponent implements OnChanges {
         this.filterData('');
     }
 
-    // onPageChange removed (duplicate)
+    // onPageChange eliminado (duplicado)
 
     filterData(query: string) {
         const term = query.toLowerCase().trim();

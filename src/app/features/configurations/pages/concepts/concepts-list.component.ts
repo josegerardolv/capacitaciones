@@ -55,7 +55,7 @@ export class ConceptsListComponent implements OnInit {
     concepts: Concept[] = [];
     filteredConcepts: Concept[] = [];
 
-    // Table Config
+    // Configuración de Tabla
     tableConfig: TableConfig = {
         loading: true,
         striped: true,
@@ -71,13 +71,13 @@ export class ConceptsListComponent implements OnInit {
         showInfo: true
     };
 
-    // Form Config
+    // Configuración del Formulario
     form!: FormGroup;
     isModalOpen = false;
     isSaving = false;
     editingId: number | null = null;
 
-    // Alerts & Confirmations
+    // Alertas y Confirmaciones
     isAlertOpen = false;
     alertConfig: AlertConfig = { title: '', message: '', type: 'info' };
 
@@ -168,7 +168,7 @@ export class ConceptsListComponent implements OnInit {
         this.updatePaginatedData();
     }
 
-    // CRUD Actions
+    // Acciones CRUD
     openForm(concept?: Concept) {
         this.initForm();
         if (concept) {

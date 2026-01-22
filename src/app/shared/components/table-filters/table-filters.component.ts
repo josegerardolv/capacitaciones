@@ -27,18 +27,19 @@ export interface FilterValue {
   template: `
     <div class="institucional-table-filters">
       <!-- Búsqueda global -->
-      <div class="institucional-form-group" *ngIf="showGlobalSearch">
+      <div class="institucional-form-group global-search-container" *ngIf="showGlobalSearch">
         <app-input-enhanced
           [control]="globalSearchControl"
-          [label]="'Búsqueda global'"
           [placeholder]="globalSearchPlaceholder || 'Buscar...'"
-          [iconLeft]="'search'"
+          [iconLeft]="''"
           [iconLeftType]="'material'"
           [variant]="'outlined'"
-          [floating]="true"
-          [size]="'md'"
+          [floating]="false"
+          [size]="'sm'"
           [fullWidth]="false"
-          [width]="'300px'">
+          [width]="'300px'"
+          [height]="'38px'"
+          extraClasses="compact-search-input">
         </app-input-enhanced>
       </div>
 
@@ -283,6 +284,20 @@ export interface FilterValue {
     .institucional-table-filter-chip-remove {
       pointer-events: auto;
       z-index: 10;
+    }
+/* Remove margin from global search input wrapper to reduce spacing with table */
+    .global-search-container ::ng-deep .input-wrapper {
+      margin-bottom: 0 !important;
+    }
+
+    /* Aggressive compaction for the search bar */
+    .global-search-container {
+      margin-bottom: 0 !important;
+      padding-bottom: 0 !important;
+    }
+
+    ::ng-deep .compact-search-input {
+      font-size: 0.875rem !important;
     }
   `]
 })

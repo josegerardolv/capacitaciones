@@ -94,7 +94,7 @@ export class GroupListComponent implements OnInit {
         showInfo: true
     };
 
-    // Breadcrumb items
+    // Elementos de migas de pan
     breadcrumbItems: BreadcrumbItem[] = [
         { label: 'Cursos', url: '/cursos' },
         { label: 'Grupos' }
@@ -133,11 +133,11 @@ export class GroupListComponent implements OnInit {
         return this.selectedGroups.length > 0;
     }
 
-    currentCourse: any = null; // Store full course object
+    currentCourse: any = null; // Almacenar objeto completo del curso
 
     constructor(
         private groupsService: GroupsService,
-        private coursesService: CoursesService, // Inject
+        private coursesService: CoursesService, // Inyectar
         private router: Router,
         private route: ActivatedRoute,
         private notificationService: NotificationService,
@@ -160,13 +160,13 @@ export class GroupListComponent implements OnInit {
                 { label: 'Grupos', url: `/cursos/${this.cursoId}/grupos` }
             ];
 
-            // Load Course Details to get courseTypeId, THEN load groups
+            // Cargar detalles del curso para obtener courseTypeId, LUEGO cargar grupos
             this.coursesService.getCourses().subscribe(courses => {
                 this.currentCourse = courses.find(c => c.id === +this.cursoId!);
-                this.loadGroups(); // Call AFTER currentCourse is set
+                this.loadGroups(); // Llamar DESPUÉS de establecer currentCourse
             });
         } else {
-            // If no course context, load all groups immediately
+            // Si no hay contexto de curso, cargar todos los grupos inmediatamente
             this.loadGroups();
         }
 
@@ -176,10 +176,10 @@ export class GroupListComponent implements OnInit {
     initForms() {
         this.groupModalForm = this.fb.group({
             name: ['', [Validators.required]],
-            // duration removed, inherited from course
+            // duración removida, heredada del curso
             location: ['', [Validators.required]],
-            date: ['', [Validators.required]], // Separated date
-            time: ['', [Validators.required]], // Separated time
+            date: ['', [Validators.required]], // Fecha separada
+            time: ['', [Validators.required]], // Hora separada
             quantity: ['', [Validators.required, Validators.min(1)]],
             autoRegisterLimit: ['', [Validators.required, Validators.min(1)]],
             course: ['', []]
@@ -339,9 +339,9 @@ export class GroupListComponent implements OnInit {
             const payload = {
                 ...formValue,
                 dateTime: `${formValue.date}, ${formValue.time}`,
-                duration: this.formatDuration(this.currentCourse?.duration), // Inherit duration
+                duration: this.formatDuration(this.currentCourse?.duration), // Heredar duración
                 courseTypeId: this.currentCourse?.courseTypeId,
-                courseType: 'LICENCIA' // Fallback or map from ID if needed
+                courseType: 'LICENCIA' // Respaldo o mapeo desde ID si es necesario
             };
 
             this.groupsService.createGroup(payload).subscribe({
@@ -357,7 +357,7 @@ export class GroupListComponent implements OnInit {
                     this.notificationService.error('Error', 'No se pudo guardar el grupo.');
                 }
             });
-        } else { // edit mode
+        } else { // modo edición
             if (!this.editingGroupId) {
                 this.notificationService.error('Error', 'ID de grupo no definido para la edición.');
                 this.isSaving = false;

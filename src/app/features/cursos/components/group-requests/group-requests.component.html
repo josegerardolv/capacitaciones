@@ -27,11 +27,9 @@
             </div>
 
             <!-- Search Bar -->
-            <div class="mb-4">
-                <app-table-filters [showGlobalSearch]="true" [globalSearchPlaceholder]="'Buscar por nombre, CURP...'"
-                    (globalSearchChange)="filterData($event)">
-                </app-table-filters>
-            </div>
+            <app-table-filters [showGlobalSearch]="true" [globalSearchPlaceholder]="'Buscar por nombre, CURP...'"
+                (globalSearchChange)="filterData($event)">
+            </app-table-filters>
 
             <!-- Table -->
             <app-institutional-table [data]="requests" [columns]="tableColumns" [config]="tableConfig"
