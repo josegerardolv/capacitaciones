@@ -20,7 +20,7 @@ import { UniversalIconComponent } from '../universal-icon/universal-icon.compone
   selector: 'app-header',
   imports: [CommonModule, RouterModule, UniversalIconComponent],
   template: `
-  <header class="bg-white shadow-md border-b border-gray-300 select-none">
+  <header class="bg-white shadow-md border-b border-gray-300 select-none sticky top-0 md:relative z-50">
       <div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center min-h-[85px]">
           
@@ -199,6 +199,7 @@ import { UniversalIconComponent } from '../universal-icon/universal-icon.compone
                 <div class="">
                   <!-- Mis Tickets -->
                   <a
+                    *ngIf="false"
                     routerLink="/tickets"
                     (click)="closeUserMenu()"
                     role="menuitem"

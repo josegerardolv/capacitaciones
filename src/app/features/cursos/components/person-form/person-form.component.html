@@ -1,48 +1,70 @@
-<div class="w-full">
-    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<div class="w-full max-w-7xl mx-auto">
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-8">
 
-        <!-- Fila 1 -->
-        <app-input-enhanced [control]="getControl('name')" label="Nombre" [floating]="true"
-            [required]="true"></app-input-enhanced>
-        <app-input-enhanced *ngIf="isVisible('firstSurname')" [control]="getControl('firstSurname')"
-            label="Primer Apellido" [floating]="true" [required]="isRequired('firstSurname')"></app-input-enhanced>
-        <app-input-enhanced *ngIf="isVisible('secondSurname')" [control]="getControl('secondSurname')"
-            label="Segundo Apellido" [floating]="true" [required]="isRequired('secondSurname')"></app-input-enhanced>
+        <!-- Sección: Datos Personales -->
+        <div>
+            <h3 class="text-lg font-semibold text-gray-800 mb-6 flex items-center gap-3">
+                <span class="w-1.5 h-6 bg-[#8B1538] rounded-full"></span>
+                Datos Personales
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <app-input-enhanced [control]="getControl('name')" label="Nombre" [floating]="true"
+                    [required]="true"></app-input-enhanced>
+                <app-input-enhanced *ngIf="isVisible('firstSurname')" [control]="getControl('firstSurname')"
+                    label="Primer Apellido" [floating]="true" [required]="true"></app-input-enhanced>
+                <app-input-enhanced *ngIf="isVisible('secondSurname')" [control]="getControl('secondSurname')"
+                    label="Segundo Apellido" [floating]="true" [required]="false"></app-input-enhanced>
 
-        <app-input-enhanced *ngIf="isVisible('license')" [control]="getControl('license')" label="Número de licencia"
-            [floating]="true" [required]="isRequired('license')"></app-input-enhanced>
+                <app-input-enhanced *ngIf="isVisible('curp')" [control]="getControl('curp')" label="CURP" [floating]="true"
+                    [required]="true"></app-input-enhanced>
+                <app-select *ngIf="isVisible('sex')" [control]="getControl('sex')" [size]="'md'" [options]="sexOptions"
+                    label="Sexo" [placeholder]="''" [floating]="true" [required]="true"></app-select>
+            </div>
+        </div>
 
-        <app-input-enhanced *ngIf="isVisible('curp')" [control]="getControl('curp')" label="CURP" [floating]="true"
-            [required]="isRequired('curp')"></app-input-enhanced>
-        <app-select *ngIf="isVisible('sex')" [control]="getControl('sex')" [size]="'md'" [options]="sexOptions"
-            label="Sexo" [placeholder]="''" [floating]="true" [required]="isRequired('sex')"></app-select>
-        <!-- Fila 2 -->
-        <app-input-enhanced *ngIf="isVisible('address')" type="textarea" [control]="getControl('address')"
-            label="Dirección" [floating]="true" [required]="isRequired('address')"></app-input-enhanced>
+        <!-- Sección: Información de Contacto -->
+        <div>
+            <h3 class="text-lg font-semibold text-gray-800 mb-6 flex items-center gap-3">
+                <span class="w-1.5 h-6 bg-[#BC955C] rounded-full"></span>
+                Información de Contacto
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <app-input-enhanced *ngIf="isVisible('email')" [control]="getControl('email')" label="Correo electrónico"
+                    placeholder="Ingresa Correo electrónico" [type]="'email'" [floating]="true"
+                    [required]="true"></app-input-enhanced>
+                <app-input-enhanced *ngIf="isVisible('phone')" [control]="getControl('phone')" label="Número de teléfono"
+                    placeholder="Ingresa número de teléfono" [floating]="true"
+                    [required]="true"></app-input-enhanced>
+                <div class="md:col-span-2" *ngIf="isVisible('address')">
+                    <app-input-enhanced type="textarea" [control]="getControl('address')"
+                        label="Dirección Completa" [floating]="true" [required]="true"></app-input-enhanced>
+                </div>
+            </div>
+        </div>
 
-        <app-input-enhanced *ngIf="isVisible('nuc')" [control]="getControl('nuc')" label="NUC"
-            placeholder="Ingresa el número único de Concesión" [floating]="false"></app-input-enhanced>
-
-        <!-- Fila 3 -->
-        <app-input-enhanced *ngIf="isVisible('phone')" [control]="getControl('phone')" label="Número de teléfono"
-            placeholder="Ingresa número de teléfono" [floating]="false"
-            [required]="isRequired('phone')"></app-input-enhanced>
-
-        <app-input-enhanced *ngIf="isVisible('email')" [control]="getControl('email')" label="Correo electrónico"
-            placeholder="Ingresa Correo electrónico" [type]="'email'" [floating]="false"
-            [required]="isRequired('email')"></app-input-enhanced>
-
-
+        <!-- Sección: Datos del Conductor (Condicional) -->
+        <div *ngIf="isVisible('license') || isVisible('nuc')">
+            <h3 class="text-lg font-semibold text-gray-800 mb-6 flex items-center gap-3">
+                <span class="w-1.5 h-6 bg-gray-600 rounded-full"></span>
+                Datos del Conductor
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <app-input-enhanced *ngIf="isVisible('license')" [control]="getControl('license')" label="Número de licencia"
+                    [floating]="true" [required]="false"></app-input-enhanced>
+                <app-input-enhanced *ngIf="isVisible('nuc')" [control]="getControl('nuc')" label="NUC"
+                    placeholder="Ingresa el número único de Concesión" [floating]="true" [required]="false"></app-input-enhanced>
+            </div>
+        </div>
 
         <!-- Footer Buttons -->
-        <div class="col-span-1 md:col-span-3 flex justify-end gap-3 mt-6 pt-6 border-t border-gray-100">
+        <div class="flex justify-end gap-4 pt-4">
             <app-institutional-button *ngIf="showCancel"
-                [config]="{variant: 'ghost', customClass: '!text-[#8B1538] !border-[#8B1538] hover:!bg-red-50'}"
+                [config]="{variant: 'ghost', customClass: '!text-[#8B1538] !border-[#8B1538] hover:!bg-red-50 px-6'}"
                 (buttonClick)="onCancel()">
                 Cancelar
             </app-institutional-button>
 
-            <app-institutional-button [config]="{variant: 'primary', icon: 'save', customClass: '!bg-[#8B1538]'}"
+            <app-institutional-button [config]="{variant: 'primary', icon: 'save', customClass: '!bg-[#8B1538] px-8 shadow-md'}"
                 (buttonClick)="onSubmit()">
                 {{ submitLabel }}
             </app-institutional-button>

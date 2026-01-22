@@ -39,7 +39,7 @@ export class PersonFormComponent implements OnInit {
             firstSurname: [''],
             secondSurname: [''],
             license: [''],
-            curp: ['', [Validators.required, Validators.pattern(/^[A-Z]{4}\d{6}[HM][A-Z]{5}[0-9A-Z]\d$/)]],
+            curp: ['', [Validators.required, Validators.pattern(/^([A-Z][AEIOUX][A-Z]{2}\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])[HM](?:AS|B[CS]|C[CLMSH]|D[FG]|G[TR]|HG|JC|M[CNS]|N[ETL]|OC|PL|Q[TR]|S[PLR]|T[CSL]|VZ|YN|ZS)[B-DF-HJ-NP-TV-Z]{3}[A-Z\d])(\d)$/), Validators.minLength(18), Validators.maxLength(18)]],
             address: ['', Validators.required],
             sex: ['', Validators.required],
             nuc: [''],
@@ -117,7 +117,11 @@ export class PersonFormComponent implements OnInit {
             const validators: any[] = [];
 
             // Preserve known specific validators by key
-            if (key === 'curp') validators.push(Validators.pattern(/^[A-Z]{4}\d{6}[HM][A-Z]{5}[0-9A-Z]\d$/));
+            if (key === 'curp') {
+                validators.push(Validators.pattern(/^([A-Z][AEIOUX][A-Z]{2}\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])[HM](?:AS|B[CS]|C[CLMSH]|D[FG]|G[TR]|HG|JC|M[CNS]|N[ETL]|OC|PL|Q[TR]|S[PLR]|T[CSL]|VZ|YN|ZS)[B-DF-HJ-NP-TV-Z]{3}[A-Z\d])(\d)$/));
+                validators.push(Validators.minLength(18));
+                validators.push(Validators.maxLength(18));
+            }
             if (key === 'phone') validators.push(Validators.pattern(/^\d{10}$/));
             if (key === 'email') validators.push(Validators.email);
 

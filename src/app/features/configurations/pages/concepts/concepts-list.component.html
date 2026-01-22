@@ -71,7 +71,7 @@
 
 <ng-template #actionsTemplate let-item>
     <div class="flex items-center justify-center space-x-2">
-        <app-institutional-button [config]="{ variant: 'secondary', size: 'small', icon: 'edit', iconPosition: 'only' }"
+        <app-institutional-button [config]="{ variant: 'warning', size: 'small', icon: 'edit', iconPosition: 'only' }"
             [appTooltip]="'Editar'" (buttonClick)="openForm(item)">
         </app-institutional-button>
 
