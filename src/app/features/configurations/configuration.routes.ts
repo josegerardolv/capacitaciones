@@ -5,9 +5,18 @@ export const CONFIGURATION_ROUTES: Routes = [
     {
         path: 'config-cursos',
         component: CourseTypeListComponent,
-        title: 'Configuración - Crear Curso'
+        title: 'Configuración - Tipos de Curso'
     },
-    // Future: path: 'tipos-cursos/nuevo', component: CourseTypeFormComponent
+    {
+        path: 'config-cursos/nuevo',
+        loadComponent: () => import('./pages/course-type-form/course-type-form.component').then(m => m.CourseTypeFormComponent),
+        title: 'Configuración - Nuevo Tipo de Curso'
+    },
+    {
+        path: 'config-cursos/editar/:id',
+        loadComponent: () => import('./pages/course-type-form/course-type-form.component').then(m => m.CourseTypeFormComponent),
+        title: 'Configuración - Editar Tipo de Curso'
+    },
     {
         path: 'concepto',
         loadComponent: () => import('./pages/concepts/concepts-list.component').then(m => m.ConceptsListComponent),

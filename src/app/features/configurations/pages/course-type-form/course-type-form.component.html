@@ -1,0 +1,162 @@
+<div class="min-h-screen">
+    <!-- Header Card -->
+    <app-institutional-card [config]="{ showHeader: false, showFooter: false, showShadow: true, showBorder: true }"
+        class="mb-6">
+        <div class="flex items-center gap-4">
+            <div class="p-3 rounded-lg bg-institucional-primario bg-opacity-10 flex items-center justify-center">
+                <app-universal-icon name="edit_note" type="material" class="w-6 h-6 text-white"></app-universal-icon>
+            </div>
+
+            <div class="min-w-0">
+                <h1 class="text-2xl md:text-3xl font-extrabold text-gray-900">{{ isEditMode ? 'Editar Tipo de Curso' :
+                    'Nuevo Tipo de Curso' }}</h1>
+                <p class="text-sm text-gray-500 mt-1">Configura los datos del curso, campos de registro y documentos
+                    asociados.</p>
+            </div>
+        </div>
+
+        <div class="mt-2 ml-4">
+            <app-breadcrumb [items]="breadcrumbItems"></app-breadcrumb>
+        </div>
+    </app-institutional-card>
+
+    <br>
+
+    <form [formGroup]="form" class="space-y-6">
+
+        <!-- Split Layout: Basic Info (Left) & Fields (Right) -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+            <!-- Left Side: Basic Info -->
+            <app-institutional-card class="h-full block"
+                [config]="{ showHeader: false, showFooter: false, showShadow: true, showBorder: true, customClass: 'h-full' }">
+                <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">DATOS TIPO CURSO</h3>
+                <div class="space-y-4">
+                    <app-input-enhanced controlName="name" [control]="form.get('name')" label="Nombre del tipo de curso"
+                        placeholder="Ingresa el nombre del tipo de curso" [required]="true">
+                    </app-input-enhanced>
+
+                    <app-input-enhanced controlName="description" [control]="form.get('description')"
+                        label="Descripción del tipo de curso" placeholder="Ingresa la descripción del tipo de curso"
+                        [required]="true">
+                    </app-input-enhanced>
+
+                    <app-input-enhanced controlName="category" [control]="form.get('category')" label="Tipo de curso"
+                        placeholder="Ingresa el tipo de curso (ej. Taller, Diplomado)" [required]="true">
+                    </app-input-enhanced>
+                </div>
+            </app-institutional-card>
+
+            <!-- Right Side: Fields Selection -->
+            <app-institutional-card class="h-full block"
+                [config]="{ showHeader: false, showFooter: false, showShadow: true, showBorder: true, customClass: 'h-full contents-flex' }">
+                <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">SELECCIONE LOS CAMPOS</h3>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div *ngFor="let field of registrationFields"
+                        class="flex items-center space-x-2 p-2 rounded-lg transition-colors border border-transparent"
+                        [ngClass]="{
+                            'hover:bg-gray-50 cursor-pointer hover:border-gray-100': !isFieldLocked(field),
+                            'opacity-70 cursor-not-allowed bg-gray-50': isFieldLocked(field)
+                        }" (click)="!isFieldLocked(field) && toggleField(field)">
+
+                        <div class="relative flex items-center justify-center h-5 w-5">
+                            <input type="checkbox" [checked]="field.visible" [disabled]="isFieldLocked(field)"
+                                class="h-5 w-5 text-[#8B1538] border-gray-300 rounded focus:ring-[#8B1538]"
+                                [ngClass]="{'cursor-pointer': !isFieldLocked(field), 'cursor-not-allowed': isFieldLocked(field)}">
+                        </div>
+                        <span class="text-sm font-medium text-gray-700 select-none">{{ field.label }}</span>
+                        <span *ngIf="isFieldLocked(field)" class="text-xs text-gray-400 ml-auto">(Obligatorio)</span>
+                    </div>
+                </div>
+            </app-institutional-card>
+        </div>
+
+        <!-- Template Selection Section -->
+        <app-institutional-card
+            [config]="{ showHeader: false, showFooter: false, showShadow: true, showBorder: false }">
+            <div class="flex flex-col-reverse md:flex-row md:items-center justify-between gap-4 mb-4">
+
+                <!-- Page Size Selector -->
+                <div class="flex items-center">
+                    <app-table-pagination [config]="paginationConfig" [showPageSizeSelector]="true"
+                        [showPaginationControls]="false" (pageChange)="onPageChange($event)">
+                    </app-table-pagination>
+                </div>
+
+                <!-- Search -->
+                <div class="w-full md:w-auto min-w-[300px]">
+                    <app-table-filters [showGlobalSearch]="true" [globalSearchPlaceholder]="'Buscar Template...'"
+                        (globalSearchChange)="filterTemplates($event)">
+                    </app-table-filters>
+                </div>
+            </div>
+
+            <!-- Table -->
+            <div class="border rounded-lg overflow-hidden border-gray-200">
+                <app-institutional-table [data]="displayedTemplates" [columns]="tableColumns" [config]="tableConfig"
+                    [selectedItems]="selectedTemplates" (selectionChange)="onSelectionChange($event)">
+
+                    <!-- Custom Actions Template -->
+                    <ng-template #actionsTemplate let-item>
+                        <button (click)="openPreview(item)"
+                            class="btn btn-ghost btn-xs btn-circle text-[#8B1538] hover:bg-pink-50"
+                            title="Ver Vista Previa">
+                            <span class="material-symbols-outlined text-[20px]">visibility</span>
+                        </button>
+                    </ng-template>
+
+                    <ng-template #costTemplate let-item>
+                        <span *ngIf="item.conceptCosto > 0" class="font-medium">{{ item.conceptCosto |
+                            currency:'MXN' }}</span>
+                        <span *ngIf="item.conceptCosto === 0"
+                            class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                            Gratuito
+                        </span>
+                    </ng-template>
+
+                    <ng-template #categoryTemplate let-item>
+                        <span
+                            class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                            {{ item.category || 'General' }}
+                        </span>
+                    </ng-template>
+
+                    <ng-template #mandatoryTemplate let-item>
+                        <div class="flex justify-center" (click)="$event.stopPropagation()">
+                            <input type="checkbox" [checked]="isMandatory(item.id)"
+                                (click)="toggleMandatory(item.id, $event)"
+                                class="h-4 w-4 text-[#8B1538] border-gray-300 rounded focus:ring-[#8B1538] cursor-pointer"
+                                [disabled]="false">
+                        </div>
+                    </ng-template>
+
+                </app-institutional-table>
+            </div>
+
+            <!-- Pagination -->
+            <app-table-pagination [config]="paginationConfig" [showPageSizeSelector]="false"
+                [showPaginationControls]="true" (pageChange)="onPageChange($event)">
+            </app-table-pagination>
+        </app-institutional-card>
+
+    </form>
+
+    <br>
+
+    <!-- Footer Actions (Unwrapped) -->
+    <div class="flex justify-end gap-3 mt-6">
+        <app-institutional-button (buttonClick)="onCancel()"
+            [config]="{variant: 'secondary', customClass: 'border-gray-300 text-gray-600'}">
+            Cancelar
+        </app-institutional-button>
+        <app-institutional-button (buttonClick)="onSave()"
+            [config]="{variant: 'primary', customClass: '!bg-[#9D2449]', loading: isLoading, disabled: isLoading}">
+            {{ isEditMode ? 'Actualizar Tipo de Curso' : 'Guardar Tipo de Curso' }}
+        </app-institutional-button>
+    </div>
+</div>
+
+<!-- Template Preview Modal -->
+<app-template-preview-modal [isOpen]="showPreviewModal" [template]="previewTemplate" (close)="showPreviewModal = false">
+</app-template-preview-modal>

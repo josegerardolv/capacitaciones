@@ -48,8 +48,8 @@ export class CourseTypeService {
                 sex: { visible: true, required: false }
             }),
             availableDocuments: [
-                { id: 'doc_diploma', name: 'Diploma de Participación', description: 'Diploma general de participación', templateId: 5, cost: 0, requiresApproval: false },
-                { id: 'doc_honor', name: 'Diploma de Honor', description: 'Diploma para alumnos destacados', templateId: 3, cost: 340, requiresApproval: true } // Confirmamos que Honor tiene costo
+                { id: 'doc_diploma', name: 'Diploma de Participación', description: 'Diploma general de participación', templateId: 5, cost: 0, requiresApproval: false, isMandatory: true }, // Gratuito -> Obligatorio
+                { id: 'doc_honor', name: 'Diploma de Honor', description: 'Diploma para alumnos destacados', templateId: 3, cost: 340, requiresApproval: true }
             ]
         },
         // MOCK: Curso Simple solicitado por usuario
@@ -76,7 +76,7 @@ export class CourseTypeService {
                 sex: { visible: false, required: false }
             }),
             availableDocuments: [
-                { id: 'doc_diploma_simple', name: 'Diploma de Participación', description: 'Diploma general de participación', templateId: 5, cost: 0, requiresApproval: false }
+                { id: 'doc_diploma_simple', name: 'Diploma de Participación', description: 'Diploma general de participación', templateId: 5, cost: 0, requiresApproval: false, isMandatory: true } // Gratuito -> Obligatorio
             ]
         }
     ];
