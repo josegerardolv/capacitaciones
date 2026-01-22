@@ -1,4 +1,5 @@
 import { Component, OnInit, TemplateRef, ViewChild } from '@angular/core';
+import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { CourseTypeService } from '../../../../core/services/course-type.service';
@@ -10,7 +11,9 @@ import { UniversalIconComponent } from '../../../../shared/components/universal-
 import { BreadcrumbComponent } from '../../../../shared/components/breadcrumb/breadcrumb.component';
 import { BreadcrumbItem } from '../../../../shared/components/breadcrumb/breadcrumb.model';
 import { TablePaginationComponent, PaginationConfig, PageChangeEvent } from '../../../../shared/components/table-pagination/table-pagination.component';
+
 import { CourseTypeFormModalComponent } from '../../components/modals/course-type-form-modal/course-type-form-modal.component';
+import { TableFiltersComponent } from '@/app/shared/components/table-filters/table-filters.component';
 
 @Component({
   selector: 'app-course-type-list',
@@ -24,7 +27,11 @@ import { CourseTypeFormModalComponent } from '../../components/modals/course-typ
     UniversalIconComponent,
     BreadcrumbComponent,
     TablePaginationComponent,
-    CourseTypeFormModalComponent
+    CourseTypeFormModalComponent,
+    TablePaginationComponent,
+    CourseTypeFormModalComponent,
+    ReactiveFormsModule,
+    TableFiltersComponent
   ],
   templateUrl: './course-type-list.component.html'
 })
@@ -33,7 +40,10 @@ export class CourseTypeListComponent implements OnInit {
   @ViewChild('statusTemplate', { static: true }) statusTemplate!: TemplateRef<any>;
 
   allCourseTypes: CourseTypeConfig[] = []; // Almacena todos los datos
+  filteredCourseTypes: CourseTypeConfig[] = []; // Datos filtrados
   courseTypes: CourseTypeConfig[] = [];
+
+
 
   // Modal states
   showFormModal = false;
@@ -81,8 +91,7 @@ export class CourseTypeListComponent implements OnInit {
     this.courseTypeService.getCourseTypes().subscribe({
       next: (data) => {
         this.allCourseTypes = data;
-        this.paginationConfig.totalItems = data.length;
-        this.updatePaginatedData();
+        this.filterData('');
         this.tableConfig.loading = false;
       },
       error: (err) => {
@@ -98,10 +107,26 @@ export class CourseTypeListComponent implements OnInit {
     this.updatePaginatedData();
   }
 
+  filterData(query: string) {
+    const term = query.toLowerCase().trim();
+
+    if (!term) {
+      this.filteredCourseTypes = [...this.allCourseTypes];
+    } else {
+      this.filteredCourseTypes = this.allCourseTypes.filter(item =>
+        item.name.toLowerCase().includes(term) ||
+        item.description.toLowerCase().includes(term)
+      );
+    }
+
+    this.paginationConfig.totalItems = this.filteredCourseTypes.length;
+    this.updatePaginatedData();
+  }
+
   updatePaginatedData() {
     const start = (this.paginationConfig.currentPage - 1) * this.paginationConfig.pageSize;
     const end = start + this.paginationConfig.pageSize;
-    this.courseTypes = this.allCourseTypes.slice(start, end);
+    this.courseTypes = this.filteredCourseTypes.slice(start, end);
   }
 
   getDisplayCost(item: CourseTypeConfig): number {

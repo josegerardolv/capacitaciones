@@ -35,6 +35,11 @@
             </div>
         </div>
 
+        <!-- Search Bar -->
+        <app-table-filters [showGlobalSearch]="true" [globalSearchPlaceholder]="'Buscar por clave, concepto...'"
+            (globalSearchChange)="filterData($event)">
+        </app-table-filters>
+
         <app-institutional-table [data]="concepts" [columns]="tableColumns" [config]="tableConfig">
         </app-institutional-table>
 

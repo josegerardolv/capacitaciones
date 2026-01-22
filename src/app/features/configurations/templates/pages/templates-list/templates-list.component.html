@@ -4,7 +4,8 @@
         class="mb-6">
         <div class="flex items-center gap-4">
             <div class="p-3 rounded-lg bg-institucional-primario bg-opacity-10 flex items-center justify-center">
-                <app-universal-icon name="design_services" type="material" class="w-6 h-6 text-white"></app-universal-icon>
+                <app-universal-icon name="design_services" type="material"
+                    class="w-6 h-6 text-white"></app-universal-icon>
             </div>
 
             <div class="min-w-0">
@@ -36,6 +37,11 @@
             </div>
         </div>
 
+        <!-- Search Bar -->
+        <app-table-filters [showGlobalSearch]="true" [globalSearchPlaceholder]="'Buscar por nombre, concepto...'"
+            (globalSearchChange)="filterData($event)">
+        </app-table-filters>
+
         <app-institutional-table [data]="templates" [columns]="tableColumns" [config]="tableConfig">
         </app-institutional-table>
         <app-table-pagination [config]="paginationConfig" [showPageSizeSelector]="false" [showPaginationControls]="true"
@@ -44,7 +50,6 @@
     </app-institutional-card>
 </div>
 
-<!-- Modal de creación -->
 <!-- Modal unificado (crear / editar) -->
 <app-modal-form *ngIf="(createModalOpen || editModalOpen) && form" [formGroup]="form"
     [isOpen]="createModalOpen || editModalOpen" [title]="editModalOpen ? 'Editar Template' : 'Nuevo Template'"

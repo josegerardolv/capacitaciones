@@ -54,6 +54,11 @@
             </div>
         </div>
 
+        <!-- Search Bar -->
+        <app-table-filters [showGlobalSearch]="true" [globalSearchPlaceholder]="'Buscar grupo por nombre, ubicación...'"
+            (globalSearchChange)="filterData($event)">
+        </app-table-filters>
+
         <!-- Tabla -->
         <app-institutional-table [data]="groups" [columns]="tableColumns" [config]="tableConfig"
             [selectedItems]="selectedGroups" (selectionChange)="onSelectionChange($event)">

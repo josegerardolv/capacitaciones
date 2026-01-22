@@ -1,6 +1,6 @@
 import { Component, EventEmitter, Input, Output, OnChanges, SimpleChanges, ViewChild, TemplateRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormGroup, FormBuilder } from '@angular/forms'; // Added FormGroup and FormBuilder
+import { FormGroup, FormBuilder, FormControl, ReactiveFormsModule } from '@angular/forms'; // FormControl agregado
 import { Group } from '../../../../core/models/group.model';
 import { Person } from '../../../../core/models/person.model';
 import { InstitutionalButtonComponent } from '../../../../shared/components/buttons/institutional-button.component';
@@ -14,6 +14,7 @@ import { TablePaginationComponent, PaginationConfig, PageChangeEvent } from '../
 import { ConfirmationModalComponent, ConfirmationConfig } from '../../../../shared/components/modals/confirmation-modal.component';
 import { ModalComponent } from '../../../../shared/components/modals/modal.component';
 import { GroupsService } from '../../services/groups.service';
+import { TableFiltersComponent } from '@/app/shared/components/table-filters/table-filters.component';
 
 @Component({
     selector: 'app-group-requests',
@@ -24,7 +25,10 @@ import { GroupsService } from '../../services/groups.service';
         InstitutionalTableComponent,
         ConfirmationModalComponent,
         TablePaginationComponent,
-        ModalComponent],
+        ReactiveFormsModule,
+        ReactiveFormsModule,
+        ModalComponent,
+        TableFiltersComponent],
     templateUrl: './group-requests.component.html'
 })
 export class GroupRequestsComponent implements OnChanges {
@@ -34,8 +38,12 @@ export class GroupRequestsComponent implements OnChanges {
 
     @ViewChild('actionsTemplate', { static: true }) actionsTemplate!: TemplateRef<any>;
 
+    allRequests: Person[] = [];
+    filteredRequests: Person[] = [];
     requests: Person[] = [];
     selectedRequests: Person[] = [];
+
+
 
     tableConfig: TableConfig = {
         loading: false,
@@ -55,7 +63,7 @@ export class GroupRequestsComponent implements OnChanges {
         showInfo: true
     };
 
-    dummyFormGroup: FormGroup; // Declared dummy form group
+    dummyFormGroup: FormGroup; // Grupo de formulario ficticio declarado
 
     // --- MODALES GENÉRICOS ---
     isConfirmOpen = false;
@@ -86,9 +94,10 @@ export class GroupRequestsComponent implements OnChanges {
         if (!this.group) return;
 
         this.groupsService.getRequestsByGroupId(this.group.id).subscribe(data => {
-            this.requests = data;
+            this.allRequests = data;
             this.selectedRequests = [];
             this.initColumns(); // Re-vinculamos templates
+            this.filterData('');
             this.tableConfig.loading = false;
         });
     }
@@ -114,6 +123,7 @@ export class GroupRequestsComponent implements OnChanges {
     onPageChange(event: PageChangeEvent) {
         this.paginationConfig.currentPage = event.page;
         this.paginationConfig.pageSize = event.pageSize;
+        this.updatePaginatedData();
     }
 
     // --- HELPERS PARA MODALES ---
@@ -139,7 +149,8 @@ export class GroupRequestsComponent implements OnChanges {
             confirmText: 'Aceptar',
             cancelText: 'Cancelar'
         }, () => {
-            this.requests = this.requests.filter(r => r.id !== id);
+            this.allRequests = this.allRequests.filter(r => r.id !== id);
+            this.filterData('');
             this.clearSelection();
         });
     }
@@ -152,7 +163,8 @@ export class GroupRequestsComponent implements OnChanges {
             confirmText: 'Rechazar',
             cancelText: 'Cancelar'
         }, () => {
-            this.requests = this.requests.filter(r => r.id !== id);
+            this.allRequests = this.allRequests.filter(r => r.id !== id);
+            this.filterData('');
             this.clearSelection();
         });
     }
@@ -169,15 +181,37 @@ export class GroupRequestsComponent implements OnChanges {
             cancelText: 'Cancelar'
         }, () => {
             const selectedIds = this.selectedRequests.map(r => r.id);
-            this.requests = this.requests.filter(r => !selectedIds.includes(r.id));
+            this.allRequests = this.allRequests.filter(r => !selectedIds.includes(r.id));
+            this.filterData(''); // Re-filtrar
             this.clearSelection();
         });
     }
 
     private clearSelection() {
         this.selectedRequests = [];
-        // Forzamos actualización de referencia para que la tabla detecte el cambio
-        this.requests = [...this.requests];
+        this.filterData('');
+    }
+
+    // onPageChange eliminado (duplicado)
+
+    filterData(query: string) {
+        const term = query.toLowerCase().trim();
+        if (!term) {
+            this.filteredRequests = [...this.allRequests];
+        } else {
+            this.filteredRequests = this.allRequests.filter(r =>
+                r.name.toLowerCase().includes(term) ||
+                (r.curp || '').toLowerCase().includes(term)
+            );
+        }
+        this.paginationConfig.totalItems = this.filteredRequests.length;
+        this.updatePaginatedData();
+    }
+
+    updatePaginatedData() {
+        const start = (this.paginationConfig.currentPage - 1) * this.paginationConfig.pageSize;
+        const end = start + this.paginationConfig.pageSize;
+        this.requests = this.filteredRequests.slice(start, end);
     }
 
     get modalTitle(): string {

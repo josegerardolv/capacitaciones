@@ -18,6 +18,7 @@ import { TooltipDirective } from '../../../../shared/components/tooltip/tooltip.
 import { UniversalIconComponent } from '../../../../shared/components/universal-icon/universal-icon.component';
 import { BreadcrumbComponent } from '../../../../shared/components/breadcrumb/breadcrumb.component';
 import { BreadcrumbItem } from '../../../../shared/components/breadcrumb/breadcrumb.model';
+import { TableFiltersComponent } from '@/app/shared/components/table-filters/table-filters.component';
 
 
 
@@ -40,7 +41,9 @@ import { BreadcrumbItem } from '../../../../shared/components/breadcrumb/breadcr
         ConfirmationModalComponent,
         TooltipDirective,
         UniversalIconComponent,
-        BreadcrumbComponent
+        UniversalIconComponent,
+        BreadcrumbComponent,
+        TableFiltersComponent
     ],
     templateUrl: './concepts-list.component.html'
 })
@@ -50,8 +53,9 @@ export class ConceptsListComponent implements OnInit {
 
     allConcepts: Concept[] = [];
     concepts: Concept[] = [];
+    filteredConcepts: Concept[] = [];
 
-    // Table Config
+    // Configuración de Tabla
     tableConfig: TableConfig = {
         loading: true,
         striped: true,
@@ -67,13 +71,13 @@ export class ConceptsListComponent implements OnInit {
         showInfo: true
     };
 
-    // Form Config
+    // Configuración del Formulario
     form!: FormGroup;
     isModalOpen = false;
     isSaving = false;
     editingId: number | null = null;
 
-    // Alerts & Confirmations
+    // Alertas y Confirmaciones
     isAlertOpen = false;
     alertConfig: AlertConfig = { title: '', message: '', type: 'info' };
 
@@ -126,8 +130,8 @@ export class ConceptsListComponent implements OnInit {
         this.templateService.getConcepts().subscribe({
             next: (data) => {
                 this.allConcepts = data;
-                this.paginationConfig.totalItems = data.length;
-                this.updatePaginatedData();
+                this.allConcepts = data;
+                this.filterData('');
                 this.tableConfig.loading = false;
             },
             error: (err) => {
@@ -147,10 +151,24 @@ export class ConceptsListComponent implements OnInit {
     updatePaginatedData() {
         const start = (this.paginationConfig.currentPage - 1) * this.paginationConfig.pageSize;
         const end = start + this.paginationConfig.pageSize;
-        this.concepts = this.allConcepts.slice(start, end);
+        this.concepts = this.filteredConcepts.slice(start, end);
     }
 
-    // CRUD Actions
+    filterData(query: string) {
+        const term = query.toLowerCase().trim();
+        if (!term) {
+            this.filteredConcepts = [...this.allConcepts];
+        } else {
+            this.filteredConcepts = this.allConcepts.filter(c =>
+                c.clave.toLowerCase().includes(term) ||
+                c.concepto.toLowerCase().includes(term)
+            );
+        }
+        this.paginationConfig.totalItems = this.filteredConcepts.length;
+        this.updatePaginatedData();
+    }
+
+    // Acciones CRUD
     openForm(concept?: Concept) {
         this.initForm();
         if (concept) {

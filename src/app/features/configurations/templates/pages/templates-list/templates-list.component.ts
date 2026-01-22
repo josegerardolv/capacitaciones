@@ -22,6 +22,7 @@ import { BreadcrumbItem } from '../../../../../shared/components/breadcrumb/brea
 // import { SelectComponent } from '@/app/shared/components'; // Duplicate import removed
 // SelectSearchComponent removed to respect shared component constraints
 // import { SelectSearchComponent, SelectSearchOption } from '../../../../../shared/components/inputs/select-search.component';
+import { TableFiltersComponent } from '@/app/shared/components/table-filters/table-filters.component';
 
 @Component({
     selector: 'app-templates-list',
@@ -42,7 +43,9 @@ import { BreadcrumbItem } from '../../../../../shared/components/breadcrumb/brea
         AlertModalComponent,
         InstitutionalButtonComponent,
         UniversalIconComponent,
-        BreadcrumbComponent
+        UniversalIconComponent,
+        BreadcrumbComponent,
+        TableFiltersComponent
     ],
     templateUrl: './templates-list.component.html'
 })
@@ -52,7 +55,11 @@ export class TemplatesListComponent implements OnInit {
     @ViewChild('conceptTemplate', { static: true }) conceptTemplate!: TemplateRef<any>;
     @ViewChild('costTemplate', { static: true }) costTemplate!: TemplateRef<any>;
 
+    allTemplates: CertificateTemplate[] = [];
+    filteredTemplates: CertificateTemplate[] = [];
     templates: CertificateTemplate[] = [];
+
+
     concepts: Concept[] = [];
     conceptOptions: SelectOption[] = [];
 
@@ -112,6 +119,8 @@ export class TemplatesListComponent implements OnInit {
         this.initColumns();
         this.loadTemplates();
         this.loadConcepts();
+
+
     }
 
     initColumns() {
@@ -141,8 +150,8 @@ export class TemplatesListComponent implements OnInit {
         this.tableConfig.loading = true;
         this.templateService.getTemplates().subscribe({
             next: (data) => {
-                this.templates = data;
-                this.paginationConfig.totalItems = data.length;
+                this.allTemplates = data;
+                this.filterData('');
                 this.tableConfig.loading = false;
             },
             error: () => {
@@ -294,6 +303,28 @@ export class TemplatesListComponent implements OnInit {
     onPageChange(event: PageChangeEvent) {
         this.paginationConfig.currentPage = event.page;
         this.paginationConfig.pageSize = event.pageSize;
+        this.updatePaginatedData();
+    }
+
+    filterData(query: string) {
+        const term = query.toLowerCase().trim();
+        if (!term) {
+            this.filteredTemplates = [...this.allTemplates];
+        } else {
+            this.filteredTemplates = this.allTemplates.filter(t =>
+                t.name.toLowerCase().includes(term) ||
+                (t.conceptName || '').toLowerCase().includes(term) ||
+                (t.description || '').toLowerCase().includes(term)
+            );
+        }
+        this.paginationConfig.totalItems = this.filteredTemplates.length;
+        this.updatePaginatedData();
+    }
+
+    updatePaginatedData() {
+        const start = (this.paginationConfig.currentPage - 1) * this.paginationConfig.pageSize;
+        const end = start + this.paginationConfig.pageSize;
+        this.templates = this.filteredTemplates.slice(start, end);
     }
 
     openConfirm(config: ConfirmationConfig, action: () => void) {

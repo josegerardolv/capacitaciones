@@ -36,6 +36,9 @@ export class TooltipDirective {
     private showTooltip(): void {
         if (this.componentRef) return;
 
+        // Verificar si el elemento sigue en el DOM
+        if (!this.elementRef.nativeElement.isConnected) return;
+
         // Crear el componente tooltip dinámicamente
         this.componentRef = createComponent(TooltipComponent, {
             environmentInjector: this.appRef.injector,
@@ -57,6 +60,8 @@ export class TooltipDirective {
     }
 
     private hideTooltip(): void {
+        clearTimeout(this.showTimeout);
+
         if (!this.componentRef) return;
 
         this.appRef.detachView(this.componentRef.hostView);
@@ -101,6 +106,7 @@ export class TooltipDirective {
     }
 
     ngOnDestroy(): void {
+        clearTimeout(this.showTimeout);
         this.hideTooltip();
     }
 }

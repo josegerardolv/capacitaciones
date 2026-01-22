@@ -37,6 +37,11 @@
             </div>
         </div>
 
+        <!-- buscar curso -->
+        <app-table-filters [showGlobalSearch]="true" [globalSearchPlaceholder]="'Buscar curso por nombre, tipo...'"
+            (globalSearchChange)="filterData($event)">
+        </app-table-filters>
+
         <!-- Tabla -->
         <app-institutional-table [data]="courses" [columns]="tableColumns" [config]="tableConfig">
         </app-institutional-table>

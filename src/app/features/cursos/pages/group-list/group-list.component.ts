@@ -1,7 +1,7 @@
 import { Component, OnInit, ViewChild, TemplateRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router, ActivatedRoute } from '@angular/router';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormControl } from '@angular/forms';
 import { Group } from '../../../../core/models/group.model';
 import { GroupsService } from '../../services/groups.service';
 import { CoursesService } from '../../services/courses.service';
@@ -19,7 +19,8 @@ import { GroupRequestsComponent } from '../../components/group-requests/group-re
 import { BreadcrumbComponent } from '../../../../shared/components/breadcrumb/breadcrumb.component';
 import { BreadcrumbItem } from '../../../../shared/components/breadcrumb/breadcrumb.model';
 import { UniversalIconComponent } from '@/app/shared/components';
-import { HttpErrorResponse } from '@angular/common/http'; // Import HttpErrorResponse
+import { HttpErrorResponse } from '@angular/common/http';
+import { TableFiltersComponent } from '@/app/shared/components/table-filters/table-filters.component';
 
 @Component({
     selector: 'app-group-list',
@@ -39,7 +40,10 @@ import { HttpErrorResponse } from '@angular/common/http'; // Import HttpErrorRes
         GroupRequestsComponent,
         BreadcrumbComponent,
         UniversalIconComponent,
-        AlertModalComponent
+        BreadcrumbComponent,
+        UniversalIconComponent,
+        AlertModalComponent,
+        TableFiltersComponent
     ],
     templateUrl: './group-list.component.html'
 })
@@ -53,8 +57,12 @@ export class GroupListComponent implements OnInit {
     @ViewChild('dateTemplate', { static: true }) dateTemplate!: TemplateRef<any>; // Template para Fecha
     @ViewChild('timeTemplate', { static: true }) timeTemplate!: TemplateRef<any>; // Template para Hora
 
+    allGroups: Group[] = [];
+    filteredGroups: Group[] = [];
     groups: Group[] = [];
     selectedGroups: Group[] = []; // Array de grupos seleccionados (para la tabla institucional)
+
+
 
     groupModalForm!: FormGroup;
     modalMode: 'create' | 'edit' = 'create';
@@ -86,7 +94,7 @@ export class GroupListComponent implements OnInit {
         showInfo: true
     };
 
-    // Breadcrumb items
+    // Elementos de migas de pan
     breadcrumbItems: BreadcrumbItem[] = [
         { label: 'Cursos', url: '/cursos' },
         { label: 'Grupos' }
@@ -125,11 +133,11 @@ export class GroupListComponent implements OnInit {
         return this.selectedGroups.length > 0;
     }
 
-    currentCourse: any = null; // Store full course object
+    currentCourse: any = null; // Almacenar objeto completo del curso
 
     constructor(
         private groupsService: GroupsService,
-        private coursesService: CoursesService, // Inject
+        private coursesService: CoursesService, // Inyectar
         private router: Router,
         private route: ActivatedRoute,
         private notificationService: NotificationService,
@@ -152,25 +160,26 @@ export class GroupListComponent implements OnInit {
                 { label: 'Grupos', url: `/cursos/${this.cursoId}/grupos` }
             ];
 
-            // Load Course Details to get courseTypeId, THEN load groups
+            // Cargar detalles del curso para obtener courseTypeId, LUEGO cargar grupos
             this.coursesService.getCourses().subscribe(courses => {
                 this.currentCourse = courses.find(c => c.id === +this.cursoId!);
-                this.loadGroups(); // Call AFTER currentCourse is set
+                this.loadGroups(); // Llamar DESPUÉS de establecer currentCourse
             });
         } else {
-            // If no course context, load all groups immediately
+            // Si no hay contexto de curso, cargar todos los grupos inmediatamente
             this.loadGroups();
         }
+
     }
 
     // Inicialización del formulario con los campos requeridos por diseño
     initForms() {
         this.groupModalForm = this.fb.group({
             name: ['', [Validators.required]],
-            // duration removed, inherited from course
+            // duración removida, heredada del curso
             location: ['', [Validators.required]],
-            date: ['', [Validators.required]], // Separated date
-            time: ['', [Validators.required]], // Separated time
+            date: ['', [Validators.required]], // Fecha separada
+            time: ['', [Validators.required]], // Hora separada
             quantity: ['', [Validators.required, Validators.min(1)]],
             autoRegisterLimit: ['', [Validators.required, Validators.min(1)]],
             course: ['', []]
@@ -202,12 +211,12 @@ export class GroupListComponent implements OnInit {
         this.groupsService.getGroups().subscribe({
             next: (data) => {
                 if (this.currentCourse) {
-                    this.groups = data.filter(g => g.courseTypeId === this.currentCourse.courseTypeId);
+                    this.allGroups = data.filter(g => g.courseTypeId === this.currentCourse.courseTypeId);
                 } else {
-                    this.groups = data;
+                    this.allGroups = data;
                 }
                 this.selectedGroups = []; // Limpiar selección al recargar
-                this.paginationConfig.totalItems = data.length;
+                this.filterData('');
                 this.tableConfig.loading = false;
             },
             error: (err) => {
@@ -221,6 +230,29 @@ export class GroupListComponent implements OnInit {
     onPageChange(event: PageChangeEvent) {
         this.paginationConfig.currentPage = event.page;
         this.paginationConfig.pageSize = event.pageSize;
+        this.updatePaginatedData();
+    }
+
+    filterData(query: string) {
+        const term = query.toLowerCase().trim();
+        if (!term) {
+            this.filteredGroups = [...this.allGroups];
+        } else {
+            this.filteredGroups = this.allGroups.filter(g =>
+                g.name.toLowerCase().includes(term) ||
+                (g.location || '').toLowerCase().includes(term) ||
+                (g.status || '').toLowerCase().includes(term)
+            );
+        }
+        this.paginationConfig.totalItems = this.filteredGroups.length;
+        this.updatePaginatedData();
+    }
+
+
+    updatePaginatedData() {
+        const start = (this.paginationConfig.currentPage - 1) * this.paginationConfig.pageSize;
+        const end = start + this.paginationConfig.pageSize;
+        this.groups = this.filteredGroups.slice(start, end);
     }
 
     // --- HELPERS PARA MODALES ---
@@ -307,9 +339,9 @@ export class GroupListComponent implements OnInit {
             const payload = {
                 ...formValue,
                 dateTime: `${formValue.date}, ${formValue.time}`,
-                duration: this.formatDuration(this.currentCourse?.duration), // Inherit duration
+                duration: this.formatDuration(this.currentCourse?.duration), // Heredar duración
                 courseTypeId: this.currentCourse?.courseTypeId,
-                courseType: 'LICENCIA' // Fallback or map from ID if needed
+                courseType: 'LICENCIA' // Respaldo o mapeo desde ID si es necesario
             };
 
             this.groupsService.createGroup(payload).subscribe({
@@ -325,7 +357,7 @@ export class GroupListComponent implements OnInit {
                     this.notificationService.error('Error', 'No se pudo guardar el grupo.');
                 }
             });
-        } else { // edit mode
+        } else { // modo edición
             if (!this.editingGroupId) {
                 this.notificationService.error('Error', 'ID de grupo no definido para la edición.');
                 this.isSaving = false;

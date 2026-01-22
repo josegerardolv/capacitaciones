@@ -21,12 +21,13 @@ import { DocumentSelectionModalComponent, DocumentOption } from '../../component
 import { LicenseSearchModalComponent } from '../../components/modals/license-search-modal/license-search-modal.component';
 import { Group } from '../../../../core/models/group.model';
 import { CourseTypeService } from '../../../../core/services/course-type.service';
+import { TableFiltersComponent } from '@/app/shared/components/table-filters/table-filters.component';
 
 // ... existing code ...
 
 
 @Component({
-    selector: 'app-group-persons', // Updated selector
+    selector: 'app-group-persons', // Selector actualizado
     standalone: true,
     imports: [
         CommonModule,
@@ -40,10 +41,12 @@ import { CourseTypeService } from '../../../../core/services/course-type.service
         ConfirmationModalComponent,
         AlertModalComponent,
         BreadcrumbComponent,
+        BreadcrumbComponent, // Duplicado de BreadcrumbComponent mantenido para coincidir con la estructura original
         FormsModule,
         UniversalIconComponent,
         DocumentSelectionModalComponent,
-        LicenseSearchModalComponent
+        LicenseSearchModalComponent,
+        TableFiltersComponent
     ],
     templateUrl: './group-persons.component.html'
 })
@@ -52,7 +55,7 @@ export class GroupPersonsComponent implements OnInit {
 
     cursoId: string | null = null;
     currentGroupId: string | null = null;
-    currentGroup: Group | null = null; // Store full group details
+    currentGroup: Group | null = null; // Almacenar detalles completos del grupo
     courseLabel: string = '';
     groupLabel: string = '';
 
@@ -101,11 +104,14 @@ export class GroupPersonsComponent implements OnInit {
     selectedPersonForDocs: Person | null = null;
 
     // Datos de Personas
+    allPersons: Person[] = [];
+    filteredPersons: Person[] = [];
     persons: Person[] = [];
+
+
 
     // --- BÚSQUEDA ---
     isSearchModalOpen = false;
-
 
     // Breadcrumb items (se construyen en ngOnInit según params)
     breadcrumbItems: BreadcrumbItem[] = [];
@@ -155,6 +161,7 @@ export class GroupPersonsComponent implements OnInit {
 
         this.initColumns();
         this.loadGroupDetails();
+        this.loadGroupDetails();
         this.loadPersons();
     }
 
@@ -163,7 +170,7 @@ export class GroupPersonsComponent implements OnInit {
         this.groupsService.getGroupById(+this.currentGroupId).subscribe(group => {
             if (group) {
                 this.currentGroup = group;
-                // Update label if available
+                // Actualizar etiqueta si está disponible
                 if (group.name) this.groupLabel = `Grupo ${group.name}`;
 
                 // Cargar configuración de columnas dinámica
@@ -174,7 +181,7 @@ export class GroupPersonsComponent implements OnInit {
                         }
                     });
                 } else {
-                    // Fallback si no hay configuración
+                    // Respaldo si no hay configuración
                     this.initColumns();
                 }
             }
@@ -186,8 +193,8 @@ export class GroupPersonsComponent implements OnInit {
         this.tableConfig.loading = true;
         this.groupsService.getPersonsByGroupId(+this.currentGroupId).subscribe({
             next: (data) => {
-                this.persons = data;
-                this.paginationConfig.totalItems = data.length;
+                this.allPersons = data;
+                this.filterData('');
                 this.tableConfig.loading = false;
             },
             error: (err) => {
@@ -201,12 +208,36 @@ export class GroupPersonsComponent implements OnInit {
     onPageChange(event: PageChangeEvent) {
         this.paginationConfig.currentPage = event.page;
         this.paginationConfig.pageSize = event.pageSize;
-        // Aquí llamaríamos al backend con (page, pageSize)
-        console.log('Paginación:', event);
+        this.updatePaginatedData();
+    }
+
+
+
+    filterData(query: string) {
+        const term = query.toLowerCase().trim();
+        if (!term) {
+            this.filteredPersons = [...this.allPersons];
+        } else {
+            this.filteredPersons = this.allPersons.filter(p =>
+                p.name.toLowerCase().includes(term) ||
+                (p.firstSurname || '').toLowerCase().includes(term) ||
+                (p.secondSurname || '').toLowerCase().includes(term) ||
+                (p.license || '').toLowerCase().includes(term) ||
+                (p.curp || '').toLowerCase().includes(term)
+            );
+        }
+        this.paginationConfig.totalItems = this.filteredPersons.length;
+        this.updatePaginatedData();
+    }
+
+    updatePaginatedData() {
+        const start = (this.paginationConfig.currentPage - 1) * this.paginationConfig.pageSize;
+        const end = start + this.paginationConfig.pageSize;
+        this.persons = this.filteredPersons.slice(start, end);
     }
 
     initColumns() {
-        // Columnas por defecto (Fallback)
+        // Columnas por defecto (Respaldo)
         this.tableColumns = [
             { key: 'name', label: 'Nombre Completo', template: this.nameTemplate },
             { key: 'license', label: 'Licencia' },
@@ -262,12 +293,12 @@ export class GroupPersonsComponent implements OnInit {
                         this.router.navigate(['nuevo'], { relativeTo: this.route });
                     }
                 } else {
-                    // Fallback si no hay config
+                    // Respaldo si no hay config
                     this.isSearchModalOpen = true;
                 }
             });
         } else {
-            // Fallback si no hay grupo cargado
+            // Respaldo si no hay grupo cargado
             this.isSearchModalOpen = true;
         }
     }
@@ -292,7 +323,7 @@ export class GroupPersonsComponent implements OnInit {
     }
 
     onManualRegistration(license: string) {
-        // NO SE ENCUENTRA o FALLBACK: Navegar solo con licencia
+        // NO SE ENCUENTRA o RESPALDO: Navegar solo con licencia
         this.router.navigate(['nuevo'], {
             relativeTo: this.route,
             queryParams: {
@@ -328,7 +359,7 @@ export class GroupPersonsComponent implements OnInit {
         this.isAlertOpen = true;
     }
 
-    // LOGICA DE NEGOCIO 
+    // LÓGICA DE NEGOCIO 
 
     setExamResult(person: Person, result: 'Aprobado' | 'No Aprobado') {
         if (result === 'Aprobado') {

@@ -22,7 +22,7 @@ export class AppConfigService {
   private config: AppConfig = {
     title: 'Sistema de Capacitaciones', // TODO: Cambiar por el nombre del sistema
     subtitle: 'SEMOVI Oaxaca',
-    logo: 'assets/images/icons/Icon.svg',
+    logo: 'assets/images/icons/Icon.svg', 
     footerLogo: 'assets/images/icons/logo_movilidad.svg',
     orgName: 'Secretaría de Movilidad, Gobierno del Estado de Oaxaca',
     headerTitle: 'SEMOVI Oaxaca',
