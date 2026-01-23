@@ -11,8 +11,8 @@ export const CURSOS_ROUTES: Routes = [
             { path: '', redirectTo: '', pathMatch: 'full' },
             { path: '', component: CourseListComponent },
             { path: ':cursoId/grupos', component: GroupListComponent },
-            { path: ':cursoId/grupos/:groupId/conductores', component: GroupPersonsComponent },
-            { path: ':cursoId/grupos/:groupId/conductores/nuevo', component: PersonRegistrationComponent } // Nueva ruta
+            { path: ':cursoId/grupos/:groupId/personas', component: GroupPersonsComponent },
+            { path: ':cursoId/grupos/:groupId/personas/nuevo', component: PersonRegistrationComponent } // Nueva ruta
         ]
     }
 ];

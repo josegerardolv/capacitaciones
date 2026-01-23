@@ -382,7 +382,7 @@ export class GroupListComponent implements OnInit {
     viewPersons(group: Group) {
         // Navegamos a la vista completa de personas del grupo
         if (this.cursoId) {
-            this.router.navigate(['/cursos', this.cursoId, 'grupos', group.id, 'conductores'], { queryParams: { courseName: this.courseNameFromQuery ?? undefined, groupLabel: group.name } });
+            this.router.navigate(['/cursos', this.cursoId, 'grupos', group.id, 'personas'], { queryParams: { courseName: this.courseNameFromQuery ?? undefined, groupLabel: group.name } });
             return;
         }
         // No existe ruta global /cursos/grupos; redirigimos a la lista de cursos

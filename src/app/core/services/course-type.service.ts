@@ -27,7 +27,7 @@ export class CourseTypeService {
             }),
             availableDocuments: [
                 { id: 'doc_constancia', name: 'Constancia Básica', description: 'Template básico para constancias de participación', templateId: 1, cost: 473, requiresApproval: true },
-                { id: 'doc_tarjeton', name: 'Tarjetón de Identidad', description: 'Documento de identificación para conductores', templateId: 4, cost: 473, requiresApproval: true },
+                { id: 'doc_tarjeton', name: 'Tarjetón de Identidad', description: 'Documento de identificación para personas', templateId: 4, cost: 473, requiresApproval: true },
                 { id: 'doc_manejo', name: 'Constancia de Curso de Manejo', description: 'Constancia específica para curso de manejo', templateId: 6, cost: 340, requiresApproval: true }
             ]
         },
