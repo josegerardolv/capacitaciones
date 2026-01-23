@@ -1,4 +1,4 @@
-export type CourseType = 'LICENCIA' | 'GENERICO' | 'CAPACITACION_ESCOLAR';
+export type CourseType = 'LICENCIA' | 'GENERICO' | 'CAPACITACION_ESCOLAR' | 'CURSO_SIMPLE';
 
 export interface Group {
     id: number;

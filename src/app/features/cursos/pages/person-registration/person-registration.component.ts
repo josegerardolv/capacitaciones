@@ -140,7 +140,7 @@ export class PersonRegistrationComponent implements OnInit {
     // Modal State
     isDocumentsModalOpen = false;
     tempPersonData: any = null;
-    currentCourseType: 'LICENCIA' | 'GENERICO' | 'CAPACITACION_ESCOLAR' = 'LICENCIA'; // Default
+    currentCourseType: CourseType = 'LICENCIA'; // Default
 
     onPersonSaved(personData: any) {
         this.tempPersonData = personData;

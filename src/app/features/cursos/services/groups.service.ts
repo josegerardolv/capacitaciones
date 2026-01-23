@@ -37,7 +37,7 @@ export class GroupsService {
             url: 'http://localhost:4200/public/register/2',
             requests: 3,
             status: 'Activo',
-            courseType: 'GENERICO', // Legacy
+            courseType: 'CAPACITACION_ESCOLAR', // Updated
             courseTypeId: 2 // Enlace a 'Capacitación Escolar'
         },
         // MOCK: Grupo Simple solicitado por usuario
@@ -52,7 +52,7 @@ export class GroupsService {
             url: 'http://localhost:4200/public/register/3',
             requests: 5,
             status: 'Activo',
-            courseType: 'GENERICO',
+            courseType: 'CURSO_SIMPLE', // Updated
             courseTypeId: 3 // Enlace estático al 'Curso Simple'
         },
         // MOCK: Grupo sin enlace para probar generación

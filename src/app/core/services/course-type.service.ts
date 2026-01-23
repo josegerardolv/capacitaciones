@@ -26,7 +26,7 @@ export class CourseTypeService {
                 sex: { visible: true, required: true }
             }),
             availableDocuments: [
-                { id: 'doc_constancia', name: 'Constancia Básica', description: 'Template básico para constancias de participación', templateId: 1, cost: 473, requiresApproval: true },
+                { id: 'doc_constancia', name: 'Constancia Básica', description: 'Template básico para constancias de participación', templateId: 1, cost: 473, requiresApproval: true, isMandatory: true }, // Obligatorio
                 { id: 'doc_tarjeton', name: 'Tarjetón de Identidad', description: 'Documento de identificación para conductores', templateId: 4, cost: 473, requiresApproval: true },
                 { id: 'doc_manejo', name: 'Constancia de Curso de Manejo', description: 'Constancia específica para curso de manejo', templateId: 6, cost: 340, requiresApproval: true }
             ]
@@ -40,12 +40,17 @@ export class CourseTypeService {
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
             registrationFields: this.cloneDefaultsWithOverrides({
-                // Solo datos básicos. Ocultamos cosas de choferes.
+                // Predeterminados: Name, Surnames, Curp, Phone, Email
+                name: { visible: true, required: true },
+                firstSurname: { visible: true, required: true },
+                secondSurname: { visible: true, required: true },
+                curp: { visible: true, required: true }, // CORREGIDO: Visible y Obligatorio
+                sex: { visible: true, required: false }, // Visible pero Opcional
+
+                // Ocultos
                 license: { visible: false, required: false },
                 nuc: { visible: false, required: false },
-                curp: { visible: false, required: false }, // Niños quizas no tienen a mano
-                address: { visible: false, required: false },
-                sex: { visible: true, required: false }
+                address: { visible: false, required: false }
             }),
             availableDocuments: [
                 { id: 'doc_diploma', name: 'Diploma de Participación', description: 'Diploma general de participación', templateId: 5, cost: 0, requiresApproval: false, isMandatory: true }, // Gratuito -> Obligatorio
@@ -62,17 +67,18 @@ export class CourseTypeService {
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
             registrationFields: this.cloneDefaultsWithOverrides({
-                // "Solo nombre y apellido"
+                // Configuración según captura de pantalla del usuario
                 name: { visible: true, required: true },
                 firstSurname: { visible: true, required: true },
-                secondSurname: { visible: true, required: false },
-                // Ocultar TODO lo demás
-                curp: { visible: false, required: false },
+                secondSurname: { visible: true, required: true }, // captura shows checked (Obligatorio)
+                curp: { visible: true, required: true }, // captura shows checked (Obligatorio)
+                phone: { visible: true, required: true }, // captura shows checked (Obligatorio)
+                email: { visible: true, required: true }, //    captura shows checked (Obligatorio)
+
+                // Deshabilitados en captura
                 license: { visible: false, required: false },
                 nuc: { visible: false, required: false },
                 address: { visible: false, required: false },
-                phone: { visible: false, required: false },
-                email: { visible: false, required: false },
                 sex: { visible: false, required: false }
             }),
             availableDocuments: [
