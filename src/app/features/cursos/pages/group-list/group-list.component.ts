@@ -181,7 +181,7 @@ export class GroupListComponent implements OnInit {
             date: ['', [Validators.required]], // Fecha separada
             time: ['', [Validators.required]], // Hora separada
             quantity: ['', [Validators.required, Validators.min(1)]],
-            autoRegisterLimit: ['', [Validators.required, Validators.min(1)]],
+            linkExpiration: ['', [Validators.required]], // Nuevo: Fecha de expiración
             course: ['', []]
         });
     }
@@ -193,7 +193,7 @@ export class GroupListComponent implements OnInit {
             { key: 'date', label: 'Fecha', template: this.dateTemplate, minWidth: '100px' },
             { key: 'time', label: 'Hora', template: this.timeTemplate, minWidth: '80px' },
             { key: 'quantity', label: 'Cantidad', sortable: true, minWidth: '80px', align: 'center' },
-            { key: 'autoRegisterLimit', label: 'Límite de autoregistro', sortable: true, minWidth: '120px', align: 'center' },
+            { key: 'linkExpiration', label: 'Vigencia Link', template: this.dateTemplate, minWidth: '120px', align: 'center' },
             { key: 'url', label: 'URL', align: 'center', template: this.urlTemplate, minWidth: '80px' },
             { key: 'status', label: 'Estatus', align: 'center', template: this.statusTemplate, minWidth: '100px' },
             {
