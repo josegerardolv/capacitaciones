@@ -8,7 +8,8 @@ export interface Group {
     location: string; // e.g., "Carlos Gracida"
     dateTime: string; // e.g., "12/07/2026, 14:30" - Could be Date object
     quantity: number; // Cupo máximo de conductores
-    linkExpiration: string; // Fecha de vencimiento del link público
+    autoRegisterLimit?: number; // Configuración: Días de validez (ej. 5 días)
+    linkExpiration?: string; // Estado: Fecha real de vencimiento (Calculada al generar link)
     url: string; // Link público generado
     requests: number; // Cantidad de solicitudes pendientes
     status: 'Activo' | 'Inactivo';

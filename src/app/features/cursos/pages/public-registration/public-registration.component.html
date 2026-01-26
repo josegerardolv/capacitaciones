@@ -39,9 +39,28 @@
         <!-- Body: formulario -->
         <div>
             <div class="p-6 md:p-8">
-                <!-- Mostramos el formulario solo si showForm es true -->
-                <app-person-form *ngIf="showForm" [submitLabel]="'Solicitar registro'" [fieldsConfig]="fieldsConfig"
-                    [initialData]="prefilledData" [showCancel]="false" (saved)="onPersonRegistered($event)">
+
+                <!-- ESTADO: ENLACE VENCIDO -->
+                <div *ngIf="isExpired" class="bg-red-50 border-l-4 border-red-500 p-4 mb-6">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <i class="material-icons text-red-500">error</i>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-red-700 font-bold">
+                                El periodo de inscripción ha finalizado.
+                            </p>
+                            <p class="text-sm text-red-600">
+                                Este enlace ya no es válido para realizar nuevos registros.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mostramos el formulario solo si showForm es true Y no ha expirado -->
+                <app-person-form *ngIf="showForm && !isExpired" [submitLabel]="'Solicitar registro'"
+                    [fieldsConfig]="fieldsConfig" [initialData]="prefilledData" [showCancel]="false"
+                    (saved)="onPersonRegistered($event)">
                 </app-person-form>
 
                 <!-- Mensaje de carga o estado inicial si no hay form ni modal -->
