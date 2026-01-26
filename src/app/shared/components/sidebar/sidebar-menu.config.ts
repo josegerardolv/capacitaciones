@@ -54,18 +54,10 @@ export const SIDEBAR_MENU_CONFIG: MenuItem[] = [
     children: [
       {
         id: 'config-cursos',
-        label: 'Configuración de Cursos',
+        label: 'Configuración Tipo de Cursos',
         icon: 'person',
         iconType: 'bootstrap',
         route: '/config/config-cursos',
-        roles: ['admin', 'SUPER_ADMINISTRADOR']
-      },
-      {
-        id: 'concepto',
-        label: 'Configuración de Conceptos',
-        icon: 'file-text',
-        iconType: 'bootstrap',
-        route: '/config/concepto',
         roles: ['admin', 'SUPER_ADMINISTRADOR']
       },
       {
@@ -75,6 +67,14 @@ export const SIDEBAR_MENU_CONFIG: MenuItem[] = [
         iconType: 'bootstrap',
         route: '/config/templates',
         roles: ['admin', 'SUPER_ADMINISTRADOR', 'SUPERVISOR']
+      },
+      {
+        id: 'concepto',
+        label: 'Configuración de Conceptos',
+        icon: 'file-text',
+        iconType: 'bootstrap',
+        route: '/config/concepto',
+        roles: ['admin', 'SUPER_ADMINISTRADOR']
       },
       {
         id: 'encuesta',

@@ -132,49 +132,68 @@ Debe tener columnas **JSON** para la configuración de campos y documentos.
 Para facilitar el desarrollo, aquí están los ejemplos exactos de lo que el Frontend envía y espera recibir.
 
 ### A. Tipos de Curso (`POST /api/course-types`)
-Aquí configuramos qué campos preguntar en el formulario.
 
+A continuación, los 3 casos de uso específicos que deben soportarse.
+
+#### Caso 1: Licencia Transporte (ID 1)
+*Requiere todos los datos y cobra documento obligatorio.*
 ```json
 {
-  "name": "Curso de Manejo Tipo A",
-  "description": "Curso para transporte público",
+  "name": "Licencia Transporte Público (Tipo A)",
   "paymentType": "De Paga",
-  "status": "Activo",
   "registrationFields": [
-    {
-      "fieldName": "license",
-      "label": "Número de Licencia",
-      "visible": true,
-      "required": true
-    },
-    {
-      "fieldName": "curp",
-      "label": "CURP",
-      "visible": true,
-      "required": true
-    },
-    {
-      "fieldName": "schoolKey",
-      "label": "CCT Escuela",
-      "visible": false,
-      "required": false
-    }
+    { "fieldName": "name", "visible": true, "required": true },
+    { "fieldName": "curp", "visible": true, "required": true },
+    { "fieldName": "license", "visible": true, "required": true },
+    { "fieldName": "nuc", "visible": true, "required": true },
+    { "fieldName": "address", "visible": true, "required": true },
+    { "fieldName": "sex", "visible": true, "required": true }
   ],
   "availableDocuments": [
-    {
-      "id": "doc_constancia",
-      "name": "Constancia de Aprobación",
-      "templateId": 10,
-      "isMandatory": true,
-      "cost": 0
-    },
-    {
-      "id": "doc_tarjeton",
-      "name": "Tarjetón Tipo A",
-      "templateId": 12,
-      "isMandatory": false,
-      "cost": 300
-    }
+    { "id": "doc_constancia", "name": "Constancia Básica", "cost": 473, "isMandatory": true },
+    { "id": "doc_tarjeton", "name": "Tarjetón", "cost": 473, "isMandatory": false }
+  ]
+}
+```
+
+#### Caso 2: Capacitación Escolar (ID 2)
+*Oculta datos sensibles de chofer, CURP obligatorio, Sexo opcional. Documento base gratuito.*
+```json
+{
+  "name": "Capacitación Escolar",
+  "paymentType": "De Paga", // (Aunque el base es gratis, permite upsell)
+  "registrationFields": [
+    { "fieldName": "name", "visible": true, "required": true },
+    { "fieldName": "curp", "visible": true, "required": true },
+    { "fieldName": "phone", "visible": true, "required": true },
+    { "fieldName": "email", "visible": true, "required": true },
+    { "fieldName": "sex", "visible": true, "required": false }, // Opcional
+    { "fieldName": "license", "visible": false, "required": false }, // Oculto
+    { "fieldName": "nuc", "visible": false, "required": false }     // Oculto
+  ],
+  "availableDocuments": [
+    { "id": "doc_diploma", "name": "Diploma Participación", "cost": 0, "isMandatory": true },
+    { "id": "doc_honor", "name": "Diploma de Honor", "cost": 340, "isMandatory": false }
+  ]
+}
+```
+
+#### Caso 3: Curso Simple (ID 3)
+*Solo datos de contacto. 100% Gratuito.*
+```json
+{
+  "name": "Curso Simple",
+  "paymentType": "Gratuito",
+  "registrationFields": [
+    { "fieldName": "name", "visible": true, "required": true },
+    { "fieldName": "curp", "visible": true, "required": true },
+    { "fieldName": "phone", "visible": true, "required": true },
+    { "fieldName": "email", "visible": true, "required": true },
+    { "fieldName": "license", "visible": false, "required": false },
+    { "fieldName": "sex", "visible": false, "required": false }
+  ],
+  "availableDocuments": [
+    { "id": "doc_simple", "name": "Diploma Simple", "cost": 0, "isMandatory": true }
   ]
 }
 ```

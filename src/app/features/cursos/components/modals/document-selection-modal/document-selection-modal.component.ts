@@ -52,8 +52,8 @@ export class DocumentSelectionModalComponent {
                 name: doc.name,
                 description: doc.description || doc.name, // Usar descripción si existe, sino nombre
                 cost: doc.cost, // Map cost
-                selected: doc.isMandatory || !doc.cost ? true : false, // Si es obligatorio o GRATIS (!cost), pre-seleccionar
-                disabled: doc.isMandatory || !doc.cost || false // Si es obligatorio O gratis, bloquear
+                selected: !!doc.isMandatory, // Si es obligatorio, pre-seleccionar
+                disabled: !!doc.isMandatory  // Si es obligatorio, bloquear
             }));
             return;
         }

@@ -19,7 +19,7 @@ export class GroupsService {
             location: 'Aula Central - Semovi',
             dateTime: '15/10/2026, 09:00',
             quantity: 40,
-            autoRegisterLimit: 5,
+            linkExpiration: '2026-10-15', // Fecha expiración
             url: 'http://localhost:4200/public/register/1',
             requests: 3,
             status: 'Activo',
@@ -33,11 +33,11 @@ export class GroupsService {
             location: 'Escuela Primaria Benito Juárez',
             dateTime: '20/10/2026, 10:30',
             quantity: 100,
-            autoRegisterLimit: 10,
+            linkExpiration: '2026-10-20',
             url: 'http://localhost:4200/public/register/2',
             requests: 3,
             status: 'Activo',
-            courseType: 'GENERICO', // Legacy
+            courseType: 'CAPACITACION_ESCOLAR', // Updated
             courseTypeId: 2 // Enlace a 'Capacitación Escolar'
         },
         // MOCK: Grupo Simple solicitado por usuario
@@ -48,11 +48,11 @@ export class GroupsService {
             location: 'Aula Virtual',
             dateTime: '01/12/2026, 09:00',
             quantity: 20,
-            autoRegisterLimit: 20,
+            linkExpiration: '2026-12-01',
             url: 'http://localhost:4200/public/register/3',
             requests: 5,
             status: 'Activo',
-            courseType: 'GENERICO',
+            courseType: 'CURSO_SIMPLE', // Updated
             courseTypeId: 3 // Enlace estático al 'Curso Simple'
         },
         // MOCK: Grupo sin enlace para probar generación
@@ -63,7 +63,7 @@ export class GroupsService {
             location: 'Aula 2',
             dateTime: '15/12/2026, 10:00',
             quantity: 30,
-            autoRegisterLimit: 5,
+            linkExpiration: '2026-12-15',
             url: '', // sin link
             requests: 0,
             status: 'Inactivo',

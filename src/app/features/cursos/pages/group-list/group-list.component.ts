@@ -172,39 +172,7 @@ export class GroupListComponent implements OnInit {
 
     }
 
-    // Inicialización del formulario con los campos requeridos por diseño
-    initForms() {
-        this.groupModalForm = this.fb.group({
-            name: ['', [Validators.required]],
-            // duración removida, heredada del curso
-            location: ['', [Validators.required]],
-            date: ['', [Validators.required]], // Fecha separada
-            time: ['', [Validators.required]], // Hora separada
-            quantity: ['', [Validators.required, Validators.min(1)]],
-            autoRegisterLimit: ['', [Validators.required, Validators.min(1)]],
-            course: ['', []]
-        });
-    }
 
-    initColumns() {
-        this.tableColumns = [
-            { key: 'name', label: 'Nombre', sortable: true, minWidth: '100px' },
-            { key: 'location', label: 'Ubicación', sortable: true, minWidth: '150px' },
-            { key: 'date', label: 'Fecha', template: this.dateTemplate, minWidth: '100px' },
-            { key: 'time', label: 'Hora', template: this.timeTemplate, minWidth: '80px' },
-            { key: 'quantity', label: 'Cantidad', sortable: true, minWidth: '80px', align: 'center' },
-            { key: 'autoRegisterLimit', label: 'Límite de autoregistro', sortable: true, minWidth: '120px', align: 'center' },
-            { key: 'url', label: 'URL', align: 'center', template: this.urlTemplate, minWidth: '80px' },
-            { key: 'status', label: 'Estatus', align: 'center', template: this.statusTemplate, minWidth: '100px' },
-            {
-                key: 'actions',
-                label: 'Acciones',
-                align: 'center',
-                minWidth: '140px',
-                template: this.actionsTemplate
-            }
-        ];
-    }
 
     loadGroups() {
         this.tableConfig.loading = true;
@@ -406,6 +374,39 @@ export class GroupListComponent implements OnInit {
         });
     }
 
+    initForms() {
+        this.groupModalForm = this.fb.group({
+            name: ['', [Validators.required]],
+            // duración removida, heredada del curso
+            location: ['', [Validators.required]],
+            date: ['', [Validators.required]], // Fecha separada
+            time: ['', [Validators.required]], // Hora separada
+            quantity: ['', [Validators.required, Validators.min(1)]],
+            linkExpiration: ['', [Validators.required]], // Fecha de Vencimiento del Link (Calendario)
+            course: ['', []]
+        });
+    }
+
+    initColumns() {
+        this.tableColumns = [
+            { key: 'name', label: 'Nombre', sortable: true, minWidth: '100px' },
+            { key: 'location', label: 'Ubicación', sortable: true, minWidth: '150px' },
+            { key: 'date', label: 'Fecha', template: this.dateTemplate, minWidth: '100px' },
+            { key: 'time', label: 'Hora', template: this.timeTemplate, minWidth: '80px' },
+            { key: 'quantity', label: 'Cantidad', sortable: true, minWidth: '80px', align: 'center' },
+            { key: 'linkExpiration', label: 'Límite de registro', template: this.dateTemplate, minWidth: '120px', align: 'center' },
+            { key: 'url', label: 'URL', align: 'center', template: this.urlTemplate, minWidth: '80px' },
+            { key: 'status', label: 'Estatus', align: 'center', template: this.statusTemplate, minWidth: '100px' },
+            {
+                key: 'actions',
+                label: 'Acciones',
+                align: 'center',
+                minWidth: '140px',
+                template: this.actionsTemplate
+            }
+        ];
+    }
+
     openRequests(group: Group) {
         this.selectedRequestGroup = group;
         this.isRequestsModalOpen = true;
@@ -444,19 +445,21 @@ export class GroupListComponent implements OnInit {
             const origin = window.location.origin; // Ej: http://localhost:4200
 
             groupsToGenerate.forEach(group => {
-                // Solo si tiene cupo (aunque esto es lógica de negocio extra, la mantenemos si existe)
-                // y doble check de que no tenga url
                 if (!group.url) {
-                    // FORMATO SOLICITADO: Ruta al registro público
+                    // 1. Generar URL
                     group.url = `${origin}/public/register/${group.id}`;
-                    group.status = 'Activo'; // Asumimos que al generar URL se activa
+
+                    // 2. La Fecha de Vencimiento ya fue definida al crear el grupo (group.linkExpiration)
+                    // No necesitamos calcular nada extra aquí, salvo cambiar el estado.
+
+                    group.status = 'Activo';
                     count++;
                 }
             });
 
             if (count > 0) {
                 this.notificationService.success('URL Generada', `Se generaron ${count} enlaces correctamente.`);
-                this.selectedGroups = []; // Limpiar selección opcionalmente, o dejarla
+                this.selectedGroups = [];
             } else {
                 this.notificationService.warning('Advertencia', 'No se generaron URLs (posiblemente ya existían).');
             }

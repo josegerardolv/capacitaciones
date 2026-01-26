@@ -122,9 +122,32 @@ export class PublicRegistrationComponent implements OnInit {
         });
     }
 
+    isExpired = false;
+
     calculateDeadline(group: any): string {
-        // Lógica simple de visualización
-        return `${group.autoRegisterLimit} días restantes`;
+        if (!group.linkExpiration) return 'Sin vigencia';
+
+        const expirationDate = new Date(group.linkExpiration);
+        const today = new Date();
+        // Reset time part for accurate date comparison
+        today.setHours(0, 0, 0, 0);
+        // We'll treat expirationDate as end-of-day or strict date? Usually strict date comparison.
+        // Assuming linkExpiration string is YYYY-MM-DD
+
+        // Fix timezone offset issue by treating string as local or creating UTC
+        // Simple string comparison for 'YYYY-MM-DD' works if local time matches
+        // Better:
+        const exp = new Date(group.linkExpiration + 'T23:59:59');
+
+        if (today > exp) {
+            this.isExpired = true;
+            return 'Enlace Vencido';
+        }
+
+        // Calculate days remaining
+        const diffTime = Math.abs(exp.getTime() - today.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        return `${diffDays} días restantes`;
     }
 
     setupLegacyFields(courseType: string) {

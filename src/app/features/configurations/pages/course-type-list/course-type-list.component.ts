@@ -1,7 +1,7 @@
 import { Component, OnInit, TemplateRef, ViewChild } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { CourseTypeService } from '../../../../core/services/course-type.service';
 import { CourseTypeConfig } from '../../../../core/models/course-type-config.model';
 import { InstitutionalTableComponent, TableColumn, TableConfig } from '../../../../shared/components/institutional-table/institutional-table.component';
@@ -27,9 +27,6 @@ import { TableFiltersComponent } from '@/app/shared/components/table-filters/tab
     UniversalIconComponent,
     BreadcrumbComponent,
     TablePaginationComponent,
-    CourseTypeFormModalComponent,
-    TablePaginationComponent,
-    CourseTypeFormModalComponent,
     ReactiveFormsModule,
     TableFiltersComponent
   ],
@@ -45,9 +42,7 @@ export class CourseTypeListComponent implements OnInit {
 
 
 
-  // Modal states
-  showFormModal = false;
-  selectedCourseType: CourseTypeConfig | null = null;
+
 
   // Configuración de la tabla
   tableColumns: TableColumn[] = [];
@@ -70,7 +65,10 @@ export class CourseTypeListComponent implements OnInit {
     { label: 'Tipos de Curso' }
   ];
 
-  constructor(private courseTypeService: CourseTypeService) { }
+  constructor(
+    private courseTypeService: CourseTypeService,
+    private router: Router
+  ) { }
 
   ngOnInit(): void {
     this.initColumns();
@@ -136,40 +134,11 @@ export class CourseTypeListComponent implements OnInit {
   }
 
   openCreateModal() {
-    this.selectedCourseType = null;
-    this.showFormModal = true;
+    this.router.navigate(['/config/config-cursos/nuevo']);
   }
 
   openEditModal(item: CourseTypeConfig) {
-    // Clone to avoid reference issues
-    this.selectedCourseType = JSON.parse(JSON.stringify(item));
-    this.showFormModal = true;
-  }
-
-  onFormSave(config: Partial<CourseTypeConfig>) {
-    this.showFormModal = false;
-    this.tableConfig.loading = true;
-
-    if (this.selectedCourseType) {
-      // Actualizar normal
-      this.courseTypeService.updateCourseType(this.selectedCourseType.id, config).subscribe({
-        next: () => this.loadData(),
-        error: (err) => {
-          console.error('Error actualizando tipo de curso:', err);
-          this.tableConfig.loading = false;
-        }
-      });
-    } else {
-      // Crear normal
-      // Forzamos el tipo (ignorando id/dates ya que el servicio los maneja)
-      this.courseTypeService.createCourseType(config as any).subscribe({
-        next: () => this.loadData(),
-        error: (err) => {
-          console.error('Error creando tipo de curso:', err);
-          this.tableConfig.loading = false;
-        }
-      });
-    }
+    this.router.navigate(['/config/config-cursos/editar', item.id]);
   }
 
   onDelete(item: CourseTypeConfig) {
