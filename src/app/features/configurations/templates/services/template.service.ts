@@ -71,7 +71,7 @@ export class TemplateService {
       conceptName: 'CONSTANCIA DE NO EMPLACAMIENTO',
       conceptClave: '3IFBAC022',
       conceptCosto: 473,
-      description: 'Documento de identificación para conductores',
+      description: 'Documento de identificación para personas',
       category: 'Identificación',
       usageCount: 120,
       pageConfig: this.getDefaultPageConfig(),

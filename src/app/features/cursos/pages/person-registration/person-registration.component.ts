@@ -75,7 +75,7 @@ export class PersonRegistrationComponent implements OnInit {
         } else {
             this.breadcrumbItems.push({ label: 'Grupos', url: '/cursos' });
         }
-        this.breadcrumbItems.push({ label: 'Personas', url: this.cursoId && this.groupId ? `/cursos/${this.cursoId}/grupos/${this.groupId}/conductores` : '/cursos' });
+        this.breadcrumbItems.push({ label: 'Personas', url: this.cursoId && this.groupId ? `/cursos/${this.cursoId}/grupos/${this.groupId}/personas` : '/cursos' });
         this.breadcrumbItems.push({ label: 'Agregar' });
 
         this.route.queryParams.subscribe(params => {
@@ -244,8 +244,8 @@ export class PersonRegistrationComponent implements OnInit {
 
     closeAndRedirect() {
         this.isAlertOpen = false;
-        // Redirigir a la lista de conductores
-        // Redirigir a la lista de conductores (../ relativa a la ruta actual 'nuevo')
+        // Redirigir a la lista de personas
+        // Redirigir a la lista de personas (../ relativa a la ruta actual 'nuevo')
         this.router.navigate(['../'], { relativeTo: this.route });
     }
 

@@ -53,7 +53,7 @@
 
 <app-modal-form *ngIf="showModal && courseModalForm" [isOpen]="showModal"
     [title]="modalMode === 'create' ? 'Nuevo Curso' : 'Editar Curso'" (modalClose)="closeModal()"
-    (formSubmit)="onModalSubmit()" [formGroup]="courseModalForm" [isLoading]="isSaving">
+    (formSubmit)="onModalSubmit()" [formGroup]="courseModalForm" [isLoading]="isSaving" [size]="'xl'">
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         <!-- Nombre del curso -->
         <div class="col-span-1">
