@@ -75,7 +75,7 @@
 </div>
 
 <app-modal-form [isOpen]="showModal" [title]="modalMode === 'create' ? 'Nuevo Grupo' : 'Editar Grupo'"
-    (modalClose)="closeModal()" (formSubmit)="onGroupModalSubmit()" [formGroup]="groupModalForm" [isLoading]="isSaving">
+    (modalClose)="closeModal()" (formSubmit)="onGroupModalSubmit()" [formGroup]="groupModalForm" [isLoading]="isSaving" [size]="'xl'">
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         <!-- Fila 1 -->
         <div class="col-span-1">
@@ -173,7 +173,8 @@
                 variant: 'secondary',
                 size: 'small', 
                 icon: 'patient_list',
-                iconPosition: 'only'}" (buttonClick)="openRequests(item)">
+                iconPosition: 'only'}" [appTooltip]="'Solicitudes pendientes'" tooltipPosition="top"
+                (buttonClick)="openRequests(item)">
             </app-institutional-button>
             <span *ngIf="item.requests > 0"
                 class="absolute -top-2 -right-2 inline-flex items-center justify-center bg-red-600 text-white text-xs font-semibold rounded-full px-2 py-0.5">{{
