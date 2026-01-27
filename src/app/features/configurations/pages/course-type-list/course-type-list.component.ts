@@ -14,6 +14,9 @@ import { TablePaginationComponent, PaginationConfig, PageChangeEvent } from '../
 
 import { CourseTypeFormModalComponent } from '../../components/modals/course-type-form-modal/course-type-form-modal.component';
 import { TableFiltersComponent } from '@/app/shared/components/table-filters/table-filters.component';
+import { TooltipDirective } from '../../../../shared/components/tooltip/tooltip.directive';
+
+
 
 @Component({
   selector: 'app-course-type-list',
@@ -28,7 +31,8 @@ import { TableFiltersComponent } from '@/app/shared/components/table-filters/tab
     BreadcrumbComponent,
     TablePaginationComponent,
     ReactiveFormsModule,
-    TableFiltersComponent
+    TableFiltersComponent,
+    TooltipDirective,
   ],
   templateUrl: './course-type-list.component.html'
 })
