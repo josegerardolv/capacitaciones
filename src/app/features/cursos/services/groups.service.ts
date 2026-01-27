@@ -72,7 +72,7 @@ export class GroupsService {
         }
     ];
 
-    // Simulación de personas por grupo (Mock DB)
+    // Simulación de conductores por grupo (Mock DB)
     private mockPersons: { [groupId: number]: Person[] } = {
         1: [
             { id: 1, name: 'Juan', firstSurname: 'Pérez', secondSurname: 'Gómez', license: 'A123456789', curp: 'AAAA000000HDFXXX00', status: 'Pendiente', requestTarjeton: false, coursePaymentStatus: 'Pagado', sex: 'Hombre', address: 'Calle 1, Col. Centro', phone: '5512345678', email: 'juan.perez@example.com' },
@@ -111,7 +111,7 @@ export class GroupsService {
     }
 
     getRequestsByGroupId(groupId: number): Observable<Person[]> {
-        // En lugar de una lista separada, filtramos los personas con status 'Pendiente'
+        // En lugar de una lista separada, filtramos los conductores con status 'Pendiente'
         const persons = this.mockPersons[groupId] || [];
         const requests = persons.filter(d => d.status === 'Pendiente');
         return of(requests).pipe(delay(200));
@@ -125,7 +125,7 @@ export class GroupsService {
 
         const newId = (this.mockPersons[groupId].length + 1) * 1000 + Math.floor(Math.random() * 999);
 
-        // Agregamos a los personas con estado 'Pendiente'
+        // Agregamos a los conductores con estado 'Pendiente'
         // Usamos destructuring para evitar conflicto de ID y conservamos los datos del modelo Person
         const { id, ...personData } = data;
 
@@ -151,7 +151,7 @@ export class GroupsService {
         return of(void 0).pipe(delay(200));
     }
 
-    // Nueva función para búsqueda simulada de personas
+    // Nueva función para búsqueda simulada de conductores
     searchPersonByLicense(license: string): Observable<Person | null> {
         // Simulamos que si la licencia empieza por "EXIST", la encuentra
         // Si no, retorna null

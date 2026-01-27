@@ -13,14 +13,14 @@ El núcleo de la operación. Aquí gestionamos los cursos y grupos.
 |------|-------------|
 | `/cursos/lista` | Catálogo general de cursos disponibles. |
 | `/cursos/grupos` | Gestión de fechas y apertura de grupos. |
-| `/cursos/grupos/:id/personas` | **Control de Asistencia:** Aquí aprobamos exámenes y documentos. |
+| `/cursos/grupos/:id/conductores` | **Control de Asistencia:** Aquí aprobamos exámenes y documentos. |
 
-###  Acceso Público (Personas)
+###  Acceso Público (Conductores)
 Rutas accesibles para usuarios externos (no requieren autenticación).
 
 | Ruta | Descripción |
 |------|-------------|
-| `/registro-publico/:id` | **Formulario de Registro:** Donde los personas se inscriben usando un ID de grupo. |
+| `/registro-publico/:id` | **Formulario de Registro:** Donde los conductores se inscriben usando un ID de grupo. |
 
 ---
 
@@ -58,7 +58,7 @@ Nos hemos movido a una arquitectura modular basada en **Features**:
 ##  Flujo de Trabajo (Cheat Sheet)
 
 ### Para aprobar a un conductor:
-1.  Ve a "Grupos" -> Click en "Ver Personas".
+1.  Ve a "Grupos" -> Click en "Ver Conductores".
 2.  Busca al conductor en la lista.
 3.  Usa el botón **Check Verde (✅)** para aprobar su examen.
 4.  *Automáticamente* se desbloquearán los botones de **Constancia, Tarjetón y Orden de Pago**.
