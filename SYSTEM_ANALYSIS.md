@@ -63,7 +63,7 @@ Es fundamental mantener la flexibilidad que hemos programado en el Frontend.
 
 ### Herencia de Configuración
 La configuración viaja en cadena:
-`Tipo de Curso` -> `Curso` -> `Grupo`.
+`Concepto` -> `Template` ->`Tipo de Curso` -> `Curso` -> `Grupo` -> `Persona`.
 Esto significa que si cambiamos la configuración del Tipo de Curso (ej. ahora pedimos Licencia), los nuevos cursos heredarán esa regla automáticamente.
 
 ### Casos de Uso Verificados

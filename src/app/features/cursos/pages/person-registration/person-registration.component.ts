@@ -156,13 +156,14 @@ export class PersonRegistrationComponent implements OnInit {
         this.isDocumentsModalOpen = false;
 
         // Map selected documents to person data
-        const wantsTarjeton = documents.some(d => d.id === 'tarjeton' && d.selected);
+        const selectedDocIds = documents.filter(d => d.selected).map(d => d.id);
+        const wantsTarjeton = selectedDocIds.includes('doc_tarjeton') || selectedDocIds.includes('tarjeton');
 
         // Merge with temp data
         const finalPersonData = {
             ...this.tempPersonData,
             requestTarjeton: wantsTarjeton,
-            // We could store other docs if the backend supported it, e.g. requestedDocuments: documents.map(...)
+            requestedDocuments: selectedDocIds // Store all selected IDs
         };
 
         this.finalizeRegistration(finalPersonData);

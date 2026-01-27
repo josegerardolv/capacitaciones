@@ -259,3 +259,45 @@ Datos que envía el formulario de registro.
   "requestedDocuments": ["doc_tarjeton"]
 }
 ```
+
+---
+
+## 7. ACTUALIZACIÓN CRÍTICA (Personas y Pagos)
+
+**Nota del Desarrollador Frontend:**
+Oigan, para terminar la implementación frontend y dejar todo listo, necesitábamos manejar casos más complejos de pagos.
+Resulta que hay escenarios donde un usuario tiene que pagar un documento obligatorio (ej. Constancia) y luego quiere pagar uno opcional (ej. Tarjetón). Con un simple `status: 'Pagado'` no nos alcanzaba.
+
+Así que hice estos ajustes para que lo contemplen en la BD:
+
+### A. Nuevo Campo en Personas: `paidDocumentIds`
+Agregué un array a la tabla `persons` para saber **exactamente qué documentos ha pagado**.
+Esto es necesario para el candado de dependencias: *"No te vendo el opcional hasta que me pagues el obligatorio"*.
+
+**Ejemplo de cómo necesito recibir el JSON:**
+
+```json
+{
+  "id": 123,
+  "name": "Maria Lopez",
+  "status": "Aprobado",
+  "paymentStatus": "Pendiente", // Estatus global (opcional)
+  "paidDocumentIds": ["doc_constancia"] // <--- ESTO ES LO NUEVO
+}
+```
+
+### B. Por qué lo necesitamos (Ejemplos Reales)
+
+Para que entiendan la lógica que programé:
+
+1.  **Caso bloqueado:**
+    *   Si llega `paidDocumentIds: []` (vacío).
+    *   El sistema ve que debe la Constancia Obligatoria.
+    *   **Acción:** Le deshabilito el botón de pagar Tarjetón (gris) hasta que pague la Constancia.
+
+2.  **Caso desbloqueado:**
+    *   Si llega `paidDocumentIds: ["doc_constancia"]`.
+    *   El sistema ve que ya cumplió con lo obligatorio.
+    *   **Acción:** Le habilitamos el botón para comprar/pagar el Tarjetón Opcional.
+
+Por favor asegúrense de guardar esto cuando SIOX confirme el pago de una línea de captura específica.
