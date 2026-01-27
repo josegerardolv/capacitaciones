@@ -75,7 +75,8 @@
 </div>
 
 <app-modal-form [isOpen]="showModal" [title]="modalMode === 'create' ? 'Nuevo Grupo' : 'Editar Grupo'"
-    (modalClose)="closeModal()" (formSubmit)="onGroupModalSubmit()" [formGroup]="groupModalForm" [isLoading]="isSaving" [size]="'xl'">
+    (modalClose)="closeModal()" (formSubmit)="onGroupModalSubmit()" [formGroup]="groupModalForm" [isLoading]="isSaving"
+    [size]="'xl'">
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         <!-- Fila 1 -->
         <div class="col-span-1">
