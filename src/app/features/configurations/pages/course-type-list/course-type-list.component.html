@@ -69,17 +69,13 @@
   <ng-template #actionsTemplate let-item>
     <div class="flex items-center justify-center space-x-2">
       <app-institutional-button [config]="{ variant: 'warning', size: 'small', icon: 'edit', iconPosition: 'only' }"
-        title="Editar" (buttonClick)="openEditModal(item)">
+        [appTooltip]="'Editar'" (buttonClick)="openEditModal(item)">
       </app-institutional-button>
 
       <app-institutional-button [config]="{ variant: 'danger', size: 'small', icon: 'delete', iconPosition: 'only' }"
-        title="Eliminar" (buttonClick)="onDelete(item)">
+        [appTooltip]="'Eliminar'" (buttonClick)="onDelete(item)">
       </app-institutional-button>
     </div>
   </ng-template>
-
-  
-
-
 
 </div>
