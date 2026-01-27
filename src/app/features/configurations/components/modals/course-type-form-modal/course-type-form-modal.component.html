@@ -67,11 +67,9 @@ x<app-modal [isOpen]="isOpen" [config]="modalConfig" (modalClose)="onClose()">
 
                         <!-- Custom Actions Template -->
                         <ng-template #actionsTemplate let-item>
-                            <button (click)="openPreview(item)"
-                                class="btn btn-ghost btn-xs btn-circle text-[#8B1538] hover:bg-pink-50"
-                                title="Ver Vista Previa">
-                                <span class="material-symbols-outlined text-[20px]">visibility</span>
-                            </button>
+                            <app-institutional-button [config]="{ variant: 'primary', size: 'small', icon: 'visibility', iconPosition: 'only', customClass: '!bg-transparent !text-[#8B1538] hover:!bg-pink-50 !border-none shadow-none' }"
+                                title="Ver Vista Previa" (buttonClick)="openPreview(item)">
+                            </app-institutional-button>
                         </ng-template>
 
                         <ng-template #costTemplate let-item>

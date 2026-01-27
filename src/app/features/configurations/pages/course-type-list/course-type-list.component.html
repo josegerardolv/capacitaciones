@@ -67,17 +67,18 @@
 
 
   <ng-template #actionsTemplate let-item>
-    <div class="flex items-center justify-center gap-2">
-      <button (click)="openEditModal(item)"
-        class="p-1.5 text-orange-500 hover:bg-orange-50 rounded-full transition-colors" title="Editar">
-        <app-universal-icon name="pencil" type="bootstrap" [size]="18"></app-universal-icon>
-      </button>
-      <button (click)="onDelete(item)" class="p-1.5 text-red-500 hover:bg-red-50 rounded-full transition-colors"
-        title="Eliminar">
-        <app-universal-icon name="trash" type="bootstrap" [size]="18"></app-universal-icon>
-      </button>
+    <div class="flex items-center justify-center space-x-2">
+      <app-institutional-button [config]="{ variant: 'warning', size: 'small', icon: 'edit', iconPosition: 'only' }"
+        title="Editar" (buttonClick)="openEditModal(item)">
+      </app-institutional-button>
+
+      <app-institutional-button [config]="{ variant: 'danger', size: 'small', icon: 'delete', iconPosition: 'only' }"
+        title="Eliminar" (buttonClick)="onDelete(item)">
+      </app-institutional-button>
     </div>
   </ng-template>
+
+  
 
 
 

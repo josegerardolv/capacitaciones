@@ -33,7 +33,7 @@ export class DocumentSelectionModalComponent {
 
     modalConfig: ModalConfig = {
         title: 'Constancias',
-        size: 'lg',
+        size: '2xl',
         showCloseButton: true,
         padding: true
     };
