@@ -17,11 +17,12 @@ import { UniversalIconComponent } from "@/app/shared/components";
 // ... (imports)
 import { Person } from '../../../../core/models/person.model';
 import { GroupsService } from '../../services/groups.service';
-import { DocumentSelectionModalComponent, DocumentOption } from '../../components/modals/document-selection-modal/document-selection-modal.component';
+
 import { LicenseSearchModalComponent } from '../../components/modals/license-search-modal/license-search-modal.component';
 import { Group } from '../../../../core/models/group.model';
 import { CourseTypeService } from '../../../../core/services/course-type.service';
 import { TableFiltersComponent } from '@/app/shared/components/table-filters/table-filters.component';
+import { DocumentsModalComponent } from '../../components/modals/documents-modal/documents-modal.component';
 
 // ... existing code ...
 
@@ -44,9 +45,9 @@ import { TableFiltersComponent } from '@/app/shared/components/table-filters/tab
         BreadcrumbComponent, // Duplicado de BreadcrumbComponent mantenido para coincidir con la estructura original
         FormsModule,
         UniversalIconComponent,
-        DocumentSelectionModalComponent,
         LicenseSearchModalComponent,
-        TableFiltersComponent
+        TableFiltersComponent,
+        DocumentsModalComponent
     ],
     templateUrl: './group-persons.component.html'
 })
@@ -365,7 +366,7 @@ export class GroupPersonsComponent implements OnInit {
         if (result === 'Aprobado') {
             this.openConfirm({
                 title: 'Aprobar Persona',
-                message: `¿Está seguro de que desea APROBAR a ${person.name}?\nEsta acción habilitará la gestión del Tarjetón.`,
+                message: `¿Está seguro de que desea APROBAR a ${person.name}?\nEsta acción habilitará la gestión de documentos.`,
                 type: 'success',
                 confirmText: 'Sí, Aprobar',
                 cancelText: 'Cancelar'
@@ -416,19 +417,20 @@ export class GroupPersonsComponent implements OnInit {
                 confirmText: 'Sí, Generar Orden',
                 cancelText: 'Cancelar'
             }, () => {
-                // Si acepta, procedemos a mostrar las opciones de generación (ahora vía el selector de documentos)
-                person.requestTarjeton = true; // Asumimos que si dijo que sí, ahora lo quiere
-                this.openDocumentSelection(person);
+                // Si acepta, procedemos a mostrar las opciones de generación
+                person.requestTarjeton = true;
+                this.openDocumentsModal(person);
             });
             return;
         }
 
-        // Si SÍ lo solicitó (o es el flujo nuevo), abrir el selector
-        this.openDocumentSelection(person);
+        // Si SÍ lo solicitó, abrir el modal de gestión directamente
+        this.openDocumentsModal(person);
     }
 
-    // --- NUEVO FLUJO DE DOCUMENTOS ---
-    openDocumentSelection(person: Person) {
+    // --- GESTIÓN DE CONSTANCIAS (NUEVO MODAL) ---
+    // Usamos las mismas variables pero con el nuevo propósito
+    openDocumentsModal(person: Person) {
         this.selectedPersonForDocs = person;
         this.isDocumentsModalOpen = true;
     }
@@ -438,19 +440,9 @@ export class GroupPersonsComponent implements OnInit {
         this.selectedPersonForDocs = null;
     }
 
-    onDocumentsConfirmed(documents: DocumentOption[]) {
-        if (!this.selectedPersonForDocs) return;
-
-        const person = this.selectedPersonForDocs;
-        const documentNames = documents.map(d => d.name).join(', ');
-
-        console.log(`Generando orden para ${person.name} con: ${documentNames}`);
-
-        this.closeDocumentsModal();
-
-        // Proceder a generación (usando el método existente)
-        this.showGenerationOptions(person, documentNames);
-    }
+    // --- (MÉTODOS OBSOLETOS O REUTILIZABLES) ---
+    // El método onDocumentsConfirmed ya no se usa directamente desde el modal anterior,
+    // pero mantenemos showGenerationOptions por si acaso se requiere lógica legacy momentáneamente.
 
     showGenerationOptions(person: Person, details: string = '') {
         this.alertConfig = {

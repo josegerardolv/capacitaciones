@@ -94,27 +94,17 @@
         </div>
     </ng-template>
     <!-- Acciones: Botones circulares de colores -->
+    <!-- Acciones: Botones circulares -->
     <ng-template #actionsTemplate let-item>
         <div class="flex items-center justify-center gap-2">
-            <!-- Constancia (Verde/Naranja) -->
+            <!-- Ver Constancias (Unificado) -->
             <app-institutional-button [config]="{
-                    variant: item.coursePaymentStatus === 'Pagado' ? 'success' : 'warning',
+                    variant: 'success',
                     icon: 'description',
                     iconPosition: 'only',
-                    disabled: item.status !== 'Aprobado',
-                }" (buttonClick)="item.status === 'Aprobado' && viewCertificate(item)"
-                [appTooltip]="item.status === 'Aprobado' ? (item.coursePaymentStatus === 'Pagado' ? 'Descargar Constancia' : 'Pago Curso Pendiente') : 'Requiere Aprobación'"
-                tooltipPosition="top">
-            </app-institutional-button>
-
-            <!-- Tarjetón (Verde/Ambar/Azul) -->
-            <app-institutional-button [config]="{
-                    variant: item.paymentStatus === 'Pagado' ? 'success' : (item.paymentStatus === 'Pendiente' ? 'warning' : 'info'),
-                    icon: 'badge',
-                    iconPosition: 'only',
-                    disabled: item.status !== 'Aprobado',
-                }" (buttonClick)="item.status === 'Aprobado' && requestTarjeton(item)"
-                [appTooltip]="item.status === 'Aprobado' ? (item.paymentStatus === 'Pagado' ? 'Descargar Tarjetón' : (item.paymentStatus === 'Pendiente' ? 'Pago Pendiente' : 'Generar Tarjetón')) : 'Requiere Aprobación'"
+                    disabled: item.status !== 'Aprobado'
+                }" (buttonClick)="item.status === 'Aprobado' && openDocumentsModal(item)"
+                [appTooltip]="item.status === 'Aprobado' ? 'Ver Constancias y Pagos' : 'Requiere Aprobación'"
                 tooltipPosition="top">
             </app-institutional-button>
 
@@ -122,7 +112,7 @@
             <app-institutional-button [config]="{
                     variant: 'danger',
                     icon: 'delete',
-                    iconPosition: 'only',
+                    iconPosition: 'only'
                 }" (buttonClick)="deletePerson(item)" [appTooltip]="'Eliminar Persona'" tooltipPosition="top">
             </app-institutional-button>
         </div>
@@ -137,8 +127,8 @@
         (modalClose)="isAlertOpen = false">
     </app-alert-modal>
 
-    <!-- Modal de Selección de Documentos -->
-    <app-document-selection-modal [isOpen]="isDocumentsModalOpen" [courseType]="currentGroup?.courseType || 'LICENCIA'"
-        (modalClose)="closeDocumentsModal()" (confirm)="onDocumentsConfirmed($event)">
-    </app-document-selection-modal>
+    <!-- Modal de Gestión de Documentos (NUEVO) -->
+    <app-documents-modal [isOpen]="isDocumentsModalOpen" [person]="selectedPersonForDocs"
+        [courseTypeId]="currentGroup?.courseTypeId || null" (onClose)="closeDocumentsModal()">
+    </app-documents-modal>
 </div>
