@@ -8,11 +8,14 @@ export interface Group {
     location: string; // e.g., "Carlos Gracida"
     dateTime: string; // e.g., "12/07/2026, 14:30" - Could be Date object
     quantity: number; // Cupo máximo de personas
-    autoRegisterLimit: number; // Días para límite de auto-registro (Vigencia del link)
+    autoRegisterLimit?: number; // Configuración: Días de validez (ej. 5 días)
+    linkExpiration?: string; // Estado: Fecha real de vencimiento (Calculada al generar link)    
     url: string; // Link público generado
     requests: number; // Cantidad de solicitudes pendientes
     status: 'Activo' | 'Inactivo';
     selected?: boolean; // Para lógica de selección en tabla
     courseType: CourseType; // Nuevo campo para distinguir lógica
     courseTypeId?: number; // ID de la configuración dinámica
+
+    
 }
