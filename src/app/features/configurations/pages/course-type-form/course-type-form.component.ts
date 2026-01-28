@@ -14,6 +14,7 @@ import { BreadcrumbItem } from '../../../../shared/components/breadcrumb/breadcr
 import { TableFiltersComponent } from '@/app/shared/components/table-filters/table-filters.component';
 import { TablePaginationComponent, PaginationConfig, PageChangeEvent } from '@/app/shared/components/table-pagination/table-pagination.component';
 import { TemplatePreviewModalComponent } from '../../components/modals/template-preview-modal/template-preview-modal.component';
+import { TooltipDirective } from '../../../../shared/components/tooltip/tooltip.directive';
 
 // Modelos y Servicios
 import { CourseTypeConfig, RegistrationFieldConfig, DEFAULT_REGISTRATION_FIELDS, DocumentConfig } from '../../../../core/models/course-type-config.model';
@@ -36,7 +37,8 @@ import { CourseTypeService } from '../../../../core/services/course-type.service
         BreadcrumbComponent,
         TemplatePreviewModalComponent,
         TableFiltersComponent,
-        TablePaginationComponent
+        TablePaginationComponent,
+        TooltipDirective
     ],
     templateUrl: './course-type-form.component.html',
     styles: []

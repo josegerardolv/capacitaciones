@@ -99,11 +99,14 @@
 
                     <!-- Custom Actions Template -->
                     <ng-template #actionsTemplate let-item>
-                        <button (click)="openPreview(item)"
-                            class="btn btn-ghost btn-xs btn-circle text-[#8B1538] hover:bg-pink-50"
-                            title="Ver Vista Previa">
-                            <span class="material-symbols-outlined text-[20px]">visibility</span>
-                        </button>
+                        <app-institutional-button [config]="{
+                                variant: 'info',
+                                size: 'small',
+                                icon: 'visibility',
+                                iconPosition: 'only'
+                            }" [appTooltip]="'Ver Vista Previa'" tooltipPosition="top"
+                            (buttonClick)="openPreview(item)">
+                        </app-institutional-button>
                     </ng-template>
 
                     <ng-template #costTemplate let-item>

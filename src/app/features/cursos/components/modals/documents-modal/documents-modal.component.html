@@ -76,34 +76,40 @@
                                 <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                                     <div class="flex justify-center space-x-3">
                                         <!-- 1. Imprimir Orden de Pago -->
-                                        <button *ngIf="doc.cost > 0" (click)="!doc.isLocked && printPaymentOrder(doc)"
-                                            [disabled]="doc.isLocked" [ngClass]="{
-                                                'text-gray-300 cursor-not-allowed': doc.isLocked,
-                                                'text-orange-500 hover:text-orange-600': !doc.isLocked
-                                            }" class="transition-colors focus:outline-none mx-1"
-                                            [title]="doc.isLocked ? 'Debe cubrir los documentos obligatorios primero' : (doc.isPaid ? 'Reimprimir Orden de Pago' : 'Imprimir Orden de Pago')">
-                                            <app-universal-icon name="print" [size]="24"></app-universal-icon>
-                                        </button>
+                                        <app-institutional-button *ngIf="doc.cost > 0" [config]="{
+                                                variant: 'warning',
+                                                size: 'small',
+                                                icon: 'print',
+                                                iconPosition: 'only',
+                                                disabled: doc.isLocked
+                                            }"
+                                            [appTooltip]="doc.isLocked ? 'Debe cubrir los documentos obligatorios primero' : (doc.isPaid ? 'Reimprimir Orden de Pago' : 'Imprimir Orden de Pago')"
+                                            tooltipPosition="top" (buttonClick)="printPaymentOrder(doc)">
+                                        </app-institutional-button>
 
                                         <!-- 2. Descargar PDF -->
-                                        <button (click)="!doc.isLocked && doc.isPaid && downloadCertificate(doc)"
-                                            [disabled]="doc.isLocked || !doc.isPaid" [ngClass]="{
-                                                'text-gray-300 cursor-not-allowed': doc.isLocked || !doc.isPaid,
-                                                'text-green-600 hover:text-green-700': !doc.isLocked && doc.isPaid
-                                            }" class="transition-colors focus:outline-none"
-                                            [title]="doc.isLocked ? 'Debe cubrir los documentos obligatorios primero' : (doc.isPaid ? 'Descargar PDF (Admin)' : 'Requiere Pago')">
-                                            <app-universal-icon name="download" [size]="20"></app-universal-icon>
-                                        </button>
+                                        <app-institutional-button [config]="{
+                                                variant: 'success',
+                                                size: 'small',
+                                                icon: 'download',
+                                                iconPosition: 'only',
+                                                disabled: doc.isLocked || !doc.isPaid
+                                            }"
+                                            [appTooltip]="doc.isLocked ? 'Debe cubrir los documentos obligatorios primero' : (doc.isPaid ? 'Descargar PDF' : 'Requiere Pago')"
+                                            tooltipPosition="top" (buttonClick)="downloadCertificate(doc)">
+                                        </app-institutional-button>
 
                                         <!-- 3. Enviar por Correo -->
-                                        <button (click)="!doc.isLocked && doc.isPaid && emailCertificate(doc)"
-                                            [disabled]="doc.isLocked || !doc.isPaid" [ngClass]="{
-                                                'text-gray-300 cursor-not-allowed': doc.isLocked || !doc.isPaid,
-                                                'text-blue-600 hover:text-blue-700': !doc.isLocked && doc.isPaid
-                                            }" class="transition-colors focus:outline-none"
-                                            [title]="doc.isLocked ? 'Debe cubrir los documentos obligatorios primero' : (doc.isPaid ? 'Enviar por Correo' : 'Requiere Pago')">
-                                            <app-universal-icon name="send" [size]="20"></app-universal-icon>
-                                        </button>
+                                        <app-institutional-button [config]="{
+                                                variant: 'info',
+                                                size: 'small',
+                                                icon: 'send',
+                                                iconPosition: 'only',
+                                                disabled: doc.isLocked || !doc.isPaid
+                                            }"
+                                            [appTooltip]="doc.isLocked ? 'Debe cubrir los documentos obligatorios primero' : (doc.isPaid ? 'Enviar por Correo' : 'Requiere Pago')"
+                                            tooltipPosition="top" (buttonClick)="emailCertificate(doc)">
+                                        </app-institutional-button>
                                     </div>
                                 </td>
                             </tr>

@@ -5,6 +5,8 @@ import { UniversalIconComponent } from '../../../../../shared/components/univers
 import { CourseTypeService } from '../../../../../core/services/course-type.service';
 import { NotificationService } from '../../../../../core/services/notification.service';
 import { AlertModalComponent, AlertConfig } from '../../../../../shared/components/modals/alert-modal.component';
+import { InstitutionalButtonComponent } from '../../../../../shared/components/buttons/institutional-button.component';
+import { TooltipDirective } from '../../../../../shared/components/tooltip/tooltip.directive';
 
 export interface DocumentRow {
     id: string;
@@ -20,7 +22,7 @@ export interface DocumentRow {
 @Component({
     selector: 'app-documents-modal',
     standalone: true,
-    imports: [CommonModule, UniversalIconComponent, AlertModalComponent],
+    imports: [CommonModule, UniversalIconComponent, AlertModalComponent, InstitutionalButtonComponent, TooltipDirective],
     templateUrl: './documents-modal.component.html'
 })
 export class DocumentsModalComponent implements OnInit {
