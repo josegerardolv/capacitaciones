@@ -609,8 +609,8 @@ export class InputEnhancedComponent implements OnInit, AfterViewInit, DoCheck, O
   @Input() disabled = false;
 
   // Atributos HTML específicos
-  @Input() min?: number;
-  @Input() max?: number;
+  @Input() min?: number | string;
+  @Input() max?: number | string;
   @Input() step?: number | string;
   @Input() accept?: string;
   @Input() multiple = false;
@@ -1180,12 +1180,12 @@ export class InputEnhancedComponent implements OnInit, AfterViewInit, DoCheck, O
 
   getRangeMin(): number {
     const spec = this.validationMap?.[this.controlName];
-    return spec?.min ?? this.min ?? 0;
+    return Number(spec?.min ?? this.min ?? 0);
   }
 
   getRangeMax(): number {
     const spec = this.validationMap?.[this.controlName];
-    return spec?.max ?? this.max ?? 100;
+    return Number(spec?.max ?? this.max ?? 100);
   }
 
   getRangePercent(): number {
@@ -1241,8 +1241,10 @@ export class InputEnhancedComponent implements OnInit, AfterViewInit, DoCheck, O
         // si está vacío o inválido, asignar cadena vacía
         this.value = '';
       } else {
-        if (this.min !== undefined && num < this.min) num = this.min;
-        if (this.max !== undefined && num > this.max) num = this.max;
+        const minVal = Number(this.min);
+        const maxVal = Number(this.max);
+        if (this.min !== undefined && !isNaN(minVal) && num < minVal) num = minVal;
+        if (this.max !== undefined && !isNaN(maxVal) && num > maxVal) num = maxVal;
         // Asegurar que el elemento muestre el valor clamped
         try {
           (target as HTMLInputElement).value = String(num);

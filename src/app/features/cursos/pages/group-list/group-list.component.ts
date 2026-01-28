@@ -13,7 +13,7 @@ import { AlertModalComponent, AlertConfig } from '../../../../shared/components/
 import { InstitutionalButtonComponent } from '../../../../shared/components/buttons/institutional-button.component';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { InstitutionalCardComponent } from '../../../../shared/components/institutional-card/institutional-card.component';
-import { ModalFormComponent } from '../../../../shared/components/forms/modal-form.component';
+import { ModalFormComponent, FormAction } from '../../../../shared/components/forms/modal-form.component';
 import { InputEnhancedComponent } from '@/app/shared/components';
 import { GroupRequestsComponent } from '../../components/group-requests/group-requests.component';
 import { BreadcrumbComponent } from '../../../../shared/components/breadcrumb/breadcrumb.component';
@@ -55,6 +55,7 @@ export class GroupListComponent implements OnInit {
     @ViewChild('urlTemplate', { static: true }) urlTemplate!: TemplateRef<any>; // Template para URL
     @ViewChild('statusTemplate', { static: true }) statusTemplate!: TemplateRef<any>; // Template para Estatus
     @ViewChild('dateTemplate', { static: true }) dateTemplate!: TemplateRef<any>; // Template para Fecha
+    @ViewChild('expirationDateTemplate', { static: true }) expirationDateTemplate!: TemplateRef<any>; // Template para Expiración
     @ViewChild('timeTemplate', { static: true }) timeTemplate!: TemplateRef<any>; // Template para Hora
 
     allGroups: Group[] = [];
@@ -74,6 +75,24 @@ export class GroupListComponent implements OnInit {
 
     isRequestsModalOpen = false;
     selectedRequestGroup: Group | null = null;
+
+    // Auto-Register URL Modal
+    isUrlDateModalOpen = false;
+    urlForm!: FormGroup; // FormGroup para el modal
+    pendingUrlGroups: Group[] = [];
+    maxDateForUrl: string = ''; // Restricción para el selector
+    maxDateForForm: string = ''; // Restricción para el selector en Formulario de Grupo
+    minDateForForm: string = ''; // Restricción para fecha de inicio (Hoy)
+
+    urlModalActions: FormAction[] = [
+        {
+            label: 'Continuar',
+            type: 'submit',
+            variant: 'primary',
+            icon: 'arrow_forward'
+        }
+    ];
+
 
 
     tableConfig: TableConfig = {
@@ -261,25 +280,29 @@ export class GroupListComponent implements OnInit {
         let dateVal = '';
         let timeVal = '';
         if (group.dateTime) {
-            const dt = new Date(group.dateTime);
-            if (!isNaN(dt.getTime())) {
+            const dt = this.parseCustomDate(group.dateTime);
+            if (dt && !isNaN(dt.getTime())) {
                 // Formato YYYY-MM-DD
                 dateVal = dt.toISOString().split('T')[0];
                 // Formato HH:mm
                 timeVal = dt.toTimeString().substring(0, 5);
-            } else {
-                // Fallback si es string simple
-                const parts = group.dateTime.split(' ');
-                if (parts.length > 0) dateVal = parts[0];
-                if (parts.length > 1) timeVal = parts[1];
             }
         }
 
         this.groupModalForm.patchValue({
             ...group,
+            ...group,
             date: dateVal,
             time: timeVal
         });
+
+        // Initialize max date for form
+        if (dateVal) {
+            const dt = new Date(dateVal);
+            dt.setDate(dt.getDate() - 1);
+            this.maxDateForForm = dt.toISOString().split('T')[0];
+        }
+
         this.showModal = true;
     }
 
@@ -382,9 +405,49 @@ export class GroupListComponent implements OnInit {
             date: ['', [Validators.required]], // Fecha separada
             time: ['', [Validators.required]], // Hora separada
             quantity: ['', [Validators.required, Validators.min(1)]],
-            linkExpiration: ['', [Validators.required]], // Fecha de Vencimiento del Link (Calendario)
+            linkExpiration: ['', []], // Opcional inicialmente
             course: ['', []]
+        }, { validators: this.dateSequenceValidator });
+
+        // Establecer fecha mínima como HOY para evitar cursos en el pasado
+        this.minDateForForm = new Date().toISOString().split('T')[0];
+
+        // Inicializar form para URL
+        this.urlForm = this.fb.group({
+            expirationDate: ['', [Validators.required]]
         });
+
+        // Escuchar cambios en la fecha del curso para actualizar el límite máximo
+        this.groupModalForm.get('date')?.valueChanges.subscribe(dateVal => {
+            if (dateVal) {
+                // Determinar fecha máxima (estrictamente antes de la fecha del curso)
+                // Para el input date HTML 'max', este incluye la fecha.
+                // Para ser "estrictamente antes", podríamos establecer max al día anterior.
+                // Usuario solicitó "deshabilitar días".
+                // Si el curso es 2026-10-30, max debería ser 2026-10-29.
+                const dt = new Date(dateVal);
+                dt.setDate(dt.getDate() - 1); // Restar 1 día
+                this.maxDateForForm = dt.toISOString().split('T')[0];
+            } else {
+                this.maxDateForForm = '';
+            }
+        });
+    }
+
+    // Validador personalizado para fechas
+    dateSequenceValidator(group: FormGroup): { [key: string]: any } | null {
+        const courseDate = group.get('date')?.value;
+        const linkExpiration = group.get('linkExpiration')?.value;
+
+        if (courseDate && linkExpiration) {
+            const cDate = new Date(courseDate);
+            const lDate = new Date(linkExpiration);
+
+            if (lDate >= cDate) {
+                return { dateError: 'La fecha límite de registro debe ser ANTES de la fecha de inicio del curso.' };
+            }
+        }
+        return null;
     }
 
     initColumns() {
@@ -394,7 +457,7 @@ export class GroupListComponent implements OnInit {
             { key: 'date', label: 'Fecha', template: this.dateTemplate, minWidth: '100px' },
             { key: 'time', label: 'Hora', template: this.timeTemplate, minWidth: '80px' },
             { key: 'quantity', label: 'Cantidad', sortable: true, minWidth: '80px', align: 'center' },
-            { key: 'linkExpiration', label: 'Límite de registro', template: this.dateTemplate, minWidth: '120px', align: 'center' },
+            { key: 'linkExpiration', label: 'Límite de registro', template: this.expirationDateTemplate, minWidth: '120px', align: 'center' },
             { key: 'url', label: 'URL', align: 'center', template: this.urlTemplate, minWidth: '80px' },
             { key: 'status', label: 'Estatus', align: 'center', template: this.statusTemplate, minWidth: '100px' },
             {
@@ -425,18 +488,78 @@ export class GroupListComponent implements OnInit {
 
     // Lógica para Generar URL
     generateUrl() {
+        console.log('Generating URL...');
         // Filtramos grupos que ya están seleccionados pero no tienen URL (doble validación)
         const groupsToGenerate = this.selectedGroups.filter(g => !g.url);
+        console.log('Groups to generate:', groupsToGenerate);
 
         if (groupsToGenerate.length === 0) {
             this.notificationService.info('Información', 'Todos los grupos seleccionados ya tienen una URL generada.');
             return;
         }
 
+        // 2. Comprobar si falta fecha de expiración en algún grupo
+        const missingDateGroups = groupsToGenerate.filter(g => !g.linkExpiration);
+        console.log('Missing date groups:', missingDateGroups);
+
+        if (missingDateGroups.length > 0) {
+            // Regla de Negocio: Si falta fecha, SOLO se puede procesar uno a la vez
+            if (missingDateGroups.length > 1) {
+                this.notificationService.warning(
+                    'Selección Múltiple no permitida',
+                    'Has seleccionado varios grupos que no tienen "Fecha Límite" configurada. Por favor, selecciona solo uno para establecer su fecha individualmente.'
+                );
+                return;
+            }
+
+            // Calcular fecha máxima más estricta (fecha de inicio del grupo único)
+            const group = missingDateGroups[0];
+            const startDate = group.dateTime ? this.parseCustomDate(group.dateTime) : null;
+
+            if (startDate) {
+                // Restar 1 día para que el límite sea "estrictamente antes" (Usuario: "si es 31, elegir hasta 30")
+                startDate.setDate(startDate.getDate() - 1);
+                this.maxDateForUrl = startDate.toISOString().split('T')[0];
+            } else {
+                this.maxDateForUrl = '';
+            }
+
+            // Preparar modal
+            this.pendingUrlGroups = missingDateGroups; // Será un array de 1 elemento
+            this.urlForm.reset();
+            this.isUrlDateModalOpen = true;
+            return;
+        }
+
+        this.proceedWithUrlGeneration(groupsToGenerate);
+    }
+
+    submitUrlGeneration() {
+        if (this.urlForm.invalid) {
+            this.urlForm.markAllAsTouched();
+            return;
+        }
+
+        const dateVal = this.urlForm.get('expirationDate')?.value;
+        if (!dateVal) return;
+
+        // Asignar fecha a los grupos pendientes
+        this.pendingUrlGroups.forEach(g => {
+            g.linkExpiration = dateVal;
+        });
+
+        // Combinar con los que ya tenían fecha (si existieran en un flujo mixto, aunque aquí pendingUrlGroups son los que faltaban)
+        // En este flujo, si entramos al modal, es porque SOLO había grupos sin fecha (o el usuario seleccionó uno sin fecha).
+        // Procedemos a generar URLs para estos.
+        this.proceedWithUrlGeneration(this.pendingUrlGroups);
+        this.isUrlDateModalOpen = false;
+    }
+
+    proceedWithUrlGeneration(groupsToGenerate: Group[]) {
         // Confirmar generación masiva
         this.openConfirm({
             title: 'Generar URL Pública',
-            message: `Se generará el enlace de registro para ${groupsToGenerate.length} grupo(s). \n\n¿Continuar?`,
+            message: `Se generarán enlaces de registro para ${groupsToGenerate.length} grupo(s).\n\nEstos enlaces respetarán la "Fecha Límite de Auto-registro" configurada.\n¿Continuar?`,
             type: 'info',
             confirmText: 'Generar',
             cancelText: 'Cancelar'
@@ -488,5 +611,79 @@ export class GroupListComponent implements OnInit {
         if (!minutes) return '0 Horas';
         const hours = Math.floor(minutes / 60);
         return `${hours} ${hours === 1 ? 'Hora' : 'Horas'}`;
+    }
+
+    private parseCustomDate(dateStr: string): Date | null {
+        if (!dateStr) return null;
+
+        // Limpiar espacios extra
+        dateStr = dateStr.trim();
+
+        // 0. Si ya tiene T, es ISO probable
+        if (dateStr.includes('T')) {
+            const dt = new Date(dateStr);
+            if (!isNaN(dt.getTime())) return dt;
+        }
+
+        // 1. Intentar formato "YYYY-MM-DD" directo (sin hora)
+        let dt = new Date(dateStr);
+        if (!isNaN(dt.getTime())) return dt;
+
+        // 2. Intentar formato con coma creado por el formulario: "YYYY-MM-DD, HH:mm"
+        if (dateStr.includes(',')) {
+            const clean = dateStr.replace(',', ''); // "YYYY-MM-DD HH:mm"
+            // Mejorar compatibilidad Safari/Firefox reemplazando espacio con T
+            const safeIso = clean.replace(' ', 'T');
+            dt = new Date(safeIso);
+            if (!isNaN(dt.getTime())) return dt;
+
+            // Fallback sin T
+            dt = new Date(clean);
+            if (!isNaN(dt.getTime())) return dt;
+        }
+
+        // 3. Intentar formato de Mocks: "DD/MM/YYYY, HH:mm" o "DD/MM/YYYY"
+        // Regex para DD/MM/YYYY
+        const dmyRegex = /^(\d{1,2})\/(\d{1,2})\/(\d{4})(.*)$/;
+        const match = dateStr.match(dmyRegex);
+
+        if (match) {
+            const day = match[1];
+            const month = match[2];
+            const year = match[3];
+            const timePart = match[4].replace(',', '').trim(); // Eliminar coma y espacios
+
+            // Construir formato ISO: YYYY-MM-DDTHH:mm:ss
+            // Si hay hora, agregarla, si no usar T00:00:00
+            let isoStr = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+
+            if (timePart) {
+                // Asumimos formato HH:mm
+                const timeParts = timePart.split(':');
+                const hh = timeParts[0].padStart(2, '0');
+                const mm = timeParts[1]?.padStart(2, '0') || '00';
+                isoStr += `T${hh}:${mm}:00`;
+            } else {
+                isoStr += `T00:00:00`;
+            }
+
+            dt = new Date(isoStr);
+            if (!isNaN(dt.getTime())) return dt;
+        }
+
+        console.warn('Could not parse date:', dateStr);
+        return null;
+    }
+
+    // Helper para formato tabla DD/MM/YYYY
+    formatDateForTable(dateStr: string | null | undefined): string {
+        if (!dateStr) return '';
+        const dt = this.parseCustomDate(dateStr);
+        if (!dt) return dateStr || ''; // Fallback al original si falla
+
+        const day = dt.getDate().toString().padStart(2, '0');
+        const month = (dt.getMonth() + 1).toString().padStart(2, '0');
+        const year = dt.getFullYear();
+        return `${day}/${month}/${year}`;
     }
 }

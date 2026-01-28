@@ -54,7 +54,7 @@
             </div>
         </div>
 
-        <!-- Search Bar -->
+        <!-- Barra de Búsqueda -->
         <app-table-filters [showGlobalSearch]="true" [globalSearchPlaceholder]="'Buscar grupo por nombre, ubicación...'"
             (globalSearchChange)="filterData($event)">
         </app-table-filters>
@@ -75,7 +75,8 @@
 </div>
 
 <app-modal-form [isOpen]="showModal" [title]="modalMode === 'create' ? 'Nuevo Grupo' : 'Editar Grupo'"
-    (modalClose)="closeModal()" (formSubmit)="onGroupModalSubmit()" [formGroup]="groupModalForm" [isLoading]="isSaving" [size]="'xl'">
+    (modalClose)="closeModal()" (formSubmit)="onGroupModalSubmit()" [formGroup]="groupModalForm" [isLoading]="isSaving"
+    [size]="'xl'">
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         <!-- Fila 1 -->
         <div class="col-span-1">
@@ -93,7 +94,8 @@
         <!-- Fila 2 -->
         <div class="col-span-1">
             <app-input-enhanced type="date" controlName="date" [control]="groupModalForm.get('date')"
-                label="Fecha de inicio curso" placeholder="Selecciona la fecha" [required]="true">
+                label="Fecha de inicio curso" placeholder="Selecciona la fecha" [required]="true"
+                [min]="minDateForForm">
             </app-input-enhanced>
         </div>
 
@@ -112,9 +114,27 @@
 
         <div class="col-span-1">
             <app-input-enhanced type="date" controlName="linkExpiration"
-                [control]="groupModalForm.get('linkExpiration')" label="Límite de auto-registro"
-                placeholder="Selecciona fecha límite" [required]="true">
+                [control]="groupModalForm.get('linkExpiration')" label="Límite de auto-registro (Opcional)"
+                placeholder="Selecciona fecha límite" [required]="false" [max]="maxDateForForm" [min]="minDateForForm"
+                [extraClasses]="'bg-blue-50 border-blue-200 text-blue-800 font-medium'">
             </app-input-enhanced>
+        </div>
+
+        <!-- Error de Validación de Fechas -->
+        <div class="col-span-1 md:col-span-3"
+            *ngIf="groupModalForm.errors?.['dateError'] && (groupModalForm.touched || groupModalForm.dirty)">
+            <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-r">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <app-universal-icon name="error_outline" class="h-5 w-5 text-red-400"></app-universal-icon>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm text-red-700 font-medium">
+                            {{ groupModalForm.errors?.['dateError'] }}
+                        </p>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </app-modal-form>
@@ -122,7 +142,7 @@
 <app-group-requests [isOpen]="isRequestsModalOpen" [group]="selectedRequestGroup" (close)="isRequestsModalOpen = false">
 </app-group-requests>
 
-<!-- Templates para Columnas -->
+<!-- Plantillas para columnas -->
 <ng-template #urlTemplate let-item>
     <div class="flex items-center justify-center">
         <button *ngIf="item.url" (click)="copyUrl(item.url)"
@@ -147,18 +167,22 @@
     </span>
 </ng-template>
 
-<!-- Templates para Selección y Fecha/Hora -->
-<!-- Checkbox templates removed as they are handled natively by institutional-table -->
+<!-- Plantillas para Selección y Fecha/Hora -->
 
 <ng-template #dateTemplate let-item>
-    <span class="text-gray-900">{{ item.dateTime?.split(',')[0] }}</span>
+    <span class="text-gray-900">{{ formatDateForTable(item.dateTime) }}</span>
+</ng-template>
+
+<ng-template #expirationDateTemplate let-item>
+    <span class="text-gray-900" *ngIf="item.linkExpiration">{{ formatDateForTable(item.linkExpiration) }}</span>
+    <span class="text-gray-400 italic text-xs" *ngIf="!item.linkExpiration">Sin límite</span>
 </ng-template>
 
 <ng-template #timeTemplate let-item>
     <span class="text-gray-500">{{ item.dateTime?.split(',')[1] || '' }}</span>
 </ng-template>
 
-<!-- Template para Acciones -->
+<!-- Plantilla para Acciones -->
 <ng-template #actionsTemplate let-item>
     <div class="flex items-center justify-center space-x-3">
         <app-institutional-button [config]="{
@@ -204,3 +228,31 @@
 <app-alert-modal [isOpen]="isAlertOpen" [config]="alertConfig" (actionClick)="isAlertOpen = false"
     (modalClose)="isAlertOpen = false">
 </app-alert-modal>
+
+<!-- Modal para pedir fecha de expiración si falta -->
+<app-modal-form [isOpen]="isUrlDateModalOpen" title="Definir Límite de Auto-registro"
+    (modalClose)="isUrlDateModalOpen = false" (formSubmit)="submitUrlGeneration()" [size]="'md'"
+    [primaryActions]="urlModalActions" [formGroup]="urlForm">
+    <div class="space-y-4">
+        <div class="bg-blue-50 p-4 rounded-md mb-4">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <app-universal-icon name="info" class="h-5 w-5 text-blue-400"></app-universal-icon>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm text-blue-700">
+                        El grupo seleccionado no tiene fecha límite. Defínela para continuar.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <app-input-enhanced type="date" controlName="expirationDate" label="Fecha Límite de Registro *"
+            placeholder="Selecciona la fecha límite" [required]="true" [max]="maxDateForUrl" [min]="minDateForForm"
+            [extraClasses]="'bg-blue-50 border-blue-200 text-blue-800 font-medium'">
+        </app-input-enhanced>
+        <p class="text-xs text-gray-500 mt-1" *ngIf="maxDateForUrl">
+            Debe ser antes del inicio del curso ({{ formatDateForTable(maxDateForUrl) }})
+        </p>
+    </div>
+</app-modal-form>
