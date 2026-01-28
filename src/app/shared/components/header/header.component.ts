@@ -20,7 +20,7 @@ import { UniversalIconComponent } from '../universal-icon/universal-icon.compone
   selector: 'app-header',
   imports: [CommonModule, RouterModule, UniversalIconComponent],
   template: `
-  <header class="bg-white shadow-md border-b border-gray-300 select-none sticky top-0 md:relative z-50">
+  <header class="bg-white shadow-md border-b border-gray-300 select-none sticky top-0 md:relative z-[1000]">
       <div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center min-h-[85px]">
           
@@ -155,7 +155,7 @@ import { UniversalIconComponent } from '../universal-icon/universal-icon.compone
                 aria-labelledby="user-menu-button"
                 tabindex="-1"
                 (keydown)="onMenuKeydown($event)"
-                class="absolute right-0 mt-2 glass-effect rounded-xl border border-gray-200 shadow-xl ring-1 ring-gray-100 z-50 overflow-hidden transform origin-top-right focus:outline-none dropdown-appear bg-white"
+                class="absolute right-0 mt-2 glass-effect rounded-xl border border-gray-200 shadow-xl ring-1 ring-gray-100 z-[1000] overflow-hidden transform origin-top-right focus:outline-none dropdown-appear bg-white"
                 [style.width]="getDropdownWidth() + 'px'"
                 [style.min-width]="'280px'"
                 [style.max-width]="'400px'">
