@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable, of, throwError, BehaviorSubject } from 'rxjs';
 import { delay } from 'rxjs/operators';
-import { User, LoginRequest, LoginResponse, Person } from '../models/auth.model';
+import { User, LoginRequest, LoginResponse, Person } from '../../models/auth.model';
 
 @Injectable({
     providedIn: 'root'
