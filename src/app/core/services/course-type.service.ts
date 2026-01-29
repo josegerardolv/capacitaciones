@@ -9,7 +9,9 @@ import { CourseTypeConfig } from '../models/course-type-config.model';
 })
 export class CourseTypeService {
 
-    private apiUrl = `${environment.apiUrl}/api/course-types`;
+    private apiUrl = `${environment.apiUrl}/course-type`;
+    // Nota: Se asume endpoint singular '/course-type' al igual que '/group' y '/course'.
+    // Si falla, verificar si es plural '/course-types' o requiere prefijo.
 
     constructor(private http: HttpClient) { }
 
