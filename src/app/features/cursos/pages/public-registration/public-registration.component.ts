@@ -75,7 +75,7 @@ export class PublicRegistrationComponent implements OnInit {
             this.groupInfo = {
                 courseName: group.name, // O el nombre del curso si tuvieramos la relación completa
                 groupName: group.name,
-                slotsAvailable: group.quantity - (group.requests || 0), // Calculo simple
+                slotsAvailable: group.limitStudents - (group.requests || 0), // Calculo simple
                 deadline: this.calculateDeadline(group)
             };
 

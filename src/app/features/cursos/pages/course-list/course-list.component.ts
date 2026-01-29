@@ -1,5 +1,7 @@
 import { Component, OnInit, ViewChild, TemplateRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { catchError, timeout } from 'rxjs/operators';
+import { of } from 'rxjs';
 import { RouterModule, Router } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormControl } from '@angular/forms';
 import { Course } from '../../../../core/models/course.model';
@@ -126,12 +128,23 @@ export class CourseListComponent implements OnInit {
     }
 
     loadCourseTypes() {
-        this.courseTypeService.getCourseTypes().subscribe(types => {
-            this.courseTypeOptions = types.map(t => ({
-                value: t.id,
-                label: t.name
-            }));
-            this.loadCourses(); // Cargar cursos después de tener los tipos
+        this.courseTypeService.getCourseTypes().pipe(
+            timeout(5000)
+        ).subscribe({
+            next: (types) => {
+                this.courseTypeOptions = types.map(t => ({
+                    value: t.id,
+                    label: t.name
+                }));
+                this.loadCourses(); // Cargar cursos después de tener los tipos
+            },
+            error: (err) => {
+                console.error('Error loading course types', err);
+                // Si falla, intentamos cargar cursos de todas formas, pero la tabla se quedará cargando si no lo manejamos.
+                // Mejor llamamos a loadCourses igual para que intente y su error handler desactive el loading,
+                // O desactivamos el loading aquí si loadCourses no se llama.
+                this.loadCourses();
+            }
         });
     }
 
@@ -165,7 +178,9 @@ export class CourseListComponent implements OnInit {
 
     loadCourses() {
         this.tableConfig.loading = true;
-        this.coursesService.getCourses().subscribe({
+        this.coursesService.getCourses().pipe(
+            timeout(5000)
+        ).subscribe({
             next: (data) => {
                 // Mapear cursos para incluir el nombre del tipo
                 this.allCourses = data.map(course => { // Almacenar en allCourses
