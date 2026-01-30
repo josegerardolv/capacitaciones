@@ -30,7 +30,8 @@
             <div class="flex flex-col md:flex-row md:items-center gap-2">
                 <app-institutional-button (buttonClick)="openCreateForm()" [config]="{
                     variant: 'primary',
-                    icon: 'add'
+                    icon: 'add',
+                    title: 'Nuevo Template'
                 }">
                     Nuevo Template
                 </app-institutional-button>
@@ -93,14 +94,15 @@
         <app-institutional-button [config]="{ 
                 variant: 'primary', 
                 size: 'small', 
-                icon: 'design_services', 
+                icon: 'design_services',
+                title: 'Editar diseño visual',
                 iconPosition: 'only' }" [appTooltip]="'Editar diseño visual'" tooltipPosition="top"
             (buttonClick)="editTemplateDesign(item)">
         </app-institutional-button>
-        <app-institutional-button [config]="{ variant: 'warning', size: 'small', icon: 'edit', iconPosition: 'only' }"
+        <app-institutional-button [config]="{ variant: 'warning', size: 'small', icon: 'edit', title: 'Editar información', iconPosition: 'only' }"
             [appTooltip]="'Editar información'" tooltipPosition="top" (buttonClick)="openEditForm(item)">
         </app-institutional-button>
-        <app-institutional-button [config]="{ variant: 'danger', size: 'small', icon: 'delete', iconPosition: 'only' }"
+        <app-institutional-button [config]="{ variant: 'danger', size: 'small', icon: 'delete', title: 'Eliminar', iconPosition: 'only' }"
             [appTooltip]="'Eliminar'" tooltipPosition="top" (buttonClick)="deleteTemplate(item)">
         </app-institutional-button>
     </div>

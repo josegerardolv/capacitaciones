@@ -103,7 +103,8 @@
                                 variant: 'info',
                                 size: 'small',
                                 icon: 'visibility',
-                                iconPosition: 'only'
+                                iconPosition: 'only',
+                                title: 'Ver Vista Previa'
                             }" [appTooltip]="'Ver Vista Previa'" tooltipPosition="top"
                             (buttonClick)="openPreview(item)">
                         </app-institutional-button>
@@ -150,11 +151,11 @@
     <!-- Footer Actions (Unwrapped) -->
     <div class="flex justify-end gap-3 mt-6">
         <app-institutional-button (buttonClick)="onCancel()"
-            [config]="{variant: 'secondary', customClass: 'border-gray-300 text-gray-600'}">
+            [config]="{variant: 'secondary', title: 'Cancelar', customClass: 'border-gray-300 text-gray-600'}">
             Cancelar
         </app-institutional-button>
         <app-institutional-button (buttonClick)="onSave()"
-            [config]="{variant: 'primary', customClass: '!bg-[#9D2449]', loading: isLoading, disabled: isLoading}">
+            [config]="{variant: 'primary', title: isEditMode ? 'Actualizar tipo de curso' : 'Guardar tipo de curso', customClass: '!bg-[#9D2449]', loading: isLoading, disabled: isLoading}">
             {{ isEditMode ? 'Actualizar Tipo de Curso' : 'Guardar Tipo de Curso' }}
         </app-institutional-button>
     </div>

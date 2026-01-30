@@ -11,5 +11,4 @@ export const environment = {
     introspectUrl: 'https://capacitacion.p1.ws.semovi.dev/oauth/introspect'
   },
   useMockAuth: false
-
 };

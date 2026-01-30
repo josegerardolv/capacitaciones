@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, TemplateRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../core/services/auth.service';
 import { User } from '../../core/models/auth.model';
@@ -18,6 +18,7 @@ import { CoursesService } from '../cursos/services/courses.service';
 })
 export class DashboardComponent implements OnInit, OnDestroy {
     user: User | null = null;
+    @ViewChild('statusTemplate', { static: true }) statusTemplate!: TemplateRef<any>;
 
     private timerSubscription!: Subscription;
     timeString: string = '';
@@ -35,7 +36,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
     tableConfig: TableConfig = {
         loading: false,
         striped: true,
-        hoverable: true
+        hoverable: true,
+        localSort: true
     };
 
     constructor(
@@ -109,13 +111,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     private initTableData() {
         this.tableColumns = [
-            { key: 'course', label: 'Curso', sortable: true },
-            { key: 'group', label: 'Grupo', sortable: true },
+            { key: 'course', label: 'Curso', sortable: true, minWidth: '100px' },
+            { key: 'group', label: 'Grupo', sortable: true, minWidth: '100px' },
             { key: 'location', label: 'Ubicación', sortable: true },
             { key: 'participants', label: 'Cantidad', sortable: true },
             { key: 'date', label: 'Fecha', sortable: true },
             { key: 'time', label: 'Hora' },
-            { key: 'status', label: 'Estatus' }
+            { key: 'status', label: 'Estatus', template: this.statusTemplate }
         ];
 
         // Cargar datos reales desde el servicio
