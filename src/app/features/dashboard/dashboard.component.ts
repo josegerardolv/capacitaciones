@@ -134,7 +134,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
                         course: course ? course.name : 'Curso no encontrado',
                         group: g.name,
                         location: g.location,
-                        participants: g.quantity,
+                        participants: g.limitStudents,
                         date: dateTimeParts[0].trim(),
                         time: dateTimeParts[1] ? dateTimeParts[1].trim() : '',
                         status: g.status
