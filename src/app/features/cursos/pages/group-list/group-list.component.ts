@@ -1,4 +1,6 @@
 import { Component, OnInit, ViewChild, TemplateRef } from '@angular/core';
+import { catchError, timeout } from 'rxjs/operators';
+import { of } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormControl } from '@angular/forms';
@@ -145,7 +147,7 @@ export class GroupListComponent implements OnInit {
         if (this.selectedGroups.length === 0) return false;
         // Solo se activa si TODOS los seleccionados NO tienen URL
         // Si al menos uno tiene URL, se desactiva (para obligar al usuario a filtrar)
-        return this.selectedGroups.every(g => !g.url);
+        return this.selectedGroups.every(g => !g.inscriptionURL);
     }
 
     get canExport(): boolean {
@@ -180,9 +182,16 @@ export class GroupListComponent implements OnInit {
             ];
 
             // Cargar detalles del curso para obtener courseTypeId, LUEGO cargar grupos
-            this.coursesService.getCourses().subscribe(courses => {
-                this.currentCourse = courses.find(c => c.id === +this.cursoId!);
-                this.loadGroups(); // Llamar DESPUÉS de establecer currentCourse
+            this.coursesService.getCourses().pipe(timeout(5000)).subscribe({
+                next: (courses) => {
+                    this.currentCourse = courses.find(c => c.id === +this.cursoId!);
+                    this.loadGroups(); // Llamar DESPUÉS de establecer currentCourse
+                },
+                error: (err) => {
+                    console.error('Error loading course details:', err);
+                    this.tableConfig.loading = false;
+                    this.notificationService.error('Error', 'No se pudieron cargar los detalles del curso.');
+                }
             });
         } else {
             // Si no hay contexto de curso, cargar todos los grupos inmediatamente
@@ -195,7 +204,7 @@ export class GroupListComponent implements OnInit {
 
     loadGroups() {
         this.tableConfig.loading = true;
-        this.groupsService.getGroups().subscribe({
+        this.groupsService.getGroups().pipe(timeout(5000)).subscribe({
             next: (data) => {
                 if (this.currentCourse) {
                     this.allGroups = data.filter(g => g.courseTypeId === this.currentCourse.courseTypeId);
@@ -404,7 +413,7 @@ export class GroupListComponent implements OnInit {
             location: ['', [Validators.required]],
             date: ['', [Validators.required]], // Fecha separada
             time: ['', [Validators.required]], // Hora separada
-            quantity: ['', [Validators.required, Validators.min(1)]],
+            limitStudents: ['', [Validators.required, Validators.min(1)]],
             linkExpiration: ['', []], // Opcional inicialmente
             course: ['', []]
         }, { validators: this.dateSequenceValidator });
@@ -456,9 +465,9 @@ export class GroupListComponent implements OnInit {
             { key: 'location', label: 'Ubicación', sortable: true, minWidth: '150px' },
             { key: 'date', label: 'Fecha', template: this.dateTemplate, minWidth: '100px' },
             { key: 'time', label: 'Hora', template: this.timeTemplate, minWidth: '80px' },
-            { key: 'quantity', label: 'Cantidad', sortable: true, minWidth: '80px', align: 'center' },
+            { key: 'limitStudents', label: 'Cantidad', sortable: true, minWidth: '80px', align: 'center' },
             { key: 'linkExpiration', label: 'Límite de registro', template: this.expirationDateTemplate, minWidth: '120px', align: 'center' },
-            { key: 'url', label: 'URL', align: 'center', template: this.urlTemplate, minWidth: '80px' },
+            { key: 'inscriptionURL', label: 'URL', align: 'center', template: this.urlTemplate, minWidth: '80px' },
             { key: 'status', label: 'Estatus', align: 'center', template: this.statusTemplate, minWidth: '100px' },
             {
                 key: 'actions',
@@ -490,7 +499,7 @@ export class GroupListComponent implements OnInit {
     generateUrl() {
         console.log('Generating URL...');
         // Filtramos grupos que ya están seleccionados pero no tienen URL (doble validación)
-        const groupsToGenerate = this.selectedGroups.filter(g => !g.url);
+        const groupsToGenerate = this.selectedGroups.filter(g => !g.inscriptionURL);
         console.log('Groups to generate:', groupsToGenerate);
 
         if (groupsToGenerate.length === 0) {
@@ -568,9 +577,9 @@ export class GroupListComponent implements OnInit {
             const origin = window.location.origin; // Ej: http://localhost:4200
 
             groupsToGenerate.forEach(group => {
-                if (!group.url) {
+                if (!group.inscriptionURL) {
                     // 1. Generar URL
-                    group.url = `${origin}/public/register/${group.id}`;
+                    group.inscriptionURL = `${origin}/public/register/${group.id}`;
 
                     // 2. La Fecha de Vencimiento ya fue definida al crear el grupo (group.linkExpiration)
                     // No necesitamos calcular nada extra aquí, salvo cambiar el estado.

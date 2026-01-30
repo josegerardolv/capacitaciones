@@ -127,16 +127,40 @@ export class DashboardComponent implements OnInit, OnDestroy {
             courses: this.coursesService.getCourses()
         }).subscribe({
             next: ({ groups, courses }) => {
+                console.log('Datos cargados en Dashboard:', { groups, courses });
+
+                // Actualizar métrica de grupos activos con el total real obtenido
+                this.calendarMetric = { ...this.calendarMetric, value: groups.length.toString() };
+
+                // Actualizar métrica de cursos impartidos (Total de cursos en catálogo)
+                this.graduationMetric = { ...this.graduationMetric, value: courses.length.toString() };
+
+                // Actualizar métrica de participantes (Suma de cupos/participantes de todos los grupos)
+                const totalParticipants = groups.reduce((sum, g) => sum + (Number((g as any).limitStudents) || 0), 0);
+                this.personMetric = { ...this.personMetric, value: totalParticipants.toLocaleString() };
+
                 // Mapeamos los cursos al formato de la tabla del dashboard
                 // Nota: Usamos datos simulados para campos que aún no vienen en el modelo Course (como grupo o ubicación)
                 this.upcomingCourses = groups.map(g => {
                     const dateTimeParts = g.dateTime ? g.dateTime.split(',') : [''];
-                    const course = courses.find(c => c.id == (g as any).courseId);
+                    
+                    // Lógica robusta para encontrar el nombre del curso (soporta anidado, camelCase y snake_case)
+                    const gAny = g as any;
+                    let courseName = 'Curso no encontrado';
+
+                    if (gAny.course && gAny.course.name) {
+                        courseName = gAny.course.name;
+                    } else {
+                        const courseId = gAny.courseId || gAny.course_id || gAny.id_course;
+                        const found = courses.find(c => c.id == courseId);
+                        if (found) courseName = found.name;
+                    }
+
                     return {
-                        course: course ? course.name : 'Curso no encontrado',
+                        course: courseName,
                         group: g.name,
                         location: g.location,
-                        participants: g.quantity,
+                        participants: g.limitStudents,
                         date: dateTimeParts[0].trim(),
                         time: dateTimeParts[1] ? dateTimeParts[1].trim() : '',
                         status: g.status
