@@ -128,15 +128,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
                 // Mapeamos los cursos al formato de la tabla del dashboard
                 // Nota: Usamos datos simulados para campos que aún no vienen en el modelo Course (como grupo o ubicación)
                 this.upcomingCourses = groups.map(g => {
-                    const dateTimeParts = g.dateTime ? g.dateTime.split(',') : [''];
-                    const course = courses.find(c => c.id == (g as any).courseId);
+                    const course = courses.find(c => c.id === g.course);
                     return {
                         course: course ? course.name : 'Curso no encontrado',
                         group: g.name,
                         location: g.location,
                         participants: g.limitStudents,
-                        date: dateTimeParts[0].trim(),
-                        time: dateTimeParts[1] ? dateTimeParts[1].trim() : '',
+                        date: g.groupStartDate,
+                        time: g.schedule,
                         status: g.status
                     };
                 }).slice(0, 5); // Mostramos solo los 5 más recientes

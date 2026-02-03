@@ -22,10 +22,9 @@ export class CoursesService {
     private mapBackendCourseToFrontend(backendCourse: any): Course {
         return {
             ...backendCourse,
-            // Backend sends 'duration' as number (hours).
-            // Frontend model expects number.
-            // Direct mapping is fine, but this method ensures extensibility.
-            duration: backendCourse.duration
+            // Conservamos únicamente esta línea porque corrige el bug visual de "Sin Tipo"
+            // al extraer el ID si el backend devuelve un objeto anidado.
+            courseTypeId: backendCourse.courseTypeId || backendCourse.courseType?.id
         };
     }
 
@@ -34,7 +33,7 @@ export class CoursesService {
     }
 
     updateCourse(id: number, updatedCourse: Course): Observable<Course> {
-        return this.http.put<Course>(`${this.apiUrl}/course/${id}`, updatedCourse);
+        return this.http.patch<Course>(`${this.apiUrl}/course/${id}`, updatedCourse);
     }
 
     deleteCourse(id: number): Observable<boolean> {
