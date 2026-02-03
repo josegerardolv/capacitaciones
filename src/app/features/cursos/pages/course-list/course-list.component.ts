@@ -258,9 +258,15 @@ export class CourseListComponent implements OnInit {
                     this.loadCourses();
                     this.notificationService.success('Eliminado', 'Curso eliminado correctamente.');
                 },
-                error: (err: HttpErrorResponse) => { // Tipar explícitamente err
-                    this.notificationService.error('Error', 'No se pudo eliminar el curso.');
-                    console.error('Error deleting course:', err); // Agregar registro para depuración
+                error: (err: HttpErrorResponse) => {
+                    console.error('Error deleting course:', err);
+                    let msg = 'No se pudo eliminar el curso.';
+                    if (err.error && err.error.message) {
+                        msg += ` ${err.error.message}`;
+                    } else if (err.status === 500) {
+                        msg += ' Posiblemente tiene grupos asociados.';
+                    }
+                    this.notificationService.error('Error', msg);
                 }
             });
         });

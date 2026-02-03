@@ -6,16 +6,17 @@ export interface Group {
     description?: string; // Opcional, puede mapearse a duración o notas internas
     duration: string; // e.g., "3 horas" - Requerido por diseño
     location: string; // e.g., "Carlos Gracida"
-    dateTime: string; // e.g., "12/07/2026, 14:30" - Could be Date object
-    limitStudents: number; // Antes 'quantity'
-    autoRegisterLimit?: number; // Configuración: Días de validez (ej. 5 días)
-    linkExpiration?: string; // Estado: Fecha real de vencimiento (Calculada al generar link)     
-    inscriptionURL: string; // Antes 'url'
-    requests: number; // Cantidad de solicitudes pendientes
+    groupStartDate: string; // "2026-02-02T..." or "2026-02-02"
+    schedule: string; // "14:00"
+    endInscriptionDate?: string; // Antes linkExpiration
+    limitStudents: number;
+    autoRegisterLimit?: number;
+    inscriptionURL: string;
+    requests: number;
     status: 'Activo' | 'Inactivo';
-    selected?: boolean; // Para lógica de selección en tabla
-    courseType: CourseType; // Nuevo campo para distinguir lógica
-    courseTypeId?: number; // ID de la configuración dinámica
+    selected?: boolean;
 
-
+    // Relations (Backend sends 'course' as number, or object)
+    course: number; // ID del Curso padre
+    courseTypeId?: number; // Puede venir si el backend cambia, pero principalmente usamos 'course' para fitrar
 }

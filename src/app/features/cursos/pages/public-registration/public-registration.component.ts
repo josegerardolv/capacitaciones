@@ -78,15 +78,14 @@ export class PublicRegistrationComponent implements OnInit {
                 slotsAvailable: group.limitStudents - (group.requests || 0), // Calculo simple
                 deadline: this.calculateDeadline(group)
             };
-
-            this.currentCourseType = group.courseType; // Para lógica legacy si hiciera falta
+            this.currentCourseType = 'GENERICO'; // Fixed fallback falta
 
             // 2. Cargar Configuración del Tipo de Curso
             if (group.courseTypeId) {
                 this.loadCourseTypeConfig(group.courseTypeId);
             } else {
                 // Fallback para grupos legacy sin courseTypeId
-                this.setupLegacyFields(group.courseType);
+                this.setupLegacyFields('GENERICO');
             }
         });
     }

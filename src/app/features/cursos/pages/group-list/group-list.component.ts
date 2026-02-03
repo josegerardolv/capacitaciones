@@ -1,6 +1,6 @@
 import { Component, OnInit, ViewChild, TemplateRef } from '@angular/core';
 import { catchError, timeout } from 'rxjs/operators';
-import { of } from 'rxjs';
+import { of, forkJoin } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormControl } from '@angular/forms';
@@ -207,7 +207,11 @@ export class GroupListComponent implements OnInit {
         this.groupsService.getGroups().pipe(timeout(5000)).subscribe({
             next: (data) => {
                 if (this.currentCourse) {
-                    this.allGroups = data.filter(g => g.courseTypeId === this.currentCourse.courseTypeId);
+                    // Filter handling both Number and Object (Backend returns object relation)
+                    this.allGroups = data.filter(g => {
+                        const gCourseId = (typeof g.course === 'object' && g.course !== null) ? (g.course as any).id : g.course;
+                        return gCourseId == this.currentCourse.id;
+                    });
                 } else {
                     this.allGroups = data;
                 }
@@ -240,6 +244,11 @@ export class GroupListComponent implements OnInit {
                 (g.status || '').toLowerCase().includes(term)
             );
         }
+        this.filteredGroups.sort((a, b) => {
+            const dateA = new Date(a.groupStartDate).getTime();
+            const dateB = new Date(b.groupStartDate).getTime();
+            return dateB - dateA; // Descending
+        });
         this.paginationConfig.totalItems = this.filteredGroups.length;
         this.updatePaginatedData();
     }
@@ -288,14 +297,11 @@ export class GroupListComponent implements OnInit {
         // Separar dateTime en date y time
         let dateVal = '';
         let timeVal = '';
-        if (group.dateTime) {
-            const dt = this.parseCustomDate(group.dateTime);
-            if (dt && !isNaN(dt.getTime())) {
-                // Formato YYYY-MM-DD
-                dateVal = dt.toISOString().split('T')[0];
-                // Formato HH:mm
-                timeVal = dt.toTimeString().substring(0, 5);
-            }
+        if (group.groupStartDate) {
+            dateVal = group.groupStartDate.split('T')[0]; // Simple split since we store raw logic
+        }
+        if (group.schedule) {
+            timeVal = group.schedule;
         }
 
         this.groupModalForm.patchValue({
@@ -336,15 +342,19 @@ export class GroupListComponent implements OnInit {
         const formValue = this.groupModalForm.value;
 
         if (this.modalMode === 'create') {
-            const payload = {
-                ...formValue,
-                dateTime: `${formValue.date}, ${formValue.time}`,
-                duration: this.formatDuration(this.currentCourse?.duration), // Heredar duración
-                courseTypeId: this.currentCourse?.courseTypeId,
-                courseType: 'LICENCIA' // Respaldo o mapeo desde ID si es necesario
+            // Construimos el payload EXACTO como lo pide el Swagger/Backend
+            const rawPayload = {
+                name: formValue.name,
+                location: formValue.location,
+                schedule: formValue.time, // "14:00"
+                limitStudents: Number(formValue.limitStudents),
+                inscriptionURL: formValue.inscriptionURL || 'https://example.com/pendiente',
+                groupStartDate: formValue.date,
+                endInscriptionDate: formValue.linkExpiration || formValue.date, // Fallback to Start Date to pass "NotEmpty"
+                course: this.currentCourse ? this.currentCourse.id : undefined
             };
 
-            this.groupsService.createGroup(payload).subscribe({
+            this.groupsService.createGroup(rawPayload as any).subscribe({
                 next: () => {
                     this.isSaving = false;
                     this.showModal = false;
@@ -363,10 +373,20 @@ export class GroupListComponent implements OnInit {
                 this.isSaving = false;
                 return;
             }
+            // Recuperar el grupo original para mantener datos que no están en el formulario (url, status)
+            const originalGroup = this.groups.find(g => g.id === this.editingGroupId);
+
             const payload = {
                 id: this.editingGroupId,
-                ...formValue,
-                dateTime: `${formValue.date}, ${formValue.time}`
+                name: formValue.name,
+                location: formValue.location,
+                schedule: formValue.time, // "14:00"
+                limitStudents: Number(formValue.limitStudents),
+                inscriptionURL: originalGroup?.inscriptionURL || '',
+                groupStartDate: formValue.date,
+                endInscriptionDate: formValue.linkExpiration || formValue.date, // Fallback to Start Date
+                course: this.currentCourse ? this.currentCourse.id : undefined,
+                status: originalGroup?.status || 'Activo' // Preservar estatus
             };
             this.groupsService.updateGroup(this.editingGroupId, payload).subscribe({
                 next: () => {
@@ -463,10 +483,10 @@ export class GroupListComponent implements OnInit {
         this.tableColumns = [
             { key: 'name', label: 'Nombre', sortable: true, minWidth: '100px' },
             { key: 'location', label: 'Ubicación', sortable: true, minWidth: '150px' },
-            { key: 'date', label: 'Fecha', template: this.dateTemplate, minWidth: '100px' },
-            { key: 'time', label: 'Hora', template: this.timeTemplate, minWidth: '80px' },
+            { key: 'groupStartDate', label: 'Fecha', template: this.dateTemplate, minWidth: '100px' },
+            { key: 'schedule', label: 'Hora', template: this.timeTemplate, minWidth: '80px' },
             { key: 'limitStudents', label: 'Cantidad', sortable: true, minWidth: '80px', align: 'center' },
-            { key: 'linkExpiration', label: 'Límite de registro', template: this.expirationDateTemplate, minWidth: '120px', align: 'center' },
+            { key: 'endInscriptionDate', label: 'Límite de registro', template: this.expirationDateTemplate, minWidth: '120px', align: 'center' },
             { key: 'inscriptionURL', label: 'URL', align: 'center', template: this.urlTemplate, minWidth: '80px' },
             { key: 'status', label: 'Estatus', align: 'center', template: this.statusTemplate, minWidth: '100px' },
             {
@@ -508,7 +528,7 @@ export class GroupListComponent implements OnInit {
         }
 
         // 2. Comprobar si falta fecha de expiración en algún grupo
-        const missingDateGroups = groupsToGenerate.filter(g => !g.linkExpiration);
+        const missingDateGroups = groupsToGenerate.filter(g => !g.endInscriptionDate);
         console.log('Missing date groups:', missingDateGroups);
 
         if (missingDateGroups.length > 0) {
@@ -523,7 +543,7 @@ export class GroupListComponent implements OnInit {
 
             // Calcular fecha máxima más estricta (fecha de inicio del grupo único)
             const group = missingDateGroups[0];
-            const startDate = group.dateTime ? this.parseCustomDate(group.dateTime) : null;
+            const startDate = group.groupStartDate ? new Date(group.groupStartDate) : null;
 
             if (startDate) {
                 // Restar 1 día para que el límite sea "estrictamente antes" (Usuario: "si es 31, elegir hasta 30")
@@ -554,7 +574,7 @@ export class GroupListComponent implements OnInit {
 
         // Asignar fecha a los grupos pendientes
         this.pendingUrlGroups.forEach(g => {
-            g.linkExpiration = dateVal;
+            g.endInscriptionDate = dateVal;
         });
 
         // Combinar con los que ya tenían fecha (si existieran en un flujo mixto, aunque aquí pendingUrlGroups son los que faltaban)
@@ -573,25 +593,42 @@ export class GroupListComponent implements OnInit {
             confirmText: 'Generar',
             cancelText: 'Cancelar'
         }, () => {
-            let count = 0;
-            const origin = window.location.origin; // Ej: http://localhost:4200
+            const updateObservables: any[] = [];
 
             groupsToGenerate.forEach(group => {
                 if (!group.inscriptionURL) {
                     // 1. Generar URL
-                    group.inscriptionURL = `${origin}/public/register/${group.id}`;
+                    const newUrl = `${origin}/public/register/${group.id}`;
 
-                    // 2. La Fecha de Vencimiento ya fue definida al crear el grupo (group.linkExpiration)
-                    // No necesitamos calcular nada extra aquí, salvo cambiar el estado.
+                    // 2. Preparar payload de actualización
+                    // Clonamos el objeto para no modificar la referencia local antes de que el back confirme
+                    // Pero necesitamos enviar todos los campos o al menos los requeridos por PUT
+                    // En este punto, 'group' ya tiene datos nativos (groupStartDate, etc).
+                    const payload = {
+                        ...group,
+                        inscriptionURL: newUrl,
+                        status: 'Activo' // Activamos al generar URL
+                    };
 
-                    group.status = 'Activo';
-                    count++;
+                    updateObservables.push(this.groupsService.updateGroup(group.id, payload));
                 }
             });
 
-            if (count > 0) {
-                this.notificationService.success('URL Generada', `Se generaron ${count} enlaces correctamente.`);
-                this.selectedGroups = [];
+            if (updateObservables.length > 0) {
+                this.tableConfig.loading = true;
+                forkJoin(updateObservables).subscribe({
+                    next: () => {
+                        this.tableConfig.loading = false;
+                        this.notificationService.success('URL Generada', `Se generaron y guardaron ${updateObservables.length} enlaces correctamente.`);
+                        this.selectedGroups = [];
+                        this.loadGroups(); // Recargar para ver cambios reales
+                    },
+                    error: (err) => {
+                        this.tableConfig.loading = false;
+                        console.error('Error generating/saving URLs:', err);
+                        this.notificationService.error('Error', 'Ocurrió un error al guardar las URLs generadas.');
+                    }
+                });
             } else {
                 this.notificationService.warning('Advertencia', 'No se generaron URLs (posiblemente ya existían).');
             }

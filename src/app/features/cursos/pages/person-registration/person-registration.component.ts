@@ -87,7 +87,8 @@ export class PersonRegistrationComponent implements OnInit {
         if (this.groupId) {
             this.groupsService.getGroupById(+this.groupId).subscribe((group: Group | undefined) => {
                 if (group) {
-                    this.currentCourseType = group.courseType;
+                    // Fallback to a default or derive from courseTypeId if needed
+                    this.currentCourseType = 'GENERICO'; // Fixed fallback since 'courseType' string is removed from model
 
                     // NEW DYNAMIC LOGIC
                     if (group.courseTypeId) {
@@ -96,12 +97,12 @@ export class PersonRegistrationComponent implements OnInit {
                                 this.setupFormFields(config);
                             } else {
                                 // Fallback if config not found but we have type string
-                                this.setupFallbackFields(group.courseType);
+                                this.setupFallbackFields('GENERICO');
                             }
                         });
                     } else {
                         // Fallback logic
-                        this.setupFallbackFields(group.courseType);
+                        this.setupFallbackFields('GENERICO');
                     }
                 }
             });
