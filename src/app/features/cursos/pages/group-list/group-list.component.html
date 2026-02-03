@@ -173,16 +173,17 @@
 <!-- Plantillas para Selección y Fecha/Hora -->
 
 <ng-template #dateTemplate let-item>
-    <span class="text-gray-900">{{ formatDateForTable(item.dateTime) }}</span>
+    <span class="text-gray-900">{{ formatDateForDisplay(item.groupStartDate) }}</span>
 </ng-template>
 
 <ng-template #expirationDateTemplate let-item>
-    <span class="text-gray-900" *ngIf="item.linkExpiration">{{ formatDateForTable(item.linkExpiration) }}</span>
-    <span class="text-gray-400 italic text-xs" *ngIf="!item.linkExpiration">Sin límite</span>
+    <span class="text-gray-900" *ngIf="item.endInscriptionDate">{{ formatDateForDisplay(item.endInscriptionDate)
+        }}</span>
+    <span class="text-gray-400 italic text-xs" *ngIf="!item.endInscriptionDate">Sin límite</span>
 </ng-template>
 
 <ng-template #timeTemplate let-item>
-    <span class="text-gray-500">{{ item.dateTime?.split(',')[1] || '' }}</span>
+    <span class="text-gray-500">{{ item.schedule }}</span>
 </ng-template>
 
 <!-- Plantilla para Acciones -->

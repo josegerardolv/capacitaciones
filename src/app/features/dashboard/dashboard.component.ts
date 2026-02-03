@@ -19,6 +19,7 @@ import { CoursesService } from '../cursos/services/courses.service';
 export class DashboardComponent implements OnInit, OnDestroy {
     user: User | null = null;
     @ViewChild('statusTemplate', { static: true }) statusTemplate!: TemplateRef<any>;
+    @ViewChild('dateTemplate', { static: true }) dateTemplate!: TemplateRef<any>;
 
     private timerSubscription!: Subscription;
     timeString: string = '';
@@ -115,7 +116,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
             { key: 'group', label: 'Grupo', sortable: true, minWidth: '100px' },
             { key: 'location', label: 'Ubicación', sortable: true },
             { key: 'participants', label: 'Cantidad', sortable: true },
-            { key: 'date', label: 'Fecha', sortable: true },
+            { key: 'date', label: 'Fecha', sortable: true, template: this.dateTemplate },
             { key: 'time', label: 'Hora' },
             { key: 'status', label: 'Estatus', template: this.statusTemplate }
         ];
@@ -142,18 +143,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
                 // Mapeamos los cursos al formato de la tabla del dashboard
                 // Nota: Usamos datos simulados para campos que aún no vienen en el modelo Course (como grupo o ubicación)
                 this.upcomingCourses = groups.map(g => {
-                    const dateTimeParts = g.dateTime ? g.dateTime.split(',') : [''];
-                    
-                    // Lógica robusta para encontrar el nombre del curso (soporta anidado, camelCase y snake_case)
-                    const gAny = g as any;
+                    // Check if g.course is populated object or ID
                     let courseName = 'Curso no encontrado';
-
-                    if (gAny.course && gAny.course.name) {
-                        courseName = gAny.course.name;
+                    if (g.course && typeof g.course === 'object' && (g.course as any).name) {
+                        courseName = (g.course as any).name;
                     } else {
-                        const courseId = gAny.courseId || gAny.course_id || gAny.id_course;
-                        const found = courses.find(c => c.id == courseId);
-                        if (found) courseName = found.name;
+                        const courseFound = courses.find(c => c.id === Number(g.course));
+                        if (courseFound) courseName = courseFound.name;
                     }
 
                     return {
@@ -161,10 +157,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
                         group: g.name,
                         location: g.location,
                         participants: g.limitStudents,
-                        date: dateTimeParts[0].trim(),
-                        time: dateTimeParts[1] ? dateTimeParts[1].trim() : '',
+                        date: g.groupStartDate,
+                        time: g.schedule,
                         status: g.status
-                    };
+                    }; 
                 }).slice(0, 5); // Mostramos solo los 5 más recientes
                 this.tableConfig.loading = false;
             },

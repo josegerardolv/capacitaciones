@@ -16,28 +16,32 @@ export class MockGroupsService {
             name: 'G-CHOFERES-01',
             duration: '4 Horas',
             location: 'Aula Central - Semovi',
-            dateTime: '15/10/2026, 09:00',
+            groupStartDate: '2026-10-15',
+            schedule: '09:00',
             limitStudents: 40,
-            linkExpiration: '2026-10-15', // Fecha expiración
+            endInscriptionDate: '2026-10-15',
             inscriptionURL: 'http://localhost:4200/public/register/1',
             requests: 3,
             status: 'Activo',
-            courseType: 'LICENCIA',
-            courseTypeId: 1 // Link to 'Licencia Transporte Público'
+            // courseType removed
+            courseTypeId: 1,
+            course: 1 // Relación con ID de curso
         },
         {
             id: 2,
             name: 'G-ESCOLAR-B',
             duration: '2 Horas',
             location: 'Escuela Primaria Benito Juárez',
-            dateTime: '20/10/2026, 10:30',
+            groupStartDate: '2026-10-20',
+            schedule: '10:30',
             limitStudents: 100,
-            linkExpiration: '2026-10-20',
+            endInscriptionDate: '2026-10-20',
             inscriptionURL: 'http://localhost:4200/public/register/2',
             requests: 3,
             status: 'Activo',
-            courseType: 'CAPACITACION_ESCOLAR',
-            courseTypeId: 2 // Enlace a 'Capacitación Escolar'
+            // courseType removed
+            courseTypeId: 2,
+            course: 2
         },
         // MOCK: Grupo Simple solicitado por usuario
         {
@@ -45,14 +49,16 @@ export class MockGroupsService {
             name: 'G-SIMPLE-01',
             duration: '1 Hora',
             location: 'Aula Virtual',
-            dateTime: '01/12/2026, 09:00',
+            groupStartDate: '2026-12-01',
+            schedule: '09:00',
             limitStudents: 20,
-            linkExpiration: '2026-12-01',
+            endInscriptionDate: '2026-12-01',
             inscriptionURL: 'http://localhost:4200/public/register/3',
             requests: 5,
             status: 'Activo',
-            courseType: 'CURSO_SIMPLE',
-            courseTypeId: 3 // Enlace estático al 'Curso Simple'
+            // courseType removed
+            courseTypeId: 3,
+            course: 3
         },
         // MOCK: Grupo sin enlace para probar generación
         {
@@ -60,14 +66,16 @@ export class MockGroupsService {
             name: 'G-NUEVO-01',
             duration: '4 Horas',
             location: 'Aula 2',
-            dateTime: '15/12/2026, 10:00',
+            groupStartDate: '2026-12-15',
+            schedule: '10:00',
             limitStudents: 30,
-            linkExpiration: '2026-12-15',
+            endInscriptionDate: '2026-12-15',
             inscriptionURL: '', // sin link
             requests: 0,
             status: 'Inactivo',
-            courseType: 'LICENCIA',
-            courseTypeId: 1
+            // courseType removed
+            courseTypeId: 1,
+            course: 1
         }
     ];
 
