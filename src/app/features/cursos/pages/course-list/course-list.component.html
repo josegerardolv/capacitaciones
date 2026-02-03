@@ -30,7 +30,8 @@
             <div class="flex flex-col md:flex-row md:items-center gap-2">
                 <app-institutional-button (buttonClick)="openForm()" [config]="{
                     variant: 'primary',
-                    icon: 'add'
+                    icon: 'add',
+                    title: 'Nuevo Curso'
                 }">
                     Nuevo Curso
                 </app-institutional-button>
@@ -92,6 +93,7 @@
                 variant: 'info',
                 size: 'small', 
                 icon: 'list_alt',
+                title: 'Ver detalles',
                 iconPosition: 'only'}" [appTooltip]="'Ver detalles'" tooltipPosition="top"
             (buttonClick)="viewGroups(item)">
         </app-institutional-button>
@@ -99,6 +101,7 @@
                 variant: 'warning',
                 size: 'small', 
                 icon: 'edit',
+                title: 'Editar',
                 iconPosition: 'only'}" [appTooltip]="'Editar'" tooltipPosition="top"
             (buttonClick)="openEditForm(item)">
         </app-institutional-button>
@@ -106,6 +109,7 @@
                 variant: 'danger',
                 size: 'small', 
                 icon: 'delete',
+                title: 'Eliminar',
                 iconPosition: 'only'}" [appTooltip]="'Eliminar'" tooltipPosition="top"
             (buttonClick)="deleteCourse(item.id)">
         </app-institutional-button>

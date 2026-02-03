@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, TemplateRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../core/services/auth.service';
 import { User } from '../../core/models/auth.model';
@@ -18,6 +18,8 @@ import { CoursesService } from '../cursos/services/courses.service';
 })
 export class DashboardComponent implements OnInit, OnDestroy {
     user: User | null = null;
+    @ViewChild('statusTemplate', { static: true }) statusTemplate!: TemplateRef<any>;
+    @ViewChild('dateTemplate', { static: true }) dateTemplate!: TemplateRef<any>;
 
     private timerSubscription!: Subscription;
     timeString: string = '';
@@ -35,7 +37,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
     tableConfig: TableConfig = {
         loading: false,
         striped: true,
-        hoverable: true
+        hoverable: true,
+        localSort: true
     };
 
     constructor(
@@ -109,13 +112,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     private initTableData() {
         this.tableColumns = [
-            { key: 'course', label: 'Curso', sortable: true },
-            { key: 'group', label: 'Grupo', sortable: true },
+            { key: 'course', label: 'Curso', sortable: true, minWidth: '100px' },
+            { key: 'group', label: 'Grupo', sortable: true, minWidth: '100px' },
             { key: 'location', label: 'Ubicación', sortable: true },
             { key: 'participants', label: 'Cantidad', sortable: true },
-            { key: 'date', label: 'Fecha', sortable: true },
+            { key: 'date', label: 'Fecha', sortable: true, template: this.dateTemplate },
             { key: 'time', label: 'Hora' },
-            { key: 'status', label: 'Estatus' }
+            { key: 'status', label: 'Estatus', template: this.statusTemplate }
         ];
 
         // Cargar datos reales desde el servicio
@@ -125,19 +128,39 @@ export class DashboardComponent implements OnInit, OnDestroy {
             courses: this.coursesService.getCourses()
         }).subscribe({
             next: ({ groups, courses }) => {
+                console.log('Datos cargados en Dashboard:', { groups, courses });
+
+                // Actualizar métrica de grupos activos con el total real obtenido
+                this.calendarMetric = { ...this.calendarMetric, value: groups.length.toString() };
+
+                // Actualizar métrica de cursos impartidos (Total de cursos en catálogo)
+                this.graduationMetric = { ...this.graduationMetric, value: courses.length.toString() };
+
+                // Actualizar métrica de participantes (Suma de cupos/participantes de todos los grupos)
+                const totalParticipants = groups.reduce((sum, g) => sum + (Number((g as any).limitStudents) || 0), 0);
+                this.personMetric = { ...this.personMetric, value: totalParticipants.toLocaleString() };
+
                 // Mapeamos los cursos al formato de la tabla del dashboard
                 // Nota: Usamos datos simulados para campos que aún no vienen en el modelo Course (como grupo o ubicación)
                 this.upcomingCourses = groups.map(g => {
-                    const course = courses.find(c => c.id === g.course);
+                    // Check if g.course is populated object or ID
+                    let courseName = 'Curso no encontrado';
+                    if (g.course && typeof g.course === 'object' && (g.course as any).name) {
+                        courseName = (g.course as any).name;
+                    } else {
+                        const courseFound = courses.find(c => c.id === Number(g.course));
+                        if (courseFound) courseName = courseFound.name;
+                    }
+
                     return {
-                        course: course ? course.name : 'Curso no encontrado',
+                        course: courseName,
                         group: g.name,
                         location: g.location,
                         participants: g.limitStudents,
                         date: g.groupStartDate,
                         time: g.schedule,
                         status: g.status
-                    };
+                    }; 
                 }).slice(0, 5); // Mostramos solo los 5 más recientes
                 this.tableConfig.loading = false;
             },

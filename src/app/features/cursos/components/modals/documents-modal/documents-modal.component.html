@@ -93,6 +93,7 @@
                                                 size: 'small',
                                                 icon: 'download',
                                                 iconPosition: 'only',
+                                                title: 'Descargar PDF',
                                                 disabled: doc.isLocked || !doc.isPaid
                                             }"
                                             [appTooltip]="doc.isLocked ? 'Debe cubrir los documentos obligatorios primero' : (doc.isPaid ? 'Descargar PDF' : 'Requiere Pago')"
@@ -105,6 +106,7 @@
                                                 size: 'small',
                                                 icon: 'send',
                                                 iconPosition: 'only',
+                                                title: 'Enviar por Correo',
                                                 disabled: doc.isLocked || !doc.isPaid
                                             }"
                                             [appTooltip]="doc.isLocked ? 'Debe cubrir los documentos obligatorios primero' : (doc.isPaid ? 'Enviar por Correo' : 'Requiere Pago')"

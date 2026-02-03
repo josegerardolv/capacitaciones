@@ -32,6 +32,7 @@
                 <app-institutional-button (buttonClick)="exportData()" [config]="{
                     variant: 'secondary',
                     icon: 'download',
+                    title: 'Exportar',
                     disabled: !canExport
                 }">
                     Exportar
@@ -40,6 +41,7 @@
                 <app-institutional-button (buttonClick)="generateUrl()" [config]="{
                     variant: 'secondary',
                     icon: 'link',
+                    title: 'Generar URL',
                     disabled: !canGenerateUrl
                 }">
                     Generar URL {{ selectedGroups.length > 0 ? '(' + selectedGroups.length + ')' : '' }}
@@ -47,7 +49,8 @@
 
                 <app-institutional-button (buttonClick)="openForm()" [config]="{
                     variant: 'primary',
-                    icon: 'add'
+                    icon: 'add',
+                    title: 'Nuevo Grupo'
                 }">
                     Nuevo Grupo
                 </app-institutional-button>
@@ -106,9 +109,9 @@
         </div>
 
         <div class="col-span-1">
-            <app-input-enhanced type="number" controlName="limitStudents"
-                [control]="groupModalForm.get('limitStudents')" label="Cantidad máxima de personas *"
-                placeholder="Ingresa la cantidad máxima de personas" [required]="true">
+            <app-input-enhanced type="number" controlName="limitStudents" [control]="groupModalForm.get('limitStudents')"
+                label="Cantidad máxima de personas" placeholder="Ingresa la cantidad máxima de personas"
+                [required]="true">
             </app-input-enhanced>
         </div>
 
@@ -190,6 +193,7 @@
                 variant: 'info',
                 size: 'small', 
                 icon: 'list_alt',
+                title: 'Ver detalles',
                 iconPosition: 'only'}" [appTooltip]="'Ver detalles'" tooltipPosition="top"
             (buttonClick)="viewPersons(item)">
         </app-institutional-button>
@@ -198,6 +202,7 @@
                 variant: 'secondary',
                 size: 'small', 
                 icon: 'patient_list',
+                title: 'Solicitudes pendientes',
                 iconPosition: 'only'}" [appTooltip]="'Solicitudes pendientes'" tooltipPosition="top"
                 (buttonClick)="openRequests(item)">
             </app-institutional-button>
@@ -209,6 +214,7 @@
                 variant: 'warning',
                 size: 'small', 
                 icon: 'edit',
+                title: 'Editar',
                 iconPosition: 'only'}" [appTooltip]="'Editar'" tooltipPosition="top"
             (buttonClick)="openEditForm(item)">
         </app-institutional-button>
@@ -216,6 +222,7 @@
                 variant: 'danger',
                 size: 'small', 
                 icon: 'delete',
+                title: 'Eliminar',
                 iconPosition: 'only'}" [appTooltip]="'Eliminar'" tooltipPosition="top"
             (buttonClick)="deleteGroup(item.id)">
         </app-institutional-button>

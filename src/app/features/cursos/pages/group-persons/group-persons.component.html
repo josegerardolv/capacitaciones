@@ -31,7 +31,8 @@
 
             <app-institutional-button (buttonClick)="openNewPersonForm()" [config]="{
                     variant: 'primary',
-                    icon: 'add'
+                    icon: 'add',
+                    title: 'Nueva Persona'
                 }">
                 Nueva Persona
             </app-institutional-button>
@@ -82,12 +83,12 @@
         <!-- Pendiente: acciones de calificación con botones institucionales -->
         <div *ngIf="item.status === 'Pendiente'" class="flex items-center justify-center gap-2">
             <app-institutional-button
-                [config]="{ variant: 'success', icon: 'check', iconPosition: 'only', size: 'small' }"
+                [config]="{ variant: 'success', icon: 'check', iconPosition: 'only', title: 'Aprobar',size: 'small' }"
                 (buttonClick)="setExamResult(item, 'Aprobado')" [appTooltip]="'Aprobar Examen'" tooltipPosition="top">
             </app-institutional-button>
 
             <app-institutional-button
-                [config]="{ variant: 'danger', icon: 'close', iconPosition: 'only', size: 'small' }"
+                [config]="{ variant: 'danger', icon: 'close', iconPosition: 'only', title: 'Reprobar', size: 'small' }"
                 (buttonClick)="setExamResult(item, 'No Aprobado')" [appTooltip]="'Reprobar Examen'"
                 tooltipPosition="top">
             </app-institutional-button>
@@ -102,6 +103,7 @@
                     variant: 'success',
                     icon: 'description',
                     iconPosition: 'only',
+                    title: 'Ver Constancias y Pagos',
                     disabled: item.status !== 'Aprobado'
                 }" (buttonClick)="item.status === 'Aprobado' && openDocumentsModal(item)"
                 [appTooltip]="item.status === 'Aprobado' ? 'Ver Constancias y Pagos' : 'Requiere Aprobación'"
@@ -112,7 +114,8 @@
             <app-institutional-button [config]="{
                     variant: 'danger',
                     icon: 'delete',
-                    iconPosition: 'only'
+                    iconPosition: 'only',
+                    title: 'Eliminar'
                 }" (buttonClick)="deletePerson(item)" [appTooltip]="'Eliminar Persona'" tooltipPosition="top">
             </app-institutional-button>
         </div>
