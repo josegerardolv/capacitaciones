@@ -170,11 +170,12 @@
 <!-- Plantillas para Selección y Fecha/Hora -->
 
 <ng-template #dateTemplate let-item>
-    <span class="text-gray-900">{{ item.groupStartDate | date:'mediumDate' }}</span>
+    <span class="text-gray-900">{{ formatDateForDisplay(item.groupStartDate) }}</span>
 </ng-template>
 
 <ng-template #expirationDateTemplate let-item>
-    <span class="text-gray-900" *ngIf="item.endInscriptionDate">{{ item.endInscriptionDate | date:'mediumDate' }}</span>
+    <span class="text-gray-900" *ngIf="item.endInscriptionDate">{{ formatDateForDisplay(item.endInscriptionDate)
+        }}</span>
     <span class="text-gray-400 italic text-xs" *ngIf="!item.endInscriptionDate">Sin límite</span>
 </ng-template>
 

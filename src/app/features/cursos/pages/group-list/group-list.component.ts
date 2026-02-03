@@ -350,7 +350,7 @@ export class GroupListComponent implements OnInit {
                 limitStudents: Number(formValue.limitStudents),
                 inscriptionURL: formValue.inscriptionURL || 'https://example.com/pendiente',
                 groupStartDate: formValue.date,
-                endInscriptionDate: formValue.linkExpiration || formValue.date, // Fallback to Start Date to pass "NotEmpty"
+                endInscriptionDate: formValue.linkExpiration || undefined, // Enviar undefined (Si el usuario no selecciona fecha)
                 course: this.currentCourse ? this.currentCourse.id : undefined
             };
 
@@ -377,16 +377,14 @@ export class GroupListComponent implements OnInit {
             const originalGroup = this.groups.find(g => g.id === this.editingGroupId);
 
             const payload = {
-                id: this.editingGroupId,
                 name: formValue.name,
                 location: formValue.location,
                 schedule: formValue.time, // "14:00"
                 limitStudents: Number(formValue.limitStudents),
                 inscriptionURL: originalGroup?.inscriptionURL || '',
                 groupStartDate: formValue.date,
-                endInscriptionDate: formValue.linkExpiration || formValue.date, // Fallback to Start Date
-                course: this.currentCourse ? this.currentCourse.id : undefined,
-                status: originalGroup?.status || 'Activo' // Preservar estatus
+                endInscriptionDate: formValue.linkExpiration || undefined, // Send undefined
+                course: this.currentCourse ? this.currentCourse.id : undefined
             };
             this.groupsService.updateGroup(this.editingGroupId, payload).subscribe({
                 next: () => {
@@ -455,7 +453,7 @@ export class GroupListComponent implements OnInit {
                 // Usuario solicitó "deshabilitar días".
                 // Si el curso es 2026-10-30, max debería ser 2026-10-29.
                 const dt = new Date(dateVal);
-                dt.setDate(dt.getDate() - 1); // Restar 1 día
+                dt.setDate(dt.getDate() - 1); // Restaurado: Se requiere máximo 1 día antes del inicio.
                 this.maxDateForForm = dt.toISOString().split('T')[0];
             } else {
                 this.maxDateForForm = '';
@@ -472,7 +470,7 @@ export class GroupListComponent implements OnInit {
             const cDate = new Date(courseDate);
             const lDate = new Date(linkExpiration);
 
-            if (lDate >= cDate) {
+            if (lDate >= cDate) { // Validación estricta: Límite debe ser ANTES del curso
                 return { dateError: 'La fecha límite de registro debe ser ANTES de la fecha de inicio del curso.' };
             }
         }
@@ -515,7 +513,17 @@ export class GroupListComponent implements OnInit {
         this.router.navigate(['/cursos']);
     }
 
-    // Lógica para Generar URL
+    // Helper para evitar desfases de Zona Horaria (El navegador cambia '2025-02-10' a 'Feb 09')
+    formatDateForDisplay(dateVal: string | Date | undefined): string {
+        if (!dateVal) return '';
+        const d = new Date(dateVal);
+        // Usamos métodos UTC para ignorar la zona horaria del navegador
+        const day = d.getUTCDate().toString().padStart(2, '0');
+        const month = (d.getUTCMonth() + 1).toString().padStart(2, '0');
+        const year = d.getUTCFullYear();
+        return `${day}/${month}/${year}`;
+    }
+
     generateUrl() {
         console.log('Generating URL...');
         // Filtramos grupos que ya están seleccionados pero no tienen URL (doble validación)

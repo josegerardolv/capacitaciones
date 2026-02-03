@@ -328,8 +328,8 @@ export class CourseListComponent implements OnInit {
                 return;
             }
             const payload = {
-                id: this.editingCourseId,
-                ...formValue
+                ...formValue,
+                courseTypeId: Number(formValue.courseTypeId) // Asegurar número
             };
             this.coursesService.updateCourse(this.editingCourseId, payload).subscribe({
                 next: () => {

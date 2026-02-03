@@ -48,8 +48,7 @@ export class GroupsService {
     }
 
     updateGroup(id: number, updatedGroup: any): Observable<Group> {
-        console.log('DEBUG: Updating group', id, 'URL:', `${this.apiUrl}/group/${id}`);
-        return this.http.put<Group>(`${this.apiUrl}/group/${id}`, updatedGroup);
+        return this.http.patch<Group>(`${this.apiUrl}/group/${id}`, updatedGroup);
     }
 
     getGroupById(id: number): Observable<Group> {

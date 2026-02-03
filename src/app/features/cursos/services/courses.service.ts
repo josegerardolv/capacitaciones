@@ -33,8 +33,7 @@ export class CoursesService {
     }
 
     updateCourse(id: number, updatedCourse: Course): Observable<Course> {
-        console.log('DEBUG: Updating course', id, 'URL:', `${this.apiUrl}/course/${id}`);
-        return this.http.put<Course>(`${this.apiUrl}/course/${id}`, updatedCourse);
+        return this.http.patch<Course>(`${this.apiUrl}/course/${id}`, updatedCourse);
     }
 
     deleteCourse(id: number): Observable<boolean> {
