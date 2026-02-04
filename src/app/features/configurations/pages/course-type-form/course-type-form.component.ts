@@ -156,7 +156,7 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
     }
 
     // Campos que no se pueden desmarcar (Obligatorios por negocio)
-    readonly LOCKED_FIELDS = ['name', 'firstSurname', 'secondSurname', 'curp', 'email', 'phone'];
+    readonly LOCKED_FIELDS = ['name', 'paternal_lastName', 'maternal_lastName', 'curp', 'email', 'phone'];
 
     initFields() {
         this.registrationFields = JSON.parse(JSON.stringify(DEFAULT_REGISTRATION_FIELDS));

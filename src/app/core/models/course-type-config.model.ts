@@ -1,5 +1,5 @@
 export interface RegistrationFieldConfig {
-    fieldName: string; // 'license', 'nuc', 'curp', 'address', 'phone', 'email', 'sex', 'name', 'firstSurname', 'secondSurname'
+    fieldName: string; // 'license', 'nuc', 'curp', 'address', 'phone', 'email', 'sex', 'name', 'paternal_lastName', 'maternal_lastName'
     label: string;
     visible: boolean;
     required: boolean;
@@ -35,8 +35,8 @@ export interface CourseTypeConfig {
 // Helper para configuración por defecto
 export const DEFAULT_REGISTRATION_FIELDS: RegistrationFieldConfig[] = [
     { fieldName: 'name', label: 'Nombre', visible: true, required: true }, // Siempre visible por lo general
-    { fieldName: 'firstSurname', label: 'Primer Apellido', visible: true, required: true },
-    { fieldName: 'secondSurname', label: 'Segundo Apellido', visible: true, required: false },
+    { fieldName: 'paternal_lastName', label: 'Primer Apellido', visible: true, required: true },
+    { fieldName: 'maternal_lastName', label: 'Segundo Apellido', visible: true, required: false },
     { fieldName: 'curp', label: 'CURP', visible: true, required: true },
     { fieldName: 'license', label: 'Licencia', visible: true, required: true },
     { fieldName: 'nuc', label: 'NUC', visible: true, required: false },

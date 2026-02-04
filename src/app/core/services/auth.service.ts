@@ -198,7 +198,8 @@ export class AuthService {
             person: {
               id: userId,
               first_name: 'Usuario',
-              last_name: 'Sistema',
+              paternal_lastName: 'Sistema',
+              maternal_lastName: '',
               email: credentials.username,
               area: { id: '1', name: 'General' },
               instalacion: { id: '1', name: 'General' }
@@ -206,7 +207,7 @@ export class AuthService {
             area: { id: '1', name: 'General' },
             instalacion: { id: '1', name: 'General' }
             // --- FIN: DATOS TEMPORALES ---
-            
+
           };
 
           this.setUser(user);
@@ -656,7 +657,7 @@ export class AuthService {
     }
 
     const person = response.person;
-    const fullName = `${person.first_name} ${person.last_name}${person.second_last_name ? ' ' + person.second_last_name : ''}`;
+    const fullName = `${person.first_name} ${person.paternal_lastName}${person.maternal_lastName ? ' ' + person.maternal_lastName : ''}`;
 
     return {
       id: response.user.id.toString(),
@@ -668,8 +669,8 @@ export class AuthService {
       person: {
         id: person.id.toString(),
         first_name: person.first_name || '',
-        last_name: person.last_name || '',
-        second_last_name: person.second_last_name || '',
+        paternal_lastName: person.paternal_lastName || '',
+        maternal_lastName: person.maternal_lastName || '',
         email: response.user.email,
         phone: '',
         position: response.work_schedule?.puesto || 'Usuario',

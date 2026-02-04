@@ -664,7 +664,7 @@ export class HeaderComponent {
 
     // Usar first_name y last_name si están disponibles, o nombre como fallback
     const firstName = person.first_name || '';
-    const lastName = person.last_name || '';
+    const lastName = person.paternal_lastName || '';
 
     if (firstName && lastName) {
       return (firstName[0] + lastName[0]).toUpperCase();
@@ -705,10 +705,10 @@ export class HeaderComponent {
     }
 
     // Usar first_name y last_name si están disponibles
-    if (person.first_name && person.last_name) {
-      let fullName = `${person.first_name} ${person.last_name}`;
-      if (person.second_last_name) {
-        fullName += ` ${person.second_last_name}`;
+    if (person.first_name && person.paternal_lastName) {
+      let fullName = `${person.first_name} ${person.paternal_lastName}`;
+      if (person.maternal_lastName) {
+        fullName += ` ${person.maternal_lastName}`;
       }
       return fullName;
     }

@@ -83,23 +83,23 @@ export class MockGroupsService {
     private mockPersons: { [groupId: number]: Person[] } = {
         1: [
             // CASO 1: NO APROBADO (Todo bloqueado, estado inicial)
-            { id: 1, name: 'Juan', firstSurname: 'Pérez', secondSurname: 'Gómez', license: 'A123456789', curp: 'AAAA000000HDFXXX00', status: 'Pendiente', requestTarjeton: false, paymentStatus: 'Pendiente', coursePaymentStatus: 'Pendiente', sex: 'Hombre', address: 'Calle 1, Col. Centro', phone: '5512345678', email: 'juan.perez@example.com', requestedDocuments: [], paidDocumentIds: [] },
+            { id: 1, name: 'Juan', paternal_lastName: 'Pérez', maternal_lastName: 'Gómez', license: 'A123456789', curp: 'AAAA000000HDFXXX00', status: 'Pendiente', requestTarjeton: false, paymentStatus: 'Pendiente', coursePaymentStatus: 'Pendiente', sex: 'Hombre', address: 'Calle 1, Col. Centro', phone: '5512345678', email: 'juan.perez@example.com', requestedDocuments: [], paidDocumentIds: [] },
 
             // CASO 2: APROBADO PERO OBLIGATORIO PENDIENTE (Debe bloquear el opcional)
             // Constancia (Obligatoria) -> PENDIENTE (Esto bloquea cualquier opcional dependiente)
             // paidDocumentIds: [] significa que no ha pagado nada.
-            { id: 2, name: 'María', firstSurname: 'López', secondSurname: 'Hernández', license: 'B987654321', curp: 'BBBB000000MDFXXX00', status: 'Aprobado', requestTarjeton: true, paymentStatus: 'Pendiente', coursePaymentStatus: 'Pagado', sex: 'Mujer', address: 'Av. Reforma 222', phone: '5587654321', email: 'maria.lopez@example.com', requestedDocuments: ['doc_tarjeton'], paidDocumentIds: [] },
+            { id: 2, name: 'María', paternal_lastName: 'López', maternal_lastName: 'Hernández', license: 'B987654321', curp: 'BBBB000000MDFXXX00', status: 'Aprobado', requestTarjeton: true, paymentStatus: 'Pendiente', coursePaymentStatus: 'Pagado', sex: 'Mujer', address: 'Av. Reforma 222', phone: '5587654321', email: 'maria.lopez@example.com', requestedDocuments: ['doc_tarjeton'], paidDocumentIds: [] },
 
             // CASO 3: APROBADO Y TODO PAGADO (Todo desbloqueado)
             // Obligatorio (Constancia) y Opcional (Tarjetón) están en paidDocumentIds.
-            { id: 3, name: 'Carlos', firstSurname: 'Ruiz', secondSurname: 'Díaz', license: 'C123123123', curp: 'CCCC000000HDFXXX00', status: 'Aprobado', requestTarjeton: true, paymentStatus: 'Pagado', coursePaymentStatus: 'Pagado', sex: 'Hombre', address: 'Calle Sur 8', phone: '5511223344', email: 'carlos.ruiz@example.com', requestedDocuments: ['doc_tarjeton'], paidDocumentIds: ['doc_constancia', 'doc_tarjeton'] },
+            { id: 3, name: 'Carlos', paternal_lastName: 'Ruiz', maternal_lastName: 'Díaz', license: 'C123123123', curp: 'CCCC000000HDFXXX00', status: 'Aprobado', requestTarjeton: true, paymentStatus: 'Pagado', coursePaymentStatus: 'Pagado', sex: 'Hombre', address: 'Calle Sur 8', phone: '5511223344', email: 'carlos.ruiz@example.com', requestedDocuments: ['doc_tarjeton'], paidDocumentIds: ['doc_constancia', 'doc_tarjeton'] },
         ],
         2: [
-            { id: 4, name: 'Ana', firstSurname: 'Martínez', secondSurname: 'López', license: '', curp: 'MALA000000MDFXXX00', status: 'Pendiente', requestTarjeton: false, coursePaymentStatus: 'Pendiente', sex: 'Mujer', address: 'Av. Escuela 123', phone: '5599887766', email: 'ana.mtz@escuela.edu.mx' },
-            { id: 5, name: 'Pedro', firstSurname: 'Sánchez', secondSurname: 'Ruiz', license: '', curp: 'SARP000000HDFXXX00', status: 'Pendiente', requestTarjeton: false, coursePaymentStatus: 'Pendiente', sex: 'Hombre', address: 'Calle Tarea 456', phone: '5544332211', email: 'pedro.sanchez@escuela.edu.mx' },
+            { id: 4, name: 'Ana', paternal_lastName: 'Martínez', maternal_lastName: 'López', license: '', curp: 'MALA000000MDFXXX00', status: 'Pendiente', requestTarjeton: false, coursePaymentStatus: 'Pendiente', sex: 'Mujer', address: 'Av. Escuela 123', phone: '5599887766', email: 'ana.mtz@escuela.edu.mx' },
+            { id: 5, name: 'Pedro', paternal_lastName: 'Sánchez', maternal_lastName: 'Ruiz', license: '', curp: 'SARP000000HDFXXX00', status: 'Pendiente', requestTarjeton: false, coursePaymentStatus: 'Pendiente', sex: 'Hombre', address: 'Calle Tarea 456', phone: '5544332211', email: 'pedro.sanchez@escuela.edu.mx' },
         ],
         3: [
-            { id: 6, name: 'Luisa', firstSurname: 'García', secondSurname: 'Torres', license: '', curp: 'GATL000000MDFXXX00', status: 'Pendiente', requestTarjeton: false, coursePaymentStatus: 'Pendiente', sex: 'Mujer', address: 'Calle Curso 789', phone: '5566778899', email: 'luisa.garcia@gmail.com' }
+            { id: 6, name: 'Luisa', paternal_lastName: 'García', maternal_lastName: 'Torres', license: '', curp: 'GATL000000MDFXXX00', status: 'Pendiente', requestTarjeton: false, coursePaymentStatus: 'Pendiente', sex: 'Mujer', address: 'Calle Curso 789', phone: '5566778899', email: 'luisa.garcia@gmail.com' }
         ]
     };
 
@@ -173,8 +173,8 @@ export class MockGroupsService {
             const mockPerson: Person = {
                 id: 999,
                 name: 'Juan',
-                firstSurname: 'Pérez',
-                secondSurname: 'Encontrado',
+                paternal_lastName: 'Pérez',
+                maternal_lastName: 'Encontrado',
                 license: license.toUpperCase(),
                 curp: 'PEHJ901212HDFR05',
                 sex: 'H',

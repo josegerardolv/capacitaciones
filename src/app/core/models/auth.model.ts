@@ -28,8 +28,8 @@ export interface BackendLoginResponse {
 export interface Person {
   id: string;
   first_name: string;
-  last_name: string;
-  second_last_name?: string;
+  paternal_lastName: string;
+  maternal_lastName?: string;
   email: string;
   phone?: string;
   area?: Area;
@@ -106,8 +106,8 @@ export interface AuthTokens {
   person: {
     id: number;
     first_name: string;
-    last_name: string;
-    second_last_name?: string;
+    paternal_lastName: string;
+    maternal_lastName?: string;
     area: {
       id: number;
       name: string;
@@ -169,8 +169,8 @@ export interface CreateUserRequest {
   username: string;
   password: string;
   first_name: string;
-  last_name: string;
-  second_last_name?: string;
+  paternal_lastName: string;
+  maternal_lastName?: string;
   email: string;
   phone?: string;
   employee_id?: string;
@@ -184,8 +184,8 @@ export interface CreateUserRequest {
 
 export interface UpdateUserRequest {
   first_name?: string;
-  last_name?: string;
-  second_last_name?: string;
+  paternal_lastName?: string;
+  maternal_lastName?: string;
   email?: string;
   phone?: string;
   employee_id?: string;

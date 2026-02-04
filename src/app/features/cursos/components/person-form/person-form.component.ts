@@ -36,8 +36,8 @@ export class PersonFormComponent implements OnInit {
     constructor(private fb: FormBuilder) {
         this.form = this.fb.group({
             name: ['', Validators.required],
-            firstSurname: [''],
-            secondSurname: [''],
+            paternal_lastName: [''],
+            maternal_lastName: [''],
             license: [''],
             curp: ['', [Validators.required, Validators.pattern(/^([A-Z][AEIOUX][A-Z]{2}\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])[HM](?:AS|B[CS]|C[CLMSH]|D[FG]|G[TR]|HG|JC|M[CNS]|N[ETL]|OC|PL|Q[TR]|S[PLR]|T[CSL]|VZ|YN|ZS)[B-DF-HJ-NP-TV-Z]{3}[A-Z\d])(\d)$/), Validators.minLength(18), Validators.maxLength(18)]],
             address: ['', Validators.required],
@@ -102,7 +102,7 @@ export class PersonFormComponent implements OnInit {
         if (!this.fieldsConfig) return;
 
         Object.keys(this.form.controls).forEach(key => {
-            // name, firstSurname and secondSurname always visible by default
+            // name, paternal_lastName and maternal_lastName always visible by default
             const cfg = this.fieldsConfig ? this.fieldsConfig[key] : undefined;
 
             // Validators: add/remove required based on config.required (if provided)
@@ -141,7 +141,7 @@ export class PersonFormComponent implements OnInit {
 
     isVisible(field: string): boolean {
         // name and surnames are always visible
-        if (field === 'name' || field === 'firstSurname' || field === 'secondSurname') return true;
+        if (field === 'name' || field === 'paternal_lastName' || field === 'maternal_lastName') return true;
         if (!this.fieldsConfig) return true;
         const cfg = this.fieldsConfig[field];
         return cfg && cfg.visible === false ? false : true;

@@ -10,12 +10,12 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <app-input-enhanced [control]="getControl('name')" label="Nombre" [floating]="true"
                     [required]="isRequired('name')"></app-input-enhanced>
-                <app-input-enhanced *ngIf="isVisible('firstSurname')" [control]="getControl('firstSurname')"
+                <app-input-enhanced *ngIf="isVisible('paternal_lastName')" [control]="getControl('paternal_lastName')"
                     label="Primer Apellido" [floating]="true"
-                    [required]="isRequired('firstSurname')"></app-input-enhanced>
-                <app-input-enhanced *ngIf="isVisible('secondSurname')" [control]="getControl('secondSurname')"
+                    [required]="isRequired('paternal_lastName')"></app-input-enhanced>
+                <app-input-enhanced *ngIf="isVisible('maternal_lastName')" [control]="getControl('maternal_lastName')"
                     label="Segundo Apellido" [floating]="true"
-                    [required]="isRequired('secondSurname')"></app-input-enhanced>
+                    [required]="isRequired('maternal_lastName')"></app-input-enhanced>
 
                 <app-input-enhanced *ngIf="isVisible('curp')" [control]="getControl('curp')" label="CURP"
                     [floating]="true" [required]="isRequired('curp')"></app-input-enhanced>

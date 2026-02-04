@@ -221,8 +221,8 @@ export class GroupPersonsComponent implements OnInit {
         } else {
             this.filteredPersons = this.allPersons.filter(p =>
                 p.name.toLowerCase().includes(term) ||
-                (p.firstSurname || '').toLowerCase().includes(term) ||
-                (p.secondSurname || '').toLowerCase().includes(term) ||
+                (p.paternal_lastName || '').toLowerCase().includes(term) ||
+                (p.maternal_lastName || '').toLowerCase().includes(term) ||
                 (p.license || '').toLowerCase().includes(term) ||
                 (p.curp || '').toLowerCase().includes(term)
             );
@@ -256,7 +256,7 @@ export class GroupPersonsComponent implements OnInit {
 
         // 2. Mapear campos visibles de la configuración
         // Campos que queremos ordernar/mostrar si son visibles
-        // EXCLUIMOS 'firstSurname' y 'secondSurname' porque ya van en nombre
+        // EXCLUIMOS 'paternal_lastName' y 'maternal_lastName' porque ya van en nombre
         const possibleFields = ['license', 'curp', 'nuc', 'phone', 'email', 'address'];
 
         // Iteramos los campos registrados en el config
@@ -312,8 +312,8 @@ export class GroupPersonsComponent implements OnInit {
             queryParams: {
                 found: 'true',
                 name: person.name,
-                firstSurname: person.firstSurname,
-                secondSurname: person.secondSurname,
+                paternal_lastName: person.paternal_lastName,
+                maternal_lastName: person.maternal_lastName,
                 license: person.license,
                 curp: person.curp,
                 sex: person.sex,
