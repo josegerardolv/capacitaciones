@@ -1,8 +1,8 @@
 export interface Person {
     id: number;
     name: string;
-    firstSurname?: string; // Apellido Paterno
-    secondSurname?: string; // Apellido Materno
+    paternal_lastName?: string; // Apellido Paterno (Antes firstSurname)
+    maternal_lastName?: string; // Apellido Materno (Antes secondSurname)
     license: string;
     curp: string;
     status: 'Pendiente' | 'Aprobado' | 'No Aprobado';

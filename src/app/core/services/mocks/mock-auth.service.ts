@@ -38,7 +38,7 @@ export class MockAuthService {
         person: {
             id: '1',
             first_name: 'Usuario',
-            last_name: 'Simulado',
+            paternal_lastName: 'Simulado',
             email: 'test@semovi.gob.mx',
             area: { id: '1', name: 'Dirección de Licencias' },
             instalacion: { id: '1', name: 'Edificio Central' }
@@ -158,7 +158,7 @@ export class MockAuthService {
                 person: {
                     id: 1,
                     first_name: 'Admin',
-                    last_name: 'Sistema',
+                    paternal_lastName: 'Sistema',
                     area: { id: 1, name: 'Dirección TIC' },
                     facilities: { id: 1, name: 'Edificio Central' }
                 },
@@ -173,7 +173,7 @@ export class MockAuthService {
                 person: {
                     id: 2,
                     first_name: 'Juan',
-                    last_name: 'Pérez',
+                    paternal_lastName: 'Pérez',
                     area: { id: 2, name: 'Licencias' },
                     facilities: { id: 2, name: 'Módulo Reforma' }
                 },

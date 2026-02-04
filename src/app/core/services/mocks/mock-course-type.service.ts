@@ -43,8 +43,8 @@ export class MockCourseTypeService {
             registrationFields: this.cloneDefaultsWithOverrides({
                 // Predeterminados: Name, Surnames, Curp, Phone, Email
                 name: { visible: true, required: true },
-                firstSurname: { visible: true, required: true },
-                secondSurname: { visible: true, required: true },
+                paternal_lastName: { visible: true, required: true },
+                maternal_lastName: { visible: true, required: true },
                 curp: { visible: true, required: true }, // CORREGIDO: Visible y Obligatorio
                 sex: { visible: true, required: false }, // Visible pero Opcional
 
@@ -70,8 +70,8 @@ export class MockCourseTypeService {
             registrationFields: this.cloneDefaultsWithOverrides({
                 // Configuración según captura de pantalla del usuario
                 name: { visible: true, required: true },
-                firstSurname: { visible: true, required: true },
-                secondSurname: { visible: true, required: true }, // captura shows checked (Obligatorio)
+                paternal_lastName: { visible: true, required: true },
+                maternal_lastName: { visible: true, required: true }, // captura shows checked (Obligatorio)
                 curp: { visible: true, required: true }, // captura shows checked (Obligatorio)
                 phone: { visible: true, required: true }, // captura shows checked (Obligatorio)
                 email: { visible: true, required: true }, //    captura shows checked (Obligatorio)

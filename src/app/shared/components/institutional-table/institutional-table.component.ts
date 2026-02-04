@@ -461,8 +461,8 @@ export class InstitutionalTableComponent implements AfterContentInit, AfterViewI
       // Manejar casos especiales para propiedades calculadas
       if (this.sortColumn === 'person.full_name') {
         // Crear nombre completo para ordenamiento
-        valueA = a.person ? `${a.person.first_name || ''} ${a.person.last_name || ''} ${a.person.second_last_name || ''}`.trim() : '';
-        valueB = b.person ? `${b.person.first_name || ''} ${b.person.last_name || ''} ${b.person.second_last_name || ''}`.trim() : '';
+        valueA = a.person ? `${a.person.first_name || ''} ${a.person.paternal_lastName || ''} ${a.person.maternal_lastName || ''}`.trim() : '';
+        valueB = b.person ? `${b.person.first_name || ''} ${b.person.paternal_lastName || ''} ${b.person.maternal_lastName || ''}`.trim() : '';
       } else {
         valueA = this.getNestedProperty(a, this.sortColumn!);
         valueB = this.getNestedProperty(b, this.sortColumn!);

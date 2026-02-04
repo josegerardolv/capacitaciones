@@ -244,8 +244,8 @@ export class PublicRegistrationComponent implements OnInit {
         console.log('Persona encontrada en registro público:', person);
         this.prefilledData = {
             name: person.name,
-            firstSurname: person.firstSurname,
-            secondSurname: person.secondSurname,
+            paternal_lastName: person.paternal_lastName,
+            maternal_lastName: person.maternal_lastName,
             license: person.license,
             curp: person.curp,
             sex: person.sex,
