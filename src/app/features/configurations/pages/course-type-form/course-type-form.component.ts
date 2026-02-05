@@ -399,13 +399,24 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
         const hasPaidDocument = availableDocuments.some(doc => doc.cost && doc.cost > 0);
         const paymentType = hasPaidDocument ? 'De Paga' : 'Gratuito';
 
-        const config: Partial<CourseTypeConfig> = {
-            ...formValue,
-            status: 'Activo',
-            paymentType: paymentType,
-            registrationFields: this.registrationFields,
-            availableDocuments: availableDocuments
+        // Crear el array 'courseConfigField' basado en los campos visibles
+        const courseConfigField = this.registrationFields
+            .filter(f => f.visible && f.requirementId) // Solo enviar campos que sean visibles y tengan un ID configurado
+            .map(f => ({
+                requirementFieldPerson: f.requirementId,
+                required: f.required
+            }));
+
+        // Construir el payload estricto para el backend
+        const config: any = {
+            name: formValue.name,
+            description: formValue.description,
+            type: formValue.category, // Mapear 'category' del frontend a 'type' del backend
+            courseConfigField: courseConfigField
         };
+
+        // Nota: Se eliminaron 'status', 'paymentType', 'registrationFields', 'availableDocuments'
+        // ya que el backend los rechaza o no los requiere en este endpoint.
 
         this.isLoading = true;
 
