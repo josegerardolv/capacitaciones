@@ -3,14 +3,14 @@ export interface RegistrationFieldConfig {
     label: string;
     visible: boolean;
     required: boolean;
-    requirementId?: number; // Backend ID for requirementFieldPerson
+    requirementId?: number; // ID del Backend para requirementFieldPerson
 }
 
 export interface DocumentConfig {
     id: string;
-    name: string; // e.g. 'Constancia de Participación', 'Tarjetón'
+    name: string; // ej. 'Constancia de Participación', 'Tarjetón'
     description?: string;
-    templateId?: number; // Linked Template ID from TemplateService
+    templateId?: number; // ID de Template vinculado del TemplateService
     cost?: number; // Costo del trámite
     requiresApproval?: boolean; // Si requiere aprobación del instructor/admin
     isMandatory?: boolean; // Si es obligatorio seleccionar este documento
@@ -18,10 +18,10 @@ export interface DocumentConfig {
 
 export interface CourseTypeConfig {
     id: number;
-    name: string; // e.g. 'Capacitación Escolar', 'Licencia Tipo A'
+    name: string; // ej. 'Capacitación Escolar', 'Licencia Tipo A'
     description: string;
     status: 'Activo' | 'Inactivo';
-    type?: string; // e.g. 'Taller', 'Diplomado' (Mapped from category in frontend)
+    type?: string; // ej. 'Taller', 'Diplomado' (Mapeado desde category en frontend)
     paymentType: 'Gratuito' | 'De Paga'; // Para mostrar en la tabla como en la imagen ('Gratuito'/'De Paga')
 
     // Configuración del Formulario de Registro
@@ -38,17 +38,17 @@ export interface CourseTypeConfig {
 export const DEFAULT_REGISTRATION_FIELDS: RegistrationFieldConfig[] = [
     // Campos Base (El Backend asume que siempre se envían, no enviar ID en payload)
     { fieldName: 'name', label: 'Nombre', visible: true, required: true },
-    { fieldName: 'paternal_lastName', label: 'Primer Apellido', visible: true, required: true },
+    { fieldName: 'paternal_lastName', label: 'Primer Apellido', visible: true, required: false }, // No obligatorio según solicitud
+    { fieldName: 'maternal_lastName', label: 'Segundo Apellido', visible: true, required: false }, // Base (En tabla Person)
     { fieldName: 'curp', label: 'CURP', visible: true, required: true },
-    { fieldName: 'email', label: 'Correo Electrónico', visible: true, required: true },
+    { fieldName: 'email', label: 'Correo Electrónico', visible: true, required: true, requirementId: 7 }, // ID 7: Correo
 
-    // Campos Configurables con IDs Confirmados (4-7)
-    { fieldName: 'address', label: 'Dirección', visible: true, required: true, requirementId: 4 }, // Confirmado con JSON del usuario
-    { fieldName: 'phone', label: 'Teléfono', visible: true, required: true, requirementId: 5 },   // Confirmado (Bloqueado Visible)
-    { fieldName: 'sex', label: 'Sexo', visible: true, required: true, requirementId: 6 },         // Confirmado
-    { fieldName: 'license', label: 'Licencia', visible: true, required: true, requirementId: 7 }, // Asignado ID 7 según solicitud anterior
+    // Campos Configurables con IDs Confirmados por Captura (4-8)
+    { fieldName: 'address', label: 'Dirección', visible: true, required: true, requirementId: 4 }, // ID 4: Dirección
+    { fieldName: 'nuc', label: 'NUC', visible: true, required: false, requirementId: 5 },          // ID 5: NUC
+    { fieldName: 'sex', label: 'Sexo', visible: true, required: true, requirementId: 6 },          // ID 6: Sexo
+    { fieldName: 'phone', label: 'Teléfono', visible: true, required: false, requirementId: 8 },    // ID 8: Teléfono
+    { fieldName: 'license', label: 'Licencia', visible: true, required: false, requirementId: 9 },
 
-    // Otros (Sin ID confirmado aún, no se envían para evitar error 500)
-    { fieldName: 'nuc', label: 'NUC', visible: true, required: false },
-    { fieldName: 'maternal_lastName', label: 'Segundo Apellido', visible: true, required: false },
+    // Licencia (NO APARECE en la captura de BD -> No enviar ID para evitar error 500)
 ];

@@ -27,8 +27,10 @@ export class CourseTypeService {
         return this.http.post<CourseTypeConfig>(this.apiUrl, config);
     }
 
+    // Actualizar un Tipo de Curso existente
     updateCourseType(id: number, config: Partial<CourseTypeConfig>): Observable<CourseTypeConfig> {
-        return this.http.put<CourseTypeConfig>(`${this.apiUrl}/${id}`, config);
+        // Se cambió PUT por PATCH ya que el backend requiere actualización parcial
+        return this.http.patch<CourseTypeConfig>(`${this.apiUrl}/${id}`, config);
     }
 
     deleteCourseType(id: number): Observable<void> {

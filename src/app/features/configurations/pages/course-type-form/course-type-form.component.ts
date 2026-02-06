@@ -160,7 +160,7 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
 
     // Campos que SIEMPRE deben ser obligatorios (Required bloqueado en TRUE)
     // Se removió 'paternal_lastName' y 'maternal_lastName' de aquí para permitir que sean opcionales.
-    readonly REQUIREMENT_LOCKED = ['name', 'curp', 'email'];
+    readonly REQUIREMENT_LOCKED = ['name', 'curp', 'email', 'paternal_lastName', 'maternal_lastName'];
 
     /**
      * Inicializa los campos combinando la configuración por defecto
@@ -404,7 +404,8 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
             .filter(f => f.visible && f.requirementId) // Solo enviar campos que sean visibles y tengan un ID configurado
             .map(f => ({
                 requirementFieldPerson: f.requirementId,
-                required: f.required
+                required: f.required,
+                typeCourse: this.courseTypeId // Necesario enviar el ID del curso al editar (PATCH)
             }));
 
         // Construir el payload estricto para el backend
