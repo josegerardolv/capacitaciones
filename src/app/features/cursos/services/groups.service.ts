@@ -16,7 +16,13 @@ export class GroupsService {
     constructor(private http: HttpClient) { }
 
     getGroups(): Observable<Group[]> {
-        return this.http.get<Group[]>(`${this.apiUrl}/group`);
+        const params = new HttpParams().set('limit', '10').set('page', '1');
+        return this.http.get<any>(`${this.apiUrl}/group`, { params }).pipe(
+            map(response => {
+                if (Array.isArray(response)) return response;
+                return response.data || response.items || response.results || [];
+            })
+        );
     }
 
     getPersonsByGroupId(groupId: number): Observable<Person[]> {
@@ -28,8 +34,15 @@ export class GroupsService {
         return this.http.get<Person[]>(`${this.apiUrl}/group/${groupId}/persons`, { params });
     }
 
+    // Payload structure based on BACKEND_INTEGRATION.md
     registerPerson(groupId: number, data: Person): Observable<boolean> {
-        return this.http.post<any>(`${this.apiUrl}/group/${groupId}/persons`, data)
+        const payload = {
+            groupId: groupId,
+            person: data, // El objeto Person completo (incluyendo email, phone, etc.)
+            requestedDocuments: data.requestedDocuments || [] // Extraer documentos a nivel raíz
+        };
+
+        return this.http.post<any>(`${this.apiUrl}/group/${groupId}/persons`, payload)
             .pipe(map(() => true));
     }
 

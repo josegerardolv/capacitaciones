@@ -56,24 +56,21 @@
 
   <!-- Templates -->
   <ng-template #statusTemplate let-item>
-    <span *ngIf="getDisplayCost(item) === 0"
-      class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-      Gratuito
-    </span>
-    <span *ngIf="getDisplayCost(item) > 0"
-      class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-      De Paga
+    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+      {{ item.type || item.category || 'Sin Tipo' }}
     </span>
   </ng-template>
 
 
   <ng-template #actionsTemplate let-item>
     <div class="flex items-center justify-center space-x-2">
-      <app-institutional-button [config]="{ variant: 'warning', size: 'small', icon: 'edit', iconPosition: 'only', title: 'Editar' }"
+      <app-institutional-button
+        [config]="{ variant: 'warning', size: 'small', icon: 'edit', iconPosition: 'only', title: 'Editar' }"
         [appTooltip]="'Editar'" (buttonClick)="openEditModal(item)">
       </app-institutional-button>
 
-      <app-institutional-button [config]="{ variant: 'danger', size: 'small', icon: 'delete', iconPosition: 'only', title: 'Eliminar' }"
+      <app-institutional-button
+        [config]="{ variant: 'danger', size: 'small', icon: 'delete', iconPosition: 'only', title: 'Eliminar' }"
         [appTooltip]="'Eliminar'" (buttonClick)="onDelete(item)">
       </app-institutional-button>
     </div>

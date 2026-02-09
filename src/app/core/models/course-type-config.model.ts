@@ -41,14 +41,14 @@ export const DEFAULT_REGISTRATION_FIELDS: RegistrationFieldConfig[] = [
     { fieldName: 'paternal_lastName', label: 'Primer Apellido', visible: true, required: false }, // No obligatorio según solicitud
     { fieldName: 'maternal_lastName', label: 'Segundo Apellido', visible: true, required: false }, // Base (En tabla Person)
     { fieldName: 'curp', label: 'CURP', visible: true, required: true },
-    { fieldName: 'email', label: 'Correo Electrónico', visible: true, required: true, requirementId: 7 }, // ID 7: Correo
 
-    // Campos Configurables con IDs Confirmados por Captura (4-8)
+    { fieldName: 'email', label: 'Correo Electrónico', visible: true, required: true, requirementId: 7 }, // ID 7: Corre
+    // Campos Configurables con IDs Confirmados por Captura (4-9)
     { fieldName: 'address', label: 'Dirección', visible: true, required: true, requirementId: 4 }, // ID 4: Dirección
     { fieldName: 'nuc', label: 'NUC', visible: true, required: false, requirementId: 5 },          // ID 5: NUC
     { fieldName: 'sex', label: 'Sexo', visible: true, required: true, requirementId: 6 },          // ID 6: Sexo
     { fieldName: 'phone', label: 'Teléfono', visible: true, required: false, requirementId: 8 },    // ID 8: Teléfono
-    { fieldName: 'license', label: 'Licencia', visible: true, required: false, requirementId: 9 },
+    { fieldName: 'license', label: 'Licencia', visible: true, required: false, requirementId: 9 }, // ID 9: Licencia
 
     // Licencia (NO APARECE en la captura de BD -> No enviar ID para evitar error 500)
 ];

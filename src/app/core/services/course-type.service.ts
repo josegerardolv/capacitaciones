@@ -1,8 +1,9 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
-import { CourseTypeConfig } from '../models/course-type-config.model';
+import { CourseTypeConfig, DEFAULT_REGISTRATION_FIELDS } from '../models/course-type-config.model';
 
 @Injectable({
     providedIn: 'root'
@@ -10,13 +11,17 @@ import { CourseTypeConfig } from '../models/course-type-config.model';
 export class CourseTypeService {
 
     private apiUrl = `${environment.apiUrl}/course-type`;
-    // Nota: Se asume endpoint singular '/course-type' al igual que '/group' y '/course'.
-    // Si falla, verificar si es plural '/course-types' o requiere prefijo.
 
     constructor(private http: HttpClient) { }
 
     getCourseTypes(): Observable<CourseTypeConfig[]> {
-        return this.http.get<CourseTypeConfig[]>(this.apiUrl);
+        const params = new HttpParams().set('limit', '10').set('page', '1');
+        return this.http.get<any>(this.apiUrl, { params }).pipe(
+            map(response => {
+                if (Array.isArray(response)) return response;
+                return response.data || response.items || response.results || [];
+            })
+        );
     }
 
     getCourseTypeById(id: number): Observable<CourseTypeConfig | undefined> {
@@ -27,13 +32,12 @@ export class CourseTypeService {
         return this.http.post<CourseTypeConfig>(this.apiUrl, config);
     }
 
-    // Actualizar un Tipo de Curso existente
     updateCourseType(id: number, config: Partial<CourseTypeConfig>): Observable<CourseTypeConfig> {
-        // Se cambió PUT por PATCH ya que el backend requiere actualización parcial
         return this.http.patch<CourseTypeConfig>(`${this.apiUrl}/${id}`, config);
     }
 
     deleteCourseType(id: number): Observable<void> {
         return this.http.delete<void>(`${this.apiUrl}/${id}`);
     }
+
 }

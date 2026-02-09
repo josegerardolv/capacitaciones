@@ -41,9 +41,10 @@
                         [required]="true" size="sm">
                     </app-input-enhanced>
                     <br>
-                    <app-input-enhanced controlName="category" [control]="form.get('category')" label="Tipo de curso"
-                        placeholder="Ingresa el tipo de curso (ej. Taller, Diplomado)" [required]="true" size="sm">
-                    </app-input-enhanced>
+                    <app-select controlName="type" [control]="typeControl" label="Tipo de curso"
+                        placeholder="Selecciona el tipo de curso" [options]="courseTypesOptions" [required]="true"
+                        size="sm">
+                    </app-select>
                 </div>
             </app-institutional-card>
 

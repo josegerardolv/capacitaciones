@@ -348,7 +348,7 @@ export class GroupListComponent implements OnInit {
                 location: formValue.location,
                 schedule: formValue.time, // "14:00"
                 limitStudents: Number(formValue.limitStudents),
-                inscriptionURL: formValue.inscriptionURL || 'https://example.com/pendiente',
+                inscriptionURL: formValue.inscriptionURL,
                 groupStartDate: formValue.date,
                 endInscriptionDate: formValue.linkExpiration || undefined, // Enviar undefined (Si el usuario no selecciona fecha)
                 course: this.currentCourse ? this.currentCourse.id : undefined

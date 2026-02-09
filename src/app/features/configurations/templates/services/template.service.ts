@@ -21,7 +21,7 @@ export class TemplateService {
         codeTemplate: 'TPL-001',
         paymentConcept: 'Concepto Pago 1',
         claveConcepto: 'CLV123',
-        conceptCosto: 0,
+        conceptCosto: 250,
         description: 'Descripción simulada del template',
         pageConfig: this.getDefaultPageConfig(),
         elements: [],

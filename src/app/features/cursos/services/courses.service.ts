@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { Course } from '../../../core/models/course.model';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from 'src/environments/environment';
 
 @Injectable({
@@ -14,8 +14,12 @@ export class CoursesService {
     constructor(private http: HttpClient) { }
 
     getCourses(): Observable<Course[]> {
-        return this.http.get<any[]>(`${this.apiUrl}/course`).pipe(
-            map(courses => courses.map(course => this.mapBackendCourseToFrontend(course)))
+        const params = new HttpParams().set('limit', '10').set('page', '1');
+        return this.http.get<any>(`${this.apiUrl}/course`, { params }).pipe(
+            map(response => {
+                const courses = Array.isArray(response) ? response : (response.data || response.items || response.results || []);
+                return courses.map((course: any) => this.mapBackendCourseToFrontend(course));
+            })
         );
     }
 
