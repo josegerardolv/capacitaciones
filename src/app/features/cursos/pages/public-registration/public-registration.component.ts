@@ -56,8 +56,23 @@ export class PublicRegistrationComponent implements OnInit {
     currentGroupId: number | null = null;
 
     ngOnInit() {
-        const id = this.route.snapshot.paramMap.get('id');
-        this.currentGroupId = id ? Number(id) : null;
+        const idParam = this.route.snapshot.paramMap.get('id');
+        this.currentGroupId = null;
+
+        if (idParam) {
+            // Lógica Simplificada:
+            // 1. Si es numérico puro, asumimos que es un ID de base de datos (Legacy/Desarrollo).
+            // 2. Si NO es numérico, asumimos que es el UID (UUID) que implementará el Backend.
+
+            if (!isNaN(Number(idParam))) {
+                this.currentGroupId = Number(idParam);
+            } else {
+                // TODO BACKEND: Cuando exista el endpoint 'GET /group/uid/:uid',
+                // aquí llamaremos a ese servicio usando 'idParam' como UUID.
+                console.warn('Recibido posible UID:', idParam, '- Esperando implementación Backend para buscar por UID.');
+                this.currentGroupId = null;
+            }
+        }
 
         if (this.currentGroupId) {
             this.loadGroupData(this.currentGroupId);

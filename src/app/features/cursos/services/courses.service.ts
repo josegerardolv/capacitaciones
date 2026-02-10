@@ -13,17 +13,20 @@ export class CoursesService {
 
     constructor(private http: HttpClient) { }
 
-    getCourses(): Observable<Course[]> {
-        const params = new HttpParams().set('limit', '10').set('page', '1');
-        return this.http.get<any>(`${this.apiUrl}/course`, { params }).pipe(
-            map(response => {
-                const courses = Array.isArray(response) ? response : (response.data || response.items || response.results || []);
-                return courses.map((course: any) => this.mapBackendCourseToFrontend(course));
-            })
-        );
+    getCourses(page: number = 1, limit: number = 10, search: string = ''): Observable<any> {
+        let params = new HttpParams()
+            .set('page', page.toString())
+            .set('limit', limit.toString());
+
+        if (search) {
+            params = params.set('name', search);
+            return this.http.get<any>(`${this.apiUrl}/course/search`, { params });
+        }
+
+        return this.http.get<any>(`${this.apiUrl}/course`, { params });
     }
 
-    private mapBackendCourseToFrontend(backendCourse: any): Course {
+    mapBackendCourseToFrontend(backendCourse: any): Course {
         return {
             ...backendCourse,
             // Conservamos únicamente esta línea porque corrige el bug visual de "Sin Tipo"

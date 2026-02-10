@@ -15,14 +15,21 @@ export class GroupsService {
 
     constructor(private http: HttpClient) { }
 
-    getGroups(): Observable<Group[]> {
-        const params = new HttpParams().set('limit', '10').set('page', '1');
-        return this.http.get<any>(`${this.apiUrl}/group`, { params }).pipe(
-            map(response => {
-                if (Array.isArray(response)) return response;
-                return response.data || response.items || response.results || [];
-            })
-        );
+    getGroups(page: number = 1, limit: number = 10, search: string = '', courseId?: number): Observable<any> {
+        let params = new HttpParams()
+            .set('page', page.toString())
+            .set('limit', limit.toString());
+
+        // Si hay búsqueda o filtro por curso, usamos el endpoint de búsqueda
+        if (search || courseId) {
+            if (search) params = params.set('name', search);
+            if (courseId) params = params.set('course', courseId.toString());
+
+            return this.http.get<any>(`${this.apiUrl}/group/search`, { params });
+        }
+
+        // Si no hay filtros, usamos el endpoint estándar
+        return this.http.get<any>(`${this.apiUrl}/group`, { params });
     }
 
     getPersonsByGroupId(groupId: number): Observable<Person[]> {

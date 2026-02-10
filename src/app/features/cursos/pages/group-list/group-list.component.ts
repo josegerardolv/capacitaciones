@@ -1,6 +1,6 @@
 import { Component, OnInit, ViewChild, TemplateRef } from '@angular/core';
-import { catchError, timeout } from 'rxjs/operators';
-import { of, forkJoin } from 'rxjs';
+import { timeout } from 'rxjs/operators';
+import { forkJoin } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormControl } from '@angular/forms';
@@ -60,8 +60,6 @@ export class GroupListComponent implements OnInit {
     @ViewChild('expirationDateTemplate', { static: true }) expirationDateTemplate!: TemplateRef<any>; // Template para Expiración
     @ViewChild('timeTemplate', { static: true }) timeTemplate!: TemplateRef<any>; // Template para Hora
 
-    allGroups: Group[] = [];
-    filteredGroups: Group[] = [];
     groups: Group[] = [];
     selectedGroups: Group[] = []; // Array de grupos seleccionados (para la tabla institucional)
 
@@ -183,14 +181,25 @@ export class GroupListComponent implements OnInit {
 
             // Cargar detalles del curso para obtener courseTypeId, LUEGO cargar grupos
             this.coursesService.getCourses().pipe(timeout(5000)).subscribe({
-                next: (courses) => {
-                    this.currentCourse = courses.find(c => c.id === +this.cursoId!);
+                next: (response) => {
+                    let courses: any[] = [];
+                    if (Array.isArray(response)) {
+                        courses = response;
+                    } else if (response.data) {
+                        courses = response.data;
+                    } else if (response.items) {
+                        courses = response.items;
+                    }
+
+                    this.currentCourse = courses.find((c: any) => c.id === +this.cursoId!);
                     this.loadGroups(); // Llamar DESPUÉS de establecer currentCourse
                 },
                 error: (err) => {
                     console.error('Error loading course details:', err);
                     this.tableConfig.loading = false;
                     this.notificationService.error('Error', 'No se pudieron cargar los detalles del curso.');
+                    // Aún así cargamos grupos, aunque sin contexto del curso
+                    this.loadGroups();
                 }
             });
         } else {
@@ -202,63 +211,79 @@ export class GroupListComponent implements OnInit {
 
 
 
+    // Variables de estado para búsqueda server-side
+    currentSearchTerm: string = '';
+
     loadGroups() {
         this.tableConfig.loading = true;
-        this.groupsService.getGroups().pipe(timeout(5000)).subscribe({
-            next: (data) => {
-                if (this.currentCourse) {
-                    // Filter handling both Number and Object (Backend returns object relation)
-                    this.allGroups = data.filter(g => {
-                        const gCourseId = (typeof g.course === 'object' && g.course !== null) ? (g.course as any).id : g.course;
-                        return gCourseId == this.currentCourse.id;
-                    });
-                } else {
-                    this.allGroups = data;
+
+        const page = this.paginationConfig.currentPage;
+        const limit = this.paginationConfig.pageSize;
+        const courseId = this.currentCourse ? this.currentCourse.id : undefined;
+
+        this.groupsService.getGroups(page, limit, this.currentSearchTerm, courseId)
+            .pipe(timeout(5000))
+            .subscribe({
+                next: (response: any) => {
+                    // 1. Extraer Lista de Items
+                    let items: Group[] = [];
+                    if (Array.isArray(response)) {
+                        items = response; // Fallback si el backend devuelve array directo
+                    } else if (response.data) {
+                        items = response.data;
+                    } else if (response.items) {
+                        items = response.items;
+                    }
+
+                    // 2. Extraer Metadatos (Total, Pages, etc)
+                    if (response.meta) {
+                        // FIX: Backend devuelve strings en 'page' y 'limit'. Aseguramos números.
+                        // Forzamos actualización de referencia para que el componente hijo detecte el cambio (ngOnChanges)
+                        this.paginationConfig = {
+                            ...this.paginationConfig,
+                            totalItems: Number(response.meta.total)
+                        };
+                    } else {
+                        // Fallback: Si no hay meta, asumimos que el total es lo que llegó (o desconocido)
+                        this.paginationConfig = {
+                            ...this.paginationConfig,
+                            totalItems: items.length
+                        };
+                    }
+
+                    // 3. (Opcional) Validación adicional
+                    // Los datos ya vienen filtrados por servidor, pero asignamos directamente.
+
+                    this.groups = items;
+                    this.tableConfig.loading = false;
+                },
+                error: (err) => {
+                    this.tableConfig.loading = false;
+                    this.notificationService.error('Error', 'No se pudieron cargar los grupos.');
+                    console.error('Error loading groups:', err);
                 }
-                this.selectedGroups = []; // Limpiar selección al recargar
-                this.filterData('');
-                this.tableConfig.loading = false;
-            },
-            error: (err) => {
-                this.tableConfig.loading = false;
-                this.notificationService.error('Error', 'No se pudieron cargar los grupos.');
-                console.error('Error loading groups:', err);
-            }
-        });
+            });
     }
 
     onPageChange(event: PageChangeEvent) {
+        // Actualizar config y recargar datos del servidor
         this.paginationConfig.currentPage = event.page;
         this.paginationConfig.pageSize = event.pageSize;
-        this.updatePaginatedData();
+        this.loadGroups();
     }
 
     filterData(query: string) {
-        const term = query.toLowerCase().trim();
-        if (!term) {
-            this.filteredGroups = [...this.allGroups];
-        } else {
-            this.filteredGroups = this.allGroups.filter(g =>
-                g.name.toLowerCase().includes(term) ||
-                (g.location || '').toLowerCase().includes(term) ||
-                (g.status || '').toLowerCase().includes(term)
-            );
+        const term = query.trim();
+        // Solo recargar si cambia el término
+        if (this.currentSearchTerm !== term) {
+            this.currentSearchTerm = term;
+            this.paginationConfig.currentPage = 1; // Reset a página 1 en nueva búsqueda
+            this.loadGroups();
         }
-        this.filteredGroups.sort((a, b) => {
-            const dateA = new Date(a.groupStartDate).getTime();
-            const dateB = new Date(b.groupStartDate).getTime();
-            return dateB - dateA; // Descending
-        });
-        this.paginationConfig.totalItems = this.filteredGroups.length;
-        this.updatePaginatedData();
     }
 
 
-    updatePaginatedData() {
-        const start = (this.paginationConfig.currentPage - 1) * this.paginationConfig.pageSize;
-        const end = start + this.paginationConfig.pageSize;
-        this.groups = this.filteredGroups.slice(start, end);
-    }
+
 
     // --- HELPERS PARA MODALES ---
     openConfirm(config: ConfirmationConfig, action: () => void) {
@@ -605,17 +630,32 @@ export class GroupListComponent implements OnInit {
 
             groupsToGenerate.forEach(group => {
                 if (!group.inscriptionURL) {
-                    // 1. Generar URL
-                    const newUrl = `${origin}/public/register/${group.id}`;
+                    // Validar existencia de UID (Requerimiento Backend)
+                    if (!group.uid) {
+                        console.warn(`Grupo ${group.id} no tiene UID. Esperando implementación en Backend.`);
+                        // TODO: Descomentar linea abajo cuando el backend envíe 'uid'
+                        // return; 
 
-                    // 2. Preparar payload de actualización
-                    // Clonamos el objeto para no modificar la referencia local antes de que el back confirme
-                    // Pero necesitamos enviar todos los campos o al menos los requeridos por PUT
-                    // En este punto, 'group' ya tiene datos nativos (groupStartDate, etc).
+                        // NOTA: Para no bloquear flujo mientras backend implementa,
+                        // el botón simplemente no generará nada o generará con ID (temporalmente desactivado por solicitud)
+                        return;
+                    }
+
+                    // Construcción de URL con UID real
+                    // El backend debe permitir 'localhost' o el dominio actual
+                    const origin = window.location.origin;
+                    const newUrl = `${origin}/public/register/${group.uid}`;
+
+                    // Construir payload solo con campos permitidos por el Backend
                     const payload = {
-                        ...group,
+                        name: group.name,
+                        location: group.location,
+                        schedule: group.schedule,
+                        limitStudents: group.limitStudents,
+                        groupStartDate: group.groupStartDate,
+                        endInscriptionDate: group.endInscriptionDate,
                         inscriptionURL: newUrl,
-                        status: 'Activo' // Activamos al generar URL
+                        course: (typeof group.course === 'object' && group.course !== null) ? (group.course as any).id : group.course
                     };
 
                     updateObservables.push(this.groupsService.updateGroup(group.id, payload));
