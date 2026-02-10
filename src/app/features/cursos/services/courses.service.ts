@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { Course } from '../../../core/models/course.model';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from 'src/environments/environment';
 
 @Injectable({
@@ -13,13 +13,20 @@ export class CoursesService {
 
     constructor(private http: HttpClient) { }
 
-    getCourses(): Observable<Course[]> {
-        return this.http.get<any[]>(`${this.apiUrl}/course`).pipe(
-            map(courses => courses.map(course => this.mapBackendCourseToFrontend(course)))
-        );
+    getCourses(page: number = 1, limit: number = 10, search: string = ''): Observable<any> {
+        let params = new HttpParams()
+            .set('page', page.toString())
+            .set('limit', limit.toString());
+
+        if (search) {
+            params = params.set('name', search);
+            return this.http.get<any>(`${this.apiUrl}/course/search`, { params });
+        }
+
+        return this.http.get<any>(`${this.apiUrl}/course`, { params });
     }
 
-    private mapBackendCourseToFrontend(backendCourse: any): Course {
+    mapBackendCourseToFrontend(backendCourse: any): Course {
         return {
             ...backendCourse,
             // Conservamos únicamente esta línea porque corrige el bug visual de "Sin Tipo"

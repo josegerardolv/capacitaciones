@@ -15,8 +15,21 @@ export class GroupsService {
 
     constructor(private http: HttpClient) { }
 
-    getGroups(): Observable<Group[]> {
-        return this.http.get<Group[]>(`${this.apiUrl}/group`);
+    getGroups(page: number = 1, limit: number = 10, search: string = '', courseId?: number): Observable<any> {
+        let params = new HttpParams()
+            .set('page', page.toString())
+            .set('limit', limit.toString());
+
+        // Si hay búsqueda o filtro por curso, usamos el endpoint de búsqueda
+        if (search || courseId) {
+            if (search) params = params.set('name', search);
+            if (courseId) params = params.set('course', courseId.toString());
+
+            return this.http.get<any>(`${this.apiUrl}/group/search`, { params });
+        }
+
+        // Si no hay filtros, usamos el endpoint estándar
+        return this.http.get<any>(`${this.apiUrl}/group`, { params });
     }
 
     getPersonsByGroupId(groupId: number): Observable<Person[]> {
@@ -28,8 +41,15 @@ export class GroupsService {
         return this.http.get<Person[]>(`${this.apiUrl}/group/${groupId}/persons`, { params });
     }
 
+    // Payload structure based on BACKEND_INTEGRATION.md
     registerPerson(groupId: number, data: Person): Observable<boolean> {
-        return this.http.post<any>(`${this.apiUrl}/group/${groupId}/persons`, data)
+        const payload = {
+            groupId: groupId,
+            person: data, // El objeto Person completo (incluyendo email, phone, etc.)
+            requestedDocuments: data.requestedDocuments || [] // Extraer documentos a nivel raíz
+        };
+
+        return this.http.post<any>(`${this.apiUrl}/group/${groupId}/persons`, payload)
             .pipe(map(() => true));
     }
 

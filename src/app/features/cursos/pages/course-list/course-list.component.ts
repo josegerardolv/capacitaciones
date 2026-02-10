@@ -176,27 +176,62 @@ export class CourseListComponent implements OnInit {
         return this.courseModalForm.get(name) as FormControl;
     }
 
+    // Variables de estado para búsqueda server-side
+    currentSearchTerm: string = '';
+
     loadCourses() {
         this.tableConfig.loading = true;
-        this.coursesService.getCourses().pipe(
+
+        const page = this.paginationConfig.currentPage;
+        const limit = this.paginationConfig.pageSize;
+        const term = this.currentSearchTerm;
+
+        this.coursesService.getCourses(page, limit, term).pipe(
             timeout(5000)
         ).subscribe({
-            next: (data) => {
-                // Mapear cursos para incluir el nombre del tipo
-                this.allCourses = data.map(course => { // Almacenar en allCourses
+            next: (response) => {
+                // 1. Extraer Lista de Items
+                let items: any[] = [];
+                if (Array.isArray(response)) {
+                    items = response;
+                } else if (response.data) {
+                    items = response.data;
+                } else if (response.items) {
+                    items = response.items;
+                }
+
+                // 2. Extraer Metadatos
+                if (response.meta) {
+                    this.paginationConfig = {
+                        ...this.paginationConfig,
+                        totalItems: Number(response.meta.total)
+                    };
+                } else {
+                    this.paginationConfig = {
+                        ...this.paginationConfig,
+                        totalItems: items.length
+                    };
+                }
+
+                // 3. Mapear A Objeto Frontend
+                this.courses = items.map(backendCourse => {
+                    const course = this.coursesService.mapBackendCourseToFrontend(backendCourse);
+                    // Agregar nombre del tipo de curso para la tabla
                     const type = this.courseTypeOptions.find(t => t.value === course.courseTypeId);
                     return {
                         ...course,
                         courseTypeName: type ? type.label : 'Sin Tipo'
                     };
                 });
-                this.filterData('');
+
+                // Ya no usamos allCourses vs filteredCourses para paginación local
+                // Asignamos directamente a la variable de tabla
                 this.tableConfig.loading = false;
             },
-            error: (err: HttpErrorResponse) => { // Tipar explícitamente err
+            error: (err: HttpErrorResponse) => {
                 this.tableConfig.loading = false;
                 this.notificationService.error('Error', 'No se pudieron cargar los cursos.');
-                console.error('Error loading courses:', err); // Agregar registro para depuración
+                console.error('Error loading courses:', err);
             }
         });
     }
@@ -204,28 +239,16 @@ export class CourseListComponent implements OnInit {
     onPageChange(event: PageChangeEvent) {
         this.paginationConfig.currentPage = event.page;
         this.paginationConfig.pageSize = event.pageSize;
-        this.updatePaginatedData();
+        this.loadCourses();
     }
 
     filterData(query: string) {
-        const term = query.toLowerCase().trim();
-        if (!term) {
-            this.filteredCourses = [...this.allCourses];
-        } else {
-            this.filteredCourses = this.allCourses.filter(c =>
-                c.name.toLowerCase().includes(term) ||
-                c.description.toLowerCase().includes(term) ||
-                (c as any).courseTypeName?.toLowerCase().includes(term)
-            );
+        const term = query.trim();
+        if (this.currentSearchTerm !== term) {
+            this.currentSearchTerm = term;
+            this.paginationConfig.currentPage = 1; // Reset a página 1 en nueva búsqueda
+            this.loadCourses();
         }
-        this.paginationConfig.totalItems = this.filteredCourses.length;
-        this.updatePaginatedData();
-    }
-
-    updatePaginatedData() {
-        const start = (this.paginationConfig.currentPage - 1) * this.paginationConfig.pageSize;
-        const end = start + this.paginationConfig.pageSize;
-        this.courses = this.filteredCourses.slice(start, end);
     }
 
     // --- HELPERS PARA MODALES ---

@@ -8,6 +8,7 @@ import { DomSanitizer } from '@angular/platform-browser';
 import { InstitutionalTableComponent, TableColumn, TableConfig } from '../../shared/components/institutional-table/institutional-table.component';
 import { GroupsService } from '../cursos/services/groups.service';
 import { CoursesService } from '../cursos/services/courses.service';
+import { Group } from '../../core/models/group.model';
 
 @Component({
     selector: 'app-dashboard',
@@ -127,27 +128,49 @@ export class DashboardComponent implements OnInit, OnDestroy {
             groups: this.groupsService.getGroups(),
             courses: this.coursesService.getCourses()
         }).subscribe({
-            next: ({ groups, courses }) => {
-                console.log('Datos cargados en Dashboard:', { groups, courses });
+            next: ({ groups: groupsResponse, courses: coursesResponse }) => {
+                console.log('Datos cargados en Dashboard:', { groupsResponse, coursesResponse });
 
-                // Actualizar métrica de grupos activos con el total real obtenido
+                // 1. Extraer Lista de Grupos (Manejo de Paginación vs Array Directo)
+                let groups: Group[] = [];
+                if (Array.isArray(groupsResponse)) {
+                    groups = groupsResponse;
+                } else if (groupsResponse.data && Array.isArray(groupsResponse.data)) {
+                    groups = groupsResponse.data;
+                } else if (groupsResponse.items && Array.isArray(groupsResponse.items)) {
+                    groups = groupsResponse.items;
+                }
+
+                // 2. Extraer Lista de Cursos (Manejo de Paginación vs Array Directo)
+                // CoursesService ahora devuelve metadatos también.
+                let courses: any[] = [];
+                if (Array.isArray(coursesResponse)) {
+                    courses = coursesResponse;
+                } else if (coursesResponse.data && Array.isArray(coursesResponse.data)) {
+                    courses = coursesResponse.data;
+                } else if (coursesResponse.items && Array.isArray(coursesResponse.items)) {
+                    courses = coursesResponse.items;
+                }
+
+                // 3. Actualizar Métricas (Usando datos reales del Backend)
                 this.calendarMetric = { ...this.calendarMetric, value: groups.length.toString() };
-
-                // Actualizar métrica de cursos impartidos (Total de cursos en catálogo)
                 this.graduationMetric = { ...this.graduationMetric, value: courses.length.toString() };
 
-                // Actualizar métrica de participantes (Suma de cupos/participantes de todos los grupos)
-                const totalParticipants = groups.reduce((sum, g) => sum + (Number((g as any).limitStudents) || 0), 0);
+                // Participantes: Suma de 'limitStudents' (o 'activeStudents' si existiera en el futuro)
+                const totalParticipants = groups.reduce((sum, g) => sum + (Number(g.limitStudents) || 0), 0);
                 this.personMetric = { ...this.personMetric, value: totalParticipants.toLocaleString() };
 
-                // Mapeamos los cursos al formato de la tabla del dashboard
-                // Nota: Usamos datos simulados para campos que aún no vienen en el modelo Course (como grupo o ubicación)
-                this.upcomingCourses = groups.map(g => {
-                    // Check if g.course is populated object or ID
+                // 3. Mapeo para Tabla (Manejo de Relaciones Dinámicas)
+                this.upcomingCourses = groups.map((g: Group) => {
+                    // Resolver Nombre del Curso
+                    // El backend puede enviar 'course' como Número (ID) o como Objeto completo.
                     let courseName = 'Curso no encontrado';
+
                     if (g.course && typeof g.course === 'object' && (g.course as any).name) {
+                        // Caso: Objeto poblado
                         courseName = (g.course as any).name;
                     } else {
+                        // Caso: ID, buscamos en el catálogo de Cursos cargado previamente
                         const courseFound = courses.find(c => c.id === Number(g.course));
                         if (courseFound) courseName = courseFound.name;
                     }
@@ -160,8 +183,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
                         date: g.groupStartDate,
                         time: g.schedule,
                         status: g.status
-                    }; 
-                }).slice(0, 5); // Mostramos solo los 5 más recientes
+                    };
+                }).slice(0, 5); // Mostrar solo los 5 más recientes
                 this.tableConfig.loading = false;
             },
             error: (err) => {

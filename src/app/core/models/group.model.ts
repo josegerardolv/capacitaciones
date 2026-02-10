@@ -2,6 +2,7 @@ export type CourseType = 'LICENCIA' | 'GENERICO' | 'CAPACITACION_ESCOLAR' | 'CUR
 
 export interface Group {
     id: number;
+    uid?: string; // UUID v4 from Backend
     name: string; // e.g., "A05"
     description?: string; // Opcional, puede mapearse a duración o notas internas
     duration: string; // e.g., "3 horas" - Requerido por diseño

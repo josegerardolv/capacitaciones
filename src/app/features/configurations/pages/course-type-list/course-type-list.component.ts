@@ -83,7 +83,7 @@ export class CourseTypeListComponent implements OnInit {
     this.tableColumns = [
       { key: 'name', label: 'Nombre', sortable: true, minWidth: '200px' },
       { key: 'description', label: 'Descripción', sortable: true, minWidth: '300px' },
-      { key: 'paymentType', label: 'Tipo', template: this.statusTemplate, align: 'center', minWidth: '150px' },
+      { key: 'type', label: 'Tipo', template: this.statusTemplate, align: 'center', minWidth: '150px' },
       { key: 'actions', label: 'Acciones', template: this.actionsTemplate, align: 'center', minWidth: '150px' }
     ];
   }

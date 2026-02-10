@@ -12,7 +12,35 @@ export class TemplateService {
 
   // ===== TEMPLATES =====
   getTemplates(): Observable<CertificateTemplate[]> {
-    return this.http.get<CertificateTemplate[]>(`${this.apiUrl}/templates`);
+    // TODO: ELIMINAR ESTE MOCK TEMPORAL CUANDO EL BACKEND ESTÉ LISTO
+    // Se usa 'of' para retornar datos simulados y no bloquear el desarrollo
+    return of([
+      {
+        id: 1,
+        name: 'Template Básico (Mock)',
+        codeTemplate: 'TPL-001',
+        paymentConcept: 'Concepto Pago 1',
+        claveConcepto: 'CLV123',
+        conceptCosto: 250,
+        description: 'Descripción simulada del template',
+        pageConfig: this.getDefaultPageConfig(),
+        elements: [],
+        variables: []
+      },
+      {
+        id: 2,
+        name: 'Template Gratuito (Mock)',
+        codeTemplate: 'TPL-FREE',
+        paymentConcept: 'Gratuito',
+        claveConcepto: 'FREE',
+        conceptCosto: 0,
+        description: 'Template sin costo para pruebas',
+        pageConfig: this.getDefaultPageConfig(),
+        elements: [],
+        variables: []
+      }
+    ]);
+    // return this.http.get<CertificateTemplate[]>(`${this.apiUrl}/templates`);
   }
 
   getTemplate(id: number): Observable<CertificateTemplate | undefined> {
@@ -37,7 +65,12 @@ export class TemplateService {
 
   // ===== CONCEPTOS =====
   getConcepts(): Observable<Concept[]> {
-    return this.http.get<Concept[]>(`${this.apiUrl}/concepts`);
+    // TODO: ELIMINAR ESTE MOCK TEMPORAL CUANDO EL BACKEND ESTÉ LISTO
+    return of([
+      { id: 1, concepto: 'Concepto Mock 1', clave: 'MOCK1', costo: 100, deprecated: false },
+      { id: 2, concepto: 'Concepto Mock 2', clave: 'MOCK2', costo: 200, deprecated: false }
+    ]);
+    // return this.http.get<Concept[]>(`${this.apiUrl}/concepts`);
   }
 
   searchConcepts(query: string): Observable<Concept[]> {

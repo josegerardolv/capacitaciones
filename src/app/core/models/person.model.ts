@@ -1,19 +1,19 @@
 export interface Person {
     id: number;
     name: string;
-    paternal_lastName?: string; // Apellido Paterno (Antes firstSurname)
-    maternal_lastName?: string; // Apellido Materno (Antes secondSurname)
+    paternal_lastName?: string;
+    maternal_lastName?: string;
     license: string;
     curp: string;
     status: 'Pendiente' | 'Aprobado' | 'No Aprobado';
-    requestTarjeton: boolean; // Anteriormente 'wantsTarjeton'
-    paymentStatus?: 'Pendiente' | 'Pagado'; // Estatus global de pago (Mantenido por compatibilidad)
+    requestTarjeton: boolean;
+    paymentStatus?: 'Pendiente' | 'Pagado'; // Estatus global de pago
     coursePaymentStatus?: 'Pendiente' | 'Pagado'; // Estatus de pago del Curso
-    sex?: 'Hombre' | 'Mujer' | 'H' | 'M'; // Agregado para consistencia con formulario
-    address?: string; // Agregado para consistencia con formulario
+    sex?: 'Hombre' | 'Mujer' | 'H' | 'M';
+    address?: string;
     phone?: string;
     email?: string;
-    nuc?: string; // Agregado para consistencia con solicitudes
+    nuc?: string;
     requestedDocuments?: string[]; // IDs de documentos seleccionados/obligatorios
-    paidDocumentIds?: string[]; // [NUEVO] IDs de documentos específicos ya pagados (Control de dependencias)
+    paidDocumentIds?: string[]; // IDs de documentos específicos ya pagados
 }
