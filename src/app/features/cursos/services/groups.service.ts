@@ -20,7 +20,8 @@ export class GroupsService {
             .set('page', page.toString())
             .set('limit', limit.toString());
 
-        // Si hay búsqueda o filtro por curso, usamos el endpoint de búsqueda
+        // FIX: El backend RECHAZA 'course' o 'name' en el endpoint /group con error 400.
+        // Por contrato (json.json), DEBEMOS usar /group/search si hay filtros.
         if (search || courseId) {
             if (search) params = params.set('name', search);
             if (courseId) params = params.set('course', courseId.toString());

@@ -36,12 +36,29 @@ export class MockCoursesService {
 
     constructor() { }
 
-    getCourses(): Observable<Course[]> {
+    getCourses(page: number = 1, limit: number = 10, search: string = '', courseTypeId?: number): Observable<any> {
+        // En el mock, podemos simplemente devolver el array, 
+        // pero el componente espera un objeto con 'data' o el array directo.
+        // Mantenemos el array directo ya que el componente lo soporta.
         return of([...this.courses]).pipe(delay(500));
     }
 
+    getCourseById(id: number): Observable<Course | undefined> {
+        const course = this.courses.find(c => c.id === id);
+        return of(course ? { ...course } : undefined).pipe(delay(300));
+    }
+
+    mapBackendCourseToFrontend(backendCourse: any): Course {
+        // En el mock los datos ya están en formato frontend,
+        // pero incluimos la lógica de normalización por si acaso.
+        return {
+            ...backendCourse,
+            courseTypeId: backendCourse.courseTypeId || backendCourse.courseType?.id
+        };
+    }
+
     createCourse(course: Omit<Course, 'id'>): Observable<Course> {
-        const newCourse = { ...course, id: this.generateNewId() };
+        const newCourse = { ...course, id: this.generateNewId() } as Course;
         this.courses.push(newCourse);
         return of(newCourse).pipe(delay(500));
     }

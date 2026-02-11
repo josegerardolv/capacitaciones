@@ -13,10 +13,14 @@ export class CoursesService {
 
     constructor(private http: HttpClient) { }
 
-    getCourses(page: number = 1, limit: number = 10, search: string = ''): Observable<any> {
+    getCourses(page: number = 1, limit: number = 10, search: string = '', courseTypeId?: number): Observable<any> {
         let params = new HttpParams()
             .set('page', page.toString())
             .set('limit', limit.toString());
+
+        if (courseTypeId) {
+            params = params.set('courseTypeId', courseTypeId.toString());
+        }
 
         if (search) {
             params = params.set('name', search);
@@ -24,6 +28,12 @@ export class CoursesService {
         }
 
         return this.http.get<any>(`${this.apiUrl}/course`, { params });
+    }
+
+    getCourseById(id: number): Observable<Course> {
+        return this.http.get<any>(`${this.apiUrl}/course/${id}`).pipe(
+            map(backendCourse => this.mapBackendCourseToFrontend(backendCourse))
+        );
     }
 
     mapBackendCourseToFrontend(backendCourse: any): Course {

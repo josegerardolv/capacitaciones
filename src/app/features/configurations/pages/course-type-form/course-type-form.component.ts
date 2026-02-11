@@ -21,6 +21,8 @@ import { CourseTypeConfig, RegistrationFieldConfig, DEFAULT_REGISTRATION_FIELDS,
 import { CertificateTemplate } from '../../../../core/models/template.model';
 import { TemplateService } from '../../templates/services/template.service';
 import { CourseTypeService } from '../../../../core/services/course-type.service';
+import { CoursesService } from '../../../cursos/services/courses.service';
+import { RequirementsService } from '../../../../core/services/requirements.service';
 import { SelectComponent } from '../../../../shared/components/inputs/select.component';
 
 @Component({
@@ -62,6 +64,9 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
     // Configuración de Campos
     registrationFields: RegistrationFieldConfig[] = [];
 
+    // Almacena los requisitos traídos del backend para mapeo
+    backendRequirements: any[] = [];
+
     // Configuración de Templates
     templates: CertificateTemplate[] = [];
     filteredTemplates: CertificateTemplate[] = [];
@@ -89,11 +94,11 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
 
     tableColumns: TableColumn[] = [
         { key: 'name', label: 'Código / Nombre', sortable: true, width: '25%' },
-        { key: 'description', label: 'Descripción', sortable: true, width: '25%' }, // Added description column
+        { key: 'description', label: 'Descripción', sortable: true, width: '25%' },
         { key: 'conceptName', label: 'Concepto de Pago', sortable: true, minWidth: '20%' },
-        { key: 'mandatory', label: 'Obligatorio', align: 'center', width: '100px' }, // Se asignará en ngAfterViewInit
-        { key: 'conceptCosto', label: 'Costo', sortable: true, width: '100px', align: 'right' }, // Se asignará en ngAfterViewInit
-        { key: 'actions', label: 'Vista Previa', align: 'center', width: '100px' } // Se asignará en ngAfterViewInit
+        { key: 'mandatory', label: 'Obligatorio', align: 'center', width: '100px' },
+        { key: 'conceptCosto', label: 'Costo', sortable: true, width: '100px', align: 'right' },
+        { key: 'actions', label: 'Vista Previa', align: 'center', width: '100px' }
     ];
 
     @ViewChild('actionsTemplate') actionsTemplate!: any;
@@ -110,24 +115,40 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
         private fb: FormBuilder,
         private templateService: TemplateService,
         private courseTypeService: CourseTypeService,
+        private coursesService: CoursesService, // Inyectamos CoursesService para verificar uso
+        private requirementsService: RequirementsService,
         private router: Router,
         private route: ActivatedRoute
     ) { }
 
     ngOnInit(): void {
         this.initForm();
-        this.initFields();
 
-        // Verificar Modo Edición
-        this.route.params.subscribe(params => {
-            if (params['id']) {
-                this.isEditMode = true;
-                this.courseTypeId = +params['id'];
-                this.breadcrumbItems[3].label = 'Editar Tipo de Curso';
-                this.loadCourseType(this.courseTypeId);
-            } else {
-                // Modo Nuevo: Cargar templates inmediatamente
-                this.loadTemplates();
+        // 1. Cargar Requisitos del Backend primero
+        this.requirementsService.getRequirements().subscribe({
+            next: (reqs) => {
+                this.backendRequirements = reqs;
+                this.initFields(); // Inicializar campos combinando Default + Backend
+
+                // 2. Revisar parámetros de ruta (Modo Edición)
+                this.route.params.subscribe(params => {
+                    if (params['id']) {
+                        this.isEditMode = true;
+                        this.courseTypeId = +params['id'];
+                        this.breadcrumbItems[3].label = 'Editar Tipo de Curso';
+                        this.loadCourseType(this.courseTypeId);
+                    } else {
+                        // Modo Nuevo: Cargar templates inmediatamente
+                        // (Los campos ya se inicializaron en initFields)
+                        this.loadTemplates();
+                    }
+                });
+            },
+            error: (err) => {
+                console.error('Error loading requirements:', err);
+                // Fallback: Inicializar con defaults si falla backend
+                this.initFields();
+                // Continuar flujo (aunque sin IDs dinámicos, el usuario podrá ver algo)
             }
         });
     }
@@ -163,7 +184,7 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
         this.form = this.fb.group({
             name: ['', Validators.required],
             description: ['', Validators.required],
-            type: ['', Validators.required] // Changed from category
+            type: ['', Validators.required]
         });
     }
 
@@ -172,37 +193,70 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
     }
 
     // Campos que SIEMPRE deben mostrarse (Visibilidad bloqueada en TRUE)
-    readonly VISIBILITY_LOCKED = ['name', 'paternal_lastName', 'maternal_lastName', 'curp', 'phone'];
+    readonly VISIBILITY_LOCKED = ['name', 'paternal_lastName', 'maternal_lastName', 'curp', 'phone', 'email'];
 
     // Campos que SIEMPRE deben ser obligatorios (Required bloqueado en TRUE)
-    readonly REQUIREMENT_LOCKED_MANDATORY = ['name', 'curp',];
+    readonly REQUIREMENT_LOCKED_MANDATORY = ['name', 'curp', 'email'];
 
     // Campos que SIEMPRE deben ser opcionales (Required bloqueado en FALSE - No se puede activar)
     readonly REQUIREMENT_LOCKED_OPTIONAL = ['paternal_lastName', 'maternal_lastName'];
 
     /**
-     * Inicializa los campos combinando la configuración por defecto
-     * con las reglas de negocio (bloqueos).
+     * Inicializa los campos combinando la configuración por defecto (Base)
+     * con los requisitos dinámicos del Backend.
      */
     initFields() {
-        this.registrationFields = JSON.parse(JSON.stringify(DEFAULT_REGISTRATION_FIELDS));
-        this.registrationFields.forEach(f => {
-            // Regla 1: Si la visibilidad está bloqueada, forzar visible = true
-            if (this.VISIBILITY_LOCKED.includes(f.fieldName)) {
-                f.visible = true;
-            } else {
-                f.visible = false;
-            }
+        // 1. Clonar los campos por defecto del MODELO (Ahora es la fuente de verdad)
+        this.registrationFields = DEFAULT_REGISTRATION_FIELDS.map(f => ({ ...f }));
 
-            // Regla 2: Bloqueo de Requerido (Mandatory vs Optional)
+        // 2. Mapear requisitos del Backend a los campos existentes o agregar nuevos
+        this.backendRequirements.forEach(req => {
+            // Normalizar nombre del backend para buscar coincidencia
+            let internalName = req.fieldName.toLowerCase()
+                .trim()
+                .replace(/á/g, 'a').replace(/é/g, 'e').replace(/í/g, 'i').replace(/ó/g, 'o').replace(/ú/g, 'u')
+                .replace(/ñ/g, 'n').replace(/\s+/g, '_');
+
+            // Caso especial: Correo (ID 7)
+            if (req.id === 7) internalName = 'email';
+            if (internalName.includes('telefono')) internalName = 'phone';
+            if (internalName.includes('direccion')) internalName = 'address';
+
+            // Buscar si ya existe en nuestra lista predefinida
+            const existingField = this.registrationFields.find(f =>
+                f.fieldName === internalName || f.label.toLowerCase() === req.fieldName.toLowerCase()
+            );
+
+            if (existingField) {
+                // Sincronizar ID del backend
+                existingField.requirementId = req.id;
+            } else {
+                // Si es un campo totalmente nuevo del backend (no está en el modelo), agregarlo
+                this.registrationFields.push({
+                    fieldName: internalName,
+                    label: req.fieldName,
+                    visible: false,
+                    required: false,
+                    requirementId: req.id
+                });
+            }
+        });
+
+        // 3. Aplicar Reglas de Bloqueo (Locks) sobre la lista final
+        this.registrationFields.forEach(f => {
+            if (this.isVisibilityLocked(f)) {
+                f.visible = true;
+            }
             if (this.REQUIREMENT_LOCKED_MANDATORY.includes(f.fieldName)) {
                 f.required = true;
             } else if (this.REQUIREMENT_LOCKED_OPTIONAL.includes(f.fieldName)) {
                 f.required = false;
             }
-            // Si no está bloqueado, respeta el default
         });
     }
+
+    // Flag para controlar bloqueo por uso
+    isLockedByUsage = false;
 
     loadCourseType(id: number) {
         this.isLoading = true;
@@ -212,6 +266,9 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
                     this.fillForm(data);
                     // Cargar templates DESPUÉS de cargar datos del curso para marcar correctamente seleccionados/obligatorios
                     this.loadTemplates(data);
+
+                    // Verificar si tiene cursos asignados para bloquear edición parcial
+                    this.checkCourseUsage(id);
                 } else {
                     this.router.navigate(['/config/config-cursos']);
                 }
@@ -224,12 +281,32 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
         });
     }
 
+    checkCourseUsage(id: number) {
+        // Consultar si existen cursos con este courseTypeId
+        // Usamos limit=1 porque solo nos interesa saber si existe alguno (>0)
+        this.coursesService.getCourses(1, 1, '', id).subscribe({
+            next: (resp) => {
+                let count = 0;
+                if (resp.meta && resp.meta.total) count = resp.meta.total;
+                else if (Array.isArray(resp)) count = resp.length;
+                else if (resp.data) count = resp.data.length; // Fallback structure
+
+                if (count > 0) {
+                    this.isLockedByUsage = true;
+                    this.form.disable(); // Bloquear formulario base (Nombre, Descripción, Tipo)
+                }
+            },
+            error: (err) => {
+                console.warn('No se pudo verificar el uso del tipo de curso', err);
+            }
+        });
+    }
+
     loadTemplates(existingData?: CourseTypeConfig) {
         this.tableConfig.loading = true;
         this.templateService.getTemplates().subscribe({
             next: (data) => {
                 this.templates = data;
-                // Ordenar por cantidad de uso descendente
                 this.templates.sort((a, b) => (b.usageCount || 0) - (a.usageCount || 0));
 
                 this.mandatoryDocuments.clear();
@@ -238,17 +315,13 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
                     const selectedIds = existingData.availableDocuments.map(d => d.templateId);
                     this.selectedTemplates = this.templates.filter(t => selectedIds.includes(t.id));
 
-                    // 1. Restaurar obligatoriedad de lo GUARDADO (Respeta decisión previa del usuario)
                     existingData.availableDocuments.forEach(doc => {
                         if (doc.isMandatory && doc.templateId) {
                             this.mandatoryDocuments.add(doc.templateId);
                         }
                     });
 
-                    // 2. Para los NO seleccionados (o nuevos en la lista), si son GRATUITOS, marcarlos como obligatorios por defecto.
-                    // Esto asegura que si el usuario decide seleccionarlos ahora, ya vengan marcados.
                     this.templates.forEach(t => {
-                        // Si NO está en los documentos guardados Y es gratuito -> Obligatorio por defecto
                         const isSaved = selectedIds.includes(t.id);
                         if (!isSaved && t.conceptCosto === 0) {
                             this.mandatoryDocuments.add(t.id);
@@ -262,9 +335,7 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
                     }
 
                 } else {
-                    // Modo Nuevo: Todos los gratuitos son obligatorios por defecto
                     this.selectedTemplates = [];
-                    // Por defecto: Los templates gratuitos son obligatorios
                     this.templates.forEach(t => {
                         if (t.conceptCosto === 0) {
                             this.mandatoryDocuments.add(t.id);
@@ -288,7 +359,6 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
     fillForm(data: CourseTypeConfig) {
         const existingType = data.type || (data as any).category;
 
-        // Si el tipo existente no está en las opciones, agregarlo para mostrarlo
         if (existingType && !this.courseTypesOptions.find(o => o.value === existingType)) {
             this.courseTypesOptions = [
                 ...this.courseTypesOptions,
@@ -303,38 +373,49 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
         });
 
         // Cargar configuración guardada
-        // El backend nos devuelve 'courseConfigField' con los IDs (requirementFieldPerson)
         const savedConfigFields = (data as any).courseConfigField || data.registrationFields;
 
         if (savedConfigFields) {
+            // Reiniciar estado visible/required de dinámicos antes de aplicar guardados
+            // (Manteniendo locks)
+            this.registrationFields.forEach(f => {
+                if (!this.isVisibilityLocked(f)) f.visible = false;
+                if (!this.isRequirementLocked(f)) f.required = false;
+            });
+
             savedConfigFields.forEach((savedField: any) => {
                 let match = null;
 
-                // 1. Intentar buscar por ID (Backend)
+                // 1. Prioridad: Buscar por ID (requirementFieldPerson)
+                // MANEJO ROBUSTO: Puede venir como número (ID) o como objeto anidado ({ id: 1, ... })
                 if (savedField.requirementFieldPerson) {
-                    match = this.registrationFields.find(f => f.requirementId === savedField.requirementFieldPerson);
+                    const reqId = typeof savedField.requirementFieldPerson === 'object'
+                        ? savedField.requirementFieldPerson.id
+                        : savedField.requirementFieldPerson;
+
+                    if (reqId) {
+                        match = this.registrationFields.find(f => f.requirementId === reqId);
+                    }
                 }
-                // 2. Fallback: Buscar por nombre (Frontend antiguo o cache)
+                // 2. Fallback: Buscar por nombre interno (fieldName)
                 else if (savedField.fieldName) {
                     match = this.registrationFields.find(f => f.fieldName === savedField.fieldName);
                 }
 
                 if (match) {
-                    // Si existe el ID en la respuesta, el campo es Visible
-                    const isVisible = savedField.visible !== undefined ? savedField.visible : true;
+                    const isVisible = savedField.visible !== undefined ? savedField.visible : true; // Si está guardado, implícitamente es visible
                     const isRequired = savedField.required;
 
-                    // Aplicar reglas de bloqueo (Business Rules)
                     if (this.isVisibilityLocked(match)) {
                         match.visible = true;
                     } else {
-                        match.visible = isVisible;
+                        match.visible = true; // Si vino del backend, es que estaba habilitado
                     }
 
-                    if (this.REQUIREMENT_LOCKED_MANDATORY.includes(match.fieldName)) {
-                        match.required = true;
-                    } else if (this.REQUIREMENT_LOCKED_OPTIONAL.includes(match.fieldName)) {
-                        match.required = false;
+                    if (this.isRequirementLocked(match)) {
+                        // Respetar lock
+                        if (this.REQUIREMENT_LOCKED_MANDATORY.includes(match.fieldName)) match.required = true;
+                        if (this.REQUIREMENT_LOCKED_OPTIONAL.includes(match.fieldName)) match.required = false;
                     } else {
                         match.required = isRequired;
                     }
@@ -372,8 +453,6 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
         this.displayedTemplates = this.filteredTemplates.slice(start, end);
     }
 
-    // Nueva lógica de validación para la vista
-
     isVisibilityLocked(field: RegistrationFieldConfig): boolean {
         return this.VISIBILITY_LOCKED.includes(field.fieldName);
     }
@@ -384,10 +463,16 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
     }
 
     toggleField(field: RegistrationFieldConfig) {
-        // Si la visibilidad está bloqueada, no hacer nada
         if (this.isVisibilityLocked(field)) {
             return;
         }
+
+        // Bloqueo 2: Si está bloqueado por uso (tiene cursos), NO se pueden quitar campos que ya estaban guardados
+        // Solo se permite AGREGAR (de false a true), no QUITAR (de true a false)
+        if (this.isLockedByUsage && field.visible && (field as any).wasSaved) {
+            return; // No hacer nada, no permitir desmarcar
+        }
+
         field.visible = !field.visible;
     }
 
@@ -396,6 +481,12 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
 
         // Si el requerimiento está bloqueado, no permitir cambios
         if (this.isRequirementLocked(field)) return;
+
+        // Bloqueo 2: Por Uso
+        // Interpretación: No modificar campos existentes.
+        if (this.isLockedByUsage && (field as any).wasSaved) {
+            return;
+        }
 
         field.required = !field.required;
     }
@@ -430,37 +521,26 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
 
         const formValue = this.form.value;
 
-        const availableDocuments: DocumentConfig[] = this.selectedTemplates.map(t => ({
-            id: `doc_temp_${t.id}`,
-            name: t.name,
-            description: t.description || t.name,
-            templateId: t.id,
-            cost: t.conceptCosto || 0,
-            hasCost: (t.conceptCosto || 0) > 0, // Asegurar compatibilidad
-            requiresApproval: false,
-            isMandatory: this.mandatoryDocuments.has(t.id)
-        }));
-
-        const hasPaidDocument = availableDocuments.some(doc => doc.cost !== undefined && doc.cost > 0);
-        const paymentType = hasPaidDocument ? 'De Paga' : 'Gratuito';
-
-        // Lógica manual recuperada (según solicitud del usuario)
+        // Construir courseConfigField
+        // SEGÚN INSTRUCCIÓN DE BACKEND (JSON):
+        // NO enviar 'id' (el backend reemplaza/recrea)
+        // NO enviar 'typeCourse' dentro del item
+        // Solo enviar { requirementFieldPerson: number, required: boolean }
         const courseConfigField = this.registrationFields
-            .filter(f => f.visible && f.requirementId)
+            .filter(f => f.visible && f.requirementId) // Solo visibles y con ID de requisito
             .map(f => ({
                 requirementFieldPerson: f.requirementId,
-                required: f.required,
-                typeCourse: this.courseTypeId
+                required: f.required
             }));
 
         const config: any = {
             name: formValue.name,
             description: formValue.description,
             type: formValue.type,
-            // paymentType: paymentType, // El backend calcula esto o no lo requiere en body? (Lo dejamos comentado si antes daba error, o lo enviamos si es necesario)
-            // Se envía courseConfigField directo
             courseConfigField: courseConfigField
         };
+
+        // NOTA: Se eliminó 'availableDocuments' del payload ya que el backend lo rechaza con 400.
 
         this.isLoading = true;
 
@@ -492,4 +572,5 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
     onCancel() {
         this.router.navigate(['/config/config-cursos']);
     }
+
 }

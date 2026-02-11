@@ -105,7 +105,8 @@ export class MockGroupsService {
 
     constructor() { }
 
-    getGroups(): Observable<Group[]> {
+    getGroups(page: number = 1, limit: number = 10, search: string = '', courseId?: number): Observable<any> {
+        // En el mock, podemos simplemente devolver el array,
         // Calculamos dinámicamente el número de solicitudes pendientes para cada grupo
         const groupsWithCounts = this.mockGroups.map(group => {
             const persons = this.mockPersons[group.id] || [];
