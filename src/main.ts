@@ -35,30 +35,30 @@ bootstrapApplication(AppComponent, {
     ),
     provideAnimations(),
     importProvidersFrom(MatIconModule),
-    // Provider conditional for Mock Auth
+    // Provider conditional for Mocking
     {
       provide: AuthService,
-      useClass: environment.useMockAuth ? MockAuthService : AuthService
+      useClass: environment.useMocks ? MockAuthService : AuthService
     },
     {
       provide: GroupsService,
-      useClass: environment.useMockAuth ? MockGroupsService : GroupsService
+      useClass: environment.useMocks ? MockGroupsService : GroupsService
     },
     {
       provide: CourseTypeService,
-      useClass: environment.useMockAuth ? MockCourseTypeService : CourseTypeService
+      useClass: environment.useMocks ? MockCourseTypeService : CourseTypeService
     },
     {
       provide: CoursesService,
-      useClass: environment.useMockAuth ? MockCoursesService : CoursesService
+      useClass: environment.useMocks ? MockCoursesService : CoursesService
     },
     {
       provide: TemplateService,
-      useClass: environment.useMockAuth ? MockTemplateService : TemplateService
+      useClass: environment.useMocks ? MockTemplateService : TemplateService
     },
     {
       provide: RequirementsService,
-      useClass: environment.useMockAuth ? MockRequirementsService : RequirementsService
+      useClass: environment.useMocks ? MockRequirementsService : RequirementsService
     }
   ]
 }).catch(err => console.error(err));

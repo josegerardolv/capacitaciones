@@ -126,17 +126,25 @@ export class GroupPersonsComponent implements OnInit {
     ) { }
 
     ngOnInit(): void {
-        console.log('GroupPersonsComponent initialized for Group:', this.groupId);
         // Leer parámetros de ruta para construir breadcrumbs y contexto
         this.cursoId = this.route.snapshot.paramMap.get('cursoId');
-        this.currentGroupId = this.route.snapshot.paramMap.get('groupId') || this.groupId || null;
+
+        // El paramMap puede tener 'groupId' como ID numérico o UUID según la ruta
+        const routeGroupId = this.route.snapshot.paramMap.get('groupId');
+        this.currentGroupId = routeGroupId || this.groupId || null;
+
+        console.log('[GroupPersons] Init:', {
+            cursoId: this.cursoId,
+            routeGroupId: routeGroupId,
+            inputGroupId: this.groupId,
+            resolvedGroupId: this.currentGroupId
+        });
 
         // Leer posible nombre del curso y del grupo pasados por query params
         const courseName = this.route.snapshot.queryParamMap.get('courseName');
         const groupLabel = this.route.snapshot.queryParamMap.get('groupLabel');
 
-        // Construir breadcrumbs según la jerarquía solicitada:
-        // Cursos (url) > Nombre del curso (SIN url) > Grupos (url al curso) > Nombre del grupo (SIN url) > Personas (SIN url)
+        // Construir breadcrumbs
         this.courseLabel = courseName ? courseName : (this.cursoId ? `Curso ${this.cursoId}` : 'Curso');
 
         this.breadcrumbItems = [
@@ -152,16 +160,13 @@ export class GroupPersonsComponent implements OnInit {
 
         if (groupLabel) {
             this.groupLabel = groupLabel;
-            this.breadcrumbItems.push({ label: this.groupLabel });
         } else if (this.currentGroupId) {
             this.groupLabel = `Grupo ${this.currentGroupId}`;
-            this.breadcrumbItems.push({ label: this.groupLabel });
         }
-
+        this.breadcrumbItems.push({ label: this.groupLabel || 'Detalle' });
         this.breadcrumbItems.push({ label: 'Personas' });
 
         this.initColumns();
-        this.loadGroupDetails();
         this.loadGroupDetails();
         this.loadPersons();
     }
@@ -255,22 +260,57 @@ export class GroupPersonsComponent implements OnInit {
         dynamicColumns.push({ key: 'name', label: 'Nombre Completo', template: this.nameTemplate });
 
         // 2. Mapear campos visibles de la configuración
-        // Campos que queremos ordernar/mostrar si son visibles
-        // EXCLUIMOS 'paternal_lastName' y 'maternal_lastName' porque ya van en nombre
-        const possibleFields = ['license', 'curp', 'nuc', 'phone', 'email', 'address'];
+        const addedFields = new Set<string>();
 
-        // Iteramos los campos registrados en el config
-        config.registrationFields.forEach((field: any) => {
-            if (field.visible && possibleFields.includes(field.fieldName)) {
-                // Evitamos duplicar si ya está (aunque el array base solo tiene name/firstSurname)
-                dynamicColumns.push({
-                    key: field.fieldName,
-                    label: field.label
-                });
+        if (config.courseConfigField) {
+            const idToFieldName: Record<number, string> = {
+                4: 'address', 5: 'nuc', 6: 'sex', 7: 'email',
+                8: 'phone', 9: 'license', 10: 'curp'
+            };
+            const idToLabel: Record<number, string> = {
+                4: 'Dirección', 5: 'NUC', 6: 'Sexo', 7: 'Email',
+                8: 'Teléfono', 9: 'Licencia', 10: 'CURP'
+            };
+
+            config.courseConfigField.forEach((cf: any) => {
+                const fieldName = idToFieldName[cf.requirementFieldPerson];
+                if (fieldName && fieldName !== 'name') {
+                    dynamicColumns.push({
+                        key: fieldName,
+                        label: idToLabel[cf.requirementFieldPerson] || fieldName
+                    });
+                    addedFields.add(fieldName);
+                }
+            });
+        } else if (config.registrationFields) {
+            // Legacy / Fallback
+            config.registrationFields.forEach((field: any) => {
+                if (field.visible && !['name', 'paternal_lastName', 'maternal_lastName'].includes(field.fieldName)) {
+                    dynamicColumns.push({
+                        key: field.fieldName,
+                        label: field.label
+                    });
+                    addedFields.add(field.fieldName);
+                }
+            });
+        }
+
+        // 3. ASEGURAR CAMPOS BASE (Email, Teléfono, CURP) si no vienen en dinámicos
+        // Por solicitud del usuario, estos son esenciales ahora.
+        const baseEssentials = [
+            { key: 'email', label: 'Email' },
+            { key: 'phone', label: 'Teléfono' },
+            { key: 'curp', label: 'CURP' }
+        ];
+
+        baseEssentials.forEach(base => {
+            if (!addedFields.has(base.key)) {
+                dynamicColumns.push({ key: base.key, label: base.label });
+                addedFields.add(base.key);
             }
         });
 
-        // 3. Columnas fijas de sistema al final
+        // 4. Columnas fijas de sistema al final
         dynamicColumns.push({ key: 'status', label: 'Estatus', template: this.statusTemplate, align: 'center' });
         dynamicColumns.push({ key: 'actions', label: 'Acciones', template: this.actionsTemplate, align: 'center' });
 

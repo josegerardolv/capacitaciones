@@ -10,5 +10,5 @@ export const environment = {
     revokeUrl: 'https://capacitacion.p1.ws.semovi.dev/oauth/revoke',
     introspectUrl: 'https://capacitacion.p1.ws.semovi.dev/oauth/introspect'
   },
-  useMockAuth: false
+  useMocks: false
 };

@@ -11,6 +11,8 @@ import { InstitutionalCardComponent } from '../../../../shared/components/instit
 import { BreadcrumbComponent } from '../../../../shared/components/breadcrumb/breadcrumb.component';
 import { BreadcrumbItem } from '../../../../shared/components/breadcrumb/breadcrumb.model';
 import { UniversalIconComponent } from '../../../../shared/components/universal-icon/universal-icon.component';
+import { LicenseSearchModalComponent } from '../../components/modals/license-search-modal/license-search-modal.component';
+import { Person } from '../../../../core/models/person.model';
 
 import { CourseType } from '../../../../core/models/group.model';
 import { CourseTypeService } from '../../../../core/services/course-type.service';
@@ -27,7 +29,8 @@ import { CourseTypeConfig, DocumentConfig } from '../../../../core/models/course
         InstitutionalCardComponent,
         BreadcrumbComponent,
         UniversalIconComponent,
-        DocumentSelectionModalComponent
+        DocumentSelectionModalComponent,
+        LicenseSearchModalComponent
     ],
     templateUrl: './person-registration.component.html'
 })
@@ -38,10 +41,12 @@ export class PersonRegistrationComponent implements OnInit {
     breadcrumbItems: BreadcrumbItem[] = [];
     prefilledData: any = null;
 
-    // Configuración de campos del formulario
+    // Configuración dinámica
     fieldsConfig: Record<string, { visible?: boolean; required?: boolean }> = {};
+    showForm = false;
+    isSearchModalOpen = false;
 
-    // Configuración del Modal
+    // Configuración del Modal Alerta
     isAlertOpen = false;
     alertConfig: AlertConfig = {
         title: '',
@@ -146,6 +151,34 @@ export class PersonRegistrationComponent implements OnInit {
 
         // Setup Documents
         this.currentAvailableDocuments = config.availableDocuments || [];
+
+        // B. Determinar si mostrar búsqueda (Si hay campo licencia Y nuc visibles, y NO hay datos precargados)
+        const hasLicense = this.fieldsConfig['license']?.visible;
+        const hasNuc = this.fieldsConfig['nuc']?.visible;
+
+        if (hasLicense && hasNuc && !this.prefilledData) {
+            console.log('[PersonRegistration] Requisito de Licencia + NUC detectado, abriendo buscador...');
+            this.isSearchModalOpen = true;
+            this.showForm = false;
+        } else {
+            console.log('[PersonRegistration] No se cumple la condición Licencia + NUC, saltando búsqueda...');
+            this.showForm = true;
+            this.isSearchModalOpen = false;
+        }
+    }
+
+    onPersonFound(person: Person) {
+        console.log('[PersonRegistration] Persona encontrada:', person);
+        this.prefilledData = { ...person };
+        this.showForm = true;
+        this.isSearchModalOpen = false;
+    }
+
+    onManualRegistration(license: string) {
+        console.log('[PersonRegistration] Registro manual iniciado con licencia:', license);
+        this.prefilledData = { license };
+        this.showForm = true;
+        this.isSearchModalOpen = false;
     }
 
     setupFallbackFields(courseType: string) {
