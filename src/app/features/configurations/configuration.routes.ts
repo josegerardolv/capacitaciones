@@ -33,16 +33,6 @@ export const CONFIGURATION_ROUTES: Routes = [
         title: 'Configuración - Templates'
     },
     {
-        path: 'templates/editor',
-        loadComponent: () => import('./templates/pages/template-editor/template-editor.component').then(m => m.TemplateEditorComponent),
-        title: 'Configuración - Nuevo Template'
-    },
-    {
-        path: 'templates/editor/:id',
-        loadComponent: () => import('./templates/pages/template-editor/template-editor.component').then(m => m.TemplateEditorComponent),
-        title: 'Configuración - Editar Template'
-    },
-    {
         path: 'templates/preview/:id',
         loadComponent: () => import('./components/modals/template-preview-modal/template-preview-modal.component').then(m => m.TemplatePreviewModalComponent),
         title: 'Configuración - Vista Previa'
