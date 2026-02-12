@@ -10,7 +10,7 @@ import { Person } from '../../../../core/models/person.model';
 export class MockGroupsService {
 
     // Datos simulados: En producción esto vendrá de la API
-    private mockGroups: Group[] = [
+    private groups: Group[] = [
         {
             id: 1,
             name: 'G-CHOFERES-01',
@@ -20,30 +20,27 @@ export class MockGroupsService {
             schedule: '09:00',
             limitStudents: 40,
             endInscriptionDate: '2026-10-15',
-            inscriptionURL: 'http://localhost:4200/public/register/1',
             requests: 3,
             status: 'Activo',
-            // courseType removed
             courseTypeId: 1,
-            course: 1 // Relación con ID de curso
+            course: 1, // Curso 1
+            uuid: '550e8400-e29b-41d4-a716-446655440001'
         },
         {
             id: 2,
-            name: 'G-ESCOLAR-B',
+            name: 'G-EXPIRED-TEST',
             duration: '2 Horas',
-            location: 'Escuela Primaria Benito Juárez',
-            groupStartDate: '2026-10-20',
+            location: 'Oficina Virtual',
+            groupStartDate: '2026-02-01',
             schedule: '10:30',
             limitStudents: 100,
-            endInscriptionDate: '2026-10-20',
-            inscriptionURL: 'http://localhost:4200/public/register/2',
-            requests: 3,
+            endInscriptionDate: '2026-02-10', // Vencido
+            requests: 0,
             status: 'Activo',
-            // courseType removed
             courseTypeId: 2,
-            course: 2
+            course: 2, // Curso 2
+            uuid: 'exp-uuid-9999-vencido'
         },
-        // MOCK: Grupo Simple solicitado por usuario
         {
             id: 3,
             name: 'G-SIMPLE-01',
@@ -53,14 +50,12 @@ export class MockGroupsService {
             schedule: '09:00',
             limitStudents: 20,
             endInscriptionDate: '2026-12-01',
-            inscriptionURL: 'http://localhost:4200/public/register/3',
             requests: 5,
             status: 'Activo',
-            // courseType removed
             courseTypeId: 3,
-            course: 3
+            course: 3, // Curso 3
+            uuid: '550e8400-e29b-41d4-a716-446655440003'
         },
-        // MOCK: Grupo sin enlace para probar generación
         {
             id: 4,
             name: 'G-NUEVO-01',
@@ -70,12 +65,41 @@ export class MockGroupsService {
             schedule: '10:00',
             limitStudents: 30,
             endInscriptionDate: '2026-12-15',
-            inscriptionURL: '', // sin link
             requests: 0,
             status: 'Inactivo',
-            // courseType removed
             courseTypeId: 1,
-            course: 1
+            course: 1, // Curso 1
+            uuid: '' // Sin uuid para probar generación
+        },
+        {
+            id: 5,
+            name: 'G-TRANSPORTE-01',
+            duration: '3 Horas',
+            location: 'Aula 5',
+            groupStartDate: '2026-05-20',
+            schedule: '11:00',
+            limitStudents: 25,
+            endInscriptionDate: '2026-05-19',
+            requests: 2,
+            status: 'Activo',
+            courseTypeId: 4,
+            course: 4, // Curso 4
+            uuid: '' // Sin uuid para probar generación
+        },
+        {
+            id: 6,
+            name: 'G-ESCOLAR-01',
+            duration: '2 Horas',
+            location: 'Escuela Primaria Central',
+            groupStartDate: '2026-11-10',
+            schedule: '10:00',
+            limitStudents: 50,
+            endInscriptionDate: '2026-11-10',
+            requests: 0,
+            status: 'Activo',
+            courseTypeId: 2, // Educación Vial Escolar
+            course: 2,
+            uuid: 'vial-escolar-2026-valid'
         }
     ];
 
@@ -108,7 +132,7 @@ export class MockGroupsService {
     getGroups(page: number = 1, limit: number = 10, search: string = '', courseId?: number): Observable<any> {
         // En el mock, podemos simplemente devolver el array,
         // Calculamos dinámicamente el número de solicitudes pendientes para cada grupo
-        const groupsWithCounts = this.mockGroups.map(group => {
+        const groupsWithCounts = this.groups.map(group => {
             const persons = this.mockPersons[group.id] || [];
             const pendingRequests = persons.filter(d => d.status === 'Pendiente').length;
             return {
@@ -116,7 +140,33 @@ export class MockGroupsService {
                 requests: pendingRequests
             };
         });
-        return of(groupsWithCounts).pipe(delay(150));
+
+        // Aplicar filtros de búsqueda y curso si existen
+        let filtered = [...groupsWithCounts];
+        if (courseId) {
+            filtered = filtered.filter(g => g.course === Number(courseId));
+        }
+
+        if (search) {
+            filtered = filtered.filter(g =>
+                g.name.toLowerCase().includes(search.toLowerCase()) ||
+                g.location.toLowerCase().includes(search.toLowerCase())
+            );
+        }
+
+        const totalItems = filtered.length;
+        const start = (page - 1) * limit;
+        const end = start + limit;
+        const data = filtered.slice(start, end);
+
+        return of({
+            data: data,
+            meta: {
+                total: totalItems,
+                page: page,
+                limit: limit
+            }
+        }).pipe(delay(150));
     }
 
     getPersonsByGroupId(groupId: number): Observable<Person[]> {
@@ -153,16 +203,16 @@ export class MockGroupsService {
         });
 
         // Actualizar contador de solicitudes en el grupo localmente
-        const groupIndex = this.mockGroups.findIndex(g => g.id === groupId);
+        const groupIndex = this.groups.findIndex(g => g.id === groupId);
         if (groupIndex > -1) {
-            this.mockGroups[groupIndex].requests = (this.mockGroups[groupIndex].requests || 0) + 1;
+            this.groups[groupIndex].requests = (this.groups[groupIndex].requests || 0) + 1;
         }
 
         return of(true).pipe(delay(500));
     }
 
     deleteGroup(id: number): Observable<void> {
-        this.mockGroups = this.mockGroups.filter(g => g.id !== id);
+        this.groups = this.groups.filter(g => g.id !== id);
         return of(void 0).pipe(delay(200));
     }
 
@@ -191,22 +241,27 @@ export class MockGroupsService {
     }
 
     createGroup(group: Group): Observable<Group> {
-        const newId = Math.max(...this.mockGroups.map(g => g.id), 0) + 1;
+        const newId = Math.max(...this.groups.map(g => g.id), 0) + 1;
         const newGroup = { ...group, id: newId, requests: 0, status: 'Activo' as 'Activo' };
-        this.mockGroups.push(newGroup);
+        this.groups.push(newGroup);
         return of(newGroup).pipe(delay(200));
     }
 
     updateGroup(id: number, updatedGroup: Group): Observable<Group> {
-        const index = this.mockGroups.findIndex(g => g.id === id);
+        const index = this.groups.findIndex(g => g.id === id);
         if (index > -1) {
-            this.mockGroups[index] = { ...this.mockGroups[index], ...updatedGroup };
+            this.groups[index] = { ...this.groups[index], ...updatedGroup };
         }
-        return of(this.mockGroups[index]).pipe(delay(200));
+        return of(this.groups[index]).pipe(delay(200));
     }
 
     getGroupById(id: number): Observable<Group | undefined> {
-        const group = this.mockGroups.find(g => g.id === id);
+        const group = this.groups.find(g => g.id === id);
         return of(group).pipe(delay(100));
+    }
+
+    getGroupByUuid(uuid: string): Observable<Group> {
+        const group = this.groups.find(g => g.uuid === uuid);
+        return of(group!).pipe(delay(300));
     }
 }

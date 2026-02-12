@@ -21,6 +21,8 @@ import { CoursesService } from './app/features/cursos/services/courses.service';
 import { MockCoursesService } from './app/features/cursos/services/mocks/mock-courses.service';
 import { TemplateService } from './app/features/configurations/templates/services/template.service';
 import { MockTemplateService } from './app/features/configurations/templates/services/mocks/mock-template.service';
+import { RequirementsService } from './app/core/services/requirements.service';
+import { MockRequirementsService } from './app/core/services/mocks/mock-requirements.service';
 
 bootstrapApplication(AppComponent, {
   providers: [
@@ -53,6 +55,10 @@ bootstrapApplication(AppComponent, {
     {
       provide: TemplateService,
       useClass: environment.useMockAuth ? MockTemplateService : TemplateService
+    },
+    {
+      provide: RequirementsService,
+      useClass: environment.useMockAuth ? MockRequirementsService : RequirementsService
     }
   ]
 }).catch(err => console.error(err));

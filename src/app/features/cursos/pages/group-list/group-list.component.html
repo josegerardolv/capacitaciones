@@ -109,9 +109,9 @@
         </div>
 
         <div class="col-span-1">
-            <app-input-enhanced type="number" controlName="limitStudents" [control]="groupModalForm.get('limitStudents')"
-                label="Cantidad máxima de personas" placeholder="Ingresa la cantidad máxima de personas"
-                [required]="true">
+            <app-input-enhanced type="number" controlName="limitStudents"
+                [control]="groupModalForm.get('limitStudents')" label="Cantidad máxima de personas"
+                placeholder="Ingresa la cantidad máxima de personas" [required]="true">
             </app-input-enhanced>
         </div>
 
@@ -148,12 +148,15 @@
 <!-- Plantillas para columnas -->
 <ng-template #urlTemplate let-item>
     <div class="flex items-center justify-center">
-        <button *ngIf="item.inscriptionURL" (click)="copyUrl(item.inscriptionURL)"
-            class="text-gray-500 hover:text-gray-700 transition-colors p-1 rounded-full hover:bg-gray-100"
-            title="Copiar enlace">
-            <app-universal-icon name="link" type="material" class="w-5 h-5"></app-universal-icon>
+        <button *ngIf="getGroupUrl(item)" (click)="copyUrl(getGroupUrl(item))"
+            class="transition-colors p-1 rounded-full hover:bg-gray-100 flex items-center gap-1"
+            [ngClass]="isGroupExpired(item) ? 'text-red-400 hover:text-red-600' : 'text-gray-500 hover:text-gray-700'"
+            [title]="isGroupExpired(item) ? 'Enlace Vencido (Haz clic para copiar)' : 'Copiar enlace'">
+            <app-universal-icon [name]="isGroupExpired(item) ? 'link_off' : 'link'" type="material"
+                class="w-5 h-5"></app-universal-icon>
+            <span *ngIf="isGroupExpired(item)" class="text-[9px] font-bold uppercase">Vencido</span>
         </button>
-        <span *ngIf="!item.inscriptionURL" class="text-xs text-gray-400 italic">Sin enlace</span>
+        <span *ngIf="!getGroupUrl(item)" class="text-xs text-gray-400 italic">Sin enlace</span>
     </div>
 </ng-template>
 

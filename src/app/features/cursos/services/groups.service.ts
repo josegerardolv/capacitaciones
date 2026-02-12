@@ -20,17 +20,16 @@ export class GroupsService {
             .set('page', page.toString())
             .set('limit', limit.toString());
 
-        // FIX: El backend RECHAZA 'course' o 'name' en el endpoint /group con error 400.
-        // Por contrato (json.json), DEBEMOS usar /group/search si hay filtros.
-        if (search || courseId) {
-            if (search) params = params.set('name', search);
-            if (courseId) params = params.set('course', courseId.toString());
-
-            return this.http.get<any>(`${this.apiUrl}/group/search`, { params });
+        if (search) {
+            params = params.set('name', search);
         }
 
-        // Si no hay filtros, usamos el endpoint estándar
-        return this.http.get<any>(`${this.apiUrl}/group`, { params });
+        if (courseId) {
+            params = params.set('course', courseId.toString());
+        }
+
+        // Según Swagger, /group/search es el endpoint para "Listar y buscar grupos"
+        return this.http.get<any>(`${this.apiUrl}/group/search`, { params });
     }
 
     getPersonsByGroupId(groupId: number): Observable<Person[]> {
@@ -74,5 +73,9 @@ export class GroupsService {
 
     getGroupById(id: number): Observable<Group> {
         return this.http.get<Group>(`${this.apiUrl}/group/${id}`);
+    }
+
+    getGroupByUuid(uuid: string): Observable<Group> {
+        return this.http.get<Group>(`${this.apiUrl}/group/uuid/${uuid}`);
     }
 }

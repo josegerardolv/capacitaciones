@@ -2,7 +2,7 @@ export type CourseType = 'LICENCIA' | 'GENERICO' | 'CAPACITACION_ESCOLAR' | 'CUR
 
 export interface Group {
     id: number;
-    uid?: string; // UUID v4 from Backend
+    uuid?: string; // UUID v4 from Backend
     name: string; // e.g., "A05"
     description?: string; // Opcional, puede mapearse a duración o notas internas
     duration: string; // e.g., "3 horas" - Requerido por diseño
@@ -12,7 +12,7 @@ export interface Group {
     endInscriptionDate?: string; // Antes linkExpiration
     limitStudents: number;
     autoRegisterLimit?: number;
-    inscriptionURL: string;
+    inscriptionURL?: string;
     requests: number;
     status: 'Activo' | 'Inactivo';
     selected?: boolean;

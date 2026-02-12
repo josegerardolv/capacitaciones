@@ -140,21 +140,27 @@ export class PersonFormComponent implements OnInit {
     }
 
     isVisible(field: string): boolean {
-        // name and surnames are always visible
-        if (field === 'name' || field === 'paternal_lastName' || field === 'maternal_lastName') return true;
-        if (!this.fieldsConfig) return true;
+        // CAMPOS BASE: Siempre visibles (Tabla Person)
+        // Se agrega 'phone' por solicitud del usuario (siempre se muestra, no editable su visibilidad)
+        const baseFields = ['name', 'paternal_lastName', 'maternal_lastName', 'curp', 'email', 'phone'];
+        if (baseFields.includes(field)) return true;
+
+        if (!this.fieldsConfig) return false;
+
         const cfg = this.fieldsConfig[field];
-        return cfg && cfg.visible === false ? false : true;
+        return cfg?.visible === true;
     }
 
     isRequired(field: string): boolean {
-        if (!this.fieldsConfig) {
-            return field === 'name' || field === 'curp' || field === 'address' || field === 'sex';
-        }
+        // CAMPOS OBLIGATORIOS FIJOS: Solo Nombre, CURP y Email (Tabla Person)
+        // Apellidos y Teléfono se muestran siempre pero su llenado es opcional/configurable
+        const mandatoryBaseFields = ['name', 'curp', 'email'];
+        if (mandatoryBaseFields.includes(field)) return true;
+
+        if (!this.fieldsConfig) return false;
+
         const cfg = this.fieldsConfig[field];
-        if (cfg && typeof cfg.required !== 'undefined') return !!cfg.required;
-        // default requireds
-        return field === 'name' || field === 'curp' || field === 'address' || field === 'sex';
+        return cfg?.required === true;
     }
 
     onSubmit() {

@@ -57,51 +57,46 @@ export class PublicRegistrationComponent implements OnInit {
 
     ngOnInit() {
         const idParam = this.route.snapshot.paramMap.get('id');
-        this.currentGroupId = null;
 
         if (idParam) {
-            // Lógica Simplificada:
-            // 1. Si es numérico puro, asumimos que es un ID de base de datos (Legacy/Desarrollo).
-            // 2. Si NO es numérico, asumimos que es el UID (UUID) que implementará el Backend.
-
             if (!isNaN(Number(idParam))) {
-                this.currentGroupId = Number(idParam);
+                // Legacy: Buscar por ID
+                this.loadGroupData(Number(idParam), false);
             } else {
-                // TODO BACKEND: Cuando exista el endpoint 'GET /group/uid/:uid',
-                // aquí llamaremos a ese servicio usando 'idParam' como UUID.
-                console.warn('Recibido posible UID:', idParam, '- Esperando implementación Backend para buscar por UID.');
-                this.currentGroupId = null;
+                // Actual: Buscar por UUID
+                this.loadGroupData(idParam, true);
             }
-        }
-
-        if (this.currentGroupId) {
-            this.loadGroupData(this.currentGroupId);
         }
     }
 
-    loadGroupData(groupId: number) {
-        this.groupsService.getGroupById(groupId).subscribe(group => {
-            if (!group) {
-                this.router.navigate(['/404']);
-                return;
-            }
+    loadGroupData(identifier: number | string, isUuid: boolean) {
+        const request = isUuid
+            ? this.groupsService.getGroupByUuid(identifier as string)
+            : this.groupsService.getGroupById(identifier as number);
 
-            // 1. Actualizar Info del Header
-            this.groupInfo = {
-                courseName: group.name, // O el nombre del curso si tuvieramos la relación completa
-                groupName: group.name,
-                slotsAvailable: group.limitStudents - (group.requests || 0), // Calculo simple
-                deadline: this.calculateDeadline(group)
-            };
-            this.currentCourseType = 'GENERICO'; // Fixed fallback falta
+        request.subscribe({
+            next: (group) => {
+                if (!group) {
+                    this.router.navigate(['/404']);
+                    return;
+                }
 
-            // 2. Cargar Configuración del Tipo de Curso
-            if (group.courseTypeId) {
-                this.loadCourseTypeConfig(group.courseTypeId);
-            } else {
-                // Fallback para grupos legacy sin courseTypeId
-                this.setupLegacyFields('GENERICO');
-            }
+                // 1. Actualizar Info del Header
+                this.groupInfo = {
+                    courseName: group.name,
+                    groupName: group.name,
+                    slotsAvailable: group.limitStudents - (group.requests || 0),
+                    deadline: this.calculateDeadline(group)
+                };
+
+                // Determinar tipo de curso para campos dinámicos
+                if (group.courseTypeId) {
+                    this.loadCourseTypeConfig(group.courseTypeId);
+                } else {
+                    this.setupLegacyFields('GENERICO');
+                }
+            },
+            error: () => this.router.navigate(['/404'])
         });
     }
 
@@ -111,25 +106,47 @@ export class PublicRegistrationComponent implements OnInit {
                 // Update Course Name if we have the config name
                 this.groupInfo.courseName = config.name;
 
-                // A. Mapear campos de registro
-                this.fieldsConfig = {};
-                config.registrationFields.forEach(field => {
-                    this.fieldsConfig[field.fieldName] = {
-                        visible: field.visible,
-                        required: field.required
+                // A. Mapear campos de registro (Soporta nuevo courseConfigField y legacy registrationFields)
+                this.fieldsConfig = {
+                    // CAMPOS BASE: Siempre visibles. Nombre/CURP/Email son obligatorios. Apellidos/Teléfono son opcionales por defecto.
+                    'name': { visible: true, required: true },
+                    'paternal_lastName': { visible: true, required: false },
+                    'maternal_lastName': { visible: true, required: false },
+                    'curp': { visible: true, required: true },
+                    'email': { visible: true, required: true },
+                    'phone': { visible: true, required: false }
+                };
+
+                if (config.courseConfigField && config.courseConfigField.length > 0) {
+                    // Nuevo formato: Mapear IDs a nombres de campo
+                    const idToFieldName: Record<number, string> = {
+                        4: 'address', 5: 'nuc', 6: 'sex', 7: 'email',
+                        8: 'phone', 9: 'license', 10: 'curp'
                     };
-                });
 
-                // B. Guardar documentos disponibles para el modal
+                    config.courseConfigField.forEach((cf: any) => {
+                        const fieldName = idToFieldName[cf.requirementFieldPerson];
+                        if (fieldName) {
+                            if (['name', 'paternal_lastName', 'maternal_lastName', 'curp', 'email', 'phone'].includes(fieldName)) {
+                                // Solo actualizamos el required, la visibilidad ya está forzada a true arriba
+                                this.fieldsConfig[fieldName].required = cf.required;
+                            } else {
+                                // Campo totalmente dinámico (Dirección, NUC, etc.)
+                                this.fieldsConfig[fieldName] = { visible: true, required: cf.required };
+                            }
+                        }
+                    });
+                }
+
+                // B. Guardar documentos disponibles y determinar si mostrar búsqueda
                 this.availableDocuments = config.availableDocuments || [];
+                const licenseField = this.fieldsConfig['license'];
 
-                // C. Determinar si mostramos modal de búsqueda o formulario directo
-                const licenseField = config.registrationFields.find(f => f.fieldName === 'license');
                 if (licenseField && licenseField.visible) {
-                    this.isSearchModalOpen = true; // Abrir modal de búsqueda
+                    this.isSearchModalOpen = true;
                     this.showForm = false;
                 } else {
-                    this.showForm = true; // Mostrar formulario directo
+                    this.showForm = true;
                     this.isSearchModalOpen = false;
                 }
             }
@@ -139,26 +156,22 @@ export class PublicRegistrationComponent implements OnInit {
     isExpired = false;
 
     calculateDeadline(group: any): string {
-        if (!group.linkExpiration) return 'Sin vigencia';
+        // Soporte para endInscriptionDate (nuevo) o linkExpiration (legacy)
+        const expirationStr = group.endInscriptionDate || group.linkExpiration;
+        if (!expirationStr) return 'Sin vigencia';
 
-        const expirationDate = new Date(group.linkExpiration);
+        const expirationDate = new Date(expirationStr);
         const today = new Date();
-        // Reset time part for accurate date comparison
         today.setHours(0, 0, 0, 0);
-        // We'll treat expirationDate as end-of-day or strict date? Usually strict date comparison.
-        // Assuming linkExpiration string is YYYY-MM-DD
 
-        // Fix timezone offset issue by treating string as local or creating UTC
-        // Simple string comparison for 'YYYY-MM-DD' works if local time matches
-        // Better:
-        const exp = new Date(group.linkExpiration + 'T23:59:59');
+        // Ajuste para fin de día local
+        const exp = new Date(expirationStr + 'T23:59:59');
 
         if (today > exp) {
             this.isExpired = true;
             return 'Enlace Vencido';
         }
 
-        // Calculate days remaining
         const diffTime = Math.abs(exp.getTime() - today.getTime());
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         return `${diffDays} días restantes`;

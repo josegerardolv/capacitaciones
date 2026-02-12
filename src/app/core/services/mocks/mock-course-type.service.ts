@@ -16,76 +16,56 @@ export class MockCourseTypeService {
             description: 'Curso obligatorio para choferes de transporte público',
             status: 'Activo',
             paymentType: 'De Paga',
+            type: 'Licencia',
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
-            registrationFields: this.cloneDefaultsWithOverrides({
-                // Requiere todo: Licencia, NUC, CURP, Dirección...
-                license: { visible: true, required: true },
-                nuc: { visible: true, required: true },
-                curp: { visible: true, required: true },
-                address: { visible: true, required: true },
-                sex: { visible: true, required: true }
-            }),
+            registrationFields: [],
             availableDocuments: [
-                { id: 'doc_constancia', name: 'Constancia Básica', description: 'Template básico para constancias de participación', templateId: 1, cost: 473, requiresApproval: true, isMandatory: true }, // Obligatorio
-                { id: 'doc_tarjeton', name: 'Tarjetón de Identidad', description: 'Documento de identificación para personas', templateId: 4, cost: 473, requiresApproval: true, isMandatory: true }, // Obligatorio
-                { id: 'doc_manejo', name: 'Constancia de Curso de Manejo', description: 'Constancia específica para curso de manejo', templateId: 6, cost: 340, requiresApproval: true } // Opcional
+                { id: 'doc_constancia', name: 'Constancia Básica', description: 'Template básico contra participación', templateId: 1, cost: 473, requiresApproval: true, isMandatory: true },
+                { id: 'doc_tarjeton', name: 'Tarjetón de Identidad', description: 'Documento de identificación', templateId: 4, cost: 473, requiresApproval: true, isMandatory: true }
+            ],
+            // Dinámicos corregidos: Dirección(O), NUC(O), Sexo(L), Licencia(O). (O=Obligatorio, L=Libre/Opcional)
+            courseConfigField: [
+                { requirementFieldPerson: 4, required: true },  // Dirección
+                { requirementFieldPerson: 5, required: true },  // NUC (Obligatorio ahora)
+                { requirementFieldPerson: 6, required: false }, // Sexo (Opcional)
+                { requirementFieldPerson: 9, required: true }   // Licencia
             ]
-        },
+        } as any,
         {
             id: 2,
-            name: 'Capacitación Escolar',
-            description: 'Curso de educación vial para escuelas primarias',
+            name: 'Capacitacion Escolar',
+            description: 'Curso de educacion vial para escuelas primarias',
             status: 'Activo',
             paymentType: 'De Paga',
+            type: 'Curso',
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
-            registrationFields: this.cloneDefaultsWithOverrides({
-                // Predeterminados: Name, Surnames, Curp, Phone, Email
-                name: { visible: true, required: true },
-                paternal_lastName: { visible: true, required: true },
-                maternal_lastName: { visible: true, required: true },
-                curp: { visible: true, required: true }, // CORREGIDO: Visible y Obligatorio
-                sex: { visible: true, required: false }, // Visible pero Opcional
-
-                // Ocultos
-                license: { visible: false, required: false },
-                nuc: { visible: false, required: false },
-                address: { visible: false, required: false }
-            }),
+            registrationFields: [],
             availableDocuments: [
-                { id: 'doc_diploma', name: 'Diploma de Participación', description: 'Diploma general de participación', templateId: 5, cost: 0, requiresApproval: false, isMandatory: true }, // Gratuito -> Obligatorio
-                { id: 'doc_honor', name: 'Diploma de Honor', description: 'Diploma para alumnos destacados', templateId: 3, cost: 340, requiresApproval: true }
+                { id: 'doc_diploma', name: 'Diploma de Participación', description: 'Diploma general', templateId: 5, cost: 0, requiresApproval: false, isMandatory: true }
+            ],
+            courseConfigField: [
+                { requirementFieldPerson: 6, required: false } // Sexo (Dynamic in this mock because it's not base-base)
             ]
-        },
-        // MOCK: Curso Simple solicitado por usuario
+        } as any,
         {
             id: 3,
             name: 'Curso Simple',
-            description: 'Curso básico solo para validar vista pública',
+            description: 'Curso basico solo para validar vista publica',
             status: 'Activo',
             paymentType: 'Gratuito',
+            type: 'Taller',
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
-            registrationFields: this.cloneDefaultsWithOverrides({
-                // Configuración según captura de pantalla del usuario
-                name: { visible: true, required: true },
-                paternal_lastName: { visible: true, required: true },
-                maternal_lastName: { visible: true, required: true }, // captura shows checked (Obligatorio)
-                curp: { visible: true, required: true }, // captura shows checked (Obligatorio)
-                phone: { visible: true, required: true }, // captura shows checked (Obligatorio)
-                email: { visible: true, required: true }, //    captura shows checked (Obligatorio)
-
-                // Deshabilitados en captura
-                license: { visible: false, required: false },
-                nuc: { visible: false, required: false },
-                address: { visible: false, required: false },
-                sex: { visible: false, required: false }
-            }),
+            registrationFields: [],
             availableDocuments: [
-                { id: 'doc_diploma_simple', name: 'Diploma de Participación', description: 'Diploma general de participación', templateId: 5, cost: 0, requiresApproval: false, isMandatory: true } // Gratuito -> Obligatorio
+                { id: 'doc_diploma_simple', name: 'Diploma de Participación', description: 'Diploma general', templateId: 5, cost: 0, requiresApproval: false, isMandatory: true }
+            ],
+            courseConfigField: [
+                { requirementFieldPerson: 8, required: true } // Teléfono
             ]
-        }
+        } as any
     ];
 
     constructor() { }

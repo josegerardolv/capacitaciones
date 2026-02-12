@@ -110,16 +110,42 @@ export class PersonRegistrationComponent implements OnInit {
     }
 
     setupFormFields(config: CourseTypeConfig) {
-        this.fieldsConfig = {};
-        config.registrationFields.forEach(field => {
-            this.fieldsConfig[field.fieldName] = {
-                visible: field.visible,
-                required: field.required
+        // A. Mapear campos de registro (Soporta nuevo courseConfigField y legacy registrationFields)
+        this.fieldsConfig = {
+            // CAMPOS BASE: Siempre visibles. Nombre/CURP/Email son obligatorios. Apellidos/Teléfono son opcionales por defecto.
+            'name': { visible: true, required: true },
+            'paternal_lastName': { visible: true, required: false },
+            'maternal_lastName': { visible: true, required: false },
+            'curp': { visible: true, required: true },
+            'email': { visible: true, required: true },
+            'phone': { visible: true, required: false }
+        };
+
+        if (config.courseConfigField && config.courseConfigField.length > 0) {
+            // Nuevo formato: Mapear IDs a nombres de campo
+            const idToFieldName: Record<number, string> = {
+                4: 'address', 5: 'nuc', 6: 'sex', 7: 'email',
+                8: 'phone', 9: 'license', 10: 'curp'
             };
-        });
+
+            config.courseConfigField.forEach((cf: any) => {
+                const fieldName = idToFieldName[cf.requirementFieldPerson];
+                // Si es un campo base que viene en dinámicos (como phone/email/curp), 
+                // actualizamos su estado de "required" según lo que diga el back/config.
+                if (fieldName) {
+                    if (['name', 'paternal_lastName', 'maternal_lastName', 'curp', 'email', 'phone'].includes(fieldName)) {
+                        // Solo actualizamos el required, la visibilidad ya está forzada a true arriba
+                        this.fieldsConfig![fieldName].required = cf.required;
+                    } else {
+                        // Campo totalmente dinámico (Dirección, NUC, etc.)
+                        this.fieldsConfig![fieldName] = { visible: true, required: cf.required };
+                    }
+                }
+            });
+        }
 
         // Setup Documents
-        this.currentAvailableDocuments = config.availableDocuments;
+        this.currentAvailableDocuments = config.availableDocuments || [];
     }
 
     setupFallbackFields(courseType: string) {

@@ -30,6 +30,12 @@ export interface CourseTypeConfig {
     // Configuración de Documentos Disponibles (Constancias)
     availableDocuments: DocumentConfig[];
 
+    // Nuevo formato de configuración del Backend
+    courseConfigField?: Array<{
+        requirementFieldPerson: number;
+        required: boolean;
+    }>;
+
     createdAt: string;
     updatedAt: string;
 }

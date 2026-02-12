@@ -140,12 +140,31 @@ export class GroupListComponent implements OnInit {
 
 
     // --- HELPERS PARA UI ---
+    getGroupUrl(group: Group): string {
+        if (group.inscriptionURL) return group.inscriptionURL;
+        if (group.uuid) {
+            // Re-calcular dinámicamente si no existe URL guardada
+            return `${window.location.origin}/public/register/${group.uuid}`;
+        }
+        return '';
+    }
+
+    isGroupExpired(group: Group): boolean {
+        if (!group.endInscriptionDate) return false;
+        // Normalizar fechas para comparar solo el día
+        const expirationDate = new Date(group.endInscriptionDate);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        // Si la fecha de expiración es estrictamente menor a hoy, está vencido
+        return expirationDate < today;
+    }
+
     get canGenerateUrl(): boolean {
         // Debe haber seleccionados
         if (this.selectedGroups.length === 0) return false;
-        // Solo se activa si TODOS los seleccionados NO tienen URL
-        // Si al menos uno tiene URL, se desactiva (para obligar al usuario a filtrar)
-        return this.selectedGroups.every(g => !g.inscriptionURL);
+        // Solo se activa si TODOS los seleccionados NO tienen URL Y NO tienen UUID
+        return this.selectedGroups.every(g => !g.inscriptionURL && !g.uuid);
     }
 
     get canExport(): boolean {
@@ -630,21 +649,15 @@ export class GroupListComponent implements OnInit {
 
             groupsToGenerate.forEach(group => {
                 if (!group.inscriptionURL) {
-                    // Validar existencia de UID (Requerimiento Backend)
-                    if (!group.uid) {
-                        console.warn(`Grupo ${group.id} no tiene UID. Esperando implementación en Backend.`);
-                        // TODO: Descomentar linea abajo cuando el backend envíe 'uid'
-                        // return; 
-
-                        // NOTA: Para no bloquear flujo mientras backend implementa,
-                        // el botón simplemente no generará nada o generará con ID (temporalmente desactivado por solicitud)
+                    // Validar existencia de UUID (Requerimiento Backend)
+                    if (!group.uuid) {
+                        console.warn(`Grupo ${group.id} no tiene UUID. No se puede generar link.`);
                         return;
                     }
 
-                    // Construcción de URL con UID real
-                    // El backend debe permitir 'localhost' o el dominio actual
+                    // Construcción de URL con UUID real
                     const origin = window.location.origin;
-                    const newUrl = `${origin}/public/register/${group.uid}`;
+                    const newUrl = `${origin}/public/register/${group.uuid}`;
 
                     // Construir payload solo con campos permitidos por el Backend
                     const payload = {
