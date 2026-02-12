@@ -14,6 +14,20 @@ export const routes: Routes = [
     loadComponent: () => import('./shared/components/login/login.component').then(m => m.LoginComponent)
   },
 
+  // --- EDITOR DE TEMPLATES (Sin Layout - Pantalla Completa) ---
+  {
+    path: 'config/templates/editor',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/configurations/templates/pages/template-editor/template-editor.component').then(m => m.TemplateEditorComponent),
+    title: 'Configuración - Nuevo Template'
+  },
+  {
+    path: 'config/templates/editor/:id',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/configurations/templates/pages/template-editor/template-editor.component').then(m => m.TemplateEditorComponent),
+    title: 'Configuración - Editar Template'
+  },
+
   // --- RUTA PÚBLICA DE REGISTRO (Sin Auth) ---
   {
     path: 'public',
