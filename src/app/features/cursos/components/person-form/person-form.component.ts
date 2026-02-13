@@ -141,7 +141,8 @@ export class PersonFormComponent implements OnInit {
 
     isVisible(field: string): boolean {
         // CAMPOS BASE: Siempre visibles (Tabla Person)
-        // Se agrega 'phone' por solicitud del usuario (siempre se muestra, no editable su visibilidad)
+        // Nombre, apellidos y CURP son el núcleo mínimo. 
+        // Email y Teléfono se consideran base para contacto, pero su visibilidad real se apoya en config.
         const baseFields = ['name', 'paternal_lastName', 'maternal_lastName', 'curp', 'email', 'phone'];
         if (baseFields.includes(field)) return true;
 

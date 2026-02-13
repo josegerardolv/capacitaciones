@@ -173,22 +173,32 @@ export class GroupPersonsComponent implements OnInit {
 
     loadGroupDetails() {
         if (!this.currentGroupId) return;
-        this.groupsService.getGroupById(+this.currentGroupId).subscribe(group => {
+        this.groupsService.getGroupById(+this.currentGroupId).subscribe((group: any) => {
             if (group) {
                 this.currentGroup = group;
                 // Actualizar etiqueta si está disponible
                 if (group.name) this.groupLabel = `Grupo ${group.name}`;
 
-                // Cargar configuración de columnas dinámica
-                if (group.courseTypeId) {
-                    this.courseTypeService.getCourseTypeById(group.courseTypeId).subscribe(config => {
-                        if (config) {
-                            this.updateColumns(config);
-                        }
-                    });
+                // 1. Priorizar configuración RICH (Ya poblada en el grupo)
+                const populatedConfig = group.course?.courseType;
+                if (populatedConfig && populatedConfig.courseConfigField && populatedConfig.courseConfigField.length > 0 && populatedConfig.courseConfigField[0].requirementFieldPerson) {
+                    console.log('[GroupPersons] Usando configuración rica del grupo...');
+                    this.updateColumns(populatedConfig);
                 } else {
-                    // Respaldo si no hay configuración
-                    this.initColumns();
+                    // 2. Fallback: Configuración SIMPLE
+                    const courseTypeId = group.courseTypeId ||
+                        (group.course && typeof group.course === 'object' ? group.course.courseType?.id : undefined) ||
+                        (group.course && typeof group.course === 'object' ? group.course.id : undefined);
+
+                    if (courseTypeId) {
+                        this.courseTypeService.getCourseTypeById(courseTypeId).subscribe(config => {
+                            if (config) {
+                                this.updateColumns(config);
+                            }
+                        });
+                    } else {
+                        this.initColumns();
+                    }
                 }
             }
         });
@@ -273,11 +283,14 @@ export class GroupPersonsComponent implements OnInit {
             };
 
             config.courseConfigField.forEach((cf: any) => {
-                const fieldName = idToFieldName[cf.requirementFieldPerson];
+                const fieldData = cf.requirementFieldPerson;
+                const fieldId = typeof fieldData === 'object' ? fieldData.id : fieldData;
+                const fieldName = idToFieldName[fieldId];
+
                 if (fieldName && fieldName !== 'name') {
                     dynamicColumns.push({
                         key: fieldName,
-                        label: idToLabel[cf.requirementFieldPerson] || fieldName
+                        label: (typeof fieldData === 'object' ? fieldData.fieldName : idToLabel[fieldId]) || fieldName
                     });
                     addedFields.add(fieldName);
                 }
@@ -318,28 +331,37 @@ export class GroupPersonsComponent implements OnInit {
     }
 
     openNewPersonForm() {
-        // Verificar configuración del Tipo de Curso
-        if (this.currentGroup && this.currentGroup.courseTypeId) {
-            this.courseTypeService.getCourseTypeById(this.currentGroup.courseTypeId).subscribe(config => {
-                if (config) {
-                    // Buscar configuración del campo 'license'
-                    const licenseField = config.registrationFields.find(f => f.fieldName === 'license');
+        if (this.currentGroup) {
+            const group = this.currentGroup;
+            const courseTypeId = group.courseTypeId ||
+                (group.course && typeof group.course === 'object' ? (group.course as any).courseType?.id : undefined) ||
+                (group.course && typeof group.course === 'object' ? (group.course as any).id : undefined);
 
-                    // Si la licencia es visible, usamos el modal de búsqueda (flujo original)
-                    if (licenseField && licenseField.visible) {
-                        this.isSearchModalOpen = true;
+            if (courseTypeId) {
+                this.courseTypeService.getCourseTypeById(courseTypeId).subscribe(config => {
+                    if (config) {
+                        // Nueva lógica: Buscar IDs 9 (Licencia) o 5 (NUC)
+                        let needsSearch = false;
+                        if (config.courseConfigField) {
+                            needsSearch = config.courseConfigField.some((cf: any) => {
+                                const id = typeof cf.requirementFieldPerson === 'object' ? cf.requirementFieldPerson.id : cf.requirementFieldPerson;
+                                return id === 9 || id === 5;
+                            });
+                        }
+
+                        if (needsSearch) {
+                            this.isSearchModalOpen = true;
+                        } else {
+                            this.router.navigate(['nuevo'], { relativeTo: this.route });
+                        }
                     } else {
-                        // Si NO es visible, saltamos la búsqueda y vamos directo al formulario manual
-                        console.log('Licencia no requerida para este curso, saltando búsqueda...');
-                        this.router.navigate(['nuevo'], { relativeTo: this.route });
+                        this.isSearchModalOpen = true;
                     }
-                } else {
-                    // Respaldo si no hay config
-                    this.isSearchModalOpen = true;
-                }
-            });
+                });
+            } else {
+                this.isSearchModalOpen = true;
+            }
         } else {
-            // Respaldo si no hay grupo cargado
             this.isSearchModalOpen = true;
         }
     }

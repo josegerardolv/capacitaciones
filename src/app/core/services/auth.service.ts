@@ -185,29 +185,28 @@ export class AuthService {
           const roleName = roleMapping[response.user.rol] || 'user';
           const userId = response.user.usuario_id.toString();
 
-          // Construir usuario fallback seguro
+          // Extraer nombres reales si el backend los envía
+          const fullName = response.user.persona_nombre || response.user.usuario?.split('@')[0].toUpperCase() || 'USUARIO';
+          const areaName = response.user.modulo_nombre || 'General';
+
+          // Construir usuario basado en la nueva estructura del Backend
           const user: User = {
             id: userId,
-            username: credentials.username, // Usar el email/username del input como fallback
-            email: credentials.username,
-            name: credentials.username.split('@')[0].toUpperCase(), // Nombre temporal
+            username: response.user.usuario,
+            email: response.user.usuario,
+            name: fullName,
             role: roleName,
             role_id: response.user.rol.toString(),
-            // --- INICIO: DATOS TEMPORALES (ELIMINAR AL RECIBIR DATOS REALES DE BACKEND) ---
-            // Estos datos se generan manualmente porque el endpoint /auth/login aun no devuelve el objeto 'person'
             person: {
-              id: userId,
-              first_name: 'Usuario',
-              paternal_lastName: 'Sistema',
-              maternal_lastName: '',
-              email: credentials.username,
-              area: { id: '1', name: 'General' },
-              instalacion: { id: '1', name: 'General' }
+              id: response.user.persona?.toString() || userId,
+              first_name: fullName,
+              paternal_lastName: '',
+              email: response.user.usuario,
+              area: { id: response.user.area?.toString() || '1', name: areaName },
+              instalacion: { id: response.user.modulo?.toString() || '1', name: areaName }
             },
-            area: { id: '1', name: 'General' },
-            instalacion: { id: '1', name: 'General' }
-            // --- FIN: DATOS TEMPORALES ---
-
+            area: { id: response.user.area?.toString() || '1', name: areaName },
+            instalacion: { id: response.user.modulo?.toString() || '1', name: areaName }
           };
 
           this.setUser(user);

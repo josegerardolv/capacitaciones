@@ -82,7 +82,15 @@ export class MockAuthService {
             data: {
                 access_token: 'mock_token_' + Date.now(),
                 refresh_token: 'mock_refresh_' + Date.now(),
-                user: mockUser,
+                user: {
+                    ...mockUser,
+                    // Simular campos del nuevo formato para pruebas
+                    usuario: credentials.username,
+                    persona_nombre: name,
+                    modulo_nombre: 'MÓDULO DE PRUEBA CENTRAL',
+                    area: '1',
+                    modulo: '1'
+                },
                 expires_in: 3600
             }
         }).pipe(delay(800)); // Simulate network delay

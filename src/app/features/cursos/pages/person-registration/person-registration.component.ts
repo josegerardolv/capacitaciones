@@ -16,7 +16,7 @@ import { Person } from '../../../../core/models/person.model';
 
 import { CourseType } from '../../../../core/models/group.model';
 import { CourseTypeService } from '../../../../core/services/course-type.service';
-import { CourseTypeConfig, DocumentConfig } from '../../../../core/models/course-type-config.model';
+import { CourseTypeConfig, DocumentConfig, RegistrationFieldConfig } from '../../../../core/models/course-type-config.model';
 
 @Component({
     selector: 'app-person-registration',
@@ -42,7 +42,7 @@ export class PersonRegistrationComponent implements OnInit {
     prefilledData: any = null;
 
     // Configuración dinámica
-    fieldsConfig: Record<string, { visible?: boolean; required?: boolean }> = {};
+    fieldsConfig: Record<string, RegistrationFieldConfig> = {};
     showForm = false;
     isSearchModalOpen = false;
 
@@ -90,24 +90,34 @@ export class PersonRegistrationComponent implements OnInit {
         });
 
         if (this.groupId) {
-            this.groupsService.getGroupById(+this.groupId).subscribe((group: Group | undefined) => {
+            this.groupsService.getGroupById(+this.groupId).subscribe((group: any) => {
                 if (group) {
-                    // Fallback to a default or derive from courseTypeId if needed
-                    this.currentCourseType = 'GENERICO'; // Fixed fallback since 'courseType' string is removed from model
+                    this.currentCourseType = 'GENERICO';
 
-                    // NEW DYNAMIC LOGIC
-                    if (group.courseTypeId) {
-                        this.courseTypeService.getCourseTypeById(group.courseTypeId).subscribe(config => {
-                            if (config) {
-                                this.setupFormFields(config);
-                            } else {
-                                // Fallback if config not found but we have type string
-                                this.setupFallbackFields('GENERICO');
-                            }
-                        });
+                    // 1. INTENTAR USAR CONFIGURACIÓN YA POBLADA (RICH)
+                    // Si el grupo ya trae el courseConfigField con relaciones, lo usamos de inmediato.
+                    const populatedConfig = group.course?.courseType;
+
+                    if (populatedConfig && populatedConfig.courseConfigField && populatedConfig.courseConfigField.length > 0 && populatedConfig.courseConfigField[0].requirementFieldPerson) {
+                        console.log('[PersonRegistration] Usando configuración rica del grupo...');
+                        this.setupFormFields(populatedConfig);
                     } else {
-                        // Fallback logic
-                        this.setupFallbackFields('GENERICO');
+                        // 2. FALLBACK: CONSULTA DINÁMICA (Si viene incompleto o shallow)
+                        const courseTypeId = group.courseTypeId ||
+                            (group.course && typeof group.course === 'object' ? group.course.courseType?.id : undefined) ||
+                            (group.course && typeof group.course === 'object' ? group.course.id : undefined);
+
+                        if (courseTypeId) {
+                            this.courseTypeService.getCourseTypeById(courseTypeId).subscribe(config => {
+                                if (config) {
+                                    this.setupFormFields(config);
+                                } else {
+                                    this.setupFallbackFields('GENERICO');
+                                }
+                            });
+                        } else {
+                            this.setupFallbackFields('GENERICO');
+                        }
                     }
                 }
             });
@@ -117,13 +127,15 @@ export class PersonRegistrationComponent implements OnInit {
     setupFormFields(config: CourseTypeConfig) {
         // A. Mapear campos de registro (Soporta nuevo courseConfigField y legacy registrationFields)
         this.fieldsConfig = {
-            // CAMPOS BASE: Siempre visibles. Nombre/CURP/Email son obligatorios. Apellidos/Teléfono son opcionales por defecto.
-            'name': { visible: true, required: true },
-            'paternal_lastName': { visible: true, required: false },
-            'maternal_lastName': { visible: true, required: false },
-            'curp': { visible: true, required: true },
-            'email': { visible: true, required: true },
-            'phone': { visible: true, required: false }
+            // CAMPOS BASE: Siempre visibles. Nombre/CURP/Email son obligatorios.
+            'name': { fieldName: 'name', label: 'Nombre', visible: true, required: true },
+            'paternal_lastName': { fieldName: 'paternal_lastName', label: 'Primer Apellido', visible: true, required: false },
+            'maternal_lastName': { fieldName: 'maternal_lastName', label: 'Segundo Apellido', visible: true, required: false },
+            'curp': { fieldName: 'curp', label: 'CURP', visible: true, required: true },
+            'email': { fieldName: 'email', label: 'Correo Electrónico', visible: true, required: true },
+            'phone': { fieldName: 'phone', label: 'Teléfono', visible: true, required: false },
+            'license': { fieldName: 'license', label: 'Licencia', visible: false, required: false },
+            'nuc': { fieldName: 'nuc', label: 'NUC', visible: false, required: false }
         };
 
         if (config.courseConfigField && config.courseConfigField.length > 0) {
@@ -134,34 +146,48 @@ export class PersonRegistrationComponent implements OnInit {
             };
 
             config.courseConfigField.forEach((cf: any) => {
-                const fieldName = idToFieldName[cf.requirementFieldPerson];
-                // Si es un campo base que viene en dinámicos (como phone/email/curp), 
-                // actualizamos su estado de "required" según lo que diga el back/config.
+                const fieldId = typeof cf.requirementFieldPerson === 'object'
+                    ? cf.requirementFieldPerson.id
+                    : cf.requirementFieldPerson;
+
+                const fieldName = idToFieldName[fieldId];
+
                 if (fieldName) {
-                    if (['name', 'paternal_lastName', 'maternal_lastName', 'curp', 'email', 'phone'].includes(fieldName)) {
-                        // Solo actualizamos el required, la visibilidad ya está forzada a true arriba
+                    if (this.fieldsConfig![fieldName]) {
+                        // Campo base o pre-configurado: habilitar y actualizar required
+                        this.fieldsConfig![fieldName].visible = true;
                         this.fieldsConfig![fieldName].required = cf.required;
+                        this.fieldsConfig![fieldName].courseConfigFieldId = cf.id;
                     } else {
-                        // Campo totalmente dinámico (Dirección, NUC, etc.)
-                        this.fieldsConfig![fieldName] = { visible: true, required: cf.required };
+                        // Campo dinámico: agregar completo
+                        this.fieldsConfig![fieldName] = {
+                            fieldName: fieldName,
+                            label: fieldName,
+                            visible: true,
+                            required: cf.required,
+                            courseConfigFieldId: cf.id
+                        };
                     }
                 }
             });
         }
 
-        // Setup Documents
-        this.currentAvailableDocuments = config.availableDocuments || [];
+        // B. Determinar si mostrar búsqueda
+        // Solo abrimos el buscador automáticamente si el curso EXPLÍCITAMENTE pide Licencia o NUC en su config
+        let needsLicenseSearch = false;
+        if (config.courseConfigField) {
+            needsLicenseSearch = config.courseConfigField.some((cf: any) => {
+                const id = typeof cf.requirementFieldPerson === 'object' ? cf.requirementFieldPerson.id : cf.requirementFieldPerson;
+                return id === 9 || id === 5; // 9 = Licencia, 5 = NUC
+            });
+        }
 
-        // B. Determinar si mostrar búsqueda (Si hay campo licencia Y nuc visibles, y NO hay datos precargados)
-        const hasLicense = this.fieldsConfig['license']?.visible;
-        const hasNuc = this.fieldsConfig['nuc']?.visible;
-
-        if (hasLicense && hasNuc && !this.prefilledData) {
-            console.log('[PersonRegistration] Requisito de Licencia + NUC detectado, abriendo buscador...');
+        if (needsLicenseSearch && !this.prefilledData) {
+            console.log('[PersonRegistration] Requisito de Licencia/NUC detectado en config, abriendo buscador...');
             this.isSearchModalOpen = true;
             this.showForm = false;
         } else {
-            console.log('[PersonRegistration] No se cumple la condición Licencia + NUC, saltando búsqueda...');
+            console.log('[PersonRegistration] No se requiere búsqueda por Licencia/NUC, saltando al formulario...');
             this.showForm = true;
             this.isSearchModalOpen = false;
         }
@@ -184,15 +210,15 @@ export class PersonRegistrationComponent implements OnInit {
     setupFallbackFields(courseType: string) {
         if (courseType === 'LICENCIA') {
             this.fieldsConfig = {
-                license: { visible: true, required: true },
-                nuc: { visible: true },
-                requestTarjeton: { visible: false }
+                license: { fieldName: 'license', label: 'Licencia', visible: true, required: true },
+                nuc: { fieldName: 'nuc', label: 'NUC', visible: true, required: false },
+                requestTarjeton: { fieldName: 'requestTarjeton', label: 'Tarjetón', visible: false, required: false }
             };
         } else {
             this.fieldsConfig = {
-                license: { visible: false, required: false },
-                nuc: { visible: false },
-                requestTarjeton: { visible: false }
+                license: { fieldName: 'license', label: 'Licencia', visible: false, required: false },
+                nuc: { fieldName: 'nuc', label: 'NUC', visible: false, required: false },
+                requestTarjeton: { fieldName: 'requestTarjeton', label: 'Tarjetón', visible: false, required: false }
             };
         }
     }
@@ -230,21 +256,52 @@ export class PersonRegistrationComponent implements OnInit {
     }
 
     finalizeRegistration(personData: any) {
-        // Simulamos guardado exitoso
-        console.log('Guardando persona:', personData);
+        console.log('[PersonRegistration] Iniciando proceso de inscripción...', personData);
 
-        // 0. Guardamos en el servicio
-        const groupId = this.groupId ? +this.groupId : 1; // Fallback 1 si es null (no debería)
+        const groupId = this.groupId ? +this.groupId : 1;
 
-        this.notificationService.showInfo('Guardando', 'Procesando registro...');
+        // 1. SEPARAR DATOS: Person Table vs Dynamic Responses
+        // Columnas fijas en la tabla Person según el usuario
+        const personTableFields = ['name', 'paternal_lastName', 'maternal_lastName', 'curp', 'email', 'license', 'nuc'];
 
-        this.groupsService.registerPerson(groupId, personData).subscribe({
-            next: (success) => {
-                // Loading finished
+        const personDataForPayload: any = {};
+        const responses: any[] = [];
 
-                // 1. Preparamos el mensaje base (Siempre incluye el curso)
-                let message = `La persona <strong>${personData.name}</strong> ha sido registrada correctamente.<br><br>
-                            La línea de captura del <strong>Curso de Capacitación</strong> está lista.`;
+        // Mapear campos del formulario
+        Object.keys(personData).forEach(key => {
+            const value = personData[key];
+            if (personTableFields.includes(key)) {
+                // Va a la tabla Person
+                personDataForPayload[key] = value;
+            } else {
+                // Va a Responses si tiene un ID de configuración
+                const fieldConfig = this.fieldsConfig![key];
+                if (fieldConfig && fieldConfig.courseConfigFieldId) {
+                    responses.push({
+                        courseConfigFieldId: fieldConfig.courseConfigFieldId,
+                        value: value?.toString() || ''
+                    });
+                }
+            }
+        });
+
+        // Asegurar que isActive esté en la persona
+        personDataForPayload.isActive = true;
+
+        const enrollmentPayload = {
+            group: groupId,
+            isAcepted: false, // Default
+            person: personDataForPayload,
+            responses: responses
+        };
+
+        console.log('[PersonRegistration] Payload final para /enrollment:', enrollmentPayload);
+
+        this.notificationService.showInfo('Guardando', 'Procesando inscripción...');
+
+        this.groupsService.createEnrollment(enrollmentPayload).subscribe({
+            next: (response) => {
+                let message = `La persona <strong>${personData.name}</strong> ha sido inscrita correctamente.`;
 
                 // 2. Agregamos nota sobre Tarjetón si fue solicitado
                 if (personData.requestTarjeton) {

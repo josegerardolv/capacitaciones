@@ -1,6 +1,6 @@
 import { Component, OnInit, ViewChild, TemplateRef } from '@angular/core';
-import { timeout } from 'rxjs/operators';
-import { forkJoin } from 'rxjs';
+import { timeout, switchMap } from 'rxjs/operators';
+import { forkJoin, Observable, of } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormControl } from '@angular/forms';
@@ -161,10 +161,8 @@ export class GroupListComponent implements OnInit {
     }
 
     get canGenerateUrl(): boolean {
-        // Debe haber seleccionados
-        if (this.selectedGroups.length === 0) return false;
-        // Solo se activa si TODOS los seleccionados NO tienen URL Y NO tienen UUID
-        return this.selectedGroups.every(g => !g.inscriptionURL && !g.uuid);
+        // Habilitar si hay al menos uno seleccionado que NO tenga URL generada (ni guardada ni dinámica vía UUID)
+        return this.selectedGroups.length > 0 && this.selectedGroups.some(g => !this.getGroupUrl(g));
     }
 
     get canExport(): boolean {
@@ -342,17 +340,25 @@ export class GroupListComponent implements OnInit {
         let dateVal = '';
         let timeVal = '';
         if (group.groupStartDate) {
-            dateVal = group.groupStartDate.split('T')[0]; // Simple split since we store raw logic
+            dateVal = group.groupStartDate.split('T')[0];
         }
         if (group.schedule) {
             timeVal = group.schedule;
         }
 
+        // Mapear fecha de expiración si existe
+        let expirationVal = '';
+        if (group.endInscriptionDate) {
+            expirationVal = group.endInscriptionDate.split('T')[0];
+        }
+
         this.groupModalForm.patchValue({
-            ...group,
-            ...group,
+            name: group.name,
+            location: group.location,
+            limitStudents: group.limitStudents,
             date: dateVal,
-            time: timeVal
+            time: timeVal,
+            linkExpiration: expirationVal
         });
 
         // Initialize max date for form
@@ -392,7 +398,6 @@ export class GroupListComponent implements OnInit {
                 location: formValue.location,
                 schedule: formValue.time, // "14:00"
                 limitStudents: Number(formValue.limitStudents),
-                inscriptionURL: formValue.inscriptionURL,
                 groupStartDate: formValue.date,
                 endInscriptionDate: formValue.linkExpiration || undefined, // Enviar undefined (Si el usuario no selecciona fecha)
                 course: this.currentCourse ? this.currentCourse.id : undefined
@@ -417,15 +422,12 @@ export class GroupListComponent implements OnInit {
                 this.isSaving = false;
                 return;
             }
-            // Recuperar el grupo original para mantener datos que no están en el formulario (url, status)
-            const originalGroup = this.groups.find(g => g.id === this.editingGroupId);
 
             const payload = {
                 name: formValue.name,
                 location: formValue.location,
                 schedule: formValue.time, // "14:00"
                 limitStudents: Number(formValue.limitStudents),
-                inscriptionURL: originalGroup?.inscriptionURL || '',
                 groupStartDate: formValue.date,
                 endInscriptionDate: formValue.linkExpiration || undefined, // Send undefined
                 course: this.currentCourse ? this.currentCourse.id : undefined
@@ -645,53 +647,72 @@ export class GroupListComponent implements OnInit {
             confirmText: 'Generar',
             cancelText: 'Cancelar'
         }, () => {
-            const updateObservables: any[] = [];
+            this.tableConfig.loading = true;
 
-            groupsToGenerate.forEach(group => {
-                if (!group.inscriptionURL) {
-                    // Validar existencia de UUID (Requerimiento Backend)
-                    if (!group.uuid) {
-                        console.warn(`Grupo ${group.id} no tiene UUID. No se puede generar link.`);
-                        return;
-                    }
+            // Creamos un array de flujos encadenados: Generar UUID (si falta) -> Actualizar con URL
+            const updateObservables = groupsToGenerate.map(group => {
+                // Paso al backend: Si NO tiene uuid, lo generamos primero
+                let uuidAction$: Observable<any> = of({ uuid: group.uuid });
 
-                    // Construcción de URL con UUID real
-                    const origin = window.location.origin;
-                    const newUrl = `${origin}/public/register/${group.uuid}`;
-
-                    // Construir payload solo con campos permitidos por el Backend
-                    const payload = {
-                        name: group.name,
-                        location: group.location,
-                        schedule: group.schedule,
-                        limitStudents: group.limitStudents,
-                        groupStartDate: group.groupStartDate,
-                        endInscriptionDate: group.endInscriptionDate,
-                        inscriptionURL: newUrl,
-                        course: (typeof group.course === 'object' && group.course !== null) ? (group.course as any).id : group.course
-                    };
-
-                    updateObservables.push(this.groupsService.updateGroup(group.id, payload));
+                if (!group.uuid) {
+                    uuidAction$ = this.groupsService.generateGroupUuid(group.id);
                 }
+
+                return uuidAction$.pipe(
+                    switchMap((response: any) => {
+                        // El backend suele devolver el objeto actualizado o un objeto con el nuevo uuid
+                        // Si no viene en el body, lo buscamos en el grupo original (si ya existía)
+                        const uuid = response?.uuid || response?.data?.uuid || group.uuid;
+
+                        if (!uuid) {
+                            throw new Error(`El servidor no proporcionó un código único para el grupo ${group.name}`);
+                        }
+
+                        // Construcción de URL con el UUID obtenido
+                        const origin = window.location.origin;
+                        const newUrl = `${origin}/public/register/${uuid}`;
+
+                        // Extraer ID del curso manejando objeto o número
+                        const courseId = (typeof group.course === 'object' && group.course !== null)
+                            ? (group.course as any).id
+                            : group.course;
+
+                        // Construir payload estándar según Swagger (SIN inscriptionURL)
+                        const payload: any = {
+                            name: group.name,
+                            location: group.location,
+                            schedule: group.schedule,
+                            limitStudents: group.limitStudents,
+                            groupStartDate: group.groupStartDate,
+                            endInscriptionDate: group.endInscriptionDate, // Ya viene asignado desde el modal si faltaba
+                            course: courseId
+                        };
+
+                        // Si el backend permite recibir el uuid en el body, lo incluimos
+                        if (uuid) payload.uuid = uuid;
+
+                        return this.groupsService.updateGroup(group.id, payload);
+                    })
+                );
             });
 
             if (updateObservables.length > 0) {
-                this.tableConfig.loading = true;
                 forkJoin(updateObservables).subscribe({
                     next: () => {
                         this.tableConfig.loading = false;
-                        this.notificationService.success('URL Generada', `Se generaron y guardaron ${updateObservables.length} enlaces correctamente.`);
+                        this.notificationService.success('URL Generada', `Se han activado ${updateObservables.length} enlaces correctamente.`);
                         this.selectedGroups = [];
-                        this.loadGroups(); // Recargar para ver cambios reales
+                        this.loadGroups();
                     },
                     error: (err) => {
                         this.tableConfig.loading = false;
-                        console.error('Error generating/saving URLs:', err);
-                        this.notificationService.error('Error', 'Ocurrió un error al guardar las URLs generadas.');
+                        console.error('Error in link generation chain:', err);
+                        this.notificationService.error('Error', 'No se pudieron generar los enlaces. Verifica la conexión con el servidor.');
                     }
                 });
             } else {
-                this.notificationService.warning('Advertencia', 'No se generaron URLs (posiblemente ya existían).');
+                this.tableConfig.loading = false;
+                this.notificationService.info('Información', 'No había grupos pendientes de generar enlace.');
             }
         });
     }
@@ -701,6 +722,25 @@ export class GroupListComponent implements OnInit {
         // Seleccionamos todo lo que venga del evento, sin filtrar.
         // La validación de acciones se hace en los getters canGenerateUrl/canExport
         this.selectedGroups = event.selectedItems;
+    }
+
+    /**
+     * Activa el UUID de un grupo usando el nuevo endpoint del backend
+     */
+    activateUuid(group: Group) {
+        this.tableConfig.loading = true;
+        this.groupsService.generateGroupUuid(group.id).subscribe({
+            next: (response) => {
+                this.tableConfig.loading = false;
+                this.notificationService.success('Código Generado', `Se ha generado el código único para el grupo ${group.name}.`);
+                this.loadGroups(); // Recargar para obtener el UUID real
+            },
+            error: (err) => {
+                this.tableConfig.loading = false;
+                console.error('Error personalizando UUID:', err);
+                this.notificationService.error('Error', 'No se pudo generar el código único del grupo.');
+            }
+        });
     }
 
     copyUrl(url: string) {

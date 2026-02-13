@@ -19,9 +19,16 @@ export interface User {
 export interface BackendLoginResponse {
   token: string;
   user: {
+    usuario: string;
     usuario_id: string | number;
     rol: number;
-    person?: Person; // Usamos la interfaz Person para obligar a que venga con esta estructura
+    aplicacion?: number;
+    area?: string | number;
+    modulo?: string | number;
+    modulo_nombre?: string;
+    persona?: string | number;
+    persona_nombre?: string;
+    nombre_aplicacion?: string;
   };
 }
 

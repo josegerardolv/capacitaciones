@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
+import { Observable, of, throwError } from 'rxjs';
 import { delay } from 'rxjs/operators';
 import { Group } from '../../../../core/models/group.model';
 import { Person } from '../../../../core/models/person.model';
@@ -257,6 +257,22 @@ export class MockGroupsService {
             this.groups[index] = { ...this.groups[index], ...updatedGroup };
         }
         return of(this.groups[index]).pipe(delay(200));
+    }
+
+    generateGroupUuid(id: number): Observable<any> {
+        const index = this.groups.findIndex(g => g.id === id);
+        if (index > -1) {
+            // Generar un UUID simulado
+            const uuid = '550e8400-e' + Math.floor(Math.random() * 999) + 'b-41d4-a716-' + Date.now();
+            this.groups[index].uuid = uuid;
+            // Simulamos respuesta de éxito con el nuevo UUID
+            return of({
+                success: true,
+                uuid: uuid,
+                data: { uuid: uuid } // Para cubrir ambas posibilidades de respuesta
+            }).pipe(delay(500));
+        }
+        return throwError(() => new Error('Grupo no encontrado')).pipe(delay(300));
     }
 
     getGroupById(id: number): Observable<Group | undefined> {

@@ -26,10 +26,10 @@ export class MockCourseTypeService {
             ],
             // Dinámicos corregidos: Dirección(O), NUC(O), Sexo(L), Licencia(O). (O=Obligatorio, L=Libre/Opcional)
             courseConfigField: [
-                { requirementFieldPerson: 4, required: true },  // Dirección
-                { requirementFieldPerson: 5, required: true },  // NUC (Obligatorio ahora)
-                { requirementFieldPerson: 6, required: false }, // Sexo (Opcional)
-                { requirementFieldPerson: 9, required: true }   // Licencia
+                { requirementFieldPerson: { id: 4, fieldName: 'Dirección' }, required: true },  // Dirección
+                { requirementFieldPerson: { id: 5, fieldName: 'NUC' }, required: true },        // NUC
+                { requirementFieldPerson: { id: 6, fieldName: 'Sexo' }, required: false },       // Sexo
+                { requirementFieldPerson: { id: 9, fieldName: 'licencia' }, required: true }     // Licencia
             ]
         } as any,
         {
@@ -46,7 +46,7 @@ export class MockCourseTypeService {
                 { id: 'doc_diploma', name: 'Diploma de Participación', description: 'Diploma general', templateId: 5, cost: 0, requiresApproval: false, isMandatory: true }
             ],
             courseConfigField: [
-                { requirementFieldPerson: 6, required: false } // Sexo (Dynamic in this mock because it's not base-base)
+                { requirementFieldPerson: { id: 6, fieldName: 'Sexo' }, required: false }
             ]
         } as any,
         {
@@ -63,7 +63,7 @@ export class MockCourseTypeService {
                 { id: 'doc_diploma_simple', name: 'Diploma de Participación', description: 'Diploma general', templateId: 5, cost: 0, requiresApproval: false, isMandatory: true }
             ],
             courseConfigField: [
-                { requirementFieldPerson: 8, required: true } // Teléfono
+                { requirementFieldPerson: { id: 8, fieldName: 'telefono' }, required: true }
             ]
         } as any
     ];

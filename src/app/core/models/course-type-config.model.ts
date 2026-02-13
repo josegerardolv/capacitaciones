@@ -4,6 +4,7 @@ export interface RegistrationFieldConfig {
     visible: boolean;
     required: boolean;
     requirementId?: number; // ID del Backend para requirementFieldPerson
+    courseConfigFieldId?: number; // ID de la instancia de configuración en el curso
 }
 
 export interface DocumentConfig {
@@ -32,7 +33,8 @@ export interface CourseTypeConfig {
 
     // Nuevo formato de configuración del Backend
     courseConfigField?: Array<{
-        requirementFieldPerson: number;
+        id: number;
+        requirementFieldPerson: number | { id: number; fieldName: string };
         required: boolean;
     }>;
 
@@ -49,11 +51,9 @@ export const DEFAULT_REGISTRATION_FIELDS: RegistrationFieldConfig[] = [
     { fieldName: 'curp', label: 'CURP', visible: true, required: true },
 
     { fieldName: 'email', label: 'Correo Electrónico', visible: true, required: true, requirementId: 7 },
-    // Campos Configurables (Se deben obtener dinámicamente de RequirementsService)
-    { fieldName: 'address', label: 'Dirección', visible: true, required: true },
-    { fieldName: 'nuc', label: 'NUC', visible: true, required: false },
-    { fieldName: 'sex', label: 'Sexo', visible: true, required: true },
-    { fieldName: 'phone', label: 'Teléfono', visible: true, required: false },
-
-    // { fieldName: 'license', label: 'Licencia', visible: true, required: false }, // Comentado: No soportado por Backend aún
+    { fieldName: 'phone', label: 'Teléfono', visible: true, required: false, requirementId: 8 },
+    { fieldName: 'address', label: 'Dirección', visible: true, required: true, requirementId: 4 },
+    { fieldName: 'nuc', label: 'NUC', visible: true, required: false, requirementId: 5 },
+    { fieldName: 'license', label: 'Licencia', visible: true, required: false, requirementId: 9 },
+    { fieldName: 'sex', label: 'Sexo', visible: true, required: true, requirementId: 6 },
 ];

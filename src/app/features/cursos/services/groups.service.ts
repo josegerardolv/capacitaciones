@@ -33,7 +33,9 @@ export class GroupsService {
     }
 
     getPersonsByGroupId(groupId: number): Observable<Person[]> {
-        return this.http.get<Person[]>(`${this.apiUrl}/group/${groupId}/persons`);
+        return this.http.get<any>(`${this.apiUrl}/person?group=${groupId}`).pipe(
+            map(response => response?.data || response)
+        );
     }
 
     getRequestsByGroupId(groupId: number): Observable<Person[]> {
@@ -53,6 +55,14 @@ export class GroupsService {
             .pipe(map(() => true));
     }
 
+    /**
+     * Crea una nueva inscripción (Enrollment) con el formato estructurado
+     * para campos de tabla y campos dinámicos.
+     */
+    createEnrollment(payload: any): Observable<any> {
+        return this.http.post<any>(`${this.apiUrl}/enrollment`, payload);
+    }
+
     deleteGroup(id: number): Observable<void> {
         return this.http.delete<void>(`${this.apiUrl}/group/${id}`);
     }
@@ -64,11 +74,21 @@ export class GroupsService {
     }
 
     createGroup(group: any): Observable<Group> {
+        // Estructura según Swagger: name, location, schedule, limitStudents, groupStartDate, endInscriptionDate, course
         return this.http.post<Group>(`${this.apiUrl}/group`, group);
     }
 
     updateGroup(id: number, updatedGroup: any): Observable<Group> {
+        // Estructura PATCH /group/{id} según Swagger
         return this.http.patch<Group>(`${this.apiUrl}/group/${id}`, updatedGroup);
+    }
+
+    /**
+     * Genera un UUID para un grupo existente
+     * Según Swagger: PATCH /group/uuid/{id}
+     */
+    generateGroupUuid(id: number): Observable<any> {
+        return this.http.patch<any>(`${this.apiUrl}/group/uuid/${id}`, {});
     }
 
     getGroupById(id: number): Observable<Group> {
@@ -76,6 +96,8 @@ export class GroupsService {
     }
 
     getGroupByUuid(uuid: string): Observable<Group> {
-        return this.http.get<Group>(`${this.apiUrl}/group/uuid/${uuid}`);
+        return this.http.get<any>(`${this.apiUrl}/group/uuid/${uuid}`).pipe(
+            map(response => response?.data || response)
+        );
     }
 }
