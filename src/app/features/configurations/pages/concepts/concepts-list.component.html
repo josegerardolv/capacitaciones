@@ -1,0 +1,97 @@
+<div class="min-h-screen">
+    <!-- Tarjeta superior: título y breadcrumb -->
+    <app-institutional-card [config]="{ showHeader: false, showFooter: false, showShadow: true, showBorder: true }"
+        class="mb-6">
+        <div class="flex items-center gap-4">
+            <div class="p-3 rounded-lg bg-institucional-primario bg-opacity-10 flex items-center justify-center">
+                <app-universal-icon name="attach_money" type="material" class="w-6 h-6 text-white"></app-universal-icon>
+            </div>
+
+            <div class="min-w-0">
+                <h1 class="text-2xl md:text-3xl font-extrabold text-gray-900">Gestión de Conceptos</h1>
+                <p class="text-sm text-gray-500 mt-1">Administra el catálogo de conceptos, claves y costos</p>
+            </div>
+        </div>
+
+        <div class="mt-2 ml-4">
+            <app-breadcrumb [items]="breadcrumbItems"></app-breadcrumb>
+        </div>
+    </app-institutional-card>
+
+    <br>
+    <app-institutional-card [config]="{ showHeader: false, showFooter: false, showShadow: true, showBorder: true }">
+        <div class="flex flex-col-reverse md:flex-row md:justify-between md:items-center gap-4 mb-4">
+            <app-table-pagination [config]="paginationConfig" [showPageSizeSelector]="true"
+                [showPaginationControls]="false" (pageChange)="onPageChange($event)">
+            </app-table-pagination>
+
+            <div class="flex flex-col md:flex-row md:items-center gap-2">
+                <app-institutional-button (buttonClick)="openForm()" [config]="{
+                    variant: 'primary',
+                    icon: 'add',
+                    title: 'Nuevo Concepto'
+                }">
+                    Nuevo Concepto
+                </app-institutional-button>
+            </div>
+        </div>
+
+        <!-- Search Bar -->
+        <app-table-filters [showGlobalSearch]="true" [globalSearchPlaceholder]="'Buscar por clave, concepto...'"
+            (globalSearchChange)="filterData($event)">
+        </app-table-filters>
+
+        <app-institutional-table [data]="concepts" [columns]="tableColumns" [config]="tableConfig">
+        </app-institutional-table>
+
+        <app-table-pagination [config]="paginationConfig" [showPageSizeSelector]="false" [showPaginationControls]="true"
+            (pageChange)="onPageChange($event)">
+        </app-table-pagination>
+    </app-institutional-card>
+</div>
+
+<!-- Modal Form -->
+<app-modal-form *ngIf="isModalOpen" [isOpen]="isModalOpen" [title]="editingId ? 'Editar Concepto' : 'Nuevo Concepto'"
+    [formGroup]="form" [isLoading]="isSaving" (formSubmit)="onSubmit()" (modalClose)="isModalOpen = false">
+
+    <app-input-enhanced [control]="claveControl" label="Clave" placeholder="Ej. 3IFBAC022" [required]="true">
+    </app-input-enhanced>
+
+    <app-input-enhanced [control]="conceptoControl" label="Concepto" placeholder="Descripción del concepto"
+        type="textarea" [required]="true">
+    </app-input-enhanced>
+
+    <app-input-enhanced [control]="costoControl" label="Costo ($)" placeholder="0.00" type="number" [required]="true">
+    </app-input-enhanced>
+
+</app-modal-form>
+
+<!-- Templates for Table -->
+<ng-template #costoTemplate let-item>
+    <span *ngIf="item.costo > 0" class="font-medium text-gray-900">{{ item.costo | currency:'MXN' }}</span>
+    <span *ngIf="item.costo === 0"
+        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+        Gratuito
+    </span>
+</ng-template>
+
+<ng-template #actionsTemplate let-item>
+    <div class="flex items-center justify-center space-x-2">
+        <app-institutional-button [config]="{ variant: 'warning', size: 'small', icon: 'edit', title: 'Editar', iconPosition: 'only' }"
+            [appTooltip]="'Editar'" (buttonClick)="openForm(item)">
+        </app-institutional-button>
+
+        <app-institutional-button [config]="{ variant: 'danger', size: 'small', icon: 'delete', title: 'Eliminar', iconPosition: 'only' }"
+            [appTooltip]="'Eliminar'" (buttonClick)="deleteConcept(item)">
+        </app-institutional-button>
+    </div>
+</ng-template>
+
+<!-- Modals -->
+<app-alert-modal [isOpen]="isAlertOpen" [config]="alertConfig" (modalClose)="isAlertOpen = false"
+    (actionClick)="isAlertOpen = false">
+</app-alert-modal>
+
+<app-confirmation-modal [isOpen]="isConfirmOpen" [config]="confirmConfig" (modalClose)="isConfirmOpen = false"
+    (confirm)="onConfirmYes()" (cancel)="isConfirmOpen = false">
+</app-confirmation-modal>

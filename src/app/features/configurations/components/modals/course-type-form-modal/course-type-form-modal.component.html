@@ -1,0 +1,127 @@
+x<app-modal [isOpen]="isOpen" [config]="modalConfig" (modalClose)="onClose()">
+    <!-- Body Content handled by app-modal projection -->
+    <div class="space-y-6">
+        <form [formGroup]="form" class="space-y-6">
+
+            <!-- Split Layout: Basic Info (Left) & Fields (Right) -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                
+                <!-- Left Side: Basic Info -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                    <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">DATOS TIPO CURSO</h3>
+                    <div class="space-y-4">
+                        <app-input-enhanced controlName="name" [control]="form.get('name')" label="Nombre del tipo de curso"
+                            placeholder="Ingresa el nombre del tipo de curso" [required]="true">
+                        </app-input-enhanced>
+
+                        <app-input-enhanced controlName="description" [control]="form.get('description')"
+                            label="Descripción del tipo de curso" placeholder="Ingresa la descripción del tipo de curso"
+                            [required]="true">
+                        </app-input-enhanced>
+
+                        <app-input-enhanced controlName="category" [control]="form.get('category')" label="Tipo de curso"
+                            placeholder="Ingresa el tipo de curso" [required]="true">
+                        </app-input-enhanced>
+                    </div>
+                </div>
+
+                <!-- Right Side: Fields Selection -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                    <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">SELECCIONE LOS CAMPOS</h3>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div *ngFor="let field of registrationFields"
+                            class="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer"
+                            (click)="toggleField(field)">
+
+                            <div class="relative flex items-center justify-center h-5 w-5">
+                                <input type="checkbox" [checked]="field.visible"
+                                    class="h-5 w-5 text-[#8B1538] border-gray-300 rounded focus:ring-[#8B1538] cursor-pointer">
+                            </div>
+                            <span class="text-sm font-medium text-gray-700 select-none">{{ field.label }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Template Selection Section -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">SELECCIONE LOS TEMPLATES
+                    </h3>
+                </div>
+
+                <!-- Search Bar -->
+                <div class="relative w-full mb-4">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <app-universal-icon name="search" type="bootstrap" class="text-gray-400"></app-universal-icon>
+                    </div>
+                    <input type="text" [formControl]="searchControl" placeholder="BUSCAR TEMPLATE"
+                        class="input input-bordered w-full pl-10 rounded-full border-gray-300 focus:border-[#621132] focus:ring-[#621132]">
+                </div>
+
+                <!-- Table -->
+                <div class="border rounded-lg overflow-hidden border-gray-200 max-h-[300px] overflow-y-auto">
+                    <app-institutional-table [data]="displayedTemplates" [columns]="tableColumns" [config]="tableConfig"
+                        [selectedItems]="selectedTemplates" (selectionChange)="onSelectionChange($event)">
+
+                        <!-- Custom Actions Template -->
+                        <ng-template #actionsTemplate let-item>
+                            <app-institutional-button [config]="{ variant: 'primary', size: 'small', icon: 'visibility', iconPosition: 'only', customClass: '!bg-transparent !text-[#8B1538] hover:!bg-pink-50 !border-none shadow-none' }"
+                                title="Ver Vista Previa" (buttonClick)="openPreview(item)">
+                            </app-institutional-button>
+                        </ng-template>
+
+                        <ng-template #costTemplate let-item>
+                            <span *ngIf="item.conceptCosto > 0" class="font-medium">{{ item.conceptCosto |
+                                currency:'MXN' }}</span>
+                            <span *ngIf="item.conceptCosto === 0"
+                                class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                Gratuito
+                            </span>
+                        </ng-template>
+
+                        <ng-template #categoryTemplate let-item>
+                            <span
+                                class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                {{ item.category || 'General' }}
+                            </span>
+                        </ng-template>
+
+                        <ng-template #mandatoryTemplate let-item>
+                            <div class="flex justify-center" (click)="$event.stopPropagation()">
+                                <input type="checkbox" [checked]="isMandatory(item.id)"
+                                    (click)="toggleMandatory(item.id, $event)"
+                                    class="h-4 w-4 text-[#8B1538] border-gray-300 rounded focus:ring-[#8B1538] cursor-pointer"
+                                    [disabled]="false">
+                            </div>
+                        </ng-template>
+
+                    </app-institutional-table>
+                </div>
+
+                <div class="text-xs text-gray-500 mt-2 text-right">
+                    Mostrando {{ displayedTemplates.length }} registros{{ filteredTemplates.length !== templates.length
+                    ? ' (filtrado)' : '' }}
+                </div>
+            </div>
+
+        </form>
+    </div>
+
+    <!-- Footer -->
+    <div slot="footer" class="flex justify-end gap-3">
+        <app-institutional-button (buttonClick)="onClose()"
+            [config]="{variant: 'secondary', customClass: 'border-gray-300 text-gray-600'}">
+            Cancelar
+        </app-institutional-button>
+        <app-institutional-button (buttonClick)="onSave()"
+            [config]="{variant: 'primary', customClass: '!bg-[#9D2449]'}">
+            Guardar Configuración
+        </app-institutional-button>
+    </div>
+</app-modal>
+
+<!-- Template Preview Modal -->
+<app-template-preview-modal [isOpen]="showPreviewModal" [template]="previewTemplate" (close)="showPreviewModal = false">
+</app-template-preview-modal>

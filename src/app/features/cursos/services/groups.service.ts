@@ -1,60 +1,103 @@
 import { Injectable } from '@angular/core';
-import { Observable, of, delay } from 'rxjs';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
+import { environment } from 'src/environments/environment';
 import { Group } from '../../../core/models/group.model';
+import { Person } from '../../../core/models/person.model';
 
 @Injectable({
     providedIn: 'root'
 })
 export class GroupsService {
 
-    // Datos simulados: En producción esto vendrá de la API
-    private mockGroups: Group[] = [
-        {
-            id: 1,
-            name: 'A05',
-            description: 'Regular text column',
-            location: 'Carlos Gracida',
-            dateTime: '12/07/2026, 14:30',
-            quantity: 55,
-            autoRegisterLimit: 's',
-            url: 'https://example.com',
-            requests: 0,
-            status: 'Activo'
-        },
-        {
-            id: 2,
-            name: 'A06',
-            description: 'Regular text column',
-            location: 'Reforma',
-            dateTime: '12/07/2026, 14:30',
-            quantity: 40,
-            autoRegisterLimit: 's',
-            url: '',
-            requests: 0,
-            status: 'Inactivo'
-        },
-        {
-            id: 3,
-            name: 'B13',
-            description: 'Regular text column',
-            location: 'Carlos Gracida',
-            dateTime: '12/07/2026, 14:30',
-            quantity: 30,
-            autoRegisterLimit: 's',
-            url: 'https://example.com',
-            requests: 0,
-            status: 'Activo'
+    private apiUrl = `${environment.apiUrl}`;
+
+    constructor(private http: HttpClient) { }
+
+    getGroups(page: number = 1, limit: number = 10, search: string = '', courseId?: number): Observable<any> {
+        let params = new HttpParams()
+            .set('page', page.toString())
+            .set('limit', limit.toString());
+
+        if (search) {
+            params = params.set('name', search);
         }
-    ];
 
-    constructor() { }
+        if (courseId) {
+            params = params.set('course', courseId.toString());
+        }
 
-    getGroups(): Observable<Group[]> {
-        return of([...this.mockGroups]).pipe(delay(500));
+        // Según Swagger, /group/search es el endpoint para "Listar y buscar grupos"
+        return this.http.get<any>(`${this.apiUrl}/group/search`, { params });
+    }
+
+    getPersonsByGroupId(groupId: number): Observable<Person[]> {
+        return this.http.get<any>(`${this.apiUrl}/person?group=${groupId}`).pipe(
+            map(response => response?.data || response)
+        );
+    }
+
+    getRequestsByGroupId(groupId: number): Observable<Person[]> {
+        const params = new HttpParams().set('status', 'Pendiente');
+        return this.http.get<Person[]>(`${this.apiUrl}/group/${groupId}/persons`, { params });
+    }
+
+    // Payload structure based on BACKEND_INTEGRATION.md
+    registerPerson(groupId: number, data: Person): Observable<boolean> {
+        const payload = {
+            groupId: groupId,
+            person: data, // El objeto Person completo (incluyendo email, phone, etc.)
+            requestedDocuments: data.requestedDocuments || [] // Extraer documentos a nivel raíz
+        };
+
+        return this.http.post<any>(`${this.apiUrl}/group/${groupId}/persons`, payload)
+            .pipe(map(() => true));
+    }
+
+    /**
+     * Crea una nueva inscripción (Enrollment) con el formato estructurado
+     * para campos de tabla y campos dinámicos.
+     */
+    createEnrollment(payload: any): Observable<any> {
+        return this.http.post<any>(`${this.apiUrl}/enrollment`, payload);
     }
 
     deleteGroup(id: number): Observable<void> {
-        this.mockGroups = this.mockGroups.filter(g => g.id !== id);
-        return of(void 0).pipe(delay(500));
+        return this.http.delete<void>(`${this.apiUrl}/group/${id}`);
+    }
+
+    searchPersonByLicense(license: string): Observable<Person | null> {
+        const params = new HttpParams().set('license', license);
+        return this.http.get<Person[]>(`${this.apiUrl}/persons`, { params })
+            .pipe(map(results => (results && results.length > 0) ? results[0] : null));
+    }
+
+    createGroup(group: any): Observable<Group> {
+        // Estructura según Swagger: name, location, schedule, limitStudents, groupStartDate, endInscriptionDate, course
+        return this.http.post<Group>(`${this.apiUrl}/group`, group);
+    }
+
+    updateGroup(id: number, updatedGroup: any): Observable<Group> {
+        // Estructura PATCH /group/{id} según Swagger
+        return this.http.patch<Group>(`${this.apiUrl}/group/${id}`, updatedGroup);
+    }
+
+    /**
+     * Genera un UUID para un grupo existente
+     * Según Swagger: PATCH /group/uuid/{id}
+     */
+    generateGroupUuid(id: number): Observable<any> {
+        return this.http.patch<any>(`${this.apiUrl}/group/uuid/${id}`, {});
+    }
+
+    getGroupById(id: number): Observable<Group> {
+        return this.http.get<Group>(`${this.apiUrl}/group/${id}`);
+    }
+
+    getGroupByUuid(uuid: string): Observable<Group> {
+        return this.http.get<any>(`${this.apiUrl}/group/uuid/${uuid}`).pipe(
+            map(response => response?.data || response)
+        );
     }
 }

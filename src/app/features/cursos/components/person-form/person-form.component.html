@@ -1,0 +1,79 @@
+<div class="w-full max-w-7xl mx-auto">
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-8">
+
+        <!-- Sección: Datos Personales -->
+        <div>
+            <h3 class="text-lg font-semibold text-gray-800 mb-6 flex items-center gap-3">
+                <span class="w-1.5 h-6 bg-[#8B1538] rounded-full"></span>
+                Datos Personales
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <app-input-enhanced [control]="getControl('name')" label="Nombre" [floating]="true"
+                    [required]="isRequired('name')"></app-input-enhanced>
+                <app-input-enhanced *ngIf="isVisible('paternal_lastName')" [control]="getControl('paternal_lastName')"
+                    label="Primer Apellido" [floating]="true"
+                    [required]="isRequired('paternal_lastName')"></app-input-enhanced>
+                <app-input-enhanced *ngIf="isVisible('maternal_lastName')" [control]="getControl('maternal_lastName')"
+                    label="Segundo Apellido" [floating]="true"
+                    [required]="isRequired('maternal_lastName')"></app-input-enhanced>
+
+                <app-input-enhanced *ngIf="isVisible('curp')" [control]="getControl('curp')" label="CURP"
+                    [floating]="true" [required]="isRequired('curp')"></app-input-enhanced>
+                <app-select *ngIf="isVisible('sex')" [control]="getControl('sex')" [size]="'md'" [options]="sexOptions"
+                    label="Sexo" [placeholder]="''" [floating]="true" [required]="isRequired('sex')"></app-select>
+            </div>
+        </div>
+
+        <!-- Sección: Información de Contacto -->
+        <div>
+            <h3 class="text-lg font-semibold text-gray-800 mb-6 flex items-center gap-3">
+                <span class="w-1.5 h-6 bg-[#BC955C] rounded-full"></span>
+                Información de Contacto
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <app-input-enhanced *ngIf="isVisible('email')" [control]="getControl('email')"
+                    label="Correo electrónico" placeholder="Ingresa Correo electrónico" [type]="'email'"
+                    [floating]="true" [required]="isRequired('email')"></app-input-enhanced>
+                <app-input-enhanced *ngIf="isVisible('phone')" [control]="getControl('phone')"
+                    label="Número de teléfono" placeholder="Ingresa número de teléfono" [floating]="true"
+                    [required]="isRequired('phone')"></app-input-enhanced>
+                <div class="md:col-span-2" *ngIf="isVisible('address')">
+                    <app-input-enhanced type="textarea" [control]="getControl('address')" label="Dirección Completa"
+                        [floating]="true" [required]="isRequired('address')"></app-input-enhanced>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sección: Datos del Conductor (Condicional) -->
+        <div *ngIf="isVisible('license') || isVisible('nuc')">
+            <h3 class="text-lg font-semibold text-gray-800 mb-6 flex items-center gap-3">
+                <span class="w-1.5 h-6 bg-gray-600 rounded-full"></span>
+                Datos del Conductor
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <app-input-enhanced *ngIf="isVisible('license')" [control]="getControl('license')"
+                    label="Número de licencia" [floating]="true"
+                    [required]="isRequired('license')"></app-input-enhanced>
+                <app-input-enhanced *ngIf="isVisible('nuc')" [control]="getControl('nuc')" label="NUC"
+                    placeholder="Ingresa el número único de Concesión" [floating]="true"
+                    [required]="isRequired('nuc')"></app-input-enhanced>
+            </div>
+        </div>
+
+        <!-- Footer Buttons -->
+        <div class="flex justify-end gap-4 pt-4">
+            <app-institutional-button *ngIf="showCancel"
+                [config]="{variant: 'ghost', customClass: '!text-[#8B1538] !border-[#8B1538] hover:!bg-red-50 px-6'}"
+                (buttonClick)="onCancel()">
+                Cancelar
+            </app-institutional-button>
+
+            <app-institutional-button
+                [config]="{variant: 'primary', icon: 'save', customClass: '!bg-[#8B1538] px-8 shadow-md'}"
+                (buttonClick)="onSubmit()">
+                {{ submitLabel }}
+            </app-institutional-button>
+        </div>
+
+    </form>
+</div>

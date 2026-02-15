@@ -9,6 +9,7 @@ export * from './date-pickers';
 
 // Componentes de badges
 export * from './badge';
+export * from './breadcrumb';
 
 // Componentes de cartas institucionales
 export * from './institutional-card/institutional-card.component';

@@ -13,6 +13,7 @@ export const environment = {
   app: {
     name: 'OAuth SEMOVI',
     version: '1.0.0',
-    description: 'Sistema de Autenticación OAuth 2.0 para SEMOVI'
-  }
+    description: 'Sistema de Capacitaciones OAuth 2.0 para SEMOVI'
+  },
+  useMockAuth: false // EN PROD SIEMPRE FALSO: Usar servicios reales
 };

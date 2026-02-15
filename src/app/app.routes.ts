@@ -14,13 +14,27 @@ export const routes: Routes = [
     loadComponent: () => import('./shared/components/login/login.component').then(m => m.LoginComponent)
   },
 
+  // --- EDITOR DE TEMPLATES (Sin Layout - Pantalla Completa) ---
+  {
+    path: 'config/templates/editor',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/configurations/templates/pages/template-editor/template-editor.component').then(m => m.TemplateEditorComponent),
+    title: 'Configuración - Nuevo Template'
+  },
+  {
+    path: 'config/templates/editor/:id',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/configurations/templates/pages/template-editor/template-editor.component').then(m => m.TemplateEditorComponent),
+    title: 'Configuración - Editar Template'
+  },
+
   // --- RUTA PÚBLICA DE REGISTRO (Sin Auth) ---
   {
-    path: 'registro-publico',
+    path: 'public',
     loadComponent: () => import('./shared/layout/public-layout.component').then(m => m.PublicLayoutComponent),
     children: [
       {
-        path: ':id', // ID del token/grupo
+        path: 'register/:id', // ID del token/grupo
         loadComponent: () => import('./features/cursos/pages/public-registration/public-registration.component').then(m => m.PublicRegistrationComponent)
       }
     ]
@@ -37,9 +51,27 @@ export const routes: Routes = [
         loadComponent: () => import('./features/dashboard/dashboard.component').then(m => m.DashboardComponent)
       },
       {
+        path: 'breadcrumb-demo',
+        loadComponent: () => import('./shared/components/breadcrumb/breadcrumb-demo.component').then(m => m.BreadcrumbDemoComponent)
+      },
+      {
         path: 'cursos',
         loadChildren: () => import('./features/cursos/cursos.routes').then(m => m.CURSOS_ROUTES)
-      }
+      },
+      {
+        path: 'busqueda',
+        loadComponent: () => import('./features/busqueda/busqueda.component').then(m => m.BusquedaComponent)
+      },
+      // {
+      //   path: 'documentos',
+      //   loadChildren: () => import('./features/templates/documents.routes').then(m => m.DOCUMENTS_ROUTES)
+      // },
+      {
+        path: 'config',
+        loadChildren: () => import('./features/configurations/configuration.routes').then(m => m.CONFIGURATION_ROUTES),
+        // canActivate: [authGuard] - inherited from parent
+      },
+
 
 
     ]

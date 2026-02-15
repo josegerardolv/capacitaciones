@@ -12,8 +12,8 @@ export interface Usuario {
   person?: {
     id: number;
     first_name: string;
-    last_name: string;
-    second_last_name?: string;
+    paternal_lastName: string;
+    maternal_lastName?: string;
     phone?: string;
     position?: string;
     area: {
@@ -44,8 +44,8 @@ export interface CreateUsuarioDto {
   rol: 'admin' | 'operador' | 'consulta';
   person: {
     first_name: string;
-    last_name: string;
-    second_last_name?: string;
+    paternal_lastName: string;
+    maternal_lastName?: string;
     phone?: string;
     position?: string;
     area_id: number;
@@ -65,8 +65,8 @@ export interface UpdateUsuarioDto {
   activo?: boolean;
   person?: {
     first_name?: string;
-    last_name?: string;
-    second_last_name?: string;
+    paternal_lastName?: string;
+    maternal_lastName?: string;
     phone?: string;
     position?: string;
     area_id?: number;
@@ -106,7 +106,7 @@ export class UsuariosService {
   constructor(
     private http: HttpClient,
     private authService: AuthService
-  ) {}
+  ) { }
 
   /**
    * Obtener todos los usuarios
@@ -235,8 +235,8 @@ export class UsuariosService {
     person: data.person ? {
       id: data.person.id,
       first_name: data.person.first_name,
-      last_name: data.person.last_name,
-      second_last_name: data.person.second_last_name,
+      paternal_lastName: data.person.paternal_lastName || data.person.last_name, // Fallback for compatibility
+      maternal_lastName: data.person.maternal_lastName || data.person.second_last_name,
       phone: data.person.phone,
       position: data.person.position,
       area: data.person.area,
@@ -282,9 +282,9 @@ export class UsuariosService {
    */
   private handleError(error: any): Observable<never> {
     console.error('Error en UsuariosService:', error);
-    
+
     let errorMessage = 'Error inesperado en el servicio de usuarios';
-    
+
     if (error.status === 400) {
       errorMessage = error.error?.message || 'Datos inválidos para el usuario';
     } else if (error.status === 404) {
@@ -296,7 +296,7 @@ export class UsuariosService {
     } else if (error.status === 403) {
       errorMessage = 'No tiene permisos para realizar esta operación';
     }
-    
+
     return throwError(() => new Error(errorMessage));
   }
 
@@ -321,7 +321,7 @@ export class UsuariosService {
         errors.push('El nombre debe tener al menos 2 caracteres');
       }
 
-      if (!usuario.person.last_name || usuario.person.last_name.trim().length < 2) {
+      if (!usuario.person.paternal_lastName || usuario.person.paternal_lastName.trim().length < 2) {
         errors.push('El apellido paterno debe tener al menos 2 caracteres');
       }
 

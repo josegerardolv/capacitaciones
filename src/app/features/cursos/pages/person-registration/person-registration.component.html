@@ -1,0 +1,61 @@
+<div class="min-h-screen">
+
+    <!-- Tarjeta superior: título y breadcrumb (estilo institucional) -->
+    <app-institutional-card [config]="{ showHeader: false, showFooter: false, showShadow: true, showBorder: true }"
+        class="mb-6">
+        <div class="flex items-center gap-4">
+            <div class="p-3 rounded-lg bg-institucional-primario bg-opacity-10 flex items-center justify-center">
+                <app-universal-icon name="person_add" type="material" class="w-6 h-6 text-white"></app-universal-icon>
+            </div>
+
+            <div class="min-w-0">
+                <h1 class="text-2xl md:text-3xl font-extrabold text-gray-900">Agregar Nueva Persona</h1>
+                <p class="text-sm text-gray-500 mt-1">Complete la información del formulario.</p>
+            </div>
+        </div>
+
+        <div class="mt-2 ml-4">
+            <app-breadcrumb [items]="breadcrumbItems"></app-breadcrumb>
+        </div>
+    </app-institutional-card>
+
+    <br>
+
+    <!-- Tarjeta principal: formulario -->
+    <app-institutional-card [config]="{ showHeader: false, showFooter: false, showShadow: true, showBorder: true }">
+        <div class="p-6">
+            <!-- Formulario (Se muestra si showForm es true) -->
+            <div *ngIf="showForm">
+                <app-person-form [initialData]="prefilledData" [fieldsConfig]="fieldsConfig"
+                    [submitLabel]="'Agregar Persona'" [showCancel]="true" (close)="onCancel()"
+                    (saved)="onPersonSaved($event)">
+                </app-person-form>
+            </div>
+
+            <!-- Placeholder mientras se busca (si showForm es false) -->
+            <div *ngIf="!showForm && isSearchModalOpen" class="text-center py-12">
+                <app-universal-icon name="person_search" type="material"
+                    class="w-16 h-16 text-gray-300 mx-auto mb-4"></app-universal-icon>
+                <h3 class="text-lg font-medium text-gray-900 mb-1">Validando Licencia</h3>
+                <p class="text-gray-500 italic">Por favor, complete la búsqueda para continuar.</p>
+            </div>
+        </div>
+    </app-institutional-card>
+
+    <!-- Modal de Búsqueda de Licencia -->
+    <app-license-search-modal [isOpen]="isSearchModalOpen" (modalClose)="isSearchModalOpen = false"
+        (personFound)="onPersonFound($event)" (manualRegistration)="onManualRegistration($event)">
+    </app-license-search-modal>
+
+    <!-- Modal de alerta de resultado -->
+    <app-alert-modal [isOpen]="isAlertOpen" [config]="alertConfig" (modalClose)="closeAndRedirect()"
+        (actionClick)="closeAndRedirect()">
+    </app-alert-modal>
+
+    <!-- Modal de Selección de Documentos -->
+    <app-document-selection-modal [isOpen]="isDocumentsModalOpen" [courseType]="currentCourseType"
+        [customDocuments]="currentAvailableDocuments" (modalClose)="isDocumentsModalOpen = false"
+        (confirm)="onDocumentsConfirmed($event)">
+    </app-document-selection-modal>
+
+</div>

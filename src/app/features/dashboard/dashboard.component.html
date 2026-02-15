@@ -1,0 +1,73 @@
+<div class="p-6">
+  <!-- <div class="bg-white rounded-lg shadow-lg p-6 mb-8 border-l-4 border-institucional-guinda" *ngIf="user">
+    <h1 class="text-3xl font-bold text-gray-800 mb-2">Bienvenido al Sistema</h1>
+    <p class="text-gray-600 text-lg">
+      Hola, <span class="font-bold text-institucional-guinda">{{ user.name || 'Usuario' }}</span>.
+      <span *ngIf="user.role">Has iniciado sesión como <span
+          class="px-2 py-1 bg-gray-100 rounded-md text-sm font-mono border border-gray-300">{{ user.role
+          }}</span></span>
+    </p>
+  </div> -->
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+    <!-- Columna Izquierda: Métricas (50% del espacio) -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 order-2 lg:order-1">
+      <app-metric-card class="h-full" [data]="graduationMetric"></app-metric-card>
+      <app-metric-card class="h-full" [data]="personMetric"></app-metric-card>
+      <app-metric-card class="h-full" [data]="finishMetric"></app-metric-card>
+      <app-metric-card class="h-full" [data]="calendarMetric"></app-metric-card>
+    </div>
+
+    <div class="order-1 lg:order-2">
+      <div
+        class="bg-white rounded-xl shadow-sm border border-gray-100 h-full flex flex-col items-center justify-center p-8 relative overflow-hidden">
+        <!-- Decoración de fondo -->
+        <div
+          class="absolute top-0 right-0 w-32 h-32 bg-institucional-primario opacity-5 rounded-full -mr-16 -mt-16 blur-2xl">
+        </div>
+        <div
+          class="absolute bottom-0 left-0 w-24 h-24 bg-institucional-secundario opacity-5 rounded-full -ml-12 -mb-12 blur-xl">
+        </div>
+
+        <div
+          class="text-7xl lg:text-8xl font-black text-institucional-primario font-sans tabular-nums relative tracking-tighter leading-none select-none">
+          {{ timeString }}
+        </div>
+        <div class="w-20 h-1.5 bg-gray-200 rounded-full my-6 relative"></div>
+        <div class="text-lg lg:text-xl text-gray-700 font-bold uppercase tracking-widest relative text-center">
+          {{ dateString }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabla de Cursos a Impartir (Ancho completo) -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-xl font-bold text-gray-800">Cursos a impartir </h2>
+    </div>
+    <app-institutional-table [data]="upcomingCourses" [columns]="tableColumns" [config]="tableConfig">
+    </app-institutional-table>
+  </div>
+
+  <ng-template #statusTemplate let-item>
+    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" [ngClass]="{
+        'bg-green-100 text-green-800': item.status === 'Abierto' || item.status === 'Activo',
+        'bg-yellow-100 text-yellow-800': item.status === 'Pendiente' || item.status === 'Por abrir',
+        'bg-red-100 text-red-800': item.status === 'Cerrado' || item.status === 'Cancelado',
+        'bg-gray-100 text-gray-800': !item.status || item.status === 'Inactivo'
+      }">
+      <span class="w-2 h-2 mr-1 rounded-full" [ngClass]="{
+        'bg-green-400': item.status === 'Abierto' || item.status === 'Activo',
+        'bg-yellow-400': item.status === 'Pendiente' || item.status === 'Por abrir',
+        'bg-red-400': item.status === 'Cerrado' || item.status === 'Cancelado',
+        'bg-gray-400': !item.status || item.status === 'Inactivo'
+      }"></span>
+      {{ item.status || 'Desconocido' }}
+    </span>
+  </ng-template>
+
+  <ng-template #dateTemplate let-item>
+    <span class="text-gray-900">{{ item.date | date:'mediumDate':'UTC' }}</span>
+  </ng-template>
+</div>

@@ -37,12 +37,22 @@ import { UniversalIconComponent } from '../universal-icon/universal-icon.compone
                 </a>
               } @else if (actionButton) {
                 <!-- Botón de Acción Personalizado -->
-                <a 
-                  [routerLink]="actionButton.route" 
-                  class="bg-white/20 hover:bg-white/30 backdrop-blur-sm px-6 py-3 rounded-2xl font-medium transition-all duration-200 flex items-center space-x-2 hover:scale-105 shadow-lg">
-                  <app-universal-icon [name]="actionButton.icon || 'plus'" [type]="actionButton.iconType || 'bootstrap'" [size]="20" class="flex-shrink-0 transition-colors duration-200"></app-universal-icon>
-                  <span>{{ actionButton.text }}</span>
-                </a>
+                @if (actionButton.onClick) {
+                  <button
+                    type="button"
+                    (click)="actionButton.onClick()"
+                    class="bg-white/20 hover:bg-white/30 backdrop-blur-sm px-6 py-3 rounded-2xl font-medium transition-all duration-200 flex items-center space-x-2 hover:scale-105 shadow-lg">
+                    <app-universal-icon [name]="actionButton.icon || 'plus'" [type]="actionButton.iconType || 'bootstrap'" [size]="20" class="flex-shrink-0 transition-colors duration-200"></app-universal-icon>
+                    <span>{{ actionButton.text }}</span>
+                  </button>
+                } @else {
+                  <a 
+                    [routerLink]="actionButton.route" 
+                    class="bg-white/20 hover:bg-white/30 backdrop-blur-sm px-6 py-3 rounded-2xl font-medium transition-all duration-200 flex items-center space-x-2 hover:scale-105 shadow-lg">
+                    <app-universal-icon [name]="actionButton.icon || 'plus'" [type]="actionButton.iconType || 'bootstrap'" [size]="20" class="flex-shrink-0 transition-colors duration-200"></app-universal-icon>
+                    <span>{{ actionButton.text }}</span>
+                  </a>
+                }
               }
             </div>
           }
@@ -60,8 +70,9 @@ export class PageHeaderComponent {
   @Input() backText: string = 'Regresar';
   @Input() actionButton?: {
     text: string;
-    route: string;
+    route?: string;
     icon?: string;
     iconType?: 'material' | 'bootstrap';
+    onClick?: () => void;
   };
 }

@@ -27,18 +27,19 @@ export interface FilterValue {
   template: `
     <div class="institucional-table-filters">
       <!-- Búsqueda global -->
-      <div class="institucional-form-group" *ngIf="showGlobalSearch">
+      <div class="institucional-form-group global-search-container" *ngIf="showGlobalSearch">
         <app-input-enhanced
           [control]="globalSearchControl"
-          [label]="'Búsqueda global'"
           [placeholder]="globalSearchPlaceholder || 'Buscar...'"
-          [iconLeft]="'search'"
+          [iconLeft]="''"
           [iconLeftType]="'material'"
           [variant]="'outlined'"
-          [floating]="true"
-          [size]="'md'"
+          [floating]="false"
+          [size]="'sm'"
           [fullWidth]="false"
-          [width]="'300px'">
+          [width]="'300px'"
+          [height]="'38px'"
+          extraClasses="compact-search-input">
         </app-input-enhanced>
       </div>
 
@@ -144,7 +145,7 @@ export interface FilterValue {
 
       <!-- Acciones de filtros -->
       <div class="institucional-table-filter-actions">
-        <app-institutional-button
+        <app-institutional-button *ngIf="activeFiltersCount > 0 || globalSearchControl.value"
           [config]="{
             variant: 'secondary',
             icon: 'clear_all'
@@ -153,7 +154,7 @@ export interface FilterValue {
           (buttonClick)="clearFilters()">
         </app-institutional-button>
 
-        <app-institutional-button
+        <app-institutional-button *ngIf="filters.length > 0"
           [config]="{
             variant: 'secondary',
             icon: 'tune'
@@ -284,6 +285,20 @@ export interface FilterValue {
       pointer-events: auto;
       z-index: 10;
     }
+/* Remove margin from global search input wrapper to reduce spacing with table */
+    .global-search-container ::ng-deep .input-wrapper {
+      margin-bottom: 0 !important;
+    }
+
+    /* Aggressive compaction for the search bar */
+    .global-search-container {
+      margin-bottom: 0 !important;
+      padding-bottom: 0 !important;
+    }
+
+    ::ng-deep .compact-search-input {
+      font-size: 0.875rem !important;
+    }
   `]
 })
 export class TableFiltersComponent implements OnInit {
@@ -301,7 +316,7 @@ export class TableFiltersComponent implements OnInit {
   activeFiltersCount = 0;
   showAdvanced = false;
 
-  constructor(private fb: FormBuilder) {}
+  constructor(private fb: FormBuilder) { }
 
   ngOnInit() {
     this.initializeForm();
@@ -325,7 +340,7 @@ export class TableFiltersComponent implements OnInit {
     const formControls: { [key: string]: any } = {};
 
     this.filters.forEach(filter => {
-      const initialValue = this.initialValues[filter.key] || 
+      const initialValue = this.initialValues[filter.key] ||
         (filter.multiple ? [] : (filter.type === 'boolean' ? '' : ''));
       formControls[filter.key] = [initialValue];
 
@@ -371,7 +386,7 @@ export class TableFiltersComponent implements OnInit {
     this.filterForm.reset();
     this.globalSearchControl.setValue('');
     const clearedValues: FilterValue = {};
-    
+
     this.filters.forEach(filter => {
       clearedValues[filter.key] = filter.multiple ? [] : '';
       if (filter.type === 'daterange') {
@@ -386,7 +401,7 @@ export class TableFiltersComponent implements OnInit {
 
   removeFilter(filterKey: string, event?: Event) {
     // console debug removed; method will stop propagation if event is provided
-    
+
     // Evitar que el evento burbujee a otros contenedores/overlays
     if (event && typeof (event as Event).stopPropagation === 'function') {
       (event as Event).stopPropagation();
@@ -423,7 +438,7 @@ export class TableFiltersComponent implements OnInit {
 
     this.filters.forEach(filter => {
       const value = values[filter.key];
-      
+
       if (filter.type === 'daterange') {
         const fromValue = values[filter.key + '_from'];
         const toValue = values[filter.key + '_to'];

@@ -1,31 +1,196 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, TemplateRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../core/services/auth.service';
 import { User } from '../../core/models/auth.model';
+import { MetricCardComponent, MetricCardData } from '../../shared/components/metric-card/metric-card.component';
+import { Subscription, interval, forkJoin } from 'rxjs';
+import { DomSanitizer } from '@angular/platform-browser';
+import { InstitutionalTableComponent, TableColumn, TableConfig } from '../../shared/components/institutional-table/institutional-table.component';
+import { GroupsService } from '../cursos/services/groups.service';
+import { CoursesService } from '../cursos/services/courses.service';
+import { Group } from '../../core/models/group.model';
 
 @Component({
     selector: 'app-dashboard',
     standalone: true,
-    imports: [CommonModule],
-    template: `
-    <div class="p-8">
-      <div class="bg-white rounded-lg shadow-lg p-6 mb-8 border-l-4 border-institucional-guinda">
-        <h1 class="text-3xl font-bold text-gray-800 mb-2">Bienvenido al Sistema</h1>
-        <p class="text-gray-600 text-lg">
-          Hola, <span class="font-bold text-institucional-guinda">{{ user?.name || 'Usuario' }}</span>.
-          Has iniciado sesión como <span class="px-2 py-1 bg-gray-100 rounded-md text-sm font-mono border border-gray-300">{{ user?.role }}</span>
-        </p>
-      </div>
-    </div>
-  `,
+    imports: [CommonModule, MetricCardComponent, InstitutionalTableComponent],
+    templateUrl: './dashboard.component.html',
     styles: []
 })
-export class DashboardComponent implements OnInit {
+export class DashboardComponent implements OnInit, OnDestroy {
     user: User | null = null;
+    @ViewChild('statusTemplate', { static: true }) statusTemplate!: TemplateRef<any>;
+    @ViewChild('dateTemplate', { static: true }) dateTemplate!: TemplateRef<any>;
 
-    constructor(private authService: AuthService) { }
+    private timerSubscription!: Subscription;
+    timeString: string = '';
+    dateString: string = '';
+
+    // Definimos los datos aquí para mantener el HTML limpio
+    graduationMetric!: MetricCardData;
+    personMetric!: MetricCardData;
+    finishMetric!: MetricCardData;
+    calendarMetric!: MetricCardData;
+
+    // Configuración de la tabla
+    upcomingCourses: any[] = [];
+    tableColumns: TableColumn[] = [];
+    tableConfig: TableConfig = {
+        loading: false,
+        striped: true,
+        hoverable: true,
+        localSort: true
+    };
+
+    constructor(
+        private authService: AuthService,
+        private sanitizer: DomSanitizer,
+        private groupsService: GroupsService,
+        private coursesService: CoursesService
+    ) { }
 
     ngOnInit(): void {
         this.user = this.authService.getCurrentUser();
+        this.startClock();
+        this.initMetrics();
+        this.initTableData();
+    }
+
+    ngOnDestroy(): void {
+        if (this.timerSubscription) {
+            this.timerSubscription.unsubscribe();
+        }
+    }
+
+    private startClock() {
+        const updateTime = () => {
+            const now = new Date();
+            this.timeString = now.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            this.dateString = now.toLocaleDateString('es-MX', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        };
+
+        updateTime(); // Llamada inicial
+        this.timerSubscription = interval(1000).subscribe(updateTime);
+    }
+
+    private initMetrics() {
+        this.graduationMetric = {
+            title: 'Cursos impartidos',
+            value: '125',
+            subtitle: 'Cursos impartidos',
+            icon: this.sanitizer.bypassSecurityTrustHtml('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-9 h-9"><path d="M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82zM12 3L1 9l11 6 9-4.91V17h2V9L12 3z"/></svg>') as any,
+            color: 'guinda'
+        };
+
+        this.personMetric = {
+            title: 'Total de participantes',
+            value: '1,284',
+            subtitle: 'Total de participantes',
+            icon: this.sanitizer.bypassSecurityTrustHtml('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-9 h-9"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>') as any,
+            color: 'guinda'
+        };
+
+        this.finishMetric = {
+            title: 'Porcentaje de aprobación',
+            value: '82%',
+            subtitle: 'Porcentaje de aprobación',
+            icon: this.sanitizer.bypassSecurityTrustHtml('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-9 h-9"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>') as any,
+            color: 'guinda',
+            progress: {
+                percentage: 82,
+                label: 'Porcentaeje de aprobación'
+            }
+        };
+
+        this.calendarMetric = {
+            title: 'Grupos activos actualmente',
+            value: '18',
+            subtitle: 'Grupos activos actualmente',
+            icon: this.sanitizer.bypassSecurityTrustHtml('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-9 h-9"><path d="M20 3h-1V1h-2v2H7V1H5v2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 18H4V8h16v13z"/></svg>') as any,
+            color: 'guinda'
+        };
+    }
+
+    private initTableData() {
+        this.tableColumns = [
+            { key: 'course', label: 'Curso', sortable: true, minWidth: '100px' },
+            { key: 'group', label: 'Grupo', sortable: true, minWidth: '100px' },
+            { key: 'location', label: 'Ubicación', sortable: true },
+            { key: 'participants', label: 'Cantidad', sortable: true },
+            { key: 'date', label: 'Fecha', sortable: true, template: this.dateTemplate },
+            { key: 'time', label: 'Hora' },
+            { key: 'status', label: 'Estatus', template: this.statusTemplate }
+        ];
+
+        // Cargar datos reales desde el servicio
+        this.tableConfig.loading = true;
+        forkJoin({
+            groups: this.groupsService.getGroups(),
+            courses: this.coursesService.getCourses()
+        }).subscribe({
+            next: ({ groups: groupsResponse, courses: coursesResponse }) => {
+                console.log('Datos cargados en Dashboard:', { groupsResponse, coursesResponse });
+
+                // 1. Extraer Lista de Grupos (Manejo de Paginación vs Array Directo)
+                let groups: Group[] = [];
+                if (Array.isArray(groupsResponse)) {
+                    groups = groupsResponse;
+                } else if (groupsResponse.data && Array.isArray(groupsResponse.data)) {
+                    groups = groupsResponse.data;
+                } else if (groupsResponse.items && Array.isArray(groupsResponse.items)) {
+                    groups = groupsResponse.items;
+                }
+
+                // 2. Extraer Lista de Cursos (Manejo de Paginación vs Array Directo)
+                // CoursesService ahora devuelve metadatos también.
+                let courses: any[] = [];
+                if (Array.isArray(coursesResponse)) {
+                    courses = coursesResponse;
+                } else if (coursesResponse.data && Array.isArray(coursesResponse.data)) {
+                    courses = coursesResponse.data;
+                } else if (coursesResponse.items && Array.isArray(coursesResponse.items)) {
+                    courses = coursesResponse.items;
+                }
+
+                // 3. Actualizar Métricas (Usando datos reales del Backend)
+                this.calendarMetric = { ...this.calendarMetric, value: groups.length.toString() };
+                this.graduationMetric = { ...this.graduationMetric, value: courses.length.toString() };
+
+                // Participantes: Suma de 'limitStudents' (o 'activeStudents' si existiera en el futuro)
+                const totalParticipants = groups.reduce((sum, g) => sum + (Number(g.limitStudents) || 0), 0);
+                this.personMetric = { ...this.personMetric, value: totalParticipants.toLocaleString() };
+
+                // 3. Mapeo para Tabla (Manejo de Relaciones Dinámicas)
+                this.upcomingCourses = groups.map((g: Group) => {
+                    // Resolver Nombre del Curso
+                    // El backend puede enviar 'course' como Número (ID) o como Objeto completo.
+                    let courseName = 'Curso no encontrado';
+
+                    if (g.course && typeof g.course === 'object' && (g.course as any).name) {
+                        // Caso: Objeto poblado
+                        courseName = (g.course as any).name;
+                    } else {
+                        // Caso: ID, buscamos en el catálogo de Cursos cargado previamente
+                        const courseFound = courses.find(c => c.id === Number(g.course));
+                        if (courseFound) courseName = courseFound.name;
+                    }
+
+                    return {
+                        course: courseName,
+                        group: g.name,
+                        location: g.location,
+                        participants: g.limitStudents,
+                        date: g.groupStartDate,
+                        time: g.schedule,
+                        status: g.status
+                    };
+                }).slice(0, 5); // Mostrar solo los 5 más recientes
+                this.tableConfig.loading = false;
+            },
+            error: (err) => {
+                console.error('Error cargando cursos en dashboard', err);
+                this.tableConfig.loading = false;
+            }
+        });
     }
 }

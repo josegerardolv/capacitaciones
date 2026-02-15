@@ -1030,6 +1030,22 @@ router-outlet + * {
   left: 100%;
 }
 
+/* Fixed-height helper for buttons when a customHeight is provided */
+.institutional-btn.btn-fixed-height {
+  padding: 0 1rem !important;
+  min-height: unset !important;
+  height: 3rem !important; /* matches inputs */
+}
+
+.institutional-btn.btn-fixed-height .institutional-btn-text,
+.institutional-btn.btn-fixed-height .institutional-btn-icon-left,
+.institutional-btn.btn-fixed-height .institutional-btn-icon-right {
+  line-height: 3rem !important;
+  display: inline-flex;
+  align-items: center;
+  height: 100%;
+}
+
 /* === BUTTON SIZES === */
 .institutional-btn-small {
   padding: 0.375rem 0.75rem;
@@ -6093,6 +6109,16 @@ app-institutional-table + app-table-pagination {
 .institucional-table-action-btn-circular .material-symbols-outlined {
   margin: 0 !important;
   font-size: 1.125rem !important;
+}
+
+/* ===========================================
+   OVERFLOW VISIBLE PARA CARDS CON DROPDOWNS
+   =========================================== */
+
+/* Permite que los dropdowns/selects escapen del contenedor padre */
+.overflow-visible-card,
+.overflow-visible-card .institutional-card-body {
+  overflow: visible !important;
 }
 
 /* ===========================================

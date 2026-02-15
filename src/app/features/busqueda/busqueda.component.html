@@ -1,0 +1,294 @@
+<div class="min-h-screen">
+  <!-- Tarjeta superior: título y breadcrumb -->
+  <app-institutional-card [config]="{ showHeader: false, showFooter: false, showShadow: true, showBorder: true }" class="mb-6">
+    <div class="flex items-center gap-4">
+      <div class="p-3 rounded-lg bg-institucional-primario bg-opacity-10 flex items-center justify-center">
+        <app-universal-icon name="search" type="bootstrap" class="w-6 h-6 text-white"></app-universal-icon>
+      </div>
+      <div class="min-w-0">
+        <h1 class="text-2xl md:text-3xl font-extrabold text-gray-900">Búsqueda de Personas</h1>
+        <p class="text-sm text-gray-500 mt-1">Busca conductores por nombre o número de licencia</p>
+      </div>
+    </div>
+    <div class="mt-2 ml-4">
+      <app-breadcrumb [items]="breadcrumbItems"></app-breadcrumb>
+    </div>
+  </app-institutional-card>
+  <br>
+  <!-- Tarjeta de búsqueda -->
+  <app-institutional-card [config]="{ showHeader: false, showFooter: false, showShadow: true, showBorder: true, customClass: 'overflow-visible-card' }" class="mb-6 overflow-visible">
+    <div class="space-y-4">
+      <p class="text-gray-700 font-medium">Seleccione el tipo de búsqueda que quiere realizar</p>
+      
+      <form [formGroup]="searchForm" class="flex flex-row items-center gap-4 flex-nowrap w-full">
+        <div class="flex w-full gap-4 flex-nowrap justify-center items-center">
+            <app-select
+            controlName="tipoSearch"
+            [control]="getControl('tipoSearch')"
+            label="Tipo de búsqueda"
+            size="md"
+            [options]="searchTypeOptions"
+            placeholder="Selecciona una opción"
+            [floating]="true"
+            class="h-full min-w-[250px]">
+            </app-select>
+            <app-input-enhanced
+                controlName="searchValue"
+                [control]="getControl('searchValue')"
+                label="Valor de búsqueda"
+                [placeholder]="getSearchPlaceholder()"
+                iconLeft="search"
+                iconLeftType="bootstrap"
+                [clear]="true"
+                [floating]="true"
+                class="h-full w-full">
+            </app-input-enhanced>
+            <app-institutional-button
+              class="h-full mb-[1rem]"
+                [config]="{
+                  variant: 'primary',
+                  icon: 'search',
+                  loading: isSearching,
+                  title: 'Buscar',
+                  customHeight: '3rem',
+                  customClass: 'btn-fixed-height'
+                }"
+                (buttonClick)="onSearch()">
+                Buscar
+            </app-institutional-button>
+        </div>
+      </form>
+    </div>
+  </app-institutional-card>
+
+  <!-- Resultados de la búsqueda -->
+  @if (hasSearched && personaEncontrada) {
+    
+    <!-- SECCIÓN 1: Datos del Conductor -->
+    <br>
+    <app-institutional-card [config]="{ showHeader: false, showFooter: false, showShadow: true, showBorder: true }" class="mb-6">
+      <div class="flex items-center gap-3 mb-6">
+        <div class="p-2.5 rounded-lg bg-institucional-primario">
+          <app-universal-icon name="person-vcard" type="bootstrap" [size]="22" customClass="text-white"></app-universal-icon>
+        </div>
+        <div>
+          <h2 class="text-xl font-bold text-gray-800">Datos del Conductor</h2>
+          <p class="text-sm text-gray-500">Información personal del conductor encontrado</p>
+        </div>
+      </div>
+      
+      <div class="rounded-xl overflow-hidden shadow-sm border border-gray-200">
+        <div class="bg-white divide-y divide-gray-100">
+          <div class="flex items-center">
+            <div class="w-44 lg:w-56 px-4 py-3.5 bg-institucional-primario-dark flex-shrink-0">
+              <span class="text-white text-sm font-medium">Nombre completo:</span>
+            </div>
+            <div class="flex-1 px-4 py-3.5 bg-gray-50">
+              <span class="text-gray-800 font-semibold text-base">{{ personaEncontrada.nombre }}</span>
+            </div>
+          </div>
+          
+          <div class="flex items-center">
+            <div class="w-44 lg:w-56 px-4 py-3.5 bg-institucional-primario-dark flex-shrink-0">
+              <span class="text-white text-sm font-medium">Número de licencia:</span>
+            </div>
+            <div class="flex-1 px-4 py-3.5">
+              <span class="text-gray-700 font-mono text-sm bg-gray-100 px-2 py-1 rounded">{{ personaEncontrada.licencia }}</span>
+            </div>
+          </div>
+          
+          <div class="flex items-center">
+            <div class="w-44 lg:w-56 px-4 py-3.5 bg-institucional-primario-dark flex-shrink-0">
+              <span class="text-white text-sm font-medium">Foto del conductor:</span>
+            </div>
+            <div class="flex-1 px-4 py-3.5 bg-gray-50">
+              @if (personaEncontrada.fotoUrl) {
+                <img [src]="personaEncontrada.fotoUrl" alt="Foto del conductor" class="w-14 h-14 rounded-full object-cover border-2 border-gray-200 shadow-sm">
+              } @else {
+                <span class="text-gray-400 italic text-sm">Sin foto disponible</span>
+              }
+            </div>
+          </div>
+          
+          <div class="flex items-center">
+            <div class="w-44 lg:w-56 px-4 py-3.5 bg-institucional-primario-dark flex-shrink-0">
+              <span class="text-white text-sm font-medium">Fecha de registro:</span>
+            </div>
+            <div class="flex-1 px-4 py-3.5">
+              <span class="text-gray-700">{{ personaEncontrada.fechaRegistro }}</span>
+            </div>
+          </div>
+          
+          <div class="flex items-center">
+            <div class="w-44 lg:w-56 px-4 py-3.5 bg-institucional-primario-dark flex-shrink-0">
+              <span class="text-white text-sm font-medium">Estatus actual:</span>
+            </div>
+            <div class="flex-1 px-4 py-3.5 bg-gray-50">
+              <app-institutional-badge [config]="getEstatusBadgeConfig(personaEncontrada.estatus)">
+                {{ personaEncontrada.estatus }}
+              </app-institutional-badge>
+            </div>
+          </div>
+        </div>
+      </div>
+    </app-institutional-card>
+
+    <!-- SECCIÓN 2: Último Curso Tomado -->
+    @if (ultimoCurso) {
+    <br>
+    <app-institutional-card [config]="{ showHeader: false, showFooter: false, showShadow: true, showBorder: true }" class="mb-6">
+    <div class="flex items-center gap-3 mb-6">
+        <div class="p-2.5 rounded-lg bg-institucional-secundario">
+        <app-universal-icon name="mortarboard-fill" type="bootstrap" [size]="22" customClass="text-white"></app-universal-icon>
+        </div>
+        <div>
+        <h2 class="text-xl font-bold text-gray-800">Último Curso Tomado</h2>
+        <p class="text-sm text-gray-500">Información del curso más reciente</p>
+        </div>
+    </div>
+    
+    <div class="rounded-xl overflow-hidden shadow-sm border border-gray-200">
+        <div class="bg-white divide-y divide-gray-100">
+        <div class="flex items-center">
+            <div class="w-44 lg:w-56 px-4 py-3.5 bg-institucional-secundario-dark flex-shrink-0">
+            <span class="text-white text-sm font-medium">Nombre del curso:</span>
+            </div>
+            <div class="flex-1 px-4 py-3.5 bg-gray-50">
+            <span class="text-gray-800 font-semibold text-base">{{ ultimoCurso.curso }}</span>
+            </div>
+        </div>
+        
+        <div class="flex items-center">
+            <div class="w-44 lg:w-56 px-4 py-3.5 bg-institucional-secundario-dark flex-shrink-0">
+            <span class="text-white text-sm font-medium">Grupo asignado:</span>
+            </div>
+            <div class="flex-1 px-4 py-3.5">
+            <span class="text-gray-800 font-semibold">{{ ultimoCurso.grupo }}</span>
+            </div>
+        </div>
+        
+        <div class="flex items-center">
+            <div class="w-44 lg:w-56 px-4 py-3.5 bg-institucional-secundario-dark flex-shrink-0">
+            <span class="text-white text-sm font-medium">Fecha del grupo:</span>
+            </div>
+            <div class="flex-1 px-4 py-3.5 bg-gray-50">
+            <span class="text-gray-700">{{ ultimoCurso.fechaGrupo }}</span>
+            </div>
+        </div>
+        
+        <div class="flex items-center">
+            <div class="w-44 lg:w-56 px-4 py-3.5 bg-institucional-secundario-dark flex-shrink-0">
+            <span class="text-white text-sm font-medium">Folio de constancia:</span>
+            </div>
+            <div class="flex-1 px-4 py-3.5">
+            <span class="text-gray-700 font-mono bg-gray-100 px-2 py-1 rounded text-sm">{{ ultimoCurso.folioConstancia }}</span>
+            </div>
+        </div>
+        
+        <div class="flex items-center">
+            <div class="w-44 lg:w-56 px-4 py-3.5 bg-institucional-secundario-dark flex-shrink-0">
+            <span class="text-white text-sm font-medium">Ver constancia:</span>
+            </div>
+            <div class="flex-1 px-4 py-3.5 bg-gray-50">
+            <app-institutional-button
+                [config]="{
+                variant: 'info',
+                size: 'small',
+                icon: 'file-earmark-pdf',
+                iconPosition: 'left'
+                }"
+                (buttonClick)="viewConstancia(cursosHistorial[0])">
+                Descargar PDF
+            </app-institutional-button>
+            </div>
+        </div>
+        </div>
+    </div>
+    </app-institutional-card>
+    }
+
+    <!-- Historial de cursos -->
+    <br>
+    <app-institutional-card [config]="{ showHeader: false, showFooter: false, showShadow: true, showBorder: true }">
+      <div class="flex items-center gap-3 mb-6">
+        <div class="p-2.5 rounded-lg bg-gray-700">
+          <app-universal-icon name="clock-history" type="bootstrap" [size]="22" customClass="text-white"></app-universal-icon>
+        </div>
+        <div>
+          <h2 class="text-xl font-bold text-gray-800">Historial de Cursos</h2>
+          <p class="text-sm text-gray-500">Cursos tomados anteriormente</p>
+        </div>
+      </div>
+      
+      <!-- Toolbar: paginación superior -->
+      <div class="flex flex-col-reverse md:flex-row md:justify-between md:items-center gap-4 mb-4">
+        <app-table-pagination
+          [config]="paginationConfig"
+          [showPageSizeSelector]="true"
+          [showPaginationControls]="false"
+          (pageChange)="onPageChange($event)">
+        </app-table-pagination>
+      </div>
+
+      <!-- Tabla de historial -->
+      <app-institutional-table
+        [data]="cursosHistorial"
+        [columns]="tableColumns"
+        [config]="tableConfig">
+      </app-institutional-table>
+
+      <!-- Paginación inferior -->
+      <app-table-pagination
+        [config]="paginationConfig"
+        [showPageSizeSelector]="false"
+        [showPaginationControls]="true"
+        (pageChange)="onPageChange($event)">
+      </app-table-pagination>
+    </app-institutional-card>
+  }
+
+  <!-- Estado vacío cuando no hay resultados -->
+  @if (hasSearched && !personaEncontrada) {
+    <app-institutional-card [config]="{ showHeader: false, showFooter: false, showShadow: true, showBorder: true }">
+      <div class="flex flex-col items-center justify-center py-16">
+        <app-universal-icon name="person-x" type="bootstrap" [size]="64" customClass="text-gray-300 mb-4"></app-universal-icon>
+        <h3 class="text-xl font-semibold text-gray-700 mb-2">No se encontraron resultados</h3>
+        <p class="text-gray-500 text-center max-w-md">
+          No se encontró ningún conductor con los datos proporcionados. Verifica la información e intenta nuevamente.
+        </p>
+        <app-institutional-button
+          class="mt-6"
+          [config]="{ variant: 'secondary', icon: 'arrow-clockwise' }"
+          (buttonClick)="onClearSearch()">
+          Nueva búsqueda
+        </app-institutional-button>
+      </div>
+    </app-institutional-card>
+  }
+</div>
+
+<!-- Template para estatus en la tabla -->
+<ng-template #estatusTemplate let-item>
+  <div class="flex justify-center">
+    <app-institutional-badge [config]="getEstatusBadgeConfig(item.estatus)">
+      {{ item.estatus }}
+    </app-institutional-badge>
+  </div>
+</ng-template>
+
+<!-- Template para constancias en la tabla -->
+<ng-template #constanciaTemplate let-item>
+  <div class="flex justify-center">
+    <app-institutional-button
+      [config]="{
+        variant: 'info',
+        size: 'small',
+        icon: 'visibility',
+        iconPosition: 'only'
+      }"
+      [appTooltip]="'Ver constancia'"
+      tooltipPosition="top"
+      (buttonClick)="viewConstancia(item)">
+    </app-institutional-button>
+  </div>
+</ng-template>

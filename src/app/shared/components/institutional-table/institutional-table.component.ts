@@ -10,7 +10,12 @@ export interface TableColumn {
   maxWidth?: string;
   minWidth?: string;
   align?: 'left' | 'center' | 'right';
-  type?: 'text' | 'number' | 'date' | 'boolean' | 'custom';
+  type?: 'text' | 'number' | 'date' | 'boolean' | 'custom' | 'duration';
+  // Para columnas de tipo duration, indicar la unidad base del valor
+  // Valores permitidos: 'seconds'|'minutes'|'hours'|'days'|'weeks'|'months'|'years'
+  durationUnit?: 'seconds' | 'minutes' | 'hours' | 'days' | 'weeks' | 'months' | 'years';
+  // Cómo mostrar la duración: 'long' (ej. "1 año 2 meses") o 'short' (ej. "1a 2mes")
+  durationDisplay?: 'long' | 'short';
   template?: TemplateRef<any>;
   /** Pin column during horizontal scroll. Use 'left' or 'right' to pin to that side. */
   pin?: 'left' | 'right';
@@ -203,7 +208,7 @@ export class InstitutionalTableComponent implements AfterContentInit, AfterViewI
 
   leftOffsets: { [key: number]: number } = {};
   rightOffsets: { [key: number]: number } = {};
-  
+
   // Para ordenamiento local
   private originalData: any[] = [];
   sortedData: any[] = [];
@@ -217,7 +222,7 @@ export class InstitutionalTableComponent implements AfterContentInit, AfterViewI
     if (changes['data'] && changes['data'].currentValue) {
       this.originalData = [...changes['data'].currentValue];
       this.applySortIfLocal();
-      
+
       // Re-aplicar sticky positioning cuando cambien los datos de la tabla
       if (!changes['data'].firstChange) {
         setTimeout(() => {
@@ -226,12 +231,12 @@ export class InstitutionalTableComponent implements AfterContentInit, AfterViewI
         }, 50);
       }
     }
-    
+
     // Si cambió el ordenamiento externo y está en modo local, aplicar ordenamiento
     if ((changes['sortColumn'] || changes['sortDirection']) && this.config.localSort) {
       this.applySortIfLocal();
     }
-    
+
     // Si cambió la configuración, re-aplicar ordenamiento
     if (changes['config'] && this.config.localSort) {
       this.applySortIfLocal();
@@ -265,7 +270,7 @@ export class InstitutionalTableComponent implements AfterContentInit, AfterViewI
 
     const tableContainer = document.querySelector('.institucional-table-responsive') as HTMLElement;
     const stickyHeaders = document.querySelectorAll('.institucional-table-column-sticky-right');
-    
+
     if (!tableContainer || !stickyHeaders.length) return;
 
     // Force the sticky positioning with JavaScript
@@ -274,8 +279,8 @@ export class InstitutionalTableComponent implements AfterContentInit, AfterViewI
       htmlElement.style.position = 'sticky';
       htmlElement.style.right = '0';
       htmlElement.style.zIndex = '1000';
-      htmlElement.style.backgroundColor = htmlElement.tagName.toLowerCase() === 'th' 
-        ? 'transparent' 
+      htmlElement.style.backgroundColor = htmlElement.tagName.toLowerCase() === 'th'
+        ? 'transparent'
         : 'white';
     });
 
@@ -375,11 +380,24 @@ export class InstitutionalTableComponent implements AfterContentInit, AfterViewI
 
   toggleSelectAll(event: Event): void {
     const target = event.target as HTMLInputElement;
-    const newSelection = target.checked ? [...this.displayData] : [];
+    const isChecked = target.checked;
+
+    let newSelection: any[];
+
+    if (isChecked) {
+      // Union: Add visible items to existing selection (avoid duplicates)
+      const currentSelectionIds = new Set(this.selectedItems.map(item => this.trackByFn(0, item)));
+      const itemsToAdd = this.displayData.filter(item => !currentSelectionIds.has(this.trackByFn(0, item)));
+      newSelection = [...this.selectedItems, ...itemsToAdd];
+    } else {
+      // Difference: Remove visible items from existing selection
+      const visibleIds = new Set(this.displayData.map(item => this.trackByFn(0, item)));
+      newSelection = this.selectedItems.filter(item => !visibleIds.has(this.trackByFn(0, item)));
+    }
 
     this.selectionChange.emit({
       selectedItems: newSelection,
-      allSelected: target.checked
+      allSelected: isChecked
     });
   }
 
@@ -388,7 +406,7 @@ export class InstitutionalTableComponent implements AfterContentInit, AfterViewI
 
     let newDirection: 'asc' | 'desc' | null = 'asc';
     let newColumn: string | null = column.key;
-    
+
     if (this.sortColumn === column.key) {
       if (this.sortDirection === 'asc') {
         newDirection = 'desc';
@@ -408,7 +426,7 @@ export class InstitutionalTableComponent implements AfterContentInit, AfterViewI
       // Forzar detección de cambios para actualizar la vista
       this.cd.detectChanges();
     }
-    
+
     // Siempre emitir el evento para mantener sincronización con el componente padre
     this.sort.emit({
       column: newColumn,
@@ -439,24 +457,24 @@ export class InstitutionalTableComponent implements AfterContentInit, AfterViewI
     this.sortedData = [...this.originalData].sort((a, b) => {
       let valueA: any;
       let valueB: any;
-      
+
       // Manejar casos especiales para propiedades calculadas
       if (this.sortColumn === 'person.full_name') {
         // Crear nombre completo para ordenamiento
-        valueA = a.person ? `${a.person.first_name || ''} ${a.person.last_name || ''} ${a.person.second_last_name || ''}`.trim() : '';
-        valueB = b.person ? `${b.person.first_name || ''} ${b.person.last_name || ''} ${b.person.second_last_name || ''}`.trim() : '';
+        valueA = a.person ? `${a.person.first_name || ''} ${a.person.paternal_lastName || ''} ${a.person.maternal_lastName || ''}`.trim() : '';
+        valueB = b.person ? `${b.person.first_name || ''} ${b.person.paternal_lastName || ''} ${b.person.maternal_lastName || ''}`.trim() : '';
       } else {
         valueA = this.getNestedProperty(a, this.sortColumn!);
         valueB = this.getNestedProperty(b, this.sortColumn!);
       }
-      
+
       // Manejar valores nulos/undefined
       if (valueA == null && valueB == null) return 0;
       if (valueA == null) return this.sortDirection === 'asc' ? 1 : -1;
       if (valueB == null) return this.sortDirection === 'asc' ? -1 : 1;
 
       let comparison = 0;
-      
+
       // Determinar tipo de comparación
       if (typeof valueA === 'string' && typeof valueB === 'string') {
         comparison = valueA.toLowerCase().localeCompare(valueB.toLowerCase(), 'es-ES');
@@ -491,7 +509,7 @@ export class InstitutionalTableComponent implements AfterContentInit, AfterViewI
     if (this.config.expandable) {
       this.toggleExpanded(item);
     }
-    
+
     this.rowClick.emit({ item, index });
   }
 
@@ -509,8 +527,64 @@ export class InstitutionalTableComponent implements AfterContentInit, AfterViewI
 
   getCellValue(item: any, column: TableColumn): any {
     const value = this.getNestedProperty(item, column.key);
-    
+
     switch (column.type) {
+      case 'duration':
+        // Determinar unidad base (por defecto: minutes para compatibilidad)
+        const base = (column as any).durationUnit || 'minutes';
+        const num = typeof value === 'number' ? value : parseFloat(value);
+        if (isNaN(num)) return '';
+
+        // Convertir todo a segundos
+        const multipliers: { [k: string]: number } = {
+          seconds: 1,
+          minutes: 60,
+          hours: 3600,
+          days: 86400,
+          weeks: 604800,
+          months: 2592000, // 30 días
+          years: 31536000 // 365 días
+        };
+
+        const totalSeconds = Math.round(num * (multipliers[base] || 60));
+
+        if (totalSeconds === 0) {
+          const baseLabels: any = { seconds: 'segundos', minutes: 'minutos', hours: 'horas', days: 'días', weeks: 'semanas', months: 'meses', years: 'años' };
+          return `0 ${baseLabels[base] || 'segundos'}`;
+        }
+
+        let rest = totalSeconds;
+        const years = Math.floor(rest / multipliers['years']); rest %= multipliers['years'];
+        const months = Math.floor(rest / multipliers['months']); rest %= multipliers['months'];
+        const weeks = Math.floor(rest / multipliers['weeks']); rest %= multipliers['weeks'];
+        const days = Math.floor(rest / multipliers['days']); rest %= multipliers['days'];
+        const hours = Math.floor(rest / multipliers['hours']); rest %= multipliers['hours'];
+        const minutes = Math.floor(rest / multipliers['minutes']); rest %= multipliers['minutes'];
+        const seconds = rest;
+
+        const display = (column as any).durationDisplay || 'long';
+        const parts: string[] = [];
+        if (display === 'short') {
+          const mapShort: any = { years: 'a', months: 'mes', weeks: 'sem', days: 'd', hours: 'h', minutes: 'min', seconds: 's' };
+          if (years) parts.push(`${years}${mapShort['years']}`);
+          if (months) parts.push(`${months}${mapShort['months']}`);
+          if (weeks) parts.push(`${weeks}${mapShort['weeks']}`);
+          if (days) parts.push(`${days}${mapShort['days']}`);
+          if (hours) parts.push(`${hours}${mapShort['hours']}`);
+          if (minutes) parts.push(`${minutes}${mapShort['minutes']}`);
+          if (seconds) parts.push(`${seconds}${mapShort['seconds']}`);
+          return parts.join(' ');
+        }
+
+        if (years) parts.push(`${years} año${years > 1 ? 's' : ''}`);
+        if (months) parts.push(`${months} mes${months > 1 ? 'es' : ''}`);
+        if (weeks) parts.push(`${weeks} semana${weeks > 1 ? 's' : ''}`);
+        if (days) parts.push(`${days} día${days > 1 ? 's' : ''}`);
+        if (hours) parts.push(`${hours} hora${hours > 1 ? 's' : ''}`);
+        if (minutes) parts.push(`${minutes} minuto${minutes > 1 ? 's' : ''}`);
+        if (seconds) parts.push(`${seconds} segundo${seconds > 1 ? 's' : ''}`);
+
+        return parts.join(' ');
       case 'date':
         return value ? new Date(value).toLocaleDateString('es-ES') : '';
       case 'boolean':
