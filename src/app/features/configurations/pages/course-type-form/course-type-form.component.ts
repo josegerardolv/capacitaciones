@@ -35,7 +35,6 @@ import { SelectComponent } from '../../../../shared/components/inputs/select.com
         UniversalIconComponent,
         InstitutionalButtonComponent,
         InputEnhancedComponent,
-        SelectComponent,
         InstitutionalCardComponent,
         InstitutionalTableComponent,
         BreadcrumbComponent,
@@ -123,6 +122,7 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
 
     ngOnInit(): void {
         this.initForm();
+        this.filteredTypeOptions = [...this.courseTypesOptions];
 
         // 1. Cargar Requisitos del Backend primero
         this.requirementsService.getRequirements().subscribe({
@@ -170,15 +170,63 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
         });
     }
 
+    // CATALOGO DE TIPOS DE CURSO
+    // Nota: Si necesitamos agregar un nuevo tipo (ej. Seminario), solo agregarlo a esta lista.
+    // El valor seleccionado se guardará automáticamente en la base de datos.
     courseTypesOptions: any[] = [
         { value: 'Licencia', label: 'Licencia' },
         { value: 'Curso', label: 'Curso' },
         { value: 'Taller', label: 'Taller' },
         { value: 'Diplomado', label: 'Diplomado' },
         { value: 'Certificación', label: 'Certificación' },
-        { value: 'Plática', label: 'Plática' },
-        { value: 'Otro', label: 'Otro' }
+        { value: 'Plática', label: 'Plática' }
     ];
+
+    // Autocomplete Logic
+    showTypeDropdown = false;
+    filteredTypeOptions: any[] = [];
+
+    filterTypes(query: string) {
+        const term = query.toLowerCase();
+        this.filteredTypeOptions = this.courseTypesOptions.filter(opt =>
+            opt.label.toLowerCase().includes(term)
+        );
+        this.showTypeDropdown = true;
+    }
+
+    handleTypeInput(event: any) {
+        // Safe casting/access for template strict mode
+        const value = event?.target?.value || '';
+        this.filterTypes(value);
+    }
+
+    selectType(option: any) {
+        this.typeControl.setValue(option.value);
+        this.showTypeDropdown = false;
+    }
+
+    onTypeFocus() {
+        // Al enfocar, mostramos todas las opciones o filtramos por lo que haya escrito
+        const currentVal = this.typeControl.value || '';
+        this.filterTypes(currentVal);
+        this.showTypeDropdown = true;
+    }
+
+    onTypeBlur() {
+        // Retrasamos el cierre para permitir el click en la opción
+        setTimeout(() => {
+            const currentVal = this.typeControl.value;
+            // Validación Estricta: Si el valor actual no coincide EXACTAMENTE con una opción, limpiar
+            const match = this.courseTypesOptions.find(opt => opt.value === currentVal);
+
+            if (!match) {
+                // Si no es válido, reseteamos el control (o lo dejamos inválido si se prefiere)
+                // El requerimiento es "escribir y solo esos permitir", así que limpiamos si no es válido
+                this.typeControl.setValue(null);
+            }
+            this.showTypeDropdown = false;
+        }, 200);
+    }
 
     initForm() {
         this.form = this.fb.group({

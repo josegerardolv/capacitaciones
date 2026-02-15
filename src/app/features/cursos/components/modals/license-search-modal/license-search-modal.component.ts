@@ -75,7 +75,12 @@ export class LicenseSearchModalComponent {
             error: (err) => {
                 this.isSearching = false;
                 console.error('Error buscando conductor:', err);
-                this.notificationService.showError('Error', 'Error en el servicio de búsqueda.');
+                // Si es 404 (No encontrado) o 400 (Bad Request - posible validación), permitimos registro manual
+                if (err.status === 404 || err.status === 400) {
+                    this.showNotFoundAlert();
+                } else {
+                    this.notificationService.showError('Error', 'Error en el servicio de búsqueda. Intente más tarde.');
+                }
             }
         });
     }

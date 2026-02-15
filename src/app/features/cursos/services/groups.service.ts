@@ -68,7 +68,7 @@ export class GroupsService {
     }
 
     searchPersonByLicense(license: string): Observable<Person | null> {
-        const params = new HttpParams().set('q', license);
+        const params = new HttpParams().set('license', license);
         return this.http.get<Person[]>(`${this.apiUrl}/persons`, { params })
             .pipe(map(results => (results && results.length > 0) ? results[0] : null));
     }

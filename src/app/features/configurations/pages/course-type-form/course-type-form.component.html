@@ -29,7 +29,7 @@
 
             <!-- Left Side: Basic Info -->
             <app-institutional-card class="h-full block lg:col-span-2"
-                [config]="{ showHeader: false, showFooter: false, showShadow: true, showBorder: true, customClass: 'h-full' }">
+                [config]="{ showHeader: false, showFooter: false, showShadow: true, showBorder: true, customClass: 'h-full !overflow-visible' }">
                 <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">DATOS TIPO CURSO</h3>
                 <div class="space-y-3">
                     <app-input-enhanced controlName="name" [control]="form.get('name')" label="Nombre del tipo de curso"
@@ -41,10 +41,27 @@
                         [required]="true" size="sm">
                     </app-input-enhanced>
                     <br>
-                    <app-select controlName="type" [control]="typeControl" label="Tipo de curso"
-                        placeholder="Selecciona el tipo de curso" [options]="courseTypesOptions" [required]="true"
-                        size="sm">
-                    </app-select>
+                    <div class="relative">
+                        <app-input-enhanced controlName="type" [control]="typeControl" label="Tipo de curso"
+                            placeholder="Escribe para buscar..." [required]="true" size="sm" [autocomplete]="'off'"
+                            (focus)="onTypeFocus()" (blur)="onTypeBlur()" (inputEvent)="handleTypeInput($event)">
+                        </app-input-enhanced>
+
+                        <!-- Dropdown List -->
+                        <ul *ngIf="showTypeDropdown && filteredTypeOptions.length > 0"
+                            class="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto focus:outline-none">
+                            <li *ngFor="let option of filteredTypeOptions" (click)="selectType(option)"
+                                class="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer transition-colors border-b border-gray-100 last:border-0">
+                                {{ option.label }}
+                            </li>
+                        </ul>
+
+                        <!-- No results -->
+                        <div *ngIf="showTypeDropdown && filteredTypeOptions.length === 0"
+                            class="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg px-4 py-3 text-sm text-gray-500 text-center">
+                            No se encontraron coincidencias.
+                        </div>
+                    </div>
                 </div>
             </app-institutional-card>
 
