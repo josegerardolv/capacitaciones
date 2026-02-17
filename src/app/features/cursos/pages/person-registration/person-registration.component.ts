@@ -272,7 +272,7 @@ export class PersonRegistrationComponent implements OnInit {
             const value = personData[key];
             if (personTableFields.includes(key)) {
                 // Va a la tabla Person
-                personDataForPayload[key] = value;
+                personDataForPayload[key] = (typeof value === 'string' && value.trim() === '') ? null : value;
             } else {
                 // Va a Responses si tiene un ID de configuración
                 const fieldConfig = this.fieldsConfig![key];

@@ -317,7 +317,8 @@ export class PublicRegistrationComponent implements OnInit {
         Object.keys(personData).forEach(key => {
             const value = personData[key];
             if (personTableFields.includes(key)) {
-                personDataForPayload[key] = value;
+                // Convertir cadenas vacías a null para campos opcionales en BD (Hybrid Model)
+                personDataForPayload[key] = (typeof value === 'string' && value.trim() === '') ? null : value;
             } else {
                 const fieldConfig = this.fieldsConfig![key];
                 if (fieldConfig && fieldConfig.courseConfigFieldId) {
