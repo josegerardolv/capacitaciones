@@ -2,7 +2,7 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { InstitutionalButtonComponent } from '../../../../../shared/components/buttons/institutional-button.component';
-import { NotificationService } from '../../../../../core/services/notification.service';
+import { NotificationService } from '../../../../../shared/services/notification.service';
 import { GroupsService } from '../../../services/groups.service';
 import { Person } from '../../../../../core/models/person.model';
 import { AlertModalComponent, AlertConfig } from '../../../../../shared/components/modals/alert-modal.component';
@@ -75,12 +75,8 @@ export class LicenseSearchModalComponent {
             error: (err) => {
                 this.isSearching = false;
                 console.error('Error buscando conductor:', err);
-                // Si es 404 (No encontrado) o 400 (Bad Request - posible validación), permitimos registro manual
-                if (err.status === 404 || err.status === 400) {
-                    this.showNotFoundAlert();
-                } else {
-                    this.notificationService.showError('Error', 'Error en el servicio de búsqueda. Intente más tarde.');
-                }
+                // Ante cualquier error de búsqueda (no encontrado, 401, etc.), permitimos continuar manualmente
+                this.showNotFoundAlert();
             }
         });
     }

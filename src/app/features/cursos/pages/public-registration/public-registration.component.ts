@@ -110,7 +110,19 @@ export class PublicRegistrationComponent implements OnInit {
                 if ((populatedConfig && populatedConfig.courseConfigField && populatedConfig.courseConfigField.length > 0) || (directFields && directFields.length > 0)) {
 
                     // Actualizar Info del Header con el nombre real del curso si está disponible
-                    if (populatedConfig) this.groupInfo.courseName = populatedConfig.name || group.name;
+                    if (populatedConfig) {
+                        this.groupInfo.courseName = populatedConfig.name || group.name;
+                        this.currentCourseType = populatedConfig.type || (populatedConfig.name?.toUpperCase().includes('CONSTANCIA') ? 'CONSTANCIA' : 'LICENCIA');
+                    }
+
+                    // Poblar templates/documentos disponibles si existen
+                    if (populatedConfig && populatedConfig.availableDocuments) {
+                        this.availableDocuments = populatedConfig.availableDocuments;
+                    } else if (group.course?.templates) {
+                        this.availableDocuments = group.course.templates;
+                    } else if (group.templates) {
+                        this.availableDocuments = group.templates;
+                    }
 
                     this.setupFormFields(populatedConfig || {} as any, directFields);
 
@@ -180,7 +192,7 @@ export class PublicRegistrationComponent implements OnInit {
             if (config) {
                 // Update Course Name if we have the config name
                 this.groupInfo.courseName = config.name;
-
+                this.availableDocuments = config.availableDocuments || [];
                 this.setupFormFields(config);
 
                 const licenseField = this.fieldsConfig['license'];
@@ -348,6 +360,9 @@ export class PublicRegistrationComponent implements OnInit {
             const value = personData[key];
             const fieldConfig = this.fieldsConfig[key];
 
+            // Mejorar: Convertir cadenas vacías en null para campos opcionales en BD
+            const processedValue = (typeof value === 'string' && value.trim() === '') ? null : value;
+
             // Si es un campo dinámico (tiene ID de configuración)
             if (fieldConfig && fieldConfig.courseConfigFieldId) {
                 responses.push({
@@ -357,11 +372,11 @@ export class PublicRegistrationComponent implements OnInit {
 
                 // Si el campo también existe en la tabla Person (ej. email, phone), lo enviamos ahí también
                 if (personTableFields.includes(key)) {
-                    personDataForPayload[key] = value;
+                    personDataForPayload[key] = processedValue;
                 }
             } else {
                 // Es un campo base (name, curp, etc.) o no configurado dinámicamente
-                personDataForPayload[key] = value;
+                personDataForPayload[key] = processedValue;
             }
         });
 
