@@ -342,26 +342,25 @@ export class PublicRegistrationComponent implements OnInit {
         // El resto (dinámicos) van a la tabla de Responses.
         const personDataForPayload: any = {};
         const responses: any[] = [];
+        const personTableFields = ['name', 'paternal_lastName', 'maternal_lastName', 'curp', 'email', 'license', 'nuc', 'phone', 'address', 'sex', 'isActive', 'requestTarjeton', 'requestedDocuments'];
 
         Object.keys(personData).forEach(key => {
             const value = personData[key];
-            const fieldConfig = this.fieldsConfig![key];
+            const fieldConfig = this.fieldsConfig[key];
 
-            // Si es un campo dinámico (tiene ID de configuración o ID de requerimiento maestro)
-            if (fieldConfig && (fieldConfig.courseConfigFieldId || fieldConfig.requirementId)) {
+            // Si es un campo dinámico (tiene ID de configuración)
+            if (fieldConfig && fieldConfig.courseConfigFieldId) {
                 responses.push({
                     courseConfigFieldId: fieldConfig.courseConfigFieldId,
-                    requirementFieldPersonId: fieldConfig.requirementId, // Fallback para UUID
                     value: value?.toString() || ''
                 });
 
                 // Si el campo también existe en la tabla Person (ej. email, phone), lo enviamos ahí también
-                const personTableFields = ['name', 'paternal_lastName', 'maternal_lastName', 'curp', 'email', 'license', 'nuc', 'phone', 'address', 'sex', 'isActive', 'requestTarjeton', 'requestedDocuments'];
                 if (personTableFields.includes(key)) {
                     personDataForPayload[key] = value;
                 }
             } else {
-                // Es un campo base (name, curp, etc.)
+                // Es un campo base (name, curp, etc.) o no configurado dinámicamente
                 personDataForPayload[key] = value;
             }
         });
