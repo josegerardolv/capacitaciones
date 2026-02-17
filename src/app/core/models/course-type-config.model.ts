@@ -1,3 +1,5 @@
+import { REQUIREMENT_FIELD_NAMES } from '../constants/requirement-names.constants';
+
 export interface RegistrationFieldConfig {
     fieldName: string; // 'license', 'nuc', 'curp', 'address', 'phone', 'email', 'sex', 'name', 'paternal_lastName', 'maternal_lastName'
     label: string;
@@ -50,10 +52,10 @@ export const DEFAULT_REGISTRATION_FIELDS: RegistrationFieldConfig[] = [
     { fieldName: 'maternal_lastName', label: 'Segundo Apellido', visible: true, required: false }, // Base (En tabla Person)
     { fieldName: 'curp', label: 'CURP', visible: true, required: true },
 
-    { fieldName: 'email', label: 'Correo Electrónico', visible: true, required: true, requirementId: 7 },
-    { fieldName: 'phone', label: 'Teléfono', visible: true, required: false, requirementId: 8 },
-    { fieldName: 'address', label: 'Dirección', visible: true, required: true, requirementId: 4 },
-    { fieldName: 'nuc', label: 'NUC', visible: true, required: false, requirementId: 5 },
-    { fieldName: 'license', label: 'Licencia', visible: true, required: false, requirementId: 9 },
-    { fieldName: 'sex', label: 'Sexo', visible: true, required: true, requirementId: 6 },
+    { fieldName: 'email', label: REQUIREMENT_FIELD_NAMES.EMAIL, visible: true, required: true },
+    { fieldName: 'phone', label: REQUIREMENT_FIELD_NAMES.PHONE, visible: true, required: false },
+    { fieldName: 'address', label: REQUIREMENT_FIELD_NAMES.ADDRESS, visible: false, required: false },
+    { fieldName: 'nuc', label: REQUIREMENT_FIELD_NAMES.NUC, visible: false, required: false },
+    { fieldName: 'license', label: REQUIREMENT_FIELD_NAMES.LICENSE, visible: false, required: false },
+    { fieldName: 'sex', label: REQUIREMENT_FIELD_NAMES.SEX, visible: false, required: false },
 ];

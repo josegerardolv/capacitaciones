@@ -94,9 +94,9 @@ export class GroupsService {
     getGroupById(id: number): Observable<Group> {
         return this.http.get<Group>(`${this.apiUrl}/group/${id}`);
     }
-
+     // /group/registro/{uuid} PARA REGISTRO PUBLICO 
     getGroupByUuid(uuid: string): Observable<Group> {
-        return this.http.get<any>(`${this.apiUrl}/group/uuid/${uuid}`).pipe(
+        return this.http.get<any>(`${this.apiUrl}/group/registro/${uuid}`).pipe(
             map(response => response?.data || response)
         );
     }

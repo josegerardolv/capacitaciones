@@ -133,13 +133,6 @@ export class GroupPersonsComponent implements OnInit {
         const routeGroupId = this.route.snapshot.paramMap.get('groupId');
         this.currentGroupId = routeGroupId || this.groupId || null;
 
-        console.log('[GroupPersons] Init:', {
-            cursoId: this.cursoId,
-            routeGroupId: routeGroupId,
-            inputGroupId: this.groupId,
-            resolvedGroupId: this.currentGroupId
-        });
-
         // Leer posible nombre del curso y del grupo pasados por query params
         const courseName = this.route.snapshot.queryParamMap.get('courseName');
         const groupLabel = this.route.snapshot.queryParamMap.get('groupLabel');
@@ -182,7 +175,6 @@ export class GroupPersonsComponent implements OnInit {
                 // 1. Priorizar configuración RICH (Ya poblada en el grupo)
                 const populatedConfig = group.course?.courseType;
                 if (populatedConfig && populatedConfig.courseConfigField && populatedConfig.courseConfigField.length > 0 && populatedConfig.courseConfigField[0].requirementFieldPerson) {
-                    console.log('[GroupPersons] Usando configuración rica del grupo...');
                     this.updateColumns(populatedConfig);
                 } else {
                     // 2. Fallback: Configuración SIMPLE
@@ -368,7 +360,6 @@ export class GroupPersonsComponent implements OnInit {
 
     onPersonFound(person: Person) {
         // SI SE ENCUENTRA: Navegar con datos precargados
-        console.log('Persona encontrada (vía modal):', person);
         this.router.navigate(['nuevo'], {
             relativeTo: this.route,
             queryParams: {
@@ -445,7 +436,6 @@ export class GroupPersonsComponent implements OnInit {
                 cancelText: 'Cancelar'
             }, () => {
                 person.status = 'No Aprobado';
-                console.log(`Persona ${person.name} reprobada.`);
             });
         }
     }
@@ -530,7 +520,6 @@ export class GroupPersonsComponent implements OnInit {
     }
 
     generatePaymentOrder(person: Person, mode: 'download' | 'email') {
-        console.log(`>> GENERANDO ORDEN (${mode})...`);
         person.requestTarjeton = true; // Actualizado a requestTarjeton
         person.paymentStatus = 'Pendiente';
 
@@ -564,7 +553,6 @@ export class GroupPersonsComponent implements OnInit {
     }
 
     downloadFinalTarjeton(person: Person) {
-        console.log('Descargando Tarjetón Final para:', person.name);
         this.notificationService.showSuccess('Descargando', 'Generando PDF del Tarjetón Oficial...');
     }
 

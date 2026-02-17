@@ -99,7 +99,6 @@ export class PersonRegistrationComponent implements OnInit {
                     const populatedConfig = group.course?.courseType;
 
                     if (populatedConfig && populatedConfig.courseConfigField && populatedConfig.courseConfigField.length > 0 && populatedConfig.courseConfigField[0].requirementFieldPerson) {
-                        console.log('[PersonRegistration] Usando configuración rica del grupo...');
                         this.setupFormFields(populatedConfig);
                     } else {
                         // 2. FALLBACK: CONSULTA DINÁMICA (Si viene incompleto o shallow)
@@ -183,25 +182,21 @@ export class PersonRegistrationComponent implements OnInit {
         }
 
         if (needsLicenseSearch && !this.prefilledData) {
-            console.log('[PersonRegistration] Requisito de Licencia/NUC detectado en config, abriendo buscador...');
             this.isSearchModalOpen = true;
             this.showForm = false;
         } else {
-            console.log('[PersonRegistration] No se requiere búsqueda por Licencia/NUC, saltando al formulario...');
             this.showForm = true;
             this.isSearchModalOpen = false;
         }
     }
 
     onPersonFound(person: Person) {
-        console.log('[PersonRegistration] Persona encontrada:', person);
         this.prefilledData = { ...person };
         this.showForm = true;
         this.isSearchModalOpen = false;
     }
 
     onManualRegistration(license: string) {
-        console.log('[PersonRegistration] Registro manual iniciado con licencia:', license);
         this.prefilledData = { license };
         this.showForm = true;
         this.isSearchModalOpen = false;
@@ -256,7 +251,6 @@ export class PersonRegistrationComponent implements OnInit {
     }
 
     finalizeRegistration(personData: any) {
-        console.log('[PersonRegistration] Iniciando proceso de inscripción...', personData);
 
         const groupId = this.groupId ? +this.groupId : 1;
 
@@ -294,8 +288,6 @@ export class PersonRegistrationComponent implements OnInit {
             person: personDataForPayload,
             responses: responses
         };
-
-        console.log('[PersonRegistration] Payload final para /enrollment:', enrollmentPayload);
 
         this.notificationService.showInfo('Guardando', 'Procesando inscripción...');
 

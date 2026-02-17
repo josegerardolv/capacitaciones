@@ -10,8 +10,9 @@ import { CourseType } from '../../../../core/models/group.model';
 import { GroupsService } from '../../services/groups.service';
 import { CourseTypeService } from '../../../../core/services/course-type.service';
 import { LicenseSearchModalComponent } from '../../components/modals/license-search-modal/license-search-modal.component';
-import { CourseTypeConfig, RegistrationFieldConfig } from '../../../../core/models/course-type-config.model';
+import { CourseTypeConfig, RegistrationFieldConfig, DEFAULT_REGISTRATION_FIELDS } from '../../../../core/models/course-type-config.model';
 import { NotificationService } from '../../../../core/services/notification.service';
+import { REQUIREMENT_FIELD_NAMES, normalizeFieldName } from '../../../../core/constants/requirement-names.constants';
 
 @Component({
     selector: 'app-public-registration',
@@ -30,6 +31,7 @@ export class PublicRegistrationComponent implements OnInit {
     };
 
     // Configuración dinámica
+    idToFieldName: Record<number, string> = {};
     fieldsConfig: Record<string, RegistrationFieldConfig> = {};
     availableDocuments: any[] = []; // Para el modal de documentos
 
@@ -65,12 +67,11 @@ export class PublicRegistrationComponent implements OnInit {
     ngOnInit() {
         const idParam = this.route.snapshot.paramMap.get('id');
 
+        // Procesar el grupo directamente (Sin descargar lista maestra por seguridad)
         if (idParam) {
             if (!isNaN(Number(idParam))) {
-                // Legacy: Buscar por ID
                 this.loadGroupData(Number(idParam), false);
             } else {
-                // Actual: Buscar por UUID
                 this.loadGroupData(idParam, true);
             }
         }
@@ -102,24 +103,36 @@ export class PublicRegistrationComponent implements OnInit {
                 };
 
                 // Determinar tipo de curso para campos dinámicos
-                // 1. Priorizar configuración RICH (Ya poblada en el grupo)
+                // 1. Priorizar configuración RICH (Ya poblada en el grupo o campos directos del UUID)
                 const populatedConfig = group.course?.courseType;
-                if (populatedConfig && populatedConfig.courseConfigField && populatedConfig.courseConfigField.length > 0 && populatedConfig.courseConfigField[0].requirementFieldPerson) {
-                    console.log('[PublicRegistration] Usando configuración rica del grupo...');
+                const directFields = group.fields; // Arreglo detectado en respuesta de UUID
+
+                if ((populatedConfig && populatedConfig.courseConfigField && populatedConfig.courseConfigField.length > 0) || (directFields && directFields.length > 0)) {
 
                     // Actualizar Info del Header con el nombre real del curso si está disponible
-                    this.groupInfo.courseName = populatedConfig.name || group.name;
+                    if (populatedConfig) this.groupInfo.courseName = populatedConfig.name || group.name;
 
-                    this.setupFormFields(populatedConfig);
+                    this.setupFormFields(populatedConfig || {} as any, directFields);
 
-                    // C. Determinar si mostrar búsqueda (Sincronizado con setupFormFields lógica)
+                    // C. Determinar si mostrar búsqueda
                     let needsLicenseSearch = false;
-                    if (populatedConfig.courseConfigField) {
-                        needsLicenseSearch = populatedConfig.courseConfigField.some((cf: any) => {
+                    const fieldsToCheck = directFields || populatedConfig?.courseConfigField || [];
+
+                    needsLicenseSearch = fieldsToCheck.some((cf: any) => {
+                        let internalKey = '';
+                        if (cf.fieldName) {
+                            const normalized = normalizeFieldName(cf.fieldName);
+                            Object.entries(REQUIREMENT_FIELD_NAMES).forEach(([key, value]) => {
+                                if (cf.fieldName.toLowerCase() === value.toLowerCase() || normalized === normalizeFieldName(value)) {
+                                    internalKey = key.toLowerCase();
+                                }
+                            });
+                        } else {
                             const id = typeof cf.requirementFieldPerson === 'object' ? cf.requirementFieldPerson.id : cf.requirementFieldPerson;
-                            return id === 9 || id === 5;
-                        });
-                    }
+                            internalKey = this.idToFieldName[id];
+                        }
+                        return internalKey === 'license' || internalKey === 'nuc';
+                    });
 
                     if (needsLicenseSearch) {
                         this.isSearchModalOpen = true;
@@ -177,7 +190,8 @@ export class PublicRegistrationComponent implements OnInit {
                 if (config.courseConfigField) {
                     needsLicenseSearch = config.courseConfigField.some((cf: any) => {
                         const id = typeof cf.requirementFieldPerson === 'object' ? cf.requirementFieldPerson.id : cf.requirementFieldPerson;
-                        return id === 9 || id === 5;
+                        const internalKey = this.idToFieldName[id];
+                        return internalKey === 'license' || internalKey === 'nuc';
                     });
                 }
 
@@ -216,45 +230,62 @@ export class PublicRegistrationComponent implements OnInit {
         return `${diffDays} días restantes`;
     }
 
-    setupFormFields(config: CourseTypeConfig) {
-        this.fieldsConfig = {
-            'name': { fieldName: 'name', label: 'Nombre', visible: true, required: true },
-            'paternal_lastName': { fieldName: 'paternal_lastName', label: 'Primer Apellido', visible: true, required: false },
-            'maternal_lastName': { fieldName: 'maternal_lastName', label: 'Segundo Apellido', visible: true, required: false },
-            'curp': { fieldName: 'curp', label: 'CURP', visible: true, required: true },
-            'email': { fieldName: 'email', label: 'Correo Electrónico', visible: true, required: true },
-            'phone': { fieldName: 'phone', label: 'Teléfono', visible: true, required: false },
-            'license': { fieldName: 'license', label: 'Licencia', visible: false, required: false },
-            'nuc': { fieldName: 'nuc', label: 'NUC', visible: false, required: false }
-        };
+    setupFormFields(config: CourseTypeConfig, directFields?: any[]) {
+        // 1. Inicializar con los campos por defecto (ADN del formulario)
+        this.fieldsConfig = {};
+        DEFAULT_REGISTRATION_FIELDS.forEach(f => {
+            // Clonamos y ocultamos por defecto (excepto core fields)
+            this.fieldsConfig[f.fieldName] = { ...f, visible: false };
+        });
 
-        if (config.courseConfigField && config.courseConfigField.length > 0) {
-            const idToFieldName: Record<number, string> = {
-                4: 'address', 5: 'nuc', 6: 'sex', 7: 'email',
-                8: 'phone', 9: 'license', 10: 'curp'
-            };
+        // Forzar visibilidad de los campos núcleo que no se pueden ocultar
+        // Email, CURP y Phone son críticos y siempre deben mostrarse
+        const coreFields = ['name', 'paternal_lastName', 'maternal_lastName', 'curp', 'email', 'phone'];
+        coreFields.forEach(key => {
+            if (this.fieldsConfig[key]) {
+                this.fieldsConfig[key].visible = true;
+            }
+        });
 
-            config.courseConfigField.forEach((cf: any) => {
-                const fieldId = typeof cf.requirementFieldPerson === 'object'
-                    ? cf.requirementFieldPerson.id
-                    : cf.requirementFieldPerson;
+        // 2. Aplicar configuración dinámica (Priorizar directFields si vienen del UUID)
+        const fieldsToProcess = directFields || config.courseConfigField || [];
 
-                const fieldName = idToFieldName[fieldId];
+        if (fieldsToProcess.length > 0) {
+            fieldsToProcess.forEach((cf: any) => {
+                let fieldName = '';
 
-                if (fieldName) {
-                    if (this.fieldsConfig![fieldName]) {
-                        this.fieldsConfig![fieldName].visible = true;
-                        this.fieldsConfig![fieldName].required = cf.required;
-                        this.fieldsConfig![fieldName].courseConfigFieldId = cf.id;
-                    } else {
-                        this.fieldsConfig![fieldName] = {
-                            visible: true,
-                            required: cf.required,
-                            fieldName: fieldName,
-                            label: fieldName,
-                            courseConfigFieldId: cf.id
-                        };
-                    }
+                // El ID de configuración puede venir como 'courseConfigField' (UUID) o 'id' (Admin)
+                const configId = cf.courseConfigField || cf.id;
+
+                // Caso A: Si tiene nombre (UUID suele mandarlo)
+                if (cf.fieldName) {
+                    const normalizedBackend = normalizeFieldName(cf.fieldName);
+                    Object.entries(REQUIREMENT_FIELD_NAMES).forEach(([key, value]) => {
+                        const normValue = normalizeFieldName(value);
+                        if (cf.fieldName.toLowerCase() === value.toLowerCase() || normalizedBackend === normValue || normalizedBackend.startsWith(normValue) || normValue.startsWith(normalizedBackend)) {
+                            fieldName = key.toLowerCase();
+                        }
+                    });
+                    if (!fieldName) fieldName = normalizedBackend;
+                }
+                // Caso B: Si no tiene nombre (Fallback a mapeo por ID si estuviéramos en Admin, pero aquí no hay master list)
+                else if (cf.requirementFieldPerson) {
+                    const id = typeof cf.requirementFieldPerson === 'object' ? cf.requirementFieldPerson.id : cf.requirementFieldPerson;
+                    fieldName = this.idToFieldName[id];
+                }
+
+                if (fieldName && this.fieldsConfig[fieldName]) {
+                    this.fieldsConfig[fieldName].visible = true;
+                    this.fieldsConfig[fieldName].required = cf.required;
+                    this.fieldsConfig[fieldName].courseConfigFieldId = configId;
+                } else if (fieldName) {
+                    this.fieldsConfig[fieldName] = {
+                        fieldName: fieldName,
+                        label: cf.fieldName || fieldName,
+                        visible: true,
+                        required: cf.required,
+                        courseConfigFieldId: configId
+                    };
                 }
             });
         }
@@ -292,8 +323,7 @@ export class PublicRegistrationComponent implements OnInit {
         // Calcular costo total
         const totalCost = selectedDocs.reduce((acc, doc) => acc + (doc.cost || 0), 0);
 
-        // En el futuro, esto se guardaría como IDs de documentos solicitados en el backend
-        // Por ahora mantenemos la compatibilidad con el campo "requestTarjeton" si existe
+        // Determinar si quiere tarjetón
         const wantsTarjeton = selectedDocs.some(d => d.name.toLowerCase().includes('tarjetón'));
 
         const finalPersonData = {
@@ -306,26 +336,33 @@ export class PublicRegistrationComponent implements OnInit {
     }
 
     finalizeRegistration(personData: any, totalCost: number) {
-        console.log('[PublicRegistration] Iniciando inscripción...', personData);
 
-        // 1. SEPARAR DATOS: Person Table vs Dynamic Responses (Sincronizado)
-        const personTableFields = ['name', 'paternal_lastName', 'maternal_lastName', 'curp', 'email', 'license', 'nuc'];
-
+        // 1. SEPARAR DATOS: Person Table vs Dynamic Responses
+        // Solo los campos CORE y los que NO tienen courseConfigFieldId van a la tabla Person
+        // El resto (dinámicos) van a la tabla de Responses.
         const personDataForPayload: any = {};
         const responses: any[] = [];
 
         Object.keys(personData).forEach(key => {
             const value = personData[key];
-            if (personTableFields.includes(key)) {
-                personDataForPayload[key] = value;
-            } else {
-                const fieldConfig = this.fieldsConfig![key];
-                if (fieldConfig && fieldConfig.courseConfigFieldId) {
-                    responses.push({
-                        courseConfigFieldId: fieldConfig.courseConfigFieldId,
-                        value: value?.toString() || ''
-                    });
+            const fieldConfig = this.fieldsConfig![key];
+
+            // Si es un campo dinámico (tiene ID de configuración o ID de requerimiento maestro)
+            if (fieldConfig && (fieldConfig.courseConfigFieldId || fieldConfig.requirementId)) {
+                responses.push({
+                    courseConfigFieldId: fieldConfig.courseConfigFieldId,
+                    requirementFieldPersonId: fieldConfig.requirementId, // Fallback para UUID
+                    value: value?.toString() || ''
+                });
+
+                // Si el campo también existe en la tabla Person (ej. email, phone), lo enviamos ahí también
+                const personTableFields = ['name', 'paternal_lastName', 'maternal_lastName', 'curp', 'email', 'license', 'nuc', 'phone', 'address', 'sex', 'isActive', 'requestTarjeton', 'requestedDocuments'];
+                if (personTableFields.includes(key)) {
+                    personDataForPayload[key] = value;
                 }
+            } else {
+                // Es un campo base (name, curp, etc.)
+                personDataForPayload[key] = value;
             }
         });
 
@@ -337,8 +374,6 @@ export class PublicRegistrationComponent implements OnInit {
             person: personDataForPayload,
             responses: responses
         };
-
-        console.log('[PublicRegistration] Payload para /enrollment:', enrollmentPayload);
 
         this.notificationService.showInfo('Enviando', 'Procesando tu solicitud...');
 
@@ -382,7 +417,6 @@ export class PublicRegistrationComponent implements OnInit {
 
     // --- MANEJO DEL MODAL DE BÚSQUEDA ---
     onPersonFound(person: any) {
-        console.log('Persona encontrada en registro público:', person);
         this.prefilledData = {
             name: person.name,
             paternal_lastName: person.paternal_lastName,
@@ -398,7 +432,6 @@ export class PublicRegistrationComponent implements OnInit {
     }
 
     onManualRegistration(license: string) {
-        console.log('Registro manual con licencia:', license);
         this.prefilledData = {
             license: license
         };

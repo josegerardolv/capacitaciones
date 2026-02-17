@@ -98,7 +98,6 @@ export class DocumentsModalComponent implements OnInit {
                         isLocked: isLocked
                     };
                 });
-            console.log('Documents Modal Loaded:', this.documents);
         });
     }
 
@@ -156,17 +155,14 @@ export class DocumentsModalComponent implements OnInit {
     }
 
     private downloadPaymentOrder(doc: DocumentRow) {
-        console.log('Downloading payment order:', doc.name);
         this.notificationService.showSuccess('Descargando', 'Generando PDF de la orden de pago...');
     }
 
     downloadCertificate(doc: DocumentRow) {
-        console.log('Admin downloading certificate:', doc.name);
         this.notificationService.showSuccess('Descarga Admin', `Recuperando archivo de: ${doc.name}`);
     }
 
     emailCertificate(doc: DocumentRow) {
-        console.log('Emailing certificate to:', this.person?.email);
         this.notificationService.showSuccess('Enviado', `Constancia enviada a: ${this.person?.email || 'Correo del usuario'}`);
     }
 
@@ -176,7 +172,6 @@ export class DocumentsModalComponent implements OnInit {
         // GET /api/payments/status?personId={id}
 
         this.isCheckingPayment = true;
-        console.log('Consultando SIOX...');
 
         // Simulamos delay de red
         setTimeout(() => {

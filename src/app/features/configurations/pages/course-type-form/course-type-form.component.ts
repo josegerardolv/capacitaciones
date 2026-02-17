@@ -24,6 +24,7 @@ import { CourseTypeService } from '../../../../core/services/course-type.service
 import { CoursesService } from '../../../cursos/services/courses.service';
 import { RequirementsService } from '../../../../core/services/requirements.service';
 import { SelectComponent } from '../../../../shared/components/inputs/select.component';
+import { REQUIREMENT_FIELD_NAMES, normalizeFieldName } from '../../../../core/constants/requirement-names.constants';
 
 @Component({
     selector: 'app-course-type-form',
@@ -241,7 +242,8 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
     }
 
     // Campos que SIEMPRE deben mostrarse (Visibilidad bloqueada en TRUE)
-    readonly VISIBILITY_LOCKED = ['name', 'paternal_lastName', 'maternal_lastName', 'curp', 'phone', 'email'];
+    // Email y Phone siempre visibles por solicitud del usuario.
+    readonly VISIBILITY_LOCKED = ['name', 'curp', 'email', 'phone', 'maternal_lastName', 'paternal_lastName'];
 
     // Campos que SIEMPRE deben ser obligatorios (Required bloqueado en TRUE)
     readonly REQUIREMENT_LOCKED_MANDATORY = ['name', 'curp', 'email'];
@@ -257,31 +259,43 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
         // 1. Clonar los campos por defecto del MODELO (Ahora es la fuente de verdad)
         this.registrationFields = DEFAULT_REGISTRATION_FIELDS.map(f => ({ ...f }));
 
-        // 2. Mapear requisitos del Backend a los campos existentes o agregar nuevos
+        // 2. Mapear requisitos del Backend a los campos existentes usando NOMBRES (Auto-descubrimiento)
         this.backendRequirements.forEach(req => {
-            // Normalizar nombre del backend para buscar coincidencia
-            let internalName = req.fieldName.toLowerCase()
-                .trim()
-                .replace(/á/g, 'a').replace(/é/g, 'e').replace(/í/g, 'i').replace(/ó/g, 'o').replace(/ú/g, 'u')
-                .replace(/ñ/g, 'n').replace(/\s+/g, '_');
+            const backendName = req.fieldName.trim();
+            const normalizedBackend = normalizeFieldName(backendName);
 
-            // Caso especial: Correo (ID 7)
-            if (req.id === 7) internalName = 'email';
-            if (internalName.includes('telefono')) internalName = 'phone';
-            if (internalName.includes('direccion')) internalName = 'address';
+            // Buscar coincidencia en nuestro mapa de constantes y campos existentes
+            // Mejorado con búsqueda "flexible" (si el nombre del backend es parte del valor o viceversa)
+            let matchKey: string | null = null;
+            Object.entries(REQUIREMENT_FIELD_NAMES).forEach(([key, value]) => {
+                const normValue = normalizeFieldName(value);
+                if (
+                    value.toLowerCase() === backendName.toLowerCase() ||
+                    normValue === normalizedBackend ||
+                    normalizedBackend.startsWith(normValue) || // ej: "telefon_movil" coincide con "telefon"
+                    normValue.startsWith(normalizedBackend)    // ej: "telefono" coincide con "telefon"
+                ) {
+                    matchKey = key.toLowerCase();
+                }
+            });
 
             // Buscar si ya existe en nuestra lista predefinida
             const existingField = this.registrationFields.find(f =>
-                f.fieldName === internalName || f.label.toLowerCase() === req.fieldName.toLowerCase()
+                f.fieldName === matchKey ||
+                normalizeFieldName(f.label) === normalizedBackend ||
+                f.label.toLowerCase() === backendName.toLowerCase() ||
+                (matchKey && f.fieldName === matchKey)
             );
 
             if (existingField) {
                 // Sincronizar ID del backend
                 existingField.requirementId = req.id;
+                // Si el nombre del backend es ligeramente diferente, actualizamos la etiqueta para que el usuario no se confunda
+                existingField.label = req.fieldName;
             } else {
                 // Si es un campo totalmente nuevo del backend (no está en el modelo), agregarlo
                 this.registrationFields.push({
-                    fieldName: internalName,
+                    fieldName: normalizedBackend,
                     label: req.fieldName,
                     visible: false,
                     required: false,
@@ -290,11 +304,24 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
             }
         });
 
-        // 3. Aplicar Reglas de Bloqueo (Locks) sobre la lista final
+        // 3. Limpieza: Si un campo por defecto (ej. NUC) NO está en el backend,
+        // lo eliminamos si no es un campo crítico "Base" (Nombre/CURP/Email)
+        // Esto evita que aparezcan duplicados o campos vacíos si el backend cambió de estructura.
+        const criticalBaseFields = ['name', 'paternal_lastName', 'maternal_lastName', 'curp', 'email'];
+        this.registrationFields = this.registrationFields.filter(f =>
+            criticalBaseFields.includes(f.fieldName) || f.requirementId
+        );
+
+        // 4. Aplicar Reglas de Bloqueo (Locks) sobre la lista final
         this.registrationFields.forEach(f => {
             if (this.isVisibilityLocked(f)) {
                 f.visible = true;
+            } else if (!f.requirementId) {
+                // Si no tiene ID del backend y no es lockeado, por seguridad no lo mostramos 
+                // activo (aunque ya deberían estar filtrados arriba)
+                f.visible = false;
             }
+
             if (this.REQUIREMENT_LOCKED_MANDATORY.includes(f.fieldName)) {
                 f.required = true;
             } else if (this.REQUIREMENT_LOCKED_OPTIONAL.includes(f.fieldName)) {
