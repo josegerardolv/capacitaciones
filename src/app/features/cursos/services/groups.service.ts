@@ -38,6 +38,11 @@ export class GroupsService {
         );
     }
 
+    getEnrollmentsByGroupId(groupId: number, isAcepted: boolean = true): Observable<any[]> {
+        const params = new HttpParams().set('isAcepted', isAcepted.toString());
+        return this.http.get<any[]>(`${this.apiUrl}/enrollment/group/${groupId}`, { params });
+    }
+
     getRequestsByGroupId(groupId: number): Observable<Person[]> {
         const params = new HttpParams().set('status', 'Pendiente');
         return this.http.get<Person[]>(`${this.apiUrl}/group/${groupId}/persons`, { params });
@@ -69,7 +74,8 @@ export class GroupsService {
 
     searchPersonByLicense(license: string): Observable<Person | null> {
         const params = new HttpParams().set('license', license);
-        return this.http.get<Person[]>(`${this.apiUrl}/persons`, { params })
+        // El backend ha habilitado el acceso público a este endpoint (/persons/lookup) para consultas de ciudadanos
+        return this.http.get<Person[]>(`${this.apiUrl}/persons/lookup`, { params })
             .pipe(map(results => (results && results.length > 0) ? results[0] : null));
     }
 
@@ -94,7 +100,7 @@ export class GroupsService {
     getGroupById(id: number): Observable<Group> {
         return this.http.get<Group>(`${this.apiUrl}/group/${id}`);
     }
-     // /group/registro/{uuid} PARA REGISTRO PUBLICO 
+    // /group/registro/{uuid} PARA REGISTRO PUBLICO 
     getGroupByUuid(uuid: string): Observable<Group> {
         return this.http.get<any>(`${this.apiUrl}/group/registro/${uuid}`).pipe(
             map(response => response?.data || response)

@@ -53,6 +53,7 @@ export class PublicRegistrationComponent implements OnInit {
     tempPersonData: any = null; // Renamed from tempDriverData
     currentCourseType: CourseType = 'LICENCIA'; // Fallback
     prefilledData: any = null; // Datos precargados de la búsqueda
+    currentPersonId: number | null = null; // ID de la persona encontrada
 
     constructor(
         private route: ActivatedRoute,
@@ -84,9 +85,12 @@ export class PublicRegistrationComponent implements OnInit {
 
         request.subscribe({
             next: (response: any) => {
-                // Soportar respuesta directa o envuelta en { data: Group }
+                // Soportar respuesta directa o envuelta en { id: number, data: Group }
                 const group = response?.data || response;
-                this.groupData = group; // Almacenar para uso en guardado
+                const groupId = response?.id || group?.id || response?.groupId || group?.groupId;
+
+                // Asegurar que el ID numérico esté presente en groupData
+                this.groupData = { ...group, id: groupId };
 
                 if (!group || !group.name) {
                     console.error('Grupo no válido o no encontrado:', response);
@@ -94,11 +98,15 @@ export class PublicRegistrationComponent implements OnInit {
                     return;
                 }
 
+                if (groupId) {
+                    this.currentGroupId = Number(groupId);
+                }
+
                 // 1. Actualizar Info del Header
                 this.groupInfo = {
-                    courseName: group.name,
+                    courseName: group.courseTypeName || group.course?.name || group.name,
                     groupName: group.name,
-                    slotsAvailable: (group.limitStudents || 0) - (group.requests || 0),
+                    slotsAvailable: group.availablePlaces !== undefined ? group.availablePlaces : ((group.limitStudents || 0) - (group.requests || 0)),
                     deadline: this.calculateDeadline(group)
                 };
 
@@ -154,14 +162,9 @@ export class PublicRegistrationComponent implements OnInit {
                         this.isSearchModalOpen = false;
                     }
                 } else {
-                    // 2. Fallback: Configuración SIMPLE
-                    const courseTypeId = group.courseTypeId || (group.course?.courseType?.id) || (group.course?.id);
-
-                    if (courseTypeId) {
-                        this.loadCourseTypeConfig(courseTypeId);
-                    } else {
-                        this.setupLegacyFields('GENERICO');
-                    }
+                    // Fallback: Si no hay campos, mostrar formulario básico
+                    this.showForm = true;
+                    this.isSearchModalOpen = false;
                 }
             },
             error: (err) => {
@@ -225,20 +228,27 @@ export class PublicRegistrationComponent implements OnInit {
         const expirationStr = group.endInscriptionDate || group.linkExpiration;
         if (!expirationStr) return 'Sin vigencia';
 
-        const expirationDate = new Date(expirationStr);
+        // Manejar tanto ISO strings como fechas simples
+        let exp: Date;
+        if (expirationStr.includes('T')) {
+            exp = new Date(expirationStr);
+        } else {
+            exp = new Date(expirationStr + 'T23:59:59');
+        }
+
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-
-        // Ajuste para fin de día local
-        const exp = new Date(expirationStr + 'T23:59:59');
 
         if (today > exp) {
             this.isExpired = true;
             return 'Enlace Vencido';
         }
 
-        const diffTime = Math.abs(exp.getTime() - today.getTime());
+        const diffTime = exp.getTime() - today.getTime();
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        if (isNaN(diffDays)) return 'Sin vigencia';
+
         return `${diffDays} días restantes`;
     }
 
@@ -354,7 +364,7 @@ export class PublicRegistrationComponent implements OnInit {
         // El resto (dinámicos) van a la tabla de Responses.
         const personDataForPayload: any = {};
         const responses: any[] = [];
-        const personTableFields = ['name', 'paternal_lastName', 'maternal_lastName', 'curp', 'email', 'license', 'nuc', 'phone', 'address', 'sex', 'isActive', 'requestTarjeton', 'requestedDocuments'];
+        const personTableFields = ['name', 'paternal_lastName', 'maternal_lastName', 'curp', 'email', 'license', 'nuc'];
 
         Object.keys(personData).forEach(key => {
             const value = personData[key];
@@ -374,19 +384,20 @@ export class PublicRegistrationComponent implements OnInit {
                 if (personTableFields.includes(key)) {
                     personDataForPayload[key] = processedValue;
                 }
-            } else {
+            } else if (!['requestTarjeton', 'requestedDocuments'].includes(key)) {
                 // Es un campo base (name, curp, etc.) o no configurado dinámicamente
                 personDataForPayload[key] = processedValue;
             }
         });
 
-        personDataForPayload.isActive = true;
-
         const enrollmentPayload = {
-            group: this.groupData.id,
+            group: Number(this.groupData.id),
             isAcepted: false,
+            dateReject: null,
+            personId: this.currentPersonId,
             person: personDataForPayload,
-            responses: responses
+            responses: responses,
+            documentCourseIds: personData.requestedDocuments || []
         };
 
         this.notificationService.showInfo('Enviando', 'Procesando tu solicitud...');
@@ -431,6 +442,7 @@ export class PublicRegistrationComponent implements OnInit {
 
     // --- MANEJO DEL MODAL DE BÚSQUEDA ---
     onPersonFound(person: any) {
+        this.currentPersonId = person.id; // Guardamos el ID para el payload final
         this.prefilledData = {
             name: person.name,
             paternal_lastName: person.paternal_lastName,

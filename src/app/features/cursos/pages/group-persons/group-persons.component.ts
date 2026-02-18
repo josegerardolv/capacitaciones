@@ -104,10 +104,10 @@ export class GroupPersonsComponent implements OnInit {
     isDocumentsModalOpen = false;
     selectedPersonForDocs: Person | null = null;
 
-    // Datos de Personas
-    allPersons: Person[] = [];
-    filteredPersons: Person[] = [];
-    persons: Person[] = [];
+    // Datos de Personas (Ahora Enrollment Data)
+    allEnrollments: any[] = [];
+    filteredEnrollments: any[] = [];
+    persons: any[] = []; // Los datos finales para la tabla
 
 
 
@@ -199,15 +199,48 @@ export class GroupPersonsComponent implements OnInit {
     loadPersons() {
         if (!this.currentGroupId) return;
         this.tableConfig.loading = true;
-        this.groupsService.getPersonsByGroupId(+this.currentGroupId).subscribe({
-            next: (data) => {
-                this.allPersons = data;
+        this.groupsService.getEnrollmentsByGroupId(+this.currentGroupId).subscribe({
+            next: (data: any[]) => {
+                // Adaptamos la estructura: el componente de tabla espera las propiedades a nivel raíz
+                this.allEnrollments = data.map(item => {
+                    const flattened: any = {
+                        ...item.person,
+                        responses: item.enrollmentResponse,
+                        documents: item.documentCourses,
+                        status: item.person.status || (item.isAcepted ? 'Aprobado' : 'Pendiente')
+                    };
+
+                    // Extraer respuestas dinámicas a la raíz para que la tabla las vea
+                    if (item.enrollmentResponse && Array.isArray(item.enrollmentResponse)) {
+                        const idToFieldName: Record<number, string> = {
+                            4: 'address', 5: 'nuc', 6: 'sex', 7: 'email',
+                            8: 'phone', 9: 'license', 10: 'curp'
+                        };
+
+                        item.enrollmentResponse.forEach((resp: any) => {
+                            const fieldData = resp.courseConfigField?.requirementFieldPerson;
+                            const rfpId = typeof fieldData === 'object' ? fieldData.id : fieldData;
+
+                            if (rfpId) {
+                                // 1. Usar nombre amigable si existe
+                                const friendlyName = idToFieldName[rfpId];
+                                if (friendlyName) {
+                                    flattened[friendlyName] = resp.value;
+                                }
+                                // 2. Siempre guardar por ID por si acaso
+                                flattened[`field_${rfpId}`] = resp.value;
+                            }
+                        });
+                    }
+
+                    return flattened;
+                });
                 this.filterData('');
                 this.tableConfig.loading = false;
             },
             error: (err) => {
-                console.error('Error loading persons', err);
-                this.notificationService.showError('Error', 'No se pudieron cargar las personas.');
+                console.error('Error loading enrollments', err);
+                this.notificationService.showError('Error', 'No se pudieron cargar los inscritos.');
                 this.tableConfig.loading = false;
             }
         });
@@ -224,9 +257,9 @@ export class GroupPersonsComponent implements OnInit {
     filterData(query: string) {
         const term = query.toLowerCase().trim();
         if (!term) {
-            this.filteredPersons = [...this.allPersons];
+            this.filteredEnrollments = [...this.allEnrollments];
         } else {
-            this.filteredPersons = this.allPersons.filter(p =>
+            this.filteredEnrollments = this.allEnrollments.filter(p =>
                 p.name.toLowerCase().includes(term) ||
                 (p.paternal_lastName || '').toLowerCase().includes(term) ||
                 (p.maternal_lastName || '').toLowerCase().includes(term) ||
@@ -234,14 +267,14 @@ export class GroupPersonsComponent implements OnInit {
                 (p.curp || '').toLowerCase().includes(term)
             );
         }
-        this.paginationConfig.totalItems = this.filteredPersons.length;
+        this.paginationConfig.totalItems = this.filteredEnrollments.length;
         this.updatePaginatedData();
     }
 
     updatePaginatedData() {
         const start = (this.paginationConfig.currentPage - 1) * this.paginationConfig.pageSize;
         const end = start + this.paginationConfig.pageSize;
-        this.persons = this.filteredPersons.slice(start, end);
+        this.persons = this.filteredEnrollments.slice(start, end);
     }
 
     initColumns() {

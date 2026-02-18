@@ -40,6 +40,7 @@ export class PersonRegistrationComponent implements OnInit {
     groupId: string | null = null;
     breadcrumbItems: BreadcrumbItem[] = [];
     prefilledData: any = null;
+    currentPersonId: number | null = null; // ID de la persona encontrada
 
     // Configuración dinámica
     fieldsConfig: Record<string, RegistrationFieldConfig> = {};
@@ -191,6 +192,7 @@ export class PersonRegistrationComponent implements OnInit {
     }
 
     onPersonFound(person: Person) {
+        this.currentPersonId = (person as any).id; // Guardamos el ID para el payload final
         this.prefilledData = { ...person };
         this.showForm = true;
         this.isSearchModalOpen = false;
@@ -268,25 +270,28 @@ export class PersonRegistrationComponent implements OnInit {
                 // Va a la tabla Person
                 personDataForPayload[key] = (typeof value === 'string' && value.trim() === '') ? null : value;
             } else {
-                // Va a Responses si tiene un ID de configuración
+                // Verificar si es un campo dinámico
                 const fieldConfig = this.fieldsConfig![key];
                 if (fieldConfig && fieldConfig.courseConfigFieldId) {
                     responses.push({
                         courseConfigFieldId: fieldConfig.courseConfigFieldId,
                         value: value?.toString() || ''
                     });
+                } else if (!['requestTarjeton', 'requestedDocuments'].includes(key)) {
+                    // Es un campo base o no configurado dinámicamente
+                    personDataForPayload[key] = (typeof value === 'string' && value.trim() === '') ? null : value;
                 }
             }
         });
 
-        // Asegurar que isActive esté en la persona
-        personDataForPayload.isActive = true;
-
         const enrollmentPayload = {
-            group: groupId,
-            isAcepted: false, // Default
+            group: Number(groupId),
+            isAcepted: true,
+            dateReject: null,
+            personId: this.currentPersonId,
             person: personDataForPayload,
-            responses: responses
+            responses: responses,
+            documentCourseIds: personData.requestedDocuments || []
         };
 
         this.notificationService.showInfo('Guardando', 'Procesando inscripción...');

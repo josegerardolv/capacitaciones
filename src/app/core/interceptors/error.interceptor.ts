@@ -22,7 +22,10 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
         switch (error.status) {
           case 401:
             // No redirigir al login si es una petición de la zona pública
-            const isPublicRequest = req.url.includes('/group/registro/') || req.url.includes('/public/');
+            const isPublicRequest = req.url.includes('/group/registro/') ||
+              req.url.includes('/public/') ||
+              req.url.includes('/person') ||
+              req.url.includes('/enrollment');
             const isPublicRoute = router.url.includes('/public/register');
 
             if (isPublicRequest || isPublicRoute) {
