@@ -407,7 +407,9 @@ export class PublicRegistrationComponent implements OnInit {
         });
 
         const enrollmentPayload = {
-            group: this.groupData.uuid || this.currentGroupUuid, // Backend (POST) espera UUID string en el campo 'group'
+            // Backend update: Send separate groupId and groupUuid fields
+            groupId: this.currentGroupId,
+            groupUuid: this.groupData.uuid || this.currentGroupUuid,
             isAcepted: false,
             dateReject: null,
             personId: this.currentPersonId,

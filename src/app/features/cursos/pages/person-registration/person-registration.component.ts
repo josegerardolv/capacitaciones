@@ -287,7 +287,9 @@ export class PersonRegistrationComponent implements OnInit {
         });
 
         const enrollmentPayload = {
-            group: this.currentGroupUuid || Number(groupId), // Backend espera UUID string (o número legacy si no hay UUID)
+            // Backend update: Send separate groupId and groupUuid fields
+            groupId: Number(groupId),
+            groupUuid: this.currentGroupUuid,
             isAcepted: true, // En vista privada se acepta automáticamente (se puede ajustar según regla de negocio)
             dateReject: null,
             personId: this.currentPersonId,
