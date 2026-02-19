@@ -64,6 +64,7 @@ export class PublicRegistrationComponent implements OnInit {
     ) { }
 
     currentGroupId: number | null = null;
+    currentGroupUuid: string | null = null;
 
     ngOnInit() {
         const idParam = this.route.snapshot.paramMap.get('id');
@@ -102,6 +103,10 @@ export class PublicRegistrationComponent implements OnInit {
                     this.currentGroupId = Number(groupId);
                 }
 
+                if (isUuid) {
+                    this.currentGroupUuid = identifier as string;
+                }
+
                 // 1. Actualizar Info del Header
                 this.groupInfo = {
                     courseName: group.courseTypeName || group.course?.name || group.name,
@@ -130,6 +135,17 @@ export class PublicRegistrationComponent implements OnInit {
                         this.availableDocuments = group.course.templates;
                     } else if (group.templates) {
                         this.availableDocuments = group.templates;
+                    } else if (group.documents) {
+                        // Soporte para nueva estructura de Backend (documents)
+                        this.availableDocuments = group.documents.map((d: any) => ({
+                            id: d.id || d.name || 'doc_unknown',
+                            name: d.name || 'Documento sin nombre',
+                            description: d.description || '',
+                            cost: d.cost || 0,
+                            templateId: d.templateId || d.id,
+                            isMandatory: d.isMandatory !== undefined ? d.isMandatory : true, // Asumir obligatorio si no viene
+                            requiresApproval: true
+                        }));
                     }
 
                     this.setupFormFields(populatedConfig || {} as any, directFields);
@@ -391,7 +407,7 @@ export class PublicRegistrationComponent implements OnInit {
         });
 
         const enrollmentPayload = {
-            group: Number(this.groupData.id),
+            group: this.groupData.uuid || this.currentGroupUuid, // Backend (POST) espera UUID string en el campo 'group'
             isAcepted: false,
             dateReject: null,
             personId: this.currentPersonId,

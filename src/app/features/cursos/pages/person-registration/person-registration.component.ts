@@ -38,6 +38,7 @@ export class PersonRegistrationComponent implements OnInit {
 
     cursoId: string | null = null;
     groupId: string | null = null;
+    currentGroupUuid: string | null = null; // UUID del grupo para el payload
     breadcrumbItems: BreadcrumbItem[] = [];
     prefilledData: any = null;
     currentPersonId: number | null = null; // ID de la persona encontrada
@@ -93,6 +94,7 @@ export class PersonRegistrationComponent implements OnInit {
         if (this.groupId) {
             this.groupsService.getGroupById(+this.groupId).subscribe((group: any) => {
                 if (group) {
+                    this.currentGroupUuid = group.uuid; // Guardar UUID para el payload
                     this.currentCourseType = 'GENERICO';
 
                     // 1. INTENTAR USAR CONFIGURACIÓN YA POBLADA (RICH)
@@ -285,8 +287,8 @@ export class PersonRegistrationComponent implements OnInit {
         });
 
         const enrollmentPayload = {
-            group: Number(groupId),
-            isAcepted: true,
+            group: this.currentGroupUuid || Number(groupId), // Backend espera UUID string (o número legacy si no hay UUID)
+            isAcepted: true, // En vista privada se acepta automáticamente (se puede ajustar según regla de negocio)
             dateReject: null,
             personId: this.currentPersonId,
             person: personDataForPayload,

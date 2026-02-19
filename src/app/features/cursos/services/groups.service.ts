@@ -44,8 +44,13 @@ export class GroupsService {
     }
 
     getRequestsByGroupId(groupId: number): Observable<Person[]> {
-        const params = new HttpParams().set('status', 'Pendiente');
-        return this.http.get<Person[]>(`${this.apiUrl}/group/${groupId}/persons`, { params });
+        const params = new HttpParams().set('isAcepted', 'false');
+        return this.http.get<any[]>(`${this.apiUrl}/enrollment/group/${groupId}`, { params }).pipe(
+            map(response => response.map(item => ({
+                ...item.person,
+                enrollmentId: item.id // Guardamos el ID de la inscripción para poder aceptarla/rechazarla
+            })))
+        );
     }
 
     // Payload structure based on BACKEND_INTEGRATION.md
@@ -105,5 +110,13 @@ export class GroupsService {
         return this.http.get<any>(`${this.apiUrl}/group/registro/${uuid}`).pipe(
             map(response => response?.data || response)
         );
+    }
+
+    acceptEnrollment(enrollmentId: number): Observable<any> {
+        return this.http.patch(`${this.apiUrl}/enrollment/${enrollmentId}`, { isAcepted: true });
+    }
+
+    rejectEnrollment(enrollmentId: number): Observable<any> {
+        return this.http.patch(`${this.apiUrl}/enrollment/${enrollmentId}`, { isAcepted: false });
     }
 }
