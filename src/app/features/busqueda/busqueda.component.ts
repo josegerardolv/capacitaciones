@@ -209,12 +209,13 @@ export class BusquedaComponent implements OnInit {
     this.personaEncontrada = {
       id: person.id,
       nombre: `${person.name} ${person.paternal_lastName} ${person.maternal_lastName}`,
-      licencia: person.license,
+      licencia: person.license || 'Sin licencia registrada',
       fechaRegistro: new Date(person.createdAt).toLocaleDateString('es-MX'),
       estatus: this.getPersonStatus(person)
     };
 
-    const sortedEnrollments = [...person.enrollments].sort((a, b) =>
+    const validEnrollments = person.enrollments.filter(e => e.group !== null && e.group !== undefined);
+    const sortedEnrollments = [...validEnrollments].sort((a, b) =>
       new Date(b.group.groupStartDate).getTime() - new Date(a.group.groupStartDate).getTime()
     );
 
