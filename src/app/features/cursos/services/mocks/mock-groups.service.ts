@@ -24,7 +24,14 @@ export class MockGroupsService {
             status: 'Activo',
             courseTypeId: 1,
             course: 1, // Curso 1
-            uuid: '550e8400-e29b-41d4-a716-446655440001'
+            uuid: '550e8400-e29b-41d4-a716-446655440001',
+            // MOCK FIELDS for Public Registration (Matches Course Type 1)
+            fields: [
+                { courseConfigField: 101, fieldName: 'Dirección', requirementFieldPerson: { id: 4, fieldName: 'Dirección' }, required: true },
+                { courseConfigField: 102, fieldName: 'NUC', requirementFieldPerson: { id: 5, fieldName: 'NUC' }, required: true },
+                { courseConfigField: 103, fieldName: 'Sexo', requirementFieldPerson: { id: 6, fieldName: 'Sexo' }, required: false },
+                { courseConfigField: 104, fieldName: 'Licencia', requirementFieldPerson: { id: 9, fieldName: 'Licencia' }, required: true }
+            ]
         },
         {
             id: 2,
@@ -39,7 +46,11 @@ export class MockGroupsService {
             status: 'Activo',
             courseTypeId: 2,
             course: 2, // Curso 2
-            uuid: 'exp-uuid-9999-vencido'
+            uuid: 'exp-uuid-9999-vencido',
+            // MOCK FIELDS for Public Registration (Matches Course Type 2)
+            fields: [
+                { courseConfigField: 201, fieldName: 'Sexo', requirementFieldPerson: { id: 6, fieldName: 'Sexo' }, required: false }
+            ]
         },
         {
             id: 3,
@@ -54,7 +65,11 @@ export class MockGroupsService {
             status: 'Activo',
             courseTypeId: 3,
             course: 3, // Curso 3
-            uuid: '550e8400-e29b-41d4-a716-446655440003'
+            uuid: '550e8400-e29b-41d4-a716-446655440003',
+            // MOCK FIELDS for Public Registration (Matches Course Type 3 - Simple)
+            fields: [
+                { courseConfigField: 301, fieldName: 'telefono', requirementFieldPerson: { id: 8, fieldName: 'telefono' }, required: true }
+            ]
         },
         {
             id: 4,
@@ -99,7 +114,11 @@ export class MockGroupsService {
             status: 'Activo',
             courseTypeId: 2, // Educación Vial Escolar
             course: 2,
-            uuid: 'vial-escolar-2026-valid'
+            uuid: 'vial-escolar-2026-valid',
+            // MOCK FIELDS for Public Registration (Matches Course Type 2 - Escolar)
+            fields: [
+                { courseConfigField: 601, fieldName: 'Sexo', requirementFieldPerson: { id: 6, fieldName: 'Sexo' }, required: false }
+            ]
         }
     ];
 
@@ -177,6 +196,22 @@ export class MockGroupsService {
         // MOCK: Consulta local mientras arreglan CORS
         const persons = this.mockPersons[groupId] || [];
         return of(persons).pipe(delay(200));
+    }
+
+    // Critical: GroupsService delegates this call when useMocks=true
+    getEnrollmentsByGroupId(groupId: number, isAcepted: boolean = true): Observable<any[]> {
+        const persons = this.mockPersons[groupId] || [];
+        const filtered = persons.filter(p => isAcepted ? (p.status === 'Aprobado') : p.status === 'Pendiente');
+
+        // Mapear a la estructura de Enrollment que espera el componente GroupPersons
+        const enrollments = filtered.map(p => ({
+            person: p,
+            enrollmentResponse: [], // Mock responses empty for now
+            isAcepted: isAcepted,
+            documentCourses: []
+        }));
+
+        return of(enrollments).pipe(delay(200));
     }
 
     getRequestsByGroupId(groupId: number): Observable<Person[]> {
@@ -280,8 +315,31 @@ export class MockGroupsService {
         return of(group).pipe(delay(100));
     }
 
+    // /group/registro/{uuid} PARA REGISTRO PUBLICO 
     getGroupByUuid(uuid: string): Observable<Group> {
         const group = this.groups.find(g => g.uuid === uuid);
-        return of(group!).pipe(delay(300));
+        if (!group) return of(null as any).pipe(delay(300));
+
+        // Enriquecer con templates (availableDocuments) según el CourseTypeId
+        // Esto simula lo que hace el backend al hidratar la respuesta pública
+        let enrichedGroup: any = { ...group };
+
+        // Mapeo manual de documentos según MockCourseTypeService
+        if (group.courseTypeId === 1) { // Licencia
+            enrichedGroup.templates = [
+                { id: 'doc_constancia', name: 'Constancia Básica', description: 'Template básico contra participación', templateId: 1, cost: 473, requiresApproval: true, isMandatory: true },
+                { id: 'doc_tarjeton', name: 'Tarjetón de Identidad', description: 'Documento de identificación', templateId: 4, cost: 473, requiresApproval: true, isMandatory: true }
+            ];
+        } else if (group.courseTypeId === 2) { // Escolar
+            enrichedGroup.templates = [
+                { id: 'doc_diploma', name: 'Diploma de Participación', description: 'Diploma general', templateId: 5, cost: 0, requiresApproval: false, isMandatory: true }
+            ];
+        } else if (group.courseTypeId === 3) { // Simple
+            enrichedGroup.templates = [
+                { id: 'doc_diploma_simple', name: 'Diploma de Participación', description: 'Diploma general', templateId: 5, cost: 0, requiresApproval: false, isMandatory: true }
+            ];
+        }
+
+        return of(enrichedGroup).pipe(delay(300));
     }
 }
