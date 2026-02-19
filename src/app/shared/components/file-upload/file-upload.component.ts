@@ -129,6 +129,5 @@ export class FileUploadComponent implements OnInit {
   @Output() uploadError = new EventEmitter<string>();
 
   ngOnInit() {
-    console.log('FileUploadComponent inicializado - modo de desarrollo');
   }
 }

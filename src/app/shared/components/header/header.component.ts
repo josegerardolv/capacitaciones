@@ -747,7 +747,6 @@ export class HeaderComponent {
   async logout(): Promise<void> {
     try {
       await this.authService.logout();
-      console.log('Logout exitoso');
       this.closeUserMenu();
       // Redirigir al login después del logout exitoso
       window.location.href = '/login';

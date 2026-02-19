@@ -140,11 +140,10 @@ export class PersonFormComponent implements OnInit {
     }
 
     isVisible(field: string): boolean {
-        // CAMPOS BASE: Siempre visibles (Tabla Person)
-        // Nombre, apellidos y CURP son el núcleo mínimo. 
-        // Email y Teléfono se consideran base para contacto, pero su visibilidad real se apoya en config.
-        const baseFields = ['name', 'paternal_lastName', 'maternal_lastName', 'curp', 'email', 'phone'];
-        if (baseFields.includes(field)) return true;
+        // CAMPOS CORE: Siempre visibles (Estructura base de la persona)
+        // Email y Phone agregados por solicitud del usuario (Siempre visibles)
+        const coreFields = ['name', 'paternal_lastName', 'maternal_lastName', 'curp', 'email', 'phone'];
+        if (coreFields.includes(field)) return true;
 
         if (!this.fieldsConfig) return false;
 
@@ -153,14 +152,17 @@ export class PersonFormComponent implements OnInit {
     }
 
     isRequired(field: string): boolean {
-        // CAMPOS OBLIGATORIOS FIJOS: Solo Nombre, CURP y Email (Tabla Person)
-        // Apellidos y Teléfono se muestran siempre pero su llenado es opcional/configurable
-        const mandatoryBaseFields = ['name', 'curp', 'email'];
-        if (mandatoryBaseFields.includes(field)) return true;
+        // CAMPOS OBLIGATORIOS FIJOS: Nombre, CURP y Email (Críticos para el sistema)
+        const mandatoryCore = ['name', 'curp', 'email'];
+        if (mandatoryCore.includes(field)) return true;
 
         if (!this.fieldsConfig) return false;
 
         const cfg = this.fieldsConfig[field];
+
+        // Si el campo no es visible, nunca puede ser requerido para el usuario
+        if (cfg?.visible === false) return false;
+
         return cfg?.required === true;
     }
 

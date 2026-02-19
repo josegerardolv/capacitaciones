@@ -38,8 +38,10 @@ export class PersonRegistrationComponent implements OnInit {
 
     cursoId: string | null = null;
     groupId: string | null = null;
+    currentGroupUuid: string | null = null; // UUID del grupo para el payload
     breadcrumbItems: BreadcrumbItem[] = [];
     prefilledData: any = null;
+    currentPersonId: number | null = null; // ID de la persona encontrada
 
     // Configuración dinámica
     fieldsConfig: Record<string, RegistrationFieldConfig> = {};
@@ -92,6 +94,7 @@ export class PersonRegistrationComponent implements OnInit {
         if (this.groupId) {
             this.groupsService.getGroupById(+this.groupId).subscribe((group: any) => {
                 if (group) {
+                    this.currentGroupUuid = group.uuid; // Guardar UUID para el payload
                     this.currentCourseType = 'GENERICO';
 
                     // 1. INTENTAR USAR CONFIGURACIÓN YA POBLADA (RICH)
@@ -99,7 +102,6 @@ export class PersonRegistrationComponent implements OnInit {
                     const populatedConfig = group.course?.courseType;
 
                     if (populatedConfig && populatedConfig.courseConfigField && populatedConfig.courseConfigField.length > 0 && populatedConfig.courseConfigField[0].requirementFieldPerson) {
-                        console.log('[PersonRegistration] Usando configuración rica del grupo...');
                         this.setupFormFields(populatedConfig);
                     } else {
                         // 2. FALLBACK: CONSULTA DINÁMICA (Si viene incompleto o shallow)
@@ -183,25 +185,22 @@ export class PersonRegistrationComponent implements OnInit {
         }
 
         if (needsLicenseSearch && !this.prefilledData) {
-            console.log('[PersonRegistration] Requisito de Licencia/NUC detectado en config, abriendo buscador...');
             this.isSearchModalOpen = true;
             this.showForm = false;
         } else {
-            console.log('[PersonRegistration] No se requiere búsqueda por Licencia/NUC, saltando al formulario...');
             this.showForm = true;
             this.isSearchModalOpen = false;
         }
     }
 
     onPersonFound(person: Person) {
-        console.log('[PersonRegistration] Persona encontrada:', person);
+        this.currentPersonId = (person as any).id; // Guardamos el ID para el payload final
         this.prefilledData = { ...person };
         this.showForm = true;
         this.isSearchModalOpen = false;
     }
 
     onManualRegistration(license: string) {
-        console.log('[PersonRegistration] Registro manual iniciado con licencia:', license);
         this.prefilledData = { license };
         this.showForm = true;
         this.isSearchModalOpen = false;
@@ -256,7 +255,6 @@ export class PersonRegistrationComponent implements OnInit {
     }
 
     finalizeRegistration(personData: any) {
-        console.log('[PersonRegistration] Iniciando proceso de inscripción...', personData);
 
         const groupId = this.groupId ? +this.groupId : 1;
 
@@ -272,30 +270,31 @@ export class PersonRegistrationComponent implements OnInit {
             const value = personData[key];
             if (personTableFields.includes(key)) {
                 // Va a la tabla Person
-                personDataForPayload[key] = value;
+                personDataForPayload[key] = (typeof value === 'string' && value.trim() === '') ? null : value;
             } else {
-                // Va a Responses si tiene un ID de configuración
+                // Verificar si es un campo dinámico
                 const fieldConfig = this.fieldsConfig![key];
                 if (fieldConfig && fieldConfig.courseConfigFieldId) {
                     responses.push({
                         courseConfigFieldId: fieldConfig.courseConfigFieldId,
                         value: value?.toString() || ''
                     });
+                } else if (!['requestTarjeton', 'requestedDocuments'].includes(key)) {
+                    // Es un campo base o no configurado dinámicamente
+                    personDataForPayload[key] = (typeof value === 'string' && value.trim() === '') ? null : value;
                 }
             }
         });
 
-        // Asegurar que isActive esté en la persona
-        personDataForPayload.isActive = true;
-
         const enrollmentPayload = {
-            group: groupId,
-            isAcepted: false, // Default
+            group: this.currentGroupUuid || Number(groupId), // Backend espera UUID string (o número legacy si no hay UUID)
+            isAcepted: true, // En vista privada se acepta automáticamente (se puede ajustar según regla de negocio)
+            dateReject: null,
+            personId: this.currentPersonId,
             person: personDataForPayload,
-            responses: responses
+            responses: responses,
+            documentCourseIds: personData.requestedDocuments || []
         };
-
-        console.log('[PersonRegistration] Payload final para /enrollment:', enrollmentPayload);
 
         this.notificationService.showInfo('Guardando', 'Procesando inscripción...');
 

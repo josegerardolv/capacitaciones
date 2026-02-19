@@ -1,5 +1,6 @@
 import { Component, EventEmitter, Input, Output, OnChanges, SimpleChanges, ViewChild, TemplateRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { forkJoin } from 'rxjs';
 import { FormGroup, FormBuilder, FormControl, ReactiveFormsModule } from '@angular/forms'; // FormControl agregado
 import { Group } from '../../../../core/models/group.model';
 import { Person } from '../../../../core/models/person.model';
@@ -141,7 +142,12 @@ export class GroupRequestsComponent implements OnChanges {
         this.pendingConfirmAction = null;
     }
 
-    acceptRequest(id: number) {
+    acceptRequest(personId: number, enrollmentId?: number) {
+        if (!enrollmentId) {
+            console.error('No enrollment ID provided');
+            return;
+        }
+
         this.openConfirm({
             title: 'Aceptar Solicitud',
             message: '¿Estás seguro de aceptar esta solicitud?',
@@ -149,13 +155,23 @@ export class GroupRequestsComponent implements OnChanges {
             confirmText: 'Aceptar',
             cancelText: 'Cancelar'
         }, () => {
-            this.allRequests = this.allRequests.filter(r => r.id !== id);
-            this.filterData('');
-            this.clearSelection();
+            this.groupsService.acceptEnrollment(enrollmentId).subscribe({
+                next: () => {
+                    this.allRequests = this.allRequests.filter(r => r.id !== personId);
+                    this.filterData('');
+                    this.clearSelection();
+                },
+                error: (err) => console.error('Error accepting enrollment', err)
+            });
         });
     }
 
-    rejectRequest(id: number) {
+    rejectRequest(personId: number, enrollmentId?: number) {
+        if (!enrollmentId) {
+            console.error('No enrollment ID provided');
+            return;
+        }
+
         this.openConfirm({
             title: 'Rechazar Solicitud',
             message: '¿Estás seguro de rechazar esta solicitud?',
@@ -163,9 +179,14 @@ export class GroupRequestsComponent implements OnChanges {
             confirmText: 'Rechazar',
             cancelText: 'Cancelar'
         }, () => {
-            this.allRequests = this.allRequests.filter(r => r.id !== id);
-            this.filterData('');
-            this.clearSelection();
+            this.groupsService.rejectEnrollment(enrollmentId).subscribe({
+                next: () => {
+                    this.allRequests = this.allRequests.filter(r => r.id !== personId);
+                    this.filterData('');
+                    this.clearSelection();
+                },
+                error: (err) => console.error('Error rejecting enrollment', err)
+            });
         });
     }
 
@@ -180,10 +201,27 @@ export class GroupRequestsComponent implements OnChanges {
             confirmText: isAccept ? 'Aceptar Todas' : 'Rechazar Todas',
             cancelText: 'Cancelar'
         }, () => {
-            const selectedIds = this.selectedRequests.map(r => r.id);
-            this.allRequests = this.allRequests.filter(r => !selectedIds.includes(r.id));
-            this.filterData(''); // Re-filtrar
-            this.clearSelection();
+            // Filtrar solo los que tienen enrollmentId válido
+            const requestsToProcess = this.selectedRequests.filter(r => r.enrollmentId);
+            if (requestsToProcess.length === 0) return;
+
+            // Crear array de observables
+            const observables = requestsToProcess.map(r =>
+                isAccept
+                    ? this.groupsService.acceptEnrollment(r.enrollmentId!)
+                    : this.groupsService.rejectEnrollment(r.enrollmentId!)
+            );
+
+            forkJoin(observables).subscribe({
+                next: () => {
+                    // Remover todos los procesados de la lista local
+                    const processedIds = requestsToProcess.map(r => r.id);
+                    this.allRequests = this.allRequests.filter(r => !processedIds.includes(r.id));
+                    this.filterData('');
+                    this.clearSelection();
+                },
+                error: (err) => console.error('Error processing bulk requests', err)
+            });
         });
     }
 

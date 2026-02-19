@@ -38,9 +38,19 @@ export class GroupsService {
         );
     }
 
+    getEnrollmentsByGroupId(groupId: number, isAcepted: boolean = true): Observable<any[]> {
+        const params = new HttpParams().set('isAcepted', isAcepted.toString());
+        return this.http.get<any[]>(`${this.apiUrl}/enrollment/group/${groupId}`, { params });
+    }
+
     getRequestsByGroupId(groupId: number): Observable<Person[]> {
-        const params = new HttpParams().set('status', 'Pendiente');
-        return this.http.get<Person[]>(`${this.apiUrl}/group/${groupId}/persons`, { params });
+        const params = new HttpParams().set('isAcepted', 'false');
+        return this.http.get<any[]>(`${this.apiUrl}/enrollment/group/${groupId}`, { params }).pipe(
+            map(response => response.map(item => ({
+                ...item.person,
+                enrollmentId: item.id // Guardamos el ID de la inscripción para poder aceptarla/rechazarla
+            })))
+        );
     }
 
     // Payload structure based on BACKEND_INTEGRATION.md
@@ -69,7 +79,8 @@ export class GroupsService {
 
     searchPersonByLicense(license: string): Observable<Person | null> {
         const params = new HttpParams().set('license', license);
-        return this.http.get<Person[]>(`${this.apiUrl}/persons`, { params })
+        // El backend ha habilitado el acceso público a este endpoint (/persons/lookup) para consultas de ciudadanos
+        return this.http.get<Person[]>(`${this.apiUrl}/persons/lookup`, { params })
             .pipe(map(results => (results && results.length > 0) ? results[0] : null));
     }
 
@@ -94,10 +105,18 @@ export class GroupsService {
     getGroupById(id: number): Observable<Group> {
         return this.http.get<Group>(`${this.apiUrl}/group/${id}`);
     }
-
+    // /group/registro/{uuid} PARA REGISTRO PUBLICO 
     getGroupByUuid(uuid: string): Observable<Group> {
-        return this.http.get<any>(`${this.apiUrl}/group/uuid/${uuid}`).pipe(
+        return this.http.get<any>(`${this.apiUrl}/group/registro/${uuid}`).pipe(
             map(response => response?.data || response)
         );
+    }
+
+    acceptEnrollment(enrollmentId: number): Observable<any> {
+        return this.http.patch(`${this.apiUrl}/enrollment/${enrollmentId}`, { isAcepted: true });
+    }
+
+    rejectEnrollment(enrollmentId: number): Observable<any> {
+        return this.http.patch(`${this.apiUrl}/enrollment/${enrollmentId}`, { isAcepted: false });
     }
 }
