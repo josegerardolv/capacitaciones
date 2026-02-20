@@ -58,7 +58,8 @@
     "typescript": "~5.8.0"
   },
   "overrides": {
-    "vite": ">=7.1.11"
+    "vite": ">=7.1.11",
+    "webpack": "^5.94.0"
   },
   "engines": {
     "node": ">=18.13.0",

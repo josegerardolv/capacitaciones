@@ -287,32 +287,31 @@ export class PersonRegistrationComponent implements OnInit {
         Object.keys(personData).forEach(key => {
             const value = personData[key];
             const fieldConfig = this.fieldsConfig![key];
+            const isPersonTableField = personTableFields.includes(key);
 
-            if (personTableFields.includes(key)) {
-                // Va a la tabla Person
-                // Solo lo enviamos si no tiene configuración (base pura) o si está marcado como visible
-                if (!fieldConfig || fieldConfig.visible) {
-                    personDataForPayload[key] = (typeof value === 'string' && value.trim() === '') ? null : value;
-                }
-            } else {
-                // Verificar si es un campo dinámico
-                if (fieldConfig && fieldConfig.courseConfigFieldId) {
-                    responses.push({
-                        courseConfigFieldId: fieldConfig.courseConfigFieldId,
-                        value: value?.toString() || ''
-                    });
+            // Valores procesados (limpiar vacíos)
+            const processedValue = (typeof value === 'string' && value.trim() === '') ? null : value;
 
-                    // Si el campo también existe en la tabla Person (ej. email, phone) Y es visible
-                    if (personTableFields.includes(key) && fieldConfig.visible) {
-                        personDataForPayload[key] = (typeof value === 'string' && value.trim() === '') ? null : value;
-                    }
-                } else if (!['requestTarjeton', 'requestedDocuments'].includes(key)) {
-                    // Es un campo base o no configurado dinámicamente
-                    if (!fieldConfig || fieldConfig.visible) {
-                        personDataForPayload[key] = (typeof value === 'string' && value.trim() === '') ? null : value;
-                    }
+            // 1. Si es un campo dinámico (tiene ID de configuración)
+            if (fieldConfig && fieldConfig.courseConfigFieldId) {
+                responses.push({
+                    courseConfigFieldId: fieldConfig.courseConfigFieldId,
+                    value: value?.toString() || ''
+                });
+
+                // Si TAMBIÉN es un campo de la tabla Person, lo enviamos allí también
+                if (isPersonTableField && fieldConfig.visible) {
+                    personDataForPayload[key] = processedValue;
                 }
             }
+            // 2. Si NO es dinámico pero SÍ es un campo base de la tabla Person
+            else if (isPersonTableField) {
+                // Solo lo enviamos si no tiene configuración restrictiva o si es visible
+                if (!fieldConfig || fieldConfig.visible) {
+                    personDataForPayload[key] = processedValue;
+                }
+            }
+            // 3. Cualquier otro campo (ej. address, sex si no son requerimientos) se IGNORA para evitar Error 400
         });
 
         const enrollmentPayload = {
