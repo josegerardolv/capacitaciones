@@ -119,9 +119,9 @@ export class MockTemplateService {
 
     // Mock Concepts Data
     private concepts: Concept[] = [
-        { id: 1, concepto: 'CONSTANCIA DE NO EMPLACAMIENTO', clave: '3IFBAC022', costo: 473, deprecated: false },
-        { id: 2, concepto: 'PERMISO PROVISIONAL (SERVICIO PÚBLICO)', clave: '3IFAAA065', costo: 340, deprecated: false },
-        { id: 3, concepto: 'PERMISO PROVISIONAL (SERVICIO PRIVADO)', clave: '3IFBAC023', costo: 340, deprecated: false }
+        { id: 1, concepto: 'CONSTANCIA DE NO EMPLACAMIENTO', clave: '3IFBAC022', umas: 473 },
+        { id: 2, concepto: 'PERMISO PROVISIONAL (SERVICIO PÚBLICO)', clave: '3IFAAA065', umas: 340 },
+        { id: 3, concepto: 'PERMISO PROVISIONAL (SERVICIO PRIVADO)', clave: '3IFBAC023', umas: 340 }
     ];
 
     constructor() { }
@@ -138,7 +138,7 @@ export class MockTemplateService {
                         conceptName: freshConcept.concepto,
                         conceptClave: freshConcept.clave,
                         claveConcepto: freshConcept.clave, // legacy support
-                        conceptCosto: freshConcept.costo
+                        conceptCosto: freshConcept.umas
                     };
                 }
             } else {
@@ -221,7 +221,7 @@ export class MockTemplateService {
 
     createConcept(concept: Omit<Concept, 'id'>): Observable<Concept> {
         const newId = Math.max(...this.concepts.map(c => c.id), 0) + 1;
-        const newConcept = { ...concept, id: newId, deprecated: false };
+        const newConcept = { ...concept, id: newId };
         this.concepts.push(newConcept);
         return of(newConcept).pipe(delay(500));
     }

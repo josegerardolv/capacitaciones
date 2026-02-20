@@ -240,7 +240,7 @@ export class TemplatesListComponent implements OnInit {
             conceptId: selectedConcept?.id || null,
             conceptName: selectedConcept?.concepto || (value.isFree ? 'Gratuito' : ''),
             conceptClave: selectedConcept?.clave || '',
-            conceptCosto: selectedConcept?.costo || 0,
+            conceptCosto: selectedConcept?.umas || 0,
             category: value.tipo,
             pageConfig: this.defaultTemplate().pageConfig,
             elements: [],
@@ -277,7 +277,7 @@ export class TemplatesListComponent implements OnInit {
             conceptId: selectedConcept?.id || null,
             conceptName: selectedConcept?.concepto || (value.isFree ? 'Gratuito' : ''),
             conceptClave: selectedConcept?.clave || '',
-            conceptCosto: selectedConcept?.costo || 0,
+            conceptCosto: selectedConcept?.umas || 0,
             category: value.tipo
         };
         delete payload.isFree;

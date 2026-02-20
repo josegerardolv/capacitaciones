@@ -7,6 +7,7 @@ import { CertificateTemplate, GeneratedCertificate, CertificateData, TemplateVar
 @Injectable({ providedIn: 'root' })
 export class TemplateService {
   private apiUrl = `${environment.apiUrl}/api`;
+  private conceptsUrl = `${environment.apiUrl}/payment-concepts`;
 
   constructor(private http: HttpClient) { }
 
@@ -65,29 +66,24 @@ export class TemplateService {
 
   // ===== CONCEPTOS =====
   getConcepts(): Observable<Concept[]> {
-    // TODO: ELIMINAR ESTE MOCK TEMPORAL CUANDO EL BACKEND ESTÉ LISTO
-    return of([
-      { id: 1, concepto: 'Concepto Mock 1', clave: 'MOCK1', costo: 100, deprecated: false },
-      { id: 2, concepto: 'Concepto Mock 2', clave: 'MOCK2', costo: 200, deprecated: false }
-    ]);
-    // return this.http.get<Concept[]>(`${this.apiUrl}/concepts`);
+    return this.http.get<Concept[]>(this.conceptsUrl);
   }
 
   searchConcepts(query: string): Observable<Concept[]> {
     const params = new HttpParams().set('q', query);
-    return this.http.get<Concept[]>(`${this.apiUrl}/concepts`, { params });
+    return this.http.get<Concept[]>(this.conceptsUrl, { params });
   }
 
   createConcept(concept: Omit<Concept, 'id'>): Observable<Concept> {
-    return this.http.post<Concept>(`${this.apiUrl}/concepts`, concept);
+    return this.http.post<Concept>(this.conceptsUrl, concept);
   }
 
   updateConcept(id: number, changes: Partial<Concept>): Observable<Concept> {
-    return this.http.put<Concept>(`${this.apiUrl}/concepts/${id}`, changes);
+    return this.http.patch<Concept>(`${this.conceptsUrl}/${id}`, changes);
   }
 
   deleteConcept(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/concepts/${id}`);
+    return this.http.delete<void>(`${this.conceptsUrl}/${id}`);
   }
 
   // ===== GENERACIÓN DE CERTIFICADOS =====

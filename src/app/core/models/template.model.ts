@@ -149,12 +149,13 @@ export interface CertificateData {
 // Concept Interface (Merged to reduce files)
 export interface Concept {
   id: number;
-  concepto: string;
   clave: string;
-  costo: number;
-  deprecated: boolean;
+  concepto: string;
+  umas: number;
   createdAt?: string;
   updatedAt?: string;
+  deletedAt?: string;
+  templateDocument?: number;
 }
 
 export interface GeneratedCertificate {
