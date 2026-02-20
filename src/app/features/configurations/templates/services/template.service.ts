@@ -1,63 +1,44 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, of } from 'rxjs';
+import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
-import { CertificateTemplate, GeneratedCertificate, CertificateData, TemplateVariable, PageConfig, Concept } from '../../../../core/models/template.model';
+import {
+  CertificateTemplate, GeneratedCertificate, CertificateData,
+  TemplateVariable, PageConfig, Concept,
+  TemplateDocument, CreateTemplateDocumentPayload, UpdateTemplateDocumentPayload
+} from '../../../../core/models/template.model';
 
 @Injectable({ providedIn: 'root' })
 export class TemplateService {
   private apiUrl = `${environment.apiUrl}/api`;
+  private templateDocUrl = `${environment.apiUrl}/template-document`;
   private conceptsUrl = `${environment.apiUrl}/payment-concepts`;
 
   constructor(private http: HttpClient) { }
 
-  // ===== TEMPLATES =====
-  getTemplates(): Observable<CertificateTemplate[]> {
-    // TODO: ELIMINAR ESTE MOCK TEMPORAL CUANDO EL BACKEND ESTÉ LISTO
-    // Se usa 'of' para retornar datos simulados y no bloquear el desarrollo
-    return of([
-      {
-        id: 1,
-        name: 'Template Básico (Mock)',
-        codeTemplate: 'TPL-001',
-        paymentConcept: 'Concepto Pago 1',
-        claveConcepto: 'CLV123',
-        conceptCosto: 250,
-        description: 'Descripción simulada del template',
-        pageConfig: this.getDefaultPageConfig(),
-        elements: [],
-        variables: []
-      },
-      {
-        id: 2,
-        name: 'Template Gratuito (Mock)',
-        codeTemplate: 'TPL-FREE',
-        paymentConcept: 'Gratuito',
-        claveConcepto: 'FREE',
-        conceptCosto: 0,
-        description: 'Template sin costo para pruebas',
-        pageConfig: this.getDefaultPageConfig(),
-        elements: [],
-        variables: []
-      }
-    ]);
-    // return this.http.get<CertificateTemplate[]>(`${this.apiUrl}/templates`);
+  // ===== TEMPLATES (Backend: /template-document) =====
+  getTemplates(): Observable<TemplateDocument[]> {
+    return this.http.get<TemplateDocument[]>(this.templateDocUrl);
+  }
+
+  getTemplateById(id: number): Observable<TemplateDocument> {
+    return this.http.get<TemplateDocument>(`${this.templateDocUrl}/${id}`);
+  }
+
+  createTemplate(payload: CreateTemplateDocumentPayload): Observable<TemplateDocument> {
+    return this.http.post<TemplateDocument>(this.templateDocUrl, payload);
+  }
+
+  updateTemplate(id: number, payload: UpdateTemplateDocumentPayload): Observable<TemplateDocument> {
+    return this.http.patch<TemplateDocument>(`${this.templateDocUrl}/${id}`, payload);
+  }
+
+  deleteTemplate(id: number): Observable<any> {
+    return this.http.delete<any>(`${this.templateDocUrl}/${id}`);
   }
 
   getTemplate(id: number): Observable<CertificateTemplate | undefined> {
     return this.http.get<CertificateTemplate>(`${this.apiUrl}/templates/${id}`);
-  }
-
-  createTemplate(template: Omit<CertificateTemplate, 'id'>): Observable<CertificateTemplate> {
-    return this.http.post<CertificateTemplate>(`${this.apiUrl}/templates`, template);
-  }
-
-  updateTemplate(id: number, template: Partial<CertificateTemplate>): Observable<CertificateTemplate> {
-    return this.http.put<CertificateTemplate>(`${this.apiUrl}/templates/${id}`, template);
-  }
-
-  deleteTemplate(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/templates/${id}`);
   }
 
   duplicateTemplate(id: number): Observable<CertificateTemplate> {

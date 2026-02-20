@@ -18,13 +18,14 @@ import { TooltipDirective } from '../../../../shared/components/tooltip/tooltip.
 
 // Modelos y Servicios
 import { CourseTypeConfig, RegistrationFieldConfig, DEFAULT_REGISTRATION_FIELDS, DocumentConfig } from '../../../../core/models/course-type-config.model';
-import { CertificateTemplate } from '../../../../core/models/template.model';
+import { TemplateDocument } from '../../../../core/models/template.model';
 import { TemplateService } from '../../templates/services/template.service';
 import { CourseTypeService } from '../../../../core/services/course-type.service';
 import { CoursesService } from '../../../cursos/services/courses.service';
 import { RequirementsService } from '../../../../core/services/requirements.service';
 import { SelectComponent } from '../../../../shared/components/inputs/select.component';
 import { REQUIREMENT_FIELD_NAMES, normalizeFieldName } from '../../../../core/constants/requirement-names.constants';
+import { UmasToPesosPipe } from '../../../../shared/pipes/umas-to-pesos.pipe';
 
 @Component({
     selector: 'app-course-type-form',
@@ -42,7 +43,8 @@ import { REQUIREMENT_FIELD_NAMES, normalizeFieldName } from '../../../../core/co
         TemplatePreviewModalComponent,
         TableFiltersComponent,
         TablePaginationComponent,
-        TooltipDirective
+        TooltipDirective,
+        UmasToPesosPipe
     ],
     templateUrl: './course-type-form.component.html',
     styles: []
@@ -68,9 +70,9 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
     backendRequirements: any[] = [];
 
     // Configuración de Templates
-    templates: CertificateTemplate[] = [];
-    filteredTemplates: CertificateTemplate[] = [];
-    selectedTemplates: CertificateTemplate[] = [];
+    templates: TemplateDocument[] = [];
+    filteredTemplates: TemplateDocument[] = [];
+    selectedTemplates: TemplateDocument[] = [];
 
     // Seguimiento de documentos obligatorios (Conjunto de IDs de Template)
     mandatoryDocuments: Set<number> = new Set();
@@ -95,9 +97,9 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
     tableColumns: TableColumn[] = [
         { key: 'name', label: 'Código / Nombre', sortable: true, width: '25%' },
         { key: 'description', label: 'Descripción', sortable: true, width: '25%' },
-        { key: 'conceptName', label: 'Concepto de Pago', sortable: true, minWidth: '20%' },
+        { key: 'paymentConcepts', label: 'Concepto de Pago', sortable: false, minWidth: '20%' },
         { key: 'mandatory', label: 'Obligatorio', align: 'center', width: '100px' },
-        { key: 'conceptCosto', label: 'Costo', sortable: true, width: '100px', align: 'right' },
+        { key: 'cost', label: 'Costo', sortable: false, width: '100px', align: 'right' },
         { key: 'actions', label: 'Vista Previa', align: 'center', width: '100px' }
     ];
 
@@ -105,11 +107,12 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
     @ViewChild('costTemplate') costTemplate!: any;
     @ViewChild('categoryTemplate') categoryTemplate!: any;
     @ViewChild('mandatoryTemplate') mandatoryTemplate!: any;
+    @ViewChild('conceptTemplate') conceptTemplate!: any;
 
     // Modal de Vista Previa
     showPreviewModal = false;
-    previewTemplate: CertificateTemplate | null = null;
-    displayedTemplates: CertificateTemplate[] = [];
+    previewTemplate: TemplateDocument | null = null;
+    displayedTemplates: TemplateDocument[] = [];
 
     constructor(
         private fb: FormBuilder,
@@ -160,7 +163,7 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
             const actionsCol = this.tableColumns.find(c => c.key === 'actions');
             if (actionsCol) actionsCol.template = this.actionsTemplate;
 
-            const costCol = this.tableColumns.find(c => c.key === 'conceptCosto');
+            const costCol = this.tableColumns.find(c => c.key === 'cost');
             if (costCol) costCol.template = this.costTemplate;
 
             const categoryCol = this.tableColumns.find(c => c.key === 'category');
@@ -168,6 +171,9 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
 
             const mandatoryCol = this.tableColumns.find(c => c.key === 'mandatory');
             if (mandatoryCol) mandatoryCol.template = this.mandatoryTemplate;
+
+            const conceptCol = this.tableColumns.find(c => c.key === 'paymentConcepts');
+            if (conceptCol) conceptCol.template = this.conceptTemplate;
         });
     }
 
@@ -382,7 +388,6 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
         this.templateService.getTemplates().subscribe({
             next: (data) => {
                 this.templates = data;
-                this.templates.sort((a, b) => (b.usageCount || 0) - (a.usageCount || 0));
 
                 this.mandatoryDocuments.clear();
 
@@ -398,7 +403,7 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
 
                     this.templates.forEach(t => {
                         const isSaved = selectedIds.includes(t.id);
-                        if (!isSaved && t.conceptCosto === 0) {
+                        if (!isSaved && !t.paymentConcepts?.length) {
                             this.mandatoryDocuments.add(t.id);
                         }
                     });
@@ -412,7 +417,7 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
                 } else {
                     this.selectedTemplates = [];
                     this.templates.forEach(t => {
-                        if (t.conceptCosto === 0) {
+                        if (!t.paymentConcepts?.length) {
                             this.mandatoryDocuments.add(t.id);
                         }
                     });
@@ -507,7 +512,7 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
         } else {
             this.filteredTemplates = this.templates.filter(t =>
                 t.name.toLowerCase().includes(term) ||
-                (t.conceptName && t.conceptName.toLowerCase().includes(term))
+                (t.paymentConcepts?.[0]?.concepto || '').toLowerCase().includes(term)
             );
         }
 
@@ -570,7 +575,7 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
         this.selectedTemplates = event.selectedItems;
     }
 
-    openPreview(template: CertificateTemplate) {
+    openPreview(template: TemplateDocument) {
         this.previewTemplate = template;
         this.showPreviewModal = true;
     }
