@@ -396,19 +396,21 @@ export class PublicRegistrationComponent implements OnInit {
                     value: value?.toString() || ''
                 });
 
-                // Si el campo también existe en la tabla Person (ej. email, phone), lo enviamos ahí también
-                if (personTableFields.includes(key)) {
+                // Si el campo también existe en la tabla Person (ej. email, phone) Y es visible
+                if (personTableFields.includes(key) && fieldConfig.visible) {
                     personDataForPayload[key] = processedValue;
                 }
-            } else if (!['requestTarjeton', 'requestedDocuments'].includes(key)) {
-                // Es un campo base (name, curp, etc.) o no configurado dinámicamente
-                personDataForPayload[key] = processedValue;
+            } else if (personTableFields.includes(key)) {
+                // Es un campo base (name, curp, etc.)
+                // Solo lo enviamos si no tiene configuración (base pura) o si está marcado como visible
+                if (!fieldConfig || fieldConfig.visible) {
+                    personDataForPayload[key] = processedValue;
+                }
             }
         });
 
-        const enrollmentPayload = {
+        const enrollmentPayload: any = {
             // Backend update: Send separate groupId and groupUuid fields
-            groupId: this.currentGroupId,
             groupUuid: this.groupData.uuid || this.currentGroupUuid,
             isAcepted: false,
             dateReject: null,
@@ -417,6 +419,11 @@ export class PublicRegistrationComponent implements OnInit {
             responses: responses,
             documentCourseIds: personData.requestedDocuments || []
         };
+
+        // Solo enviar groupId si fue obtenido (evita desvíos si es null)
+        if (this.currentGroupId) {
+            enrollmentPayload.groupId = this.currentGroupId;
+        }
 
         this.notificationService.showInfo('Enviando', 'Procesando tu solicitud...');
 
@@ -461,16 +468,23 @@ export class PublicRegistrationComponent implements OnInit {
     // --- MANEJO DEL MODAL DE BÚSQUEDA ---
     onPersonFound(person: any) {
         this.currentPersonId = person.id; // Guardamos el ID para el payload final
-        this.prefilledData = {
-            name: person.name,
-            paternal_lastName: person.paternal_lastName,
-            maternal_lastName: person.maternal_lastName,
-            license: person.license,
-            curp: person.curp,
-            sex: person.sex,
-            address: person.address,
-            found: true
-        };
+
+        // Solo prellenar campos que son bases o están marcados como visibles en este curso
+        const data: any = { found: true };
+        const alwaysPrefill = ['name', 'paternal_lastName', 'maternal_lastName', 'curp'];
+
+        alwaysPrefill.forEach(key => {
+            if (person[key]) data[key] = person[key];
+        });
+
+        // Solo prellenar License/NUC/Sex/Address si el curso ACTUAL los pide
+        Object.keys(this.fieldsConfig).forEach(key => {
+            if (this.fieldsConfig[key]?.visible && person[key]) {
+                data[key] = person[key];
+            }
+        });
+
+        this.prefilledData = data;
         this.isSearchModalOpen = false;
         this.showForm = true;
     }

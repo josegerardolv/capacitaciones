@@ -46,10 +46,36 @@ export class GroupsService {
     getRequestsByGroupId(groupId: number): Observable<Person[]> {
         const params = new HttpParams().set('isAcepted', 'false');
         return this.http.get<any[]>(`${this.apiUrl}/enrollment/group/${groupId}`, { params }).pipe(
-            map(response => response.map(item => ({
-                ...item.person,
-                enrollmentId: item.id // Guardamos el ID de la inscripción para poder aceptarla/rechazarla
-            })))
+            map(response => response.map(item => {
+                // Flatten responses into the root object for the table
+                const dynamicFields: any = {};
+                if (item.enrollmentResponse) {
+                    item.enrollmentResponse.forEach((resp: any) => {
+                        // Intentar mapear por el nombre del campo del requisito
+                        const fieldName = resp.courseConfigField?.requirementFieldPerson?.fieldName;
+                        if (fieldName) {
+                            // Normalizar (ej: "Dirección" -> "address")
+                            // Usaremos una lógica simple de mapeo aquí
+                            const lower = fieldName.toLowerCase();
+                            if (lower.includes('dirección')) dynamicFields['address'] = resp.value;
+                            else if (lower.includes('sexo')) dynamicFields['sex'] = resp.value;
+                            else if (lower.includes('telefono')) dynamicFields['phone'] = resp.value;
+                            else if (lower.includes('licencia')) dynamicFields['license'] = resp.value;
+                            else if (lower.includes('nuc')) dynamicFields['nuc'] = resp.value;
+                            else if (lower.includes('correo') || lower.includes('email')) {
+                                if (resp.value) dynamicFields['email'] = resp.value;
+                            }
+                            else dynamicFields[fieldName] = resp.value;
+                        }
+                    });
+                }
+
+                return {
+                    ...item.person,
+                    ...dynamicFields,
+                    enrollmentId: item.id
+                };
+            }))
         );
     }
 

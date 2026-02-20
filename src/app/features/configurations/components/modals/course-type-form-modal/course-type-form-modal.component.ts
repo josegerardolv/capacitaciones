@@ -6,10 +6,11 @@ import { InstitutionalButtonComponent } from '../../../../../shared/components/b
 import { InputEnhancedComponent } from '../../../../../shared/components/inputs/input-enhanced.component';
 import { CourseTypeConfig, DocumentConfig, RegistrationFieldConfig, DEFAULT_REGISTRATION_FIELDS } from '../../../../../core/models/course-type-config.model';
 import { TemplateService } from '../../../templates/services/template.service';
-import { CertificateTemplate } from '../../../../../core/models/template.model';
+import { TemplateDocument } from '../../../../../core/models/template.model';
 import { InstitutionalTableComponent, TableColumn, TableConfig } from '../../../../../shared/components/institutional-table/institutional-table.component';
 import { ModalComponent, ModalConfig } from '../../../../../shared/components/modals/modal.component';
 import { TemplatePreviewModalComponent } from '../template-preview-modal/template-preview-modal.component';
+import { UmasToPesosPipe } from '../../../../../shared/pipes/umas-to-pesos.pipe';
 
 @Component({
   selector: 'app-course-type-form-modal',
@@ -22,7 +23,8 @@ import { TemplatePreviewModalComponent } from '../template-preview-modal/templat
     InputEnhancedComponent,
     InstitutionalTableComponent,
     TemplatePreviewModalComponent,
-    ModalComponent
+    ModalComponent,
+    UmasToPesosPipe
   ],
   templateUrl: './course-type-form-modal.component.html',
   styles: [`
@@ -52,9 +54,9 @@ export class CourseTypeFormModalComponent implements OnInit {
   registrationFields: RegistrationFieldConfig[] = [];
 
   // Configuración de Templates y Tabla
-  templates: CertificateTemplate[] = [];
-  filteredTemplates: CertificateTemplate[] = [];
-  selectedTemplates: CertificateTemplate[] = [];
+  templates: TemplateDocument[] = [];
+  filteredTemplates: TemplateDocument[] = [];
+  selectedTemplates: TemplateDocument[] = [];
   searchControl = new FormControl('');
 
   tableConfig: TableConfig = {
@@ -68,21 +70,22 @@ export class CourseTypeFormModalComponent implements OnInit {
   @ViewChild('actionsTemplate') actionsTemplate!: any;
   @ViewChild('costTemplate') costTemplate!: any;
   @ViewChild('categoryTemplate') categoryTemplate!: any;
-  @ViewChild('mandatoryTemplate') mandatoryTemplate!: any; // Nuevo Template para checkbox
+  @ViewChild('mandatoryTemplate') mandatoryTemplate!: any;
+  @ViewChild('conceptTemplate') conceptTemplate!: any;
 
   tableColumns: TableColumn[] = [
     { key: 'name', label: 'Nombre', sortable: true, width: '220px' },
     { key: 'category', label: 'Tipo', sortable: true, width: '150px', template: this.categoryTemplate },
-    { key: 'conceptName', label: 'Concepto (Siox)', sortable: true, minWidth: '300px' },
+    { key: 'paymentConcepts', label: 'Concepto (Siox)', sortable: false, minWidth: '300px' },
     { key: 'mandatory', label: 'Obligatorio', align: 'center', width: '100px', template: this.mandatoryTemplate }, // Nueva Columna
-    { key: 'conceptCosto', label: 'Costo', sortable: true, width: '130px', align: 'right' },
+    { key: 'cost', label: 'Costo', sortable: false, width: '130px', align: 'right' },
     { key: 'actions', label: 'Documento', align: 'center', width: '120px' }
   ];
 
   // Resto de propiedades...
   showPreviewModal = false;
-  previewTemplate: CertificateTemplate | null = null;
-  displayedTemplates: CertificateTemplate[] = [];
+  previewTemplate: TemplateDocument | null = null;
+  displayedTemplates: TemplateDocument[] = [];
 
   // Set para rastrear obligatorios por ID de template
   mandatoryDocuments: Set<number> = new Set();
@@ -115,7 +118,7 @@ export class CourseTypeFormModalComponent implements OnInit {
       const actionsCol = this.tableColumns.find(c => c.key === 'actions');
       if (actionsCol) actionsCol.template = this.actionsTemplate;
 
-      const costCol = this.tableColumns.find(c => c.key === 'conceptCosto');
+      const costCol = this.tableColumns.find(c => c.key === 'cost');
       if (costCol) costCol.template = this.costTemplate;
 
       const categoryCol = this.tableColumns.find(c => c.key === 'category');
@@ -123,6 +126,9 @@ export class CourseTypeFormModalComponent implements OnInit {
 
       const mandatoryCol = this.tableColumns.find(c => c.key === 'mandatory');
       if (mandatoryCol) mandatoryCol.template = this.mandatoryTemplate;
+
+      const conceptCol = this.tableColumns.find(c => c.key === 'paymentConcepts');
+      if (conceptCol) conceptCol.template = this.conceptTemplate;
     });
   }
 
@@ -131,13 +137,10 @@ export class CourseTypeFormModalComponent implements OnInit {
     this.templateService.getTemplates().subscribe({
       next: (data) => {
         this.templates = data;
-        this.templates.sort((a, b) => (b.usageCount || 0) - (a.usageCount || 0));
-
         if (this.courseTypeToEdit && this.courseTypeToEdit.availableDocuments) {
           const selectedIds = this.courseTypeToEdit.availableDocuments.map(d => d.templateId);
           this.selectedTemplates = this.templates.filter(t => selectedIds.includes(t.id));
 
-          // Cargar estado de obligatorios
           this.mandatoryDocuments.clear();
           this.courseTypeToEdit.availableDocuments.forEach(doc => {
             if (doc.isMandatory && doc.templateId) {
@@ -145,10 +148,8 @@ export class CourseTypeFormModalComponent implements OnInit {
             }
           });
 
-          // Asegurar que los gratuitos sean obligatorios por defecto (si no se guardó explícitamente lo contrario, o siempre?)
-          // "todo lo que es gratuito ... debe de venir marcado por defecto"
           this.templates.forEach(t => {
-            if (t.conceptCosto === 0) {
+            if (!t.paymentConcepts?.length) {
               this.mandatoryDocuments.add(t.id);
             }
           });
@@ -161,9 +162,8 @@ export class CourseTypeFormModalComponent implements OnInit {
           this.selectedTemplates = [];
           this.mandatoryDocuments.clear();
 
-          // Nuevos registros: Gratuitos son obligatorios por defecto
           this.templates.forEach(t => {
-            if (t.conceptCosto === 0) {
+            if (!t.paymentConcepts?.length) {
               this.mandatoryDocuments.add(t.id);
             }
           });
@@ -251,7 +251,7 @@ export class CourseTypeFormModalComponent implements OnInit {
     this.selectedTemplates = event.selectedItems;
   }
 
-  openPreview(template: CertificateTemplate) {
+  openPreview(template: TemplateDocument) {
     this.previewTemplate = template;
     this.showPreviewModal = true;
   }
@@ -282,7 +282,7 @@ export class CourseTypeFormModalComponent implements OnInit {
       name: t.name,
       description: t.description || t.name,
       templateId: t.id,
-      cost: t.conceptCosto || 0,
+      cost: t.paymentConcepts?.[0]?.umas || 0,
       requiresApproval: false,
       isMandatory: this.mandatoryDocuments.has(t.id) // Guardar estado
     }));
