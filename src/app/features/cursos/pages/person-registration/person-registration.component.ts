@@ -195,7 +195,25 @@ export class PersonRegistrationComponent implements OnInit {
 
     onPersonFound(person: Person) {
         this.currentPersonId = (person as any).id; // Guardamos el ID para el payload final
-        this.prefilledData = { ...person };
+
+        // Solo prellenar campos que son bases o están marcados como visibles en este curso
+        const data: any = { found: true };
+        const alwaysPrefill = ['name', 'paternal_lastName', 'maternal_lastName', 'curp'];
+
+        alwaysPrefill.forEach(key => {
+            if ((person as any)[key]) data[key] = (person as any)[key];
+        });
+
+        // Solo prellenar campos adicionales si el curso ACTUAL los pide
+        if (this.fieldsConfig) {
+            Object.keys(this.fieldsConfig).forEach(key => {
+                if (this.fieldsConfig![key]?.visible && (person as any)[key]) {
+                    data[key] = (person as any)[key];
+                }
+            });
+        }
+
+        this.prefilledData = data;
         this.showForm = true;
         this.isSearchModalOpen = false;
     }
@@ -268,20 +286,31 @@ export class PersonRegistrationComponent implements OnInit {
         // Mapear campos del formulario
         Object.keys(personData).forEach(key => {
             const value = personData[key];
+            const fieldConfig = this.fieldsConfig![key];
+
             if (personTableFields.includes(key)) {
                 // Va a la tabla Person
-                personDataForPayload[key] = (typeof value === 'string' && value.trim() === '') ? null : value;
+                // Solo lo enviamos si no tiene configuración (base pura) o si está marcado como visible
+                if (!fieldConfig || fieldConfig.visible) {
+                    personDataForPayload[key] = (typeof value === 'string' && value.trim() === '') ? null : value;
+                }
             } else {
                 // Verificar si es un campo dinámico
-                const fieldConfig = this.fieldsConfig![key];
                 if (fieldConfig && fieldConfig.courseConfigFieldId) {
                     responses.push({
                         courseConfigFieldId: fieldConfig.courseConfigFieldId,
                         value: value?.toString() || ''
                     });
+
+                    // Si el campo también existe en la tabla Person (ej. email, phone) Y es visible
+                    if (personTableFields.includes(key) && fieldConfig.visible) {
+                        personDataForPayload[key] = (typeof value === 'string' && value.trim() === '') ? null : value;
+                    }
                 } else if (!['requestTarjeton', 'requestedDocuments'].includes(key)) {
                     // Es un campo base o no configurado dinámicamente
-                    personDataForPayload[key] = (typeof value === 'string' && value.trim() === '') ? null : value;
+                    if (!fieldConfig || fieldConfig.visible) {
+                        personDataForPayload[key] = (typeof value === 'string' && value.trim() === '') ? null : value;
+                    }
                 }
             }
         });

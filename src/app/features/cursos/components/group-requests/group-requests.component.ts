@@ -104,14 +104,41 @@ export class GroupRequestsComponent implements OnChanges {
     }
 
     initColumns() {
-        this.tableColumns = [
+        // Columnas base
+        const columns: TableColumn[] = [
             { key: 'name', label: 'Nombre', sortable: true },
             { key: 'curp', label: 'CURP', sortable: true },
-            { key: 'sex', label: 'Sexo', sortable: true },
-            { key: 'address', label: 'Dirección', sortable: true },
-            { key: 'nuc', label: 'NUC', sortable: true },
-            { key: 'actions', label: 'Solicitud', align: 'center', template: this.actionsTemplate }
+            { key: 'email', label: 'Correo', sortable: true }
         ];
+
+        // Columnas dinámicas de la configuración del curso
+        if (this.group?.course?.courseType?.courseConfigField) {
+            this.group.course.courseType.courseConfigField.forEach((field: any) => {
+                const configField = field.requirementFieldPerson;
+                if (configField) {
+                    const label = configField.fieldName;
+                    let key = label.toLowerCase();
+
+                    // Normalizar llaves para que coincidan con el flatten de GroupsService
+                    if (key.includes('dirección')) key = 'address';
+                    else if (key.includes('sexo')) key = 'sex';
+                    else if (key.includes('telefono')) key = 'phone';
+                    else if (key.includes('licencia')) key = 'license';
+                    else if (key.includes('nuc')) key = 'nuc';
+                    else if (key.includes('correo') || key.includes('email')) key = 'email';
+
+                    // Evitar duplicados si hay campos core
+                    if (!columns.find(c => c.key === key)) {
+                        columns.push({ key: key, label: label, sortable: true });
+                    }
+                }
+            });
+        }
+
+        // Columna de acciones siempre al final
+        columns.push({ key: 'actions', label: 'Solicitud', align: 'center', template: this.actionsTemplate });
+
+        this.tableColumns = columns;
     }
 
     closeModal() {
@@ -157,7 +184,7 @@ export class GroupRequestsComponent implements OnChanges {
         }, () => {
             this.groupsService.acceptEnrollment(enrollmentId).subscribe({
                 next: () => {
-                    this.allRequests = this.allRequests.filter(r => r.id !== personId);
+                    this.allRequests = this.allRequests.filter(r => r.enrollmentId !== enrollmentId);
                     this.filterData('');
                     this.clearSelection();
                 },
@@ -181,7 +208,7 @@ export class GroupRequestsComponent implements OnChanges {
         }, () => {
             this.groupsService.rejectEnrollment(enrollmentId).subscribe({
                 next: () => {
-                    this.allRequests = this.allRequests.filter(r => r.id !== personId);
+                    this.allRequests = this.allRequests.filter(r => r.enrollmentId !== enrollmentId);
                     this.filterData('');
                     this.clearSelection();
                 },
@@ -214,9 +241,9 @@ export class GroupRequestsComponent implements OnChanges {
 
             forkJoin(observables).subscribe({
                 next: () => {
-                    // Remover todos los procesados de la lista local
-                    const processedIds = requestsToProcess.map(r => r.id);
-                    this.allRequests = this.allRequests.filter(r => !processedIds.includes(r.id));
+                    // Remover todos los procesados de la lista local usando enrollmentId
+                    const processedEnrollmentIds = requestsToProcess.map(r => r.enrollmentId);
+                    this.allRequests = this.allRequests.filter(r => !processedEnrollmentIds.includes(r.enrollmentId));
                     this.filterData('');
                     this.clearSelection();
                 },
