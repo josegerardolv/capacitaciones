@@ -70,10 +70,14 @@ export class GroupsService {
                     });
                 }
 
+                // Mapear nombres de documentos solicitados
+                const requestedDocs = item.documentCourse?.map((dc: any) => dc.templateDocumentObject?.name || dc.templateDocument?.name || 'Documento') || [];
+
                 return {
                     ...item.person,
                     ...dynamicFields,
-                    enrollmentId: item.id
+                    enrollmentId: item.id,
+                    requestedDocumentsNames: requestedDocs.join(', ')
                 };
             }))
         );

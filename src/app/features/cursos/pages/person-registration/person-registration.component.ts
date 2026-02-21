@@ -103,6 +103,18 @@ export class PersonRegistrationComponent implements OnInit {
 
                     if (populatedConfig && populatedConfig.courseConfigField && populatedConfig.courseConfigField.length > 0 && populatedConfig.courseConfigField[0].requirementFieldPerson) {
                         this.setupFormFields(populatedConfig);
+                        // Poblar documentos disponibles si vienen poblados
+                        if (populatedConfig.documentCourse) {
+                            this.currentAvailableDocuments = populatedConfig.documentCourse.map((d: any) => ({
+                                id: d.id || d.templateDocument || 'doc_unknown',
+                                name: d.templateDocumentObject?.name || d.name || 'Documento',
+                                templateId: d.templateDocument,
+                                isMandatory: d.isRequired,
+                                cost: d.templateDocumentObject?.paymentConcepts?.[0]?.umas || 0
+                            }));
+                        } else if (populatedConfig.availableDocuments) {
+                            this.currentAvailableDocuments = populatedConfig.availableDocuments;
+                        }
                     } else {
                         // 2. FALLBACK: CONSULTA DINÁMICA (Si viene incompleto o shallow)
                         const courseTypeId = group.courseTypeId ||
@@ -113,6 +125,18 @@ export class PersonRegistrationComponent implements OnInit {
                             this.courseTypeService.getCourseTypeById(courseTypeId).subscribe(config => {
                                 if (config) {
                                     this.setupFormFields(config);
+                                    // Poblar documentos disponibles
+                                    if (config.documentCourse) {
+                                        this.currentAvailableDocuments = config.documentCourse.map((d: any) => ({
+                                            id: d.id || d.templateDocument || 'doc_unknown',
+                                            name: d.templateDocumentObject?.name || d.name || 'Documento',
+                                            templateId: d.templateDocument,
+                                            isMandatory: d.isRequired,
+                                            cost: d.templateDocumentObject?.paymentConcepts?.[0]?.umas || 0
+                                        }));
+                                    } else if (config.availableDocuments) {
+                                        this.currentAvailableDocuments = config.availableDocuments;
+                                    }
                                 } else {
                                     this.setupFallbackFields('GENERICO');
                                 }

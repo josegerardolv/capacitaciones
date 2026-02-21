@@ -135,15 +135,26 @@ export class PublicRegistrationComponent implements OnInit {
                         this.availableDocuments = group.course.templates;
                     } else if (group.templates) {
                         this.availableDocuments = group.templates;
+                    } else if (group.documentCourse) {
+                        // Soporte para la estructura que acabamos de conectar
+                        this.availableDocuments = group.documentCourse.map((d: any) => ({
+                            id: d.id || d.templateDocument || 'doc_unknown',
+                            name: d.templateDocumentObject?.name || d.name || 'Documento',
+                            description: d.templateDocumentObject?.description || d.description || '',
+                            cost: d.templateDocumentObject?.paymentConcepts?.[0]?.umas || 0, // Ajustar según estructura real de Template
+                            templateId: d.templateDocument,
+                            isMandatory: d.isRequired,
+                            requiresApproval: true
+                        }));
                     } else if (group.documents) {
-                        // Soporte para nueva estructura de Backend (documents)
+                        // Soporte para estructura previa
                         this.availableDocuments = group.documents.map((d: any) => ({
                             id: d.id || d.name || 'doc_unknown',
                             name: d.name || 'Documento sin nombre',
                             description: d.description || '',
                             cost: d.cost || 0,
                             templateId: d.templateId || d.id,
-                            isMandatory: d.isMandatory !== undefined ? d.isMandatory : true, // Asumir obligatorio si no viene
+                            isMandatory: d.isMandatory !== undefined ? d.isMandatory : true,
                             requiresApproval: true
                         }));
                     }

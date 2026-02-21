@@ -128,11 +128,13 @@ export class CourseListComponent implements OnInit {
     }
 
     loadCourseTypes() {
-        this.courseTypeService.getCourseTypes().pipe(
+        // Usamos getActiveCourseTypes con un límite alto (100) para asegurar que se vean todos en el dropdown del modal
+        this.courseTypeService.getActiveCourseTypes(100).pipe(
             timeout(5000)
         ).subscribe({
-            next: (types) => {
-                this.courseTypeOptions = types.map(t => ({
+            next: (response) => {
+                const types = response.data || response.items || response.results || (Array.isArray(response) ? response : []);
+                this.courseTypeOptions = types.map((t: CourseTypeConfig) => ({
                     value: t.id,
                     label: t.name
                 }));
@@ -237,8 +239,11 @@ export class CourseListComponent implements OnInit {
     }
 
     onPageChange(event: PageChangeEvent) {
-        this.paginationConfig.currentPage = event.page;
-        this.paginationConfig.pageSize = event.pageSize;
+        this.paginationConfig = {
+            ...this.paginationConfig,
+            currentPage: event.page,
+            pageSize: event.pageSize
+        };
         this.loadCourses();
     }
 
@@ -246,7 +251,10 @@ export class CourseListComponent implements OnInit {
         const term = query.trim();
         if (this.currentSearchTerm !== term) {
             this.currentSearchTerm = term;
-            this.paginationConfig.currentPage = 1; // Reset a página 1 en nueva búsqueda
+            this.paginationConfig = {
+                ...this.paginationConfig,
+                currentPage: 1
+            };
             this.loadCourses();
         }
     }

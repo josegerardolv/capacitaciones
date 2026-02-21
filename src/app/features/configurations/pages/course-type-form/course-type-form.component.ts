@@ -391,13 +391,27 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
 
                 this.mandatoryDocuments.clear();
 
-                if (existingData && existingData.availableDocuments) {
-                    const selectedIds = existingData.availableDocuments.map(d => d.templateId);
+                const savedDocuments = (existingData as any)?.documentCourses || (existingData as any)?.documentCourse || existingData?.availableDocuments;
+
+                if (savedDocuments) {
+                    const selectedIds = savedDocuments.map((d: any) => {
+                        if (d.templateDocument && typeof d.templateDocument === 'object') {
+                            return d.templateDocument.id;
+                        }
+                        return d.templateId || d.templateDocument;
+                    });
+
                     this.selectedTemplates = this.templates.filter(t => selectedIds.includes(t.id));
 
-                    existingData.availableDocuments.forEach(doc => {
-                        if (doc.isMandatory && doc.templateId) {
-                            this.mandatoryDocuments.add(doc.templateId);
+                    savedDocuments.forEach((doc: any) => {
+                        const tId = (doc.templateDocument && typeof doc.templateDocument === 'object')
+                            ? doc.templateDocument.id
+                            : (doc.templateId || doc.templateDocument);
+
+                        const isMandatoryField = doc.isMandatory !== undefined ? doc.isMandatory : doc.isRequired;
+
+                        if (isMandatoryField && tId) {
+                            this.mandatoryDocuments.add(tId);
                         }
                     });
 
@@ -613,11 +627,17 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
                 required: f.required
             }));
 
+        const documentCourse = this.selectedTemplates.map(t => ({
+            templateDocument: t.id,
+            isRequired: this.isMandatory(t.id)
+        }));
+
         const config: any = {
             name: formValue.name,
             description: formValue.description,
             type: formValue.type,
-            courseConfigField: courseConfigField
+            courseConfigField: courseConfigField,
+            documentCourse: documentCourse
         };
 
         // NOTA: Se eliminó 'availableDocuments' del payload ya que el backend lo rechaza con 400.
