@@ -22,6 +22,16 @@
 
     <br>
 
+    <!-- Warning for existing courses (Rule 4.4) -->
+    <div *ngIf="isLockedByUsage"
+        class="mb-6 p-4 bg-amber-50 border-l-4 border-amber-400 rounded-r-lg flex items-start gap-3">
+        <app-universal-icon name="warning" type="material" class="text-amber-500 mt-0.5"></app-universal-icon>
+        <div>
+            <p class="text-amber-800 font-bold">Este Tipo de Curso ya tiene cursos asociados.</p>
+            <p class="text-amber-700 text-sm italic">Los cambios solo aplicarán a nuevos cursos.</p>
+        </div>
+    </div>
+
     <form [formGroup]="form" class="space-y-6">
 
         <!-- Split Layout: Basic Info (Left) & Fields (Right) -->
@@ -161,7 +171,8 @@
                     </ng-template>
 
                     <ng-template #costTemplate let-item>
-                        <span *ngIf="item.paymentConcepts?.[0]?.umas > 0" class="font-medium">{{ item.paymentConcepts[0].umas |
+                        <span *ngIf="item.paymentConcepts?.[0]?.umas > 0" class="font-medium">{{
+                            item.paymentConcepts[0].umas |
                             umasToPesos | currency:'MXN' }}</span>
                         <span *ngIf="!item.paymentConcepts?.length || item.paymentConcepts[0]?.umas === 0"
                             class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
@@ -171,7 +182,8 @@
 
                     <ng-template #conceptTemplate let-item>
                         <div class="flex flex-col">
-                            <span class="font-medium text-gray-900">{{ item.paymentConcepts?.[0]?.concepto || 'Sin concepto' }}</span>
+                            <span class="font-medium text-gray-900">{{ item.paymentConcepts?.[0]?.concepto || 'Sin
+                                concepto' }}</span>
                             <span class="text-xs text-gray-500 font-mono">{{ item.paymentConcepts?.[0]?.clave }}</span>
                         </div>
                     </ng-template>

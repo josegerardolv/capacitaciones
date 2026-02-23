@@ -88,12 +88,23 @@ export class CourseTypeListComponent implements OnInit {
     ];
   }
 
-  loadData() {
+  loadData(search: string = '') {
     this.tableConfig.loading = true;
-    this.courseTypeService.getCourseTypes().subscribe({
-      next: (data) => {
-        this.allCourseTypes = data;
-        this.filterData('');
+    this.courseTypeService.getCourseTypes(
+      this.paginationConfig.currentPage,
+      this.paginationConfig.pageSize,
+      search
+    ).subscribe({
+      next: (response) => {
+        // Soporte para el objeto meta que envía el backend
+        this.courseTypes = response.data || response.items || response.results || [];
+
+        // Actualizar referencia para disparar OnChanges en el componente de paginación
+        this.paginationConfig = {
+          ...this.paginationConfig,
+          totalItems: response.meta?.total || response.total || response.count || this.courseTypes.length
+        };
+
         this.tableConfig.loading = false;
       },
       error: (err) => {
@@ -104,25 +115,20 @@ export class CourseTypeListComponent implements OnInit {
   }
 
   onPageChange(event: PageChangeEvent) {
-    this.paginationConfig.currentPage = event.page;
-    this.paginationConfig.pageSize = event.pageSize;
-    this.updatePaginatedData();
+    this.paginationConfig = {
+      ...this.paginationConfig,
+      currentPage: event.page,
+      pageSize: event.pageSize
+    };
+    this.loadData(); // Volvemos a cargar desde el servidor
   }
 
   filterData(query: string) {
-    const term = query.toLowerCase().trim();
-
-    if (!term) {
-      this.filteredCourseTypes = [...this.allCourseTypes];
-    } else {
-      this.filteredCourseTypes = this.allCourseTypes.filter(item =>
-        item.name.toLowerCase().includes(term) ||
-        item.description.toLowerCase().includes(term)
-      );
-    }
-
-    this.paginationConfig.totalItems = this.filteredCourseTypes.length;
-    this.updatePaginatedData();
+    this.paginationConfig = {
+      ...this.paginationConfig,
+      currentPage: 1
+    };
+    this.loadData(query); // Buscamos en el servidor
   }
 
   updatePaginatedData() {

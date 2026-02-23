@@ -14,14 +14,25 @@ export class CourseTypeService {
 
     constructor(private http: HttpClient) { }
 
-    getCourseTypes(): Observable<CourseTypeConfig[]> {
-        const params = new HttpParams().set('limit', '10').set('page', '1');
-        return this.http.get<any>(this.apiUrl, { params }).pipe(
-            map(response => {
-                if (Array.isArray(response)) return response;
-                return response.data || response.items || response.results || [];
-            })
-        );
+    getCourseTypes(page: number = 1, limit: number = 10, name?: string): Observable<any> {
+        let params = new HttpParams()
+            .set('page', page.toString())
+            .set('limit', limit.toString());
+
+        if (name) {
+            params = params.set('name', name);
+        }
+
+        // Usamos /search para permitir filtrado global y paginación correcta
+        return this.http.get<any>(`${this.apiUrl}/search`, { params });
+    }
+
+    // Usar para dropdowns en modales para asegurar ver más de 10
+    getActiveCourseTypes(limit: number = 100): Observable<any> {
+        const params = new HttpParams()
+            .set('page', '1')
+            .set('limit', limit.toString());
+        return this.http.get<any>(`${this.apiUrl}/actives`, { params });
     }
 
     getCourseTypeById(id: number): Observable<CourseTypeConfig | undefined> {
