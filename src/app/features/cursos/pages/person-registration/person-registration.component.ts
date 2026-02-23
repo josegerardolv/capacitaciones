@@ -104,14 +104,37 @@ export class PersonRegistrationComponent implements OnInit {
                     if (populatedConfig && populatedConfig.courseConfigField && populatedConfig.courseConfigField.length > 0 && populatedConfig.courseConfigField[0].requirementFieldPerson) {
                         this.setupFormFields(populatedConfig);
                         // Poblar documentos disponibles si vienen poblados
-                        if (populatedConfig.documentCourse) {
-                            this.currentAvailableDocuments = populatedConfig.documentCourse.map((d: any) => ({
-                                id: d.id || d.templateDocument || 'doc_unknown',
-                                name: d.templateDocumentObject?.name || d.name || 'Documento',
-                                templateId: d.templateDocument,
-                                isMandatory: d.isRequired,
-                                cost: d.templateDocumentObject?.paymentConcepts?.[0]?.umas || 0
-                            }));
+                        if (group.documents && group.documents.length > 0) {
+                            this.currentAvailableDocuments = group.documents.map((d: any) => {
+                                let calculatedCost = d.cost || 0;
+                                if (d.paymentConcept && d.paymentConcept.umas) {
+                                    calculatedCost = Number(d.paymentConcept.umas) * 117.31;
+                                }
+                                return {
+                                    id: d.documentCourses || d.id || d.name || 'doc_unknown',
+                                    name: d.name || 'Documento sin nombre',
+                                    templateId: d.templateId || d.id,
+                                    isMandatory: d.isRequired !== undefined ? d.isRequired : (d.isMandatory !== undefined ? d.isMandatory : false),
+                                    cost: calculatedCost
+                                };
+                            });
+                        } else if (populatedConfig.documentCourse || populatedConfig.documentCourses) {
+                            const docs = populatedConfig.documentCourse || populatedConfig.documentCourses || [];
+                            this.currentAvailableDocuments = docs.map((d: any) => {
+                                let calculatedCost = 0;
+                                if (d.templateDocument?.paymentConcepts?.[0]?.umas) {
+                                    calculatedCost = Number(d.templateDocument.paymentConcepts[0].umas) * 117.31;
+                                } else if (d.templateDocumentObject?.paymentConcepts?.[0]?.umas) {
+                                    calculatedCost = Number(d.templateDocumentObject.paymentConcepts[0].umas) * 117.31;
+                                }
+                                return {
+                                    id: d.id || d.templateDocument?.id || d.templateDocument || 'doc_unknown',
+                                    name: d.templateDocument?.name || d.templateDocumentObject?.name || d.name || 'Documento',
+                                    templateId: d.templateDocument?.id || d.templateDocument,
+                                    isMandatory: d.isRequired !== undefined ? d.isRequired : (d.isMandatory !== undefined ? d.isMandatory : false),
+                                    cost: calculatedCost
+                                };
+                            });
                         } else if (populatedConfig.availableDocuments) {
                             this.currentAvailableDocuments = populatedConfig.availableDocuments;
                         }
@@ -126,14 +149,37 @@ export class PersonRegistrationComponent implements OnInit {
                                 if (config) {
                                     this.setupFormFields(config);
                                     // Poblar documentos disponibles
-                                    if (config.documentCourse) {
-                                        this.currentAvailableDocuments = config.documentCourse.map((d: any) => ({
-                                            id: d.id || d.templateDocument || 'doc_unknown',
-                                            name: d.templateDocumentObject?.name || d.name || 'Documento',
-                                            templateId: d.templateDocument,
-                                            isMandatory: d.isRequired,
-                                            cost: d.templateDocumentObject?.paymentConcepts?.[0]?.umas || 0
-                                        }));
+                                    if (group.documents && group.documents.length > 0) {
+                                        this.currentAvailableDocuments = group.documents.map((d: any) => {
+                                            let calculatedCost = d.cost || 0;
+                                            if (d.paymentConcept && d.paymentConcept.umas) {
+                                                calculatedCost = Number(d.paymentConcept.umas) * 117.31;
+                                            }
+                                            return {
+                                                id: d.documentCourses || d.id || d.name || 'doc_unknown',
+                                                name: d.name || 'Documento sin nombre',
+                                                templateId: d.templateId || d.id,
+                                                isMandatory: d.isRequired !== undefined ? d.isRequired : (d.isMandatory !== undefined ? d.isMandatory : false),
+                                                cost: calculatedCost
+                                            };
+                                        });
+                                    } else if (config.documentCourse || config.documentCourses) {
+                                        const docs = config.documentCourse || config.documentCourses || [];
+                                        this.currentAvailableDocuments = docs.map((d: any) => {
+                                            let calculatedCost = 0;
+                                            if (d.templateDocument?.paymentConcepts?.[0]?.umas) {
+                                                calculatedCost = Number(d.templateDocument.paymentConcepts[0].umas) * 117.31;
+                                            } else if (d.templateDocumentObject?.paymentConcepts?.[0]?.umas) {
+                                                calculatedCost = Number(d.templateDocumentObject.paymentConcepts[0].umas) * 117.31;
+                                            }
+                                            return {
+                                                id: d.id || d.templateDocument?.id || d.templateDocument || 'doc_unknown',
+                                                name: d.templateDocument?.name || d.templateDocumentObject?.name || d.name || 'Documento',
+                                                templateId: d.templateDocument?.id || d.templateDocument,
+                                                isMandatory: d.isRequired !== undefined ? d.isRequired : (d.isMandatory !== undefined ? d.isMandatory : false),
+                                                cost: calculatedCost
+                                            };
+                                        });
                                     } else if (config.availableDocuments) {
                                         this.currentAvailableDocuments = config.availableDocuments;
                                     }
