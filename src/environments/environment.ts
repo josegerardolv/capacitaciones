@@ -10,5 +10,10 @@ export const environment = {
     revokeUrl: 'https://capacitacion.p1.ws.semovi.dev/oauth/revoke',
     introspectUrl: 'https://capacitacion.p1.ws.semovi.dev/oauth/introspect'
   },
+  app: {
+    name: 'OAuth SEMOVI',
+    version: '0.0.1',
+    description: 'Sistema de Capacitaciones OAuth 2.0 para SEMOVI'
+  },
   useMocks: false
 };

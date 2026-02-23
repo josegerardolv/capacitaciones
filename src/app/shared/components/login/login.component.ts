@@ -50,7 +50,7 @@ import { LoginRequest } from '../../../core/models/auth.model';
                     required
                     formControlName="username"
                     class="block w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-institucional-guinda focus:border-institucional-guinda transition-all duration-200 bg-white hover:bg-gray-50 focus:bg-white"
-                    placeholder="Ingrese su usuario"
+                    placeholder="Ingresa Correo Institucional"
                     [class.border-red-400]="loginForm.get('username')?.invalid && loginForm.get('username')?.touched"
                     [class.ring-red-400]="loginForm.get('username')?.invalid && loginForm.get('username')?.touched"
                     [class.bg-red-50]="loginForm.get('username')?.invalid && loginForm.get('username')?.touched"
@@ -81,7 +81,7 @@ import { LoginRequest } from '../../../core/models/auth.model';
                     required
                     formControlName="password"
                     class="block w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-institucional-guinda focus:border-institucional-guinda transition-all duration-200 bg-white hover:bg-gray-50 focus:bg-white"
-                    placeholder="Ingrese su contraseña"
+                    placeholder="Ingrese su Contraseña"
                     [class.border-red-400]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched"
                     [class.ring-red-400]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched"
                     [class.bg-red-50]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched"
@@ -140,7 +140,7 @@ import { LoginRequest } from '../../../core/models/auth.model';
             </div>
             <p class="text-xs text-gray-500 mt-2">
               <!-- TODO: Cambiar por el nombre del sistema -->
-              Sistema de Capacitaciones - <span class="font-semibold">Versión 1.0.0</span>
+              Sistema de Capacitaciones - <span class="font-semibold">Versión </span>
             </p>
           </div>
         </div>
