@@ -6,7 +6,7 @@
 
         <!-- Header de la carta (slot) -->
         <div slot="header" class="card-institucional-header p-6">
-            <h2 class="text-2xl md:text-3xl font-bold text-white mb-1">Registro de Conductor</h2>
+            <h2 class="text-2xl md:text-3xl font-bold text-white mb-1">Registro de Personas</h2>
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 text-white/90">
                 <div>
                     <p class="font-medium text-lg">{{ groupInfo.courseName }}</p>
@@ -66,23 +66,24 @@
                     </div>
                     <h3 class="text-3xl font-bold text-gray-900 mb-4">¡Registro Completado!</h3>
                     <p class="text-lg text-gray-600 max-w-md mx-auto mb-8">
-                        Tu solicitud ha sido enviada exitosamente al sistema. 
+                        Tu solicitud ha sido enviada exitosamente al sistema.
                         <strong>Ya puedes cerrar esta pestaña.</strong>
                     </p>
                     <div class="bg-blue-50 border-l-4 border-blue-400 p-4 max-w-lg mx-auto text-left">
                         <div class="flex">
                             <i class="material-icons text-blue-400 mr-3">info</i>
                             <p class="text-sm text-blue-800">
-                                Una vez que el instructor valide tus datos, recibirás un correo electrónico con los siguientes pasos y tu línea de pago (si aplica).
+                                Una vez que el instructor valide tus datos, recibirás un correo electrónico con los
+                                siguientes pasos y tu línea de pago (si aplica).
                             </p>
                         </div>
                     </div>
                 </div>
 
                 <!-- Mostramos el formulario solo si showForm es true Y no ha expirado Y no ha terminado el registro -->
-                <app-person-form *ngIf="showForm && !isExpired && !registrationSuccess" [submitLabel]="'Solicitar registro'"
-                    [fieldsConfig]="fieldsConfig" [initialData]="prefilledData" [showCancel]="false"
-                    (saved)="onPersonRegistered($event)">
+                <app-person-form *ngIf="showForm && !isExpired && !registrationSuccess"
+                    [submitLabel]="'Solicitar registro'" [fieldsConfig]="fieldsConfig" [initialData]="prefilledData"
+                    [showCancel]="false" (saved)="onPersonRegistered($event)">
                 </app-person-form>
 
                 <!-- Mensaje de carga o estado inicial si no hay form ni modal -->

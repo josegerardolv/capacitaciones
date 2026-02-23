@@ -70,8 +70,31 @@ export class MockCourseTypeService {
 
     constructor() { }
 
-    getCourseTypes(): Observable<CourseTypeConfig[]> {
-        return of([...this.courseTypes]).pipe(delay(500));
+    getCourseTypes(page: number = 1, limit: number = 10, name?: string): Observable<any> {
+        let filtered = [...this.courseTypes];
+        if (name) {
+            filtered = filtered.filter(t => t.name.toLowerCase().includes(name.toLowerCase()));
+        }
+
+        const totalItems = filtered.length;
+        const start = (page - 1) * limit;
+        const data = filtered.slice(start, start + limit);
+
+        return of({
+            data: data,
+            total: totalItems,
+            items: data, // For compatibility
+            results: data // For compatibility
+        }).pipe(delay(500));
+    }
+
+    getActiveCourseTypes(limit: number = 100): Observable<any> {
+        const data = this.courseTypes.filter(t => t.status === 'Activo').slice(0, limit);
+        return of({
+            data: data,
+            total: data.length,
+            items: data
+        }).pipe(delay(300));
     }
 
     getCourseTypeById(id: number): Observable<CourseTypeConfig | undefined> {
