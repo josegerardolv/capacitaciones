@@ -37,10 +37,26 @@ export class MockCoursesService {
     constructor() { }
 
     getCourses(page: number = 1, limit: number = 10, search: string = '', courseTypeId?: number): Observable<any> {
-        // En el mock, podemos simplemente devolver el array, 
-        // pero el componente espera un objeto con 'data' o el array directo.
-        // Mantenemos el array directo ya que el componente lo soporta.
-        return of([...this.courses]).pipe(delay(500));
+        let filtered = [...this.courses];
+        if (search) {
+            filtered = filtered.filter(c => c.name.toLowerCase().includes(search.toLowerCase()));
+        }
+        if (courseTypeId) {
+            filtered = filtered.filter(c => c.courseTypeId === Number(courseTypeId));
+        }
+
+        const totalItems = filtered.length;
+        const start = (page - 1) * limit;
+        const data = filtered.slice(start, start + limit);
+
+        return of({
+            data: data,
+            meta: {
+                total: totalItems,
+                page: page,
+                limit: limit
+            }
+        }).pipe(delay(500));
     }
 
     getCourseById(id: number): Observable<Course | undefined> {

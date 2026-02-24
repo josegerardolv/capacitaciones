@@ -104,10 +104,10 @@ export class GroupPersonsComponent implements OnInit {
     isDocumentsModalOpen = false;
     selectedPersonForDocs: Person | null = null;
 
-    // Datos de Personas
-    allPersons: Person[] = [];
-    filteredPersons: Person[] = [];
-    persons: Person[] = [];
+    // Datos de Personas (Ahora Enrollment Data)
+    allEnrollments: any[] = [];
+    filteredEnrollments: any[] = [];
+    persons: any[] = []; // Los datos finales para la tabla
 
 
 
@@ -132,13 +132,6 @@ export class GroupPersonsComponent implements OnInit {
         // El paramMap puede tener 'groupId' como ID numérico o UUID según la ruta
         const routeGroupId = this.route.snapshot.paramMap.get('groupId');
         this.currentGroupId = routeGroupId || this.groupId || null;
-
-        console.log('[GroupPersons] Init:', {
-            cursoId: this.cursoId,
-            routeGroupId: routeGroupId,
-            inputGroupId: this.groupId,
-            resolvedGroupId: this.currentGroupId
-        });
 
         // Leer posible nombre del curso y del grupo pasados por query params
         const courseName = this.route.snapshot.queryParamMap.get('courseName');
@@ -182,7 +175,6 @@ export class GroupPersonsComponent implements OnInit {
                 // 1. Priorizar configuración RICH (Ya poblada en el grupo)
                 const populatedConfig = group.course?.courseType;
                 if (populatedConfig && populatedConfig.courseConfigField && populatedConfig.courseConfigField.length > 0 && populatedConfig.courseConfigField[0].requirementFieldPerson) {
-                    console.log('[GroupPersons] Usando configuración rica del grupo...');
                     this.updateColumns(populatedConfig);
                 } else {
                     // 2. Fallback: Configuración SIMPLE
@@ -207,15 +199,48 @@ export class GroupPersonsComponent implements OnInit {
     loadPersons() {
         if (!this.currentGroupId) return;
         this.tableConfig.loading = true;
-        this.groupsService.getPersonsByGroupId(+this.currentGroupId).subscribe({
-            next: (data) => {
-                this.allPersons = data;
+        this.groupsService.getEnrollmentsByGroupId(+this.currentGroupId).subscribe({
+            next: (data: any[]) => {
+                // Adaptamos la estructura: el componente de tabla espera las propiedades a nivel raíz
+                this.allEnrollments = data.map(item => {
+                    const flattened: any = {
+                        ...item.person,
+                        responses: item.enrollmentResponse,
+                        documents: item.documentCourses,
+                        status: item.person.status || (item.isAcepted ? 'Aprobado' : 'Pendiente')
+                    };
+
+                    // Extraer respuestas dinámicas a la raíz para que la tabla las vea
+                    if (item.enrollmentResponse && Array.isArray(item.enrollmentResponse)) {
+                        const idToFieldName: Record<number, string> = {
+                            4: 'address', 5: 'nuc', 6: 'sex', 7: 'email',
+                            8: 'phone', 9: 'license', 10: 'curp'
+                        };
+
+                        item.enrollmentResponse.forEach((resp: any) => {
+                            const fieldData = resp.courseConfigField?.requirementFieldPerson;
+                            const rfpId = typeof fieldData === 'object' ? fieldData.id : fieldData;
+
+                            if (rfpId) {
+                                // 1. Usar nombre amigable si existe
+                                const friendlyName = idToFieldName[rfpId];
+                                if (friendlyName) {
+                                    flattened[friendlyName] = resp.value;
+                                }
+                                // 2. Siempre guardar por ID por si acaso
+                                flattened[`field_${rfpId}`] = resp.value;
+                            }
+                        });
+                    }
+
+                    return flattened;
+                });
                 this.filterData('');
                 this.tableConfig.loading = false;
             },
             error: (err) => {
-                console.error('Error loading persons', err);
-                this.notificationService.showError('Error', 'No se pudieron cargar las personas.');
+                console.error('Error loading enrollments', err);
+                this.notificationService.showError('Error', 'No se pudieron cargar los inscritos.');
                 this.tableConfig.loading = false;
             }
         });
@@ -232,9 +257,9 @@ export class GroupPersonsComponent implements OnInit {
     filterData(query: string) {
         const term = query.toLowerCase().trim();
         if (!term) {
-            this.filteredPersons = [...this.allPersons];
+            this.filteredEnrollments = [...this.allEnrollments];
         } else {
-            this.filteredPersons = this.allPersons.filter(p =>
+            this.filteredEnrollments = this.allEnrollments.filter(p =>
                 p.name.toLowerCase().includes(term) ||
                 (p.paternal_lastName || '').toLowerCase().includes(term) ||
                 (p.maternal_lastName || '').toLowerCase().includes(term) ||
@@ -242,14 +267,14 @@ export class GroupPersonsComponent implements OnInit {
                 (p.curp || '').toLowerCase().includes(term)
             );
         }
-        this.paginationConfig.totalItems = this.filteredPersons.length;
+        this.paginationConfig.totalItems = this.filteredEnrollments.length;
         this.updatePaginatedData();
     }
 
     updatePaginatedData() {
         const start = (this.paginationConfig.currentPage - 1) * this.paginationConfig.pageSize;
         const end = start + this.paginationConfig.pageSize;
-        this.persons = this.filteredPersons.slice(start, end);
+        this.persons = this.filteredEnrollments.slice(start, end);
     }
 
     initColumns() {
@@ -368,7 +393,6 @@ export class GroupPersonsComponent implements OnInit {
 
     onPersonFound(person: Person) {
         // SI SE ENCUENTRA: Navegar con datos precargados
-        console.log('Persona encontrada (vía modal):', person);
         this.router.navigate(['nuevo'], {
             relativeTo: this.route,
             queryParams: {
@@ -445,7 +469,6 @@ export class GroupPersonsComponent implements OnInit {
                 cancelText: 'Cancelar'
             }, () => {
                 person.status = 'No Aprobado';
-                console.log(`Persona ${person.name} reprobada.`);
             });
         }
     }
@@ -530,7 +553,6 @@ export class GroupPersonsComponent implements OnInit {
     }
 
     generatePaymentOrder(person: Person, mode: 'download' | 'email') {
-        console.log(`>> GENERANDO ORDEN (${mode})...`);
         person.requestTarjeton = true; // Actualizado a requestTarjeton
         person.paymentStatus = 'Pendiente';
 
@@ -564,7 +586,6 @@ export class GroupPersonsComponent implements OnInit {
     }
 
     downloadFinalTarjeton(person: Person) {
-        console.log('Descargando Tarjetón Final para:', person.name);
         this.notificationService.showSuccess('Descargando', 'Generando PDF del Tarjetón Oficial...');
     }
 

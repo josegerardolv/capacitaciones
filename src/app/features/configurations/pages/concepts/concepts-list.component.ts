@@ -19,6 +19,7 @@ import { UniversalIconComponent } from '../../../../shared/components/universal-
 import { BreadcrumbComponent } from '../../../../shared/components/breadcrumb/breadcrumb.component';
 import { BreadcrumbItem } from '../../../../shared/components/breadcrumb/breadcrumb.model';
 import { TableFiltersComponent } from '@/app/shared/components/table-filters/table-filters.component';
+import { UmasToPesosPipe } from '../../../../shared/pipes/umas-to-pesos.pipe';
 
 
 
@@ -43,7 +44,8 @@ import { TableFiltersComponent } from '@/app/shared/components/table-filters/tab
         UniversalIconComponent,
         UniversalIconComponent,
         BreadcrumbComponent,
-        TableFiltersComponent
+        TableFiltersComponent,
+        UmasToPesosPipe
     ],
     templateUrl: './concepts-list.component.html'
 })
@@ -108,19 +110,19 @@ export class ConceptsListComponent implements OnInit {
         this.form = this.fb.group({
             clave: ['', [Validators.required]],
             concepto: ['', [Validators.required]],
-            costo: [0, [Validators.required, Validators.min(0)]]
+            umas: [0, [Validators.required, Validators.min(0)]]
         });
     }
 
     get claveControl(): FormControl { return this.form.get('clave') as FormControl; }
     get conceptoControl(): FormControl { return this.form.get('concepto') as FormControl; }
-    get costoControl(): FormControl { return this.form.get('costo') as FormControl; }
+    get umasControl(): FormControl { return this.form.get('umas') as FormControl; }
 
     initColumns() {
         this.tableColumns = [
             { key: 'clave', label: 'Clave', sortable: true, minWidth: '120px' },
             { key: 'concepto', label: 'Concepto', sortable: true, minWidth: '350px' },
-            { key: 'costo', label: 'Costo', sortable: true, minWidth: '100px', template: this.costoTemplate, align: 'right' },
+            { key: 'umas', label: 'Costo', sortable: true, minWidth: '100px', template: this.costoTemplate, align: 'right' },
             { key: 'actions', label: 'Acciones', align: 'center', minWidth: '120px', template: this.actionsTemplate }
         ];
     }
@@ -176,7 +178,7 @@ export class ConceptsListComponent implements OnInit {
             this.form.patchValue({
                 clave: concept.clave,
                 concepto: concept.concepto,
-                costo: concept.costo
+                umas: concept.umas
             });
         } else {
             this.editingId = null;
@@ -193,9 +195,11 @@ export class ConceptsListComponent implements OnInit {
         this.isSaving = true;
         const formData = this.form.value;
 
+        const payload = { clave: formData.clave, concepto: formData.concepto, umas: formData.umas };
+
         const request$ = this.editingId
-            ? this.templateService.updateConcept(this.editingId, formData)
-            : this.templateService.createConcept(formData);
+            ? this.templateService.updateConcept(this.editingId, payload)
+            : this.templateService.createConcept(payload);
 
         request$.subscribe({
             next: () => {

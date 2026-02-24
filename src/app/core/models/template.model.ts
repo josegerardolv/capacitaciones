@@ -149,12 +149,39 @@ export interface CertificateData {
 // Concept Interface (Merged to reduce files)
 export interface Concept {
   id: number;
-  concepto: string;
   clave: string;
-  costo: number;
-  deprecated: boolean;
+  concepto: string;
+  umas: number;
   createdAt?: string;
   updatedAt?: string;
+  deletedAt?: string;
+  templateDocument?: number;
+}
+
+export interface TemplateDocument {
+  id: number;
+  name: string;
+  description: string;
+  category: 'GENERAL' | 'CONSTANCIA' | 'DIPLOMA';
+  fields: string[];
+  paymentConcepts: Concept[];
+  medias: any[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateTemplateDocumentPayload {
+  name: string;
+  description: string;
+  category: string;
+  paymentConcepts?: number[];
+}
+
+export interface UpdateTemplateDocumentPayload {
+  name?: string;
+  description?: string;
+  category?: string;
+  paymentConcepts?: number[];
 }
 
 export interface GeneratedCertificate {

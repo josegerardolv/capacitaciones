@@ -1,5 +1,6 @@
 import { Component, EventEmitter, Input, Output, OnChanges, SimpleChanges, ViewChild, TemplateRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { forkJoin } from 'rxjs';
 import { FormGroup, FormBuilder, FormControl, ReactiveFormsModule } from '@angular/forms'; // FormControl agregado
 import { Group } from '../../../../core/models/group.model';
 import { Person } from '../../../../core/models/person.model';
@@ -103,14 +104,44 @@ export class GroupRequestsComponent implements OnChanges {
     }
 
     initColumns() {
-        this.tableColumns = [
+        // Columnas base
+        const columns: TableColumn[] = [
             { key: 'name', label: 'Nombre', sortable: true },
             { key: 'curp', label: 'CURP', sortable: true },
-            { key: 'sex', label: 'Sexo', sortable: true },
-            { key: 'address', label: 'Dirección', sortable: true },
-            { key: 'nuc', label: 'NUC', sortable: true },
-            { key: 'actions', label: 'Solicitud', align: 'center', template: this.actionsTemplate }
+            { key: 'email', label: 'Correo', sortable: true }
         ];
+
+        // Columnas dinámicas de la configuración del curso
+        if (this.group?.course?.courseType?.courseConfigField) {
+            this.group.course.courseType.courseConfigField.forEach((field: any) => {
+                const configField = field.requirementFieldPerson;
+                if (configField) {
+                    const label = configField.fieldName;
+                    let key = label.toLowerCase();
+
+                    // Normalizar llaves para que coincidan con el flatten de GroupsService
+                    if (key.includes('dirección')) key = 'address';
+                    else if (key.includes('sexo')) key = 'sex';
+                    else if (key.includes('telefono')) key = 'phone';
+                    else if (key.includes('licencia')) key = 'license';
+                    else if (key.includes('nuc')) key = 'nuc';
+                    else if (key.includes('correo') || key.includes('email')) key = 'email';
+
+                    // Evitar duplicados si hay campos core
+                    if (!columns.find(c => c.key === key)) {
+                        columns.push({ key: key, label: label, sortable: true });
+                    }
+                }
+            });
+        }
+
+        // Agregar columna de documentos solicitados
+        columns.push({ key: 'requestedDocumentsNames', label: 'Documentos', sortable: true, minWidth: '150px' });
+
+        // Columna de acciones siempre al final
+        columns.push({ key: 'actions', label: 'Solicitud', align: 'center', template: this.actionsTemplate });
+
+        this.tableColumns = columns;
     }
 
     closeModal() {
@@ -141,7 +172,12 @@ export class GroupRequestsComponent implements OnChanges {
         this.pendingConfirmAction = null;
     }
 
-    acceptRequest(id: number) {
+    acceptRequest(personId: number, enrollmentId?: number) {
+        if (!enrollmentId) {
+            console.error('No enrollment ID provided');
+            return;
+        }
+
         this.openConfirm({
             title: 'Aceptar Solicitud',
             message: '¿Estás seguro de aceptar esta solicitud?',
@@ -149,13 +185,23 @@ export class GroupRequestsComponent implements OnChanges {
             confirmText: 'Aceptar',
             cancelText: 'Cancelar'
         }, () => {
-            this.allRequests = this.allRequests.filter(r => r.id !== id);
-            this.filterData('');
-            this.clearSelection();
+            this.groupsService.acceptEnrollment(enrollmentId).subscribe({
+                next: () => {
+                    this.allRequests = this.allRequests.filter(r => r.enrollmentId !== enrollmentId);
+                    this.filterData('');
+                    this.clearSelection();
+                },
+                error: (err) => console.error('Error accepting enrollment', err)
+            });
         });
     }
 
-    rejectRequest(id: number) {
+    rejectRequest(personId: number, enrollmentId?: number) {
+        if (!enrollmentId) {
+            console.error('No enrollment ID provided');
+            return;
+        }
+
         this.openConfirm({
             title: 'Rechazar Solicitud',
             message: '¿Estás seguro de rechazar esta solicitud?',
@@ -163,9 +209,14 @@ export class GroupRequestsComponent implements OnChanges {
             confirmText: 'Rechazar',
             cancelText: 'Cancelar'
         }, () => {
-            this.allRequests = this.allRequests.filter(r => r.id !== id);
-            this.filterData('');
-            this.clearSelection();
+            this.groupsService.rejectEnrollment(enrollmentId).subscribe({
+                next: () => {
+                    this.allRequests = this.allRequests.filter(r => r.enrollmentId !== enrollmentId);
+                    this.filterData('');
+                    this.clearSelection();
+                },
+                error: (err) => console.error('Error rejecting enrollment', err)
+            });
         });
     }
 
@@ -180,10 +231,27 @@ export class GroupRequestsComponent implements OnChanges {
             confirmText: isAccept ? 'Aceptar Todas' : 'Rechazar Todas',
             cancelText: 'Cancelar'
         }, () => {
-            const selectedIds = this.selectedRequests.map(r => r.id);
-            this.allRequests = this.allRequests.filter(r => !selectedIds.includes(r.id));
-            this.filterData(''); // Re-filtrar
-            this.clearSelection();
+            // Filtrar solo los que tienen enrollmentId válido
+            const requestsToProcess = this.selectedRequests.filter(r => r.enrollmentId);
+            if (requestsToProcess.length === 0) return;
+
+            // Crear array de observables
+            const observables = requestsToProcess.map(r =>
+                isAccept
+                    ? this.groupsService.acceptEnrollment(r.enrollmentId!)
+                    : this.groupsService.rejectEnrollment(r.enrollmentId!)
+            );
+
+            forkJoin(observables).subscribe({
+                next: () => {
+                    // Remover todos los procesados de la lista local usando enrollmentId
+                    const processedEnrollmentIds = requestsToProcess.map(r => r.enrollmentId);
+                    this.allRequests = this.allRequests.filter(r => !processedEnrollmentIds.includes(r.enrollmentId));
+                    this.filterData('');
+                    this.clearSelection();
+                },
+                error: (err) => console.error('Error processing bulk requests', err)
+            });
         });
     }
 

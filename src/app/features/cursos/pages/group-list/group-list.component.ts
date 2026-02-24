@@ -571,19 +571,15 @@ export class GroupListComponent implements OnInit {
     }
 
     generateUrl() {
-        console.log('Generating URL...');
         // Filtramos grupos que ya están seleccionados pero no tienen URL (doble validación)
         const groupsToGenerate = this.selectedGroups.filter(g => !g.inscriptionURL);
-        console.log('Groups to generate:', groupsToGenerate);
 
         if (groupsToGenerate.length === 0) {
             this.notificationService.info('Información', 'Todos los grupos seleccionados ya tienen una URL generada.');
             return;
         }
 
-        // 2. Comprobar si falta fecha de expiración en algún grupo
         const missingDateGroups = groupsToGenerate.filter(g => !g.endInscriptionDate);
-        console.log('Missing date groups:', missingDateGroups);
 
         if (missingDateGroups.length > 0) {
             // Regla de Negocio: Si falta fecha, SOLO se puede procesar uno a la vez

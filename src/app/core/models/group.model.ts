@@ -18,6 +18,9 @@ export interface Group {
     selected?: boolean;
 
     // Relations (Backend sends 'course' as number, or object)
-    course: number; // ID del Curso padre
+    course: any; // ID del Curso padre o el objeto Course completo
     courseTypeId?: number; // Puede venir si el backend cambia, pero principalmente usamos 'course' para fitrar
+
+    // Auxiliar para campos dinámicos en vista pública (Backend lo envía en /group/registro/{uuid})
+    fields?: any[];
 }

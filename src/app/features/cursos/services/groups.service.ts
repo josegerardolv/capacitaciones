@@ -38,9 +38,49 @@ export class GroupsService {
         );
     }
 
+    getEnrollmentsByGroupId(groupId: number, isAcepted: boolean = true): Observable<any[]> {
+        const params = new HttpParams().set('isAcepted', isAcepted.toString());
+        return this.http.get<any[]>(`${this.apiUrl}/enrollment/group/${groupId}`, { params });
+    }
+
     getRequestsByGroupId(groupId: number): Observable<Person[]> {
-        const params = new HttpParams().set('status', 'Pendiente');
-        return this.http.get<Person[]>(`${this.apiUrl}/group/${groupId}/persons`, { params });
+        const params = new HttpParams().set('isAcepted', 'false');
+        return this.http.get<any[]>(`${this.apiUrl}/enrollment/group/${groupId}`, { params }).pipe(
+            map(response => response.map(item => {
+                // Flatten responses into the root object for the table
+                const dynamicFields: any = {};
+                if (item.enrollmentResponse) {
+                    item.enrollmentResponse.forEach((resp: any) => {
+                        // Intentar mapear por el nombre del campo del requisito
+                        const fieldName = resp.courseConfigField?.requirementFieldPerson?.fieldName;
+                        if (fieldName) {
+                            // Normalizar (ej: "Dirección" -> "address")
+                            // Usaremos una lógica simple de mapeo aquí
+                            const lower = fieldName.toLowerCase();
+                            if (lower.includes('dirección')) dynamicFields['address'] = resp.value;
+                            else if (lower.includes('sexo')) dynamicFields['sex'] = resp.value;
+                            else if (lower.includes('telefono')) dynamicFields['phone'] = resp.value;
+                            else if (lower.includes('licencia')) dynamicFields['license'] = resp.value;
+                            else if (lower.includes('nuc')) dynamicFields['nuc'] = resp.value;
+                            else if (lower.includes('correo') || lower.includes('email')) {
+                                if (resp.value) dynamicFields['email'] = resp.value;
+                            }
+                            else dynamicFields[fieldName] = resp.value;
+                        }
+                    });
+                }
+
+                // Mapear nombres de documentos solicitados
+                const requestedDocs = item.documentCourse?.map((dc: any) => dc.templateDocumentObject?.name || dc.templateDocument?.name || 'Documento') || [];
+
+                return {
+                    ...item.person,
+                    ...dynamicFields,
+                    enrollmentId: item.id,
+                    requestedDocumentsNames: requestedDocs.join(', ')
+                };
+            }))
+        );
     }
 
     // Payload structure based on BACKEND_INTEGRATION.md
@@ -69,7 +109,8 @@ export class GroupsService {
 
     searchPersonByLicense(license: string): Observable<Person | null> {
         const params = new HttpParams().set('license', license);
-        return this.http.get<Person[]>(`${this.apiUrl}/persons`, { params })
+        // El backend ha habilitado el acceso público a este endpoint (/persons/lookup) para consultas de ciudadanos
+        return this.http.get<Person[]>(`${this.apiUrl}/persons/lookup`, { params })
             .pipe(map(results => (results && results.length > 0) ? results[0] : null));
     }
 
@@ -94,10 +135,18 @@ export class GroupsService {
     getGroupById(id: number): Observable<Group> {
         return this.http.get<Group>(`${this.apiUrl}/group/${id}`);
     }
-
+    // /group/registro/{uuid} PARA REGISTRO PUBLICO 
     getGroupByUuid(uuid: string): Observable<Group> {
-        return this.http.get<any>(`${this.apiUrl}/group/uuid/${uuid}`).pipe(
+        return this.http.get<any>(`${this.apiUrl}/group/registro/${uuid}`).pipe(
             map(response => response?.data || response)
         );
+    }
+
+    acceptEnrollment(enrollmentId: number): Observable<any> {
+        return this.http.patch(`${this.apiUrl}/enrollment/${enrollmentId}`, { isAcepted: true });
+    }
+
+    rejectEnrollment(enrollmentId: number): Observable<any> {
+        return this.http.patch(`${this.apiUrl}/enrollment/${enrollmentId}`, { isAcepted: false });
     }
 }

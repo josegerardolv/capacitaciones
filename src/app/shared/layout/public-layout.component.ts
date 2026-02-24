@@ -4,6 +4,7 @@ import { RouterOutlet } from '@angular/router';
 
 import { PublicHeaderComponent } from '../components/public-header/public-header.component';
 import { FooterComponent } from '../components/footer/footer.component';
+import { NotificationContainerComponent } from '../components/notification-container/notification-container.component';
 
 /**
  * PublicLayoutComponent - Layout para la parte pública del sistema
@@ -18,19 +19,23 @@ import { FooterComponent } from '../components/footer/footer.component';
  * sidebar, notificaciones, y funcionalidades de administración
  */
 @Component({
-    selector: 'app-public-layout',
-    standalone: true,
-    imports: [
-        CommonModule,
-        RouterOutlet,
-        PublicHeaderComponent,
-        FooterComponent
-    ],
-    template: `
+  selector: 'app-public-layout',
+  standalone: true,
+  imports: [
+    CommonModule,
+    RouterOutlet,
+    PublicHeaderComponent,
+    FooterComponent,
+    NotificationContainerComponent
+  ],
+  template: `
     <div class="min-h-screen bg-gray-50 flex flex-col">
       
       <!-- Header público estático -->
       <app-public-header class="flex-shrink-0 sticky top-0 z-30"></app-public-header>
+
+      <!-- Contenedor de Notificaciones (Toasts) -->
+      <app-notification-container></app-notification-container>
 
       <!-- Contenido principal (ocupa todo el ancho de la pantalla) -->
       <main class="flex-1 relative bg-white my-4 w-full rounded-none shadow-none overflow-hidden">
@@ -44,7 +49,7 @@ import { FooterComponent } from '../components/footer/footer.component';
       
     </div>
   `,
-    styles: [`
+  styles: [`
       /* Asegurar que el layout ocupe toda la altura de la ventana */
       :host {
         display: block;

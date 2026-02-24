@@ -1,9 +1,8 @@
 import { Component, OnInit, ViewChild, TemplateRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
-import { CertificateTemplate } from '../../../../../core/models/template.model';
 import { TemplateService } from '../../services/template.service';
-import { Concept } from '../../../../../core/models/template.model';
+import { Concept, TemplateDocument, CreateTemplateDocumentPayload, UpdateTemplateDocumentPayload } from '../../../../../core/models/template.model';
 // ConceptService removed, logic integrated in TemplateService
 import { InstitutionalTableComponent, TableColumn, TableConfig } from '../../../../../shared/components/institutional-table/institutional-table.component';
 import { TablePaginationComponent, PaginationConfig, PageChangeEvent } from '../../../../../shared/components/table-pagination/table-pagination.component';
@@ -23,6 +22,7 @@ import { BreadcrumbItem } from '../../../../../shared/components/breadcrumb/brea
 // SelectSearchComponent removed to respect shared component constraints
 // import { SelectSearchComponent, SelectSearchOption } from '../../../../../shared/components/inputs/select-search.component';
 import { TableFiltersComponent } from '@/app/shared/components/table-filters/table-filters.component';
+import { UmasToPesosPipe } from '../../../../../shared/pipes/umas-to-pesos.pipe';
 
 @Component({
     selector: 'app-templates-list',
@@ -45,7 +45,8 @@ import { TableFiltersComponent } from '@/app/shared/components/table-filters/tab
         UniversalIconComponent,
         UniversalIconComponent,
         BreadcrumbComponent,
-        TableFiltersComponent
+        TableFiltersComponent,
+        UmasToPesosPipe
     ],
     templateUrl: './templates-list.component.html'
 })
@@ -55,9 +56,9 @@ export class TemplatesListComponent implements OnInit {
     @ViewChild('conceptTemplate', { static: true }) conceptTemplate!: TemplateRef<any>;
     @ViewChild('costTemplate', { static: true }) costTemplate!: TemplateRef<any>;
 
-    allTemplates: CertificateTemplate[] = [];
-    filteredTemplates: CertificateTemplate[] = [];
-    templates: CertificateTemplate[] = [];
+    allTemplates: TemplateDocument[] = [];
+    filteredTemplates: TemplateDocument[] = [];
+    templates: TemplateDocument[] = [];
 
 
     concepts: Concept[] = [];
@@ -68,7 +69,7 @@ export class TemplatesListComponent implements OnInit {
     isSaving = false;
     createModalOpen = false;
     editModalOpen = false;
-    selectedTemplate: CertificateTemplate | null = null;
+    selectedTemplate: TemplateDocument | null = null;
 
     tableConfig: TableConfig = {
         loading: true,
@@ -126,8 +127,8 @@ export class TemplatesListComponent implements OnInit {
     initColumns() {
         this.tableColumns = [
             { key: 'name', label: 'Nombre', sortable: true, minWidth: '200px' },
-            { key: 'conceptName', label: 'Concepto (Siox)', sortable: true, minWidth: '200px', template: this.conceptTemplate },
-            { key: 'conceptCosto', label: 'Costo', sortable: true, minWidth: '100px', align: 'right', template: this.costTemplate },
+            { key: 'paymentConcepts', label: 'Concepto (Siox)', sortable: false, minWidth: '200px', template: this.conceptTemplate },
+            { key: 'paymentConcepts', label: 'Costo', sortable: false, minWidth: '100px', align: 'right', template: this.costTemplate },
             {
                 key: 'category',
                 label: 'Categoría',
@@ -170,20 +171,11 @@ export class TemplatesListComponent implements OnInit {
         });
     }
 
-    // Form helpers and CRUD adapted to certificates-style UI
-    private defaultTemplate() {
-        return {
-            pageConfig: this.templateService.getDefaultPageConfig(),
-            elements: [],
-            variables: []
-        };
-    }
-
     openCreateForm() {
         this.form = this.fb.group({
             name: ['', Validators.required],
             conceptId: [null, Validators.required],
-            tipo: [''], // Category
+            tipo: ['GENERAL'],
             description: [''],
             isFree: [false]
         });
@@ -191,13 +183,14 @@ export class TemplatesListComponent implements OnInit {
         this.createModalOpen = true;
     }
 
-    openEditForm(template: CertificateTemplate) {
+    openEditForm(template: TemplateDocument) {
         this.selectedTemplate = template;
-        const isFree = !template.conceptId;
+        const firstConcept = template.paymentConcepts?.[0];
+        const isFree = !firstConcept;
         this.form = this.fb.group({
             name: [template.name, Validators.required],
-            conceptId: [template.conceptId || null, isFree ? [] : Validators.required],
-            tipo: [template.category || ''],
+            conceptId: [firstConcept?.id || null, isFree ? [] : Validators.required],
+            tipo: [template.category || 'GENERAL'],
             description: [template.description || ''],
             isFree: [isFree]
         });
@@ -228,26 +221,12 @@ export class TemplatesListComponent implements OnInit {
         if (this.form.invalid) return;
         this.isSaving = true;
 
-        let selectedConcept = null;
-        if (!value.isFree) {
-            selectedConcept = this.concepts.find(c => c.id === value.conceptId);
-        }
-
-        const payload: any = {
-            ...value,
-            // Si es gratuito, mandamos campos vacíos/null
-            claveConcepto: selectedConcept?.clave || '',
-            conceptId: selectedConcept?.id || null,
-            conceptName: selectedConcept?.concepto || (value.isFree ? 'Gratuito' : ''),
-            conceptClave: selectedConcept?.clave || '',
-            conceptCosto: selectedConcept?.costo || 0,
-            category: value.tipo,
-            pageConfig: this.defaultTemplate().pageConfig,
-            elements: [],
-            variables: []
+        const payload: CreateTemplateDocumentPayload = {
+            name: value.name,
+            description: value.description || '',
+            category: value.tipo || 'GENERAL',
+            paymentConcepts: value.isFree ? [] : (value.conceptId ? [value.conceptId] : [])
         };
-        // Remove virtual field
-        delete payload.isFree;
 
         this.templateService.createTemplate(payload).subscribe({
             next: () => {
@@ -266,21 +245,12 @@ export class TemplatesListComponent implements OnInit {
         if (!this.selectedTemplate || this.form.invalid) return;
         this.isSaving = true;
 
-        let selectedConcept = null;
-        if (!value.isFree) {
-            selectedConcept = this.concepts.find(c => c.id === value.conceptId);
-        }
-
-        const payload: any = {
-            ...value,
-            claveConcepto: selectedConcept?.clave || '',
-            conceptId: selectedConcept?.id || null,
-            conceptName: selectedConcept?.concepto || (value.isFree ? 'Gratuito' : ''),
-            conceptClave: selectedConcept?.clave || '',
-            conceptCosto: selectedConcept?.costo || 0,
-            category: value.tipo
+        const payload: UpdateTemplateDocumentPayload = {
+            name: value.name,
+            description: value.description || '',
+            category: value.tipo || 'GENERAL',
+            paymentConcepts: value.isFree ? [] : (value.conceptId ? [value.conceptId] : [])
         };
-        delete payload.isFree;
 
         this.templateService.updateTemplate(this.selectedTemplate.id, payload).subscribe({
             next: () => {
@@ -296,7 +266,7 @@ export class TemplatesListComponent implements OnInit {
         });
     }
 
-    editTemplateDesign(template: CertificateTemplate) {
+    editTemplateDesign(template: TemplateDocument) {
         this.router.navigate(['/config/templates/editor', template.id]);
     }
 
@@ -313,7 +283,7 @@ export class TemplatesListComponent implements OnInit {
         } else {
             this.filteredTemplates = this.allTemplates.filter(t =>
                 t.name.toLowerCase().includes(term) ||
-                (t.conceptName || '').toLowerCase().includes(term) ||
+                (t.paymentConcepts?.[0]?.concepto || '').toLowerCase().includes(term) ||
                 (t.description || '').toLowerCase().includes(term)
             );
         }
@@ -355,11 +325,11 @@ export class TemplatesListComponent implements OnInit {
         this.router.navigate(['/config/templates/editor']);
     }
 
-    editTemplate(template: CertificateTemplate) {
+    editTemplate(template: TemplateDocument) {
         this.router.navigate(['/config/templates/editor', template.id]);
     }
 
-    duplicateTemplate(template: CertificateTemplate) {
+    duplicateTemplate(template: TemplateDocument) {
         this.openConfirm({
             title: 'Duplicar Template',
             message: `¿Deseas crear una copia de "${template.name}"?`,
@@ -374,11 +344,11 @@ export class TemplatesListComponent implements OnInit {
         });
     }
 
-    previewTemplate(template: CertificateTemplate) {
+    previewTemplate(template: TemplateDocument) {
         this.router.navigate(['/config/templates/preview', template.id]);
     }
 
-    deleteTemplate(template: CertificateTemplate) {
+    deleteTemplate(template: TemplateDocument) {
         this.openConfirm({
             title: 'Eliminar Template',
             message: `¿Estás seguro de eliminar "${template.name}"? Esta acción no se puede deshacer.`,

@@ -38,8 +38,10 @@ export class PersonRegistrationComponent implements OnInit {
 
     cursoId: string | null = null;
     groupId: string | null = null;
+    currentGroupUuid: string | null = null; // UUID del grupo para el payload
     breadcrumbItems: BreadcrumbItem[] = [];
     prefilledData: any = null;
+    currentPersonId: number | null = null; // ID de la persona encontrada
 
     // Configuración dinámica
     fieldsConfig: Record<string, RegistrationFieldConfig> = {};
@@ -92,6 +94,7 @@ export class PersonRegistrationComponent implements OnInit {
         if (this.groupId) {
             this.groupsService.getGroupById(+this.groupId).subscribe((group: any) => {
                 if (group) {
+                    this.currentGroupUuid = group.uuid; // Guardar UUID para el payload
                     this.currentCourseType = 'GENERICO';
 
                     // 1. INTENTAR USAR CONFIGURACIÓN YA POBLADA (RICH)
@@ -99,8 +102,42 @@ export class PersonRegistrationComponent implements OnInit {
                     const populatedConfig = group.course?.courseType;
 
                     if (populatedConfig && populatedConfig.courseConfigField && populatedConfig.courseConfigField.length > 0 && populatedConfig.courseConfigField[0].requirementFieldPerson) {
-                        console.log('[PersonRegistration] Usando configuración rica del grupo...');
                         this.setupFormFields(populatedConfig);
+                        // Poblar documentos disponibles si vienen poblados
+                        if (group.documents && group.documents.length > 0) {
+                            this.currentAvailableDocuments = group.documents.map((d: any) => {
+                                let calculatedCost = d.cost || 0;
+                                if (d.paymentConcept && d.paymentConcept.umas) {
+                                    calculatedCost = Number(d.paymentConcept.umas) * 117.31;
+                                }
+                                return {
+                                    id: d.documentCourses || d.id || d.name || 'doc_unknown',
+                                    name: d.name || 'Documento sin nombre',
+                                    templateId: d.templateId || d.id,
+                                    isMandatory: d.isRequired !== undefined ? d.isRequired : (d.isMandatory !== undefined ? d.isMandatory : false),
+                                    cost: calculatedCost
+                                };
+                            });
+                        } else if (populatedConfig.documentCourse || populatedConfig.documentCourses) {
+                            const docs = populatedConfig.documentCourse || populatedConfig.documentCourses || [];
+                            this.currentAvailableDocuments = docs.map((d: any) => {
+                                let calculatedCost = 0;
+                                if (d.templateDocument?.paymentConcepts?.[0]?.umas) {
+                                    calculatedCost = Number(d.templateDocument.paymentConcepts[0].umas) * 117.31;
+                                } else if (d.templateDocumentObject?.paymentConcepts?.[0]?.umas) {
+                                    calculatedCost = Number(d.templateDocumentObject.paymentConcepts[0].umas) * 117.31;
+                                }
+                                return {
+                                    id: d.id || d.templateDocument?.id || d.templateDocument || 'doc_unknown',
+                                    name: d.templateDocument?.name || d.templateDocumentObject?.name || d.name || 'Documento',
+                                    templateId: d.templateDocument?.id || d.templateDocument,
+                                    isMandatory: d.isRequired !== undefined ? d.isRequired : (d.isMandatory !== undefined ? d.isMandatory : false),
+                                    cost: calculatedCost
+                                };
+                            });
+                        } else if (populatedConfig.availableDocuments) {
+                            this.currentAvailableDocuments = populatedConfig.availableDocuments;
+                        }
                     } else {
                         // 2. FALLBACK: CONSULTA DINÁMICA (Si viene incompleto o shallow)
                         const courseTypeId = group.courseTypeId ||
@@ -111,6 +148,41 @@ export class PersonRegistrationComponent implements OnInit {
                             this.courseTypeService.getCourseTypeById(courseTypeId).subscribe(config => {
                                 if (config) {
                                     this.setupFormFields(config);
+                                    // Poblar documentos disponibles
+                                    if (group.documents && group.documents.length > 0) {
+                                        this.currentAvailableDocuments = group.documents.map((d: any) => {
+                                            let calculatedCost = d.cost || 0;
+                                            if (d.paymentConcept && d.paymentConcept.umas) {
+                                                calculatedCost = Number(d.paymentConcept.umas) * 117.31;
+                                            }
+                                            return {
+                                                id: d.documentCourses || d.id || d.name || 'doc_unknown',
+                                                name: d.name || 'Documento sin nombre',
+                                                templateId: d.templateId || d.id,
+                                                isMandatory: d.isRequired !== undefined ? d.isRequired : (d.isMandatory !== undefined ? d.isMandatory : false),
+                                                cost: calculatedCost
+                                            };
+                                        });
+                                    } else if (config.documentCourse || config.documentCourses) {
+                                        const docs = config.documentCourse || config.documentCourses || [];
+                                        this.currentAvailableDocuments = docs.map((d: any) => {
+                                            let calculatedCost = 0;
+                                            if (d.templateDocument?.paymentConcepts?.[0]?.umas) {
+                                                calculatedCost = Number(d.templateDocument.paymentConcepts[0].umas) * 117.31;
+                                            } else if (d.templateDocumentObject?.paymentConcepts?.[0]?.umas) {
+                                                calculatedCost = Number(d.templateDocumentObject.paymentConcepts[0].umas) * 117.31;
+                                            }
+                                            return {
+                                                id: d.id || d.templateDocument?.id || d.templateDocument || 'doc_unknown',
+                                                name: d.templateDocument?.name || d.templateDocumentObject?.name || d.name || 'Documento',
+                                                templateId: d.templateDocument?.id || d.templateDocument,
+                                                isMandatory: d.isRequired !== undefined ? d.isRequired : (d.isMandatory !== undefined ? d.isMandatory : false),
+                                                cost: calculatedCost
+                                            };
+                                        });
+                                    } else if (config.availableDocuments) {
+                                        this.currentAvailableDocuments = config.availableDocuments;
+                                    }
                                 } else {
                                     this.setupFallbackFields('GENERICO');
                                 }
@@ -183,25 +255,40 @@ export class PersonRegistrationComponent implements OnInit {
         }
 
         if (needsLicenseSearch && !this.prefilledData) {
-            console.log('[PersonRegistration] Requisito de Licencia/NUC detectado en config, abriendo buscador...');
             this.isSearchModalOpen = true;
             this.showForm = false;
         } else {
-            console.log('[PersonRegistration] No se requiere búsqueda por Licencia/NUC, saltando al formulario...');
             this.showForm = true;
             this.isSearchModalOpen = false;
         }
     }
 
     onPersonFound(person: Person) {
-        console.log('[PersonRegistration] Persona encontrada:', person);
-        this.prefilledData = { ...person };
+        this.currentPersonId = (person as any).id; // Guardamos el ID para el payload final
+
+        // Solo prellenar campos que son bases o están marcados como visibles en este curso
+        const data: any = { found: true };
+        const alwaysPrefill = ['name', 'paternal_lastName', 'maternal_lastName', 'curp'];
+
+        alwaysPrefill.forEach(key => {
+            if ((person as any)[key]) data[key] = (person as any)[key];
+        });
+
+        // Solo prellenar campos adicionales si el curso ACTUAL los pide
+        if (this.fieldsConfig) {
+            Object.keys(this.fieldsConfig).forEach(key => {
+                if (this.fieldsConfig![key]?.visible && (person as any)[key]) {
+                    data[key] = (person as any)[key];
+                }
+            });
+        }
+
+        this.prefilledData = data;
         this.showForm = true;
         this.isSearchModalOpen = false;
     }
 
     onManualRegistration(license: string) {
-        console.log('[PersonRegistration] Registro manual iniciado con licencia:', license);
         this.prefilledData = { license };
         this.showForm = true;
         this.isSearchModalOpen = false;
@@ -256,7 +343,6 @@ export class PersonRegistrationComponent implements OnInit {
     }
 
     finalizeRegistration(personData: any) {
-        console.log('[PersonRegistration] Iniciando proceso de inscripción...', personData);
 
         const groupId = this.groupId ? +this.groupId : 1;
 
@@ -270,32 +356,45 @@ export class PersonRegistrationComponent implements OnInit {
         // Mapear campos del formulario
         Object.keys(personData).forEach(key => {
             const value = personData[key];
-            if (personTableFields.includes(key)) {
-                // Va a la tabla Person
-                personDataForPayload[key] = value;
-            } else {
-                // Va a Responses si tiene un ID de configuración
-                const fieldConfig = this.fieldsConfig![key];
-                if (fieldConfig && fieldConfig.courseConfigFieldId) {
-                    responses.push({
-                        courseConfigFieldId: fieldConfig.courseConfigFieldId,
-                        value: value?.toString() || ''
-                    });
+            const fieldConfig = this.fieldsConfig![key];
+            const isPersonTableField = personTableFields.includes(key);
+
+            // Valores procesados (limpiar vacíos)
+            const processedValue = (typeof value === 'string' && value.trim() === '') ? null : value;
+
+            // 1. Si es un campo dinámico (tiene ID de configuración)
+            if (fieldConfig && fieldConfig.courseConfigFieldId) {
+                responses.push({
+                    courseConfigFieldId: fieldConfig.courseConfigFieldId,
+                    value: value?.toString() || ''
+                });
+
+                // Si TAMBIÉN es un campo de la tabla Person, lo enviamos allí también
+                if (isPersonTableField && fieldConfig.visible) {
+                    personDataForPayload[key] = processedValue;
                 }
             }
+            // 2. Si NO es dinámico pero SÍ es un campo base de la tabla Person
+            else if (isPersonTableField) {
+                // Solo lo enviamos si no tiene configuración restrictiva o si es visible
+                if (!fieldConfig || fieldConfig.visible) {
+                    personDataForPayload[key] = processedValue;
+                }
+            }
+            // 3. Cualquier otro campo (ej. address, sex si no son requerimientos) se IGNORA para evitar Error 400
         });
 
-        // Asegurar que isActive esté en la persona
-        personDataForPayload.isActive = true;
-
         const enrollmentPayload = {
-            group: groupId,
-            isAcepted: false, // Default
+            // Backend update: Send separate groupId and groupUuid fields
+            groupId: Number(groupId),
+            groupUuid: this.currentGroupUuid,
+            isAcepted: true, // En vista privada se acepta automáticamente (se puede ajustar según regla de negocio)
+            dateReject: null,
+            personId: this.currentPersonId,
             person: personDataForPayload,
-            responses: responses
+            responses: responses,
+            documentCourseIds: personData.requestedDocuments || []
         };
-
-        console.log('[PersonRegistration] Payload final para /enrollment:', enrollmentPayload);
 
         this.notificationService.showInfo('Guardando', 'Procesando inscripción...');
 

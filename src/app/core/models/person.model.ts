@@ -1,5 +1,6 @@
 export interface Person {
     id: number;
+    enrollmentId?: number;
     name: string;
     paternal_lastName?: string;
     maternal_lastName?: string;

@@ -54,11 +54,6 @@ export class AppComponent implements OnInit, OnDestroy {
         }
       }
     });
-
-    // 2. Debugging Temporal (Opcional, puedes dejarlo o quitarlo)
-    if (typeof window !== 'undefined') {
-      (window as any).notificationService = this.notificationService;
-    }
   }
 
   ngOnDestroy(): void {

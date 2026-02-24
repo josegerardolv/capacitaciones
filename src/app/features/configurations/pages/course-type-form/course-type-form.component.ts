@@ -18,12 +18,14 @@ import { TooltipDirective } from '../../../../shared/components/tooltip/tooltip.
 
 // Modelos y Servicios
 import { CourseTypeConfig, RegistrationFieldConfig, DEFAULT_REGISTRATION_FIELDS, DocumentConfig } from '../../../../core/models/course-type-config.model';
-import { CertificateTemplate } from '../../../../core/models/template.model';
+import { TemplateDocument } from '../../../../core/models/template.model';
 import { TemplateService } from '../../templates/services/template.service';
 import { CourseTypeService } from '../../../../core/services/course-type.service';
 import { CoursesService } from '../../../cursos/services/courses.service';
 import { RequirementsService } from '../../../../core/services/requirements.service';
 import { SelectComponent } from '../../../../shared/components/inputs/select.component';
+import { REQUIREMENT_FIELD_NAMES, normalizeFieldName } from '../../../../core/constants/requirement-names.constants';
+import { UmasToPesosPipe } from '../../../../shared/pipes/umas-to-pesos.pipe';
 
 @Component({
     selector: 'app-course-type-form',
@@ -41,7 +43,8 @@ import { SelectComponent } from '../../../../shared/components/inputs/select.com
         TemplatePreviewModalComponent,
         TableFiltersComponent,
         TablePaginationComponent,
-        TooltipDirective
+        TooltipDirective,
+        UmasToPesosPipe
     ],
     templateUrl: './course-type-form.component.html',
     styles: []
@@ -67,12 +70,18 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
     backendRequirements: any[] = [];
 
     // Configuración de Templates
-    templates: CertificateTemplate[] = [];
-    filteredTemplates: CertificateTemplate[] = [];
-    selectedTemplates: CertificateTemplate[] = [];
+    templates: TemplateDocument[] = [];
+    filteredTemplates: TemplateDocument[] = [];
+    selectedTemplates: TemplateDocument[] = [];
 
     // Seguimiento de documentos obligatorios (Conjunto de IDs de Template)
     mandatoryDocuments: Set<number> = new Set();
+
+    // Conjunto de IDs de Template que ya fueron guardados (No Editables)
+    savedTemplateIds: Set<number> = new Set();
+
+    // Mapeo entre templateId y el ID de la relación (document_course_id)
+    documentCoursePivotIds: Map<number, number> = new Map();
 
     // Configuración de Tabla
     tableConfig: TableConfig = {
@@ -94,9 +103,9 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
     tableColumns: TableColumn[] = [
         { key: 'name', label: 'Código / Nombre', sortable: true, width: '25%' },
         { key: 'description', label: 'Descripción', sortable: true, width: '25%' },
-        { key: 'conceptName', label: 'Concepto de Pago', sortable: true, minWidth: '20%' },
+        { key: 'paymentConcepts', label: 'Concepto de Pago', sortable: false, minWidth: '20%' },
         { key: 'mandatory', label: 'Obligatorio', align: 'center', width: '100px' },
-        { key: 'conceptCosto', label: 'Costo', sortable: true, width: '100px', align: 'right' },
+        { key: 'cost', label: 'Costo', sortable: false, width: '100px', align: 'right' },
         { key: 'actions', label: 'Vista Previa', align: 'center', width: '100px' }
     ];
 
@@ -104,11 +113,12 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
     @ViewChild('costTemplate') costTemplate!: any;
     @ViewChild('categoryTemplate') categoryTemplate!: any;
     @ViewChild('mandatoryTemplate') mandatoryTemplate!: any;
+    @ViewChild('conceptTemplate') conceptTemplate!: any;
 
     // Modal de Vista Previa
     showPreviewModal = false;
-    previewTemplate: CertificateTemplate | null = null;
-    displayedTemplates: CertificateTemplate[] = [];
+    previewTemplate: TemplateDocument | null = null;
+    displayedTemplates: TemplateDocument[] = [];
 
     constructor(
         private fb: FormBuilder,
@@ -159,7 +169,7 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
             const actionsCol = this.tableColumns.find(c => c.key === 'actions');
             if (actionsCol) actionsCol.template = this.actionsTemplate;
 
-            const costCol = this.tableColumns.find(c => c.key === 'conceptCosto');
+            const costCol = this.tableColumns.find(c => c.key === 'cost');
             if (costCol) costCol.template = this.costTemplate;
 
             const categoryCol = this.tableColumns.find(c => c.key === 'category');
@@ -167,6 +177,9 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
 
             const mandatoryCol = this.tableColumns.find(c => c.key === 'mandatory');
             if (mandatoryCol) mandatoryCol.template = this.mandatoryTemplate;
+
+            const conceptCol = this.tableColumns.find(c => c.key === 'paymentConcepts');
+            if (conceptCol) conceptCol.template = this.conceptTemplate;
         });
     }
 
@@ -241,7 +254,8 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
     }
 
     // Campos que SIEMPRE deben mostrarse (Visibilidad bloqueada en TRUE)
-    readonly VISIBILITY_LOCKED = ['name', 'paternal_lastName', 'maternal_lastName', 'curp', 'phone', 'email'];
+    // Email y Phone siempre visibles por solicitud del usuario.
+    readonly VISIBILITY_LOCKED = ['name', 'curp', 'email', 'phone', 'maternal_lastName', 'paternal_lastName'];
 
     // Campos que SIEMPRE deben ser obligatorios (Required bloqueado en TRUE)
     readonly REQUIREMENT_LOCKED_MANDATORY = ['name', 'curp', 'email'];
@@ -257,31 +271,43 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
         // 1. Clonar los campos por defecto del MODELO (Ahora es la fuente de verdad)
         this.registrationFields = DEFAULT_REGISTRATION_FIELDS.map(f => ({ ...f }));
 
-        // 2. Mapear requisitos del Backend a los campos existentes o agregar nuevos
+        // 2. Mapear requisitos del Backend a los campos existentes usando NOMBRES (Auto-descubrimiento)
         this.backendRequirements.forEach(req => {
-            // Normalizar nombre del backend para buscar coincidencia
-            let internalName = req.fieldName.toLowerCase()
-                .trim()
-                .replace(/á/g, 'a').replace(/é/g, 'e').replace(/í/g, 'i').replace(/ó/g, 'o').replace(/ú/g, 'u')
-                .replace(/ñ/g, 'n').replace(/\s+/g, '_');
+            const backendName = req.fieldName.trim();
+            const normalizedBackend = normalizeFieldName(backendName);
 
-            // Caso especial: Correo (ID 7)
-            if (req.id === 7) internalName = 'email';
-            if (internalName.includes('telefono')) internalName = 'phone';
-            if (internalName.includes('direccion')) internalName = 'address';
+            // Buscar coincidencia en nuestro mapa de constantes y campos existentes
+            // Mejorado con búsqueda "flexible" (si el nombre del backend es parte del valor o viceversa)
+            let matchKey: string | null = null;
+            Object.entries(REQUIREMENT_FIELD_NAMES).forEach(([key, value]) => {
+                const normValue = normalizeFieldName(value);
+                if (
+                    value.toLowerCase() === backendName.toLowerCase() ||
+                    normValue === normalizedBackend ||
+                    normalizedBackend.startsWith(normValue) || // ej: "telefon_movil" coincide con "telefon"
+                    normValue.startsWith(normalizedBackend)    // ej: "telefono" coincide con "telefon"
+                ) {
+                    matchKey = key.toLowerCase();
+                }
+            });
 
             // Buscar si ya existe en nuestra lista predefinida
             const existingField = this.registrationFields.find(f =>
-                f.fieldName === internalName || f.label.toLowerCase() === req.fieldName.toLowerCase()
+                f.fieldName === matchKey ||
+                normalizeFieldName(f.label) === normalizedBackend ||
+                f.label.toLowerCase() === backendName.toLowerCase() ||
+                (matchKey && f.fieldName === matchKey)
             );
 
             if (existingField) {
                 // Sincronizar ID del backend
                 existingField.requirementId = req.id;
+                // Si el nombre del backend es ligeramente diferente, actualizamos la etiqueta para que el usuario no se confunda
+                existingField.label = req.fieldName;
             } else {
                 // Si es un campo totalmente nuevo del backend (no está en el modelo), agregarlo
                 this.registrationFields.push({
-                    fieldName: internalName,
+                    fieldName: normalizedBackend,
                     label: req.fieldName,
                     visible: false,
                     required: false,
@@ -290,11 +316,24 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
             }
         });
 
-        // 3. Aplicar Reglas de Bloqueo (Locks) sobre la lista final
+        // 3. Limpieza: Si un campo por defecto (ej. NUC) NO está en el backend,
+        // lo eliminamos si no es un campo crítico "Base" (Nombre/CURP/Email)
+        // Esto evita que aparezcan duplicados o campos vacíos si el backend cambió de estructura.
+        const criticalBaseFields = ['name', 'paternal_lastName', 'maternal_lastName', 'curp', 'email'];
+        this.registrationFields = this.registrationFields.filter(f =>
+            criticalBaseFields.includes(f.fieldName) || f.requirementId
+        );
+
+        // 4. Aplicar Reglas de Bloqueo (Locks) sobre la lista final
         this.registrationFields.forEach(f => {
             if (this.isVisibilityLocked(f)) {
                 f.visible = true;
+            } else if (!f.requirementId) {
+                // Si no tiene ID del backend y no es lockeado, por seguridad no lo mostramos 
+                // activo (aunque ya deberían estar filtrados arriba)
+                f.visible = false;
             }
+
             if (this.REQUIREMENT_LOCKED_MANDATORY.includes(f.fieldName)) {
                 f.required = true;
             } else if (this.REQUIREMENT_LOCKED_OPTIONAL.includes(f.fieldName)) {
@@ -355,23 +394,39 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
         this.templateService.getTemplates().subscribe({
             next: (data) => {
                 this.templates = data;
-                this.templates.sort((a, b) => (b.usageCount || 0) - (a.usageCount || 0));
 
-                this.mandatoryDocuments.clear();
+                this.selectedTemplates = [];
+                this.savedTemplateIds.clear();
 
-                if (existingData && existingData.availableDocuments) {
-                    const selectedIds = existingData.availableDocuments.map(d => d.templateId);
+                const savedDocuments = (existingData as any)?.documentCourses || (existingData as any)?.documentCourse || existingData?.availableDocuments;
+
+                if (savedDocuments) {
+                    const selectedIds = savedDocuments.map((d: any) => {
+                        const tId = (d.templateDocument && typeof d.templateDocument === 'object')
+                            ? d.templateDocument.id
+                            : (d.templateId || d.templateDocument);
+
+                        this.savedTemplateIds.add(tId);
+                        return tId;
+                    });
+
                     this.selectedTemplates = this.templates.filter(t => selectedIds.includes(t.id));
 
-                    existingData.availableDocuments.forEach(doc => {
-                        if (doc.isMandatory && doc.templateId) {
-                            this.mandatoryDocuments.add(doc.templateId);
+                    savedDocuments.forEach((doc: any) => {
+                        const tId = (doc.templateDocument && typeof doc.templateDocument === 'object')
+                            ? doc.templateDocument.id
+                            : (doc.templateId || doc.templateDocument);
+
+                        const isMandatoryField = doc.isMandatory !== undefined ? doc.isMandatory : doc.isRequired;
+
+                        if (isMandatoryField && tId) {
+                            this.mandatoryDocuments.add(tId);
                         }
                     });
 
                     this.templates.forEach(t => {
                         const isSaved = selectedIds.includes(t.id);
-                        if (!isSaved && t.conceptCosto === 0) {
+                        if (!isSaved && !t.paymentConcepts?.length) {
                             this.mandatoryDocuments.add(t.id);
                         }
                     });
@@ -385,7 +440,7 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
                 } else {
                     this.selectedTemplates = [];
                     this.templates.forEach(t => {
-                        if (t.conceptCosto === 0) {
+                        if (!t.paymentConcepts?.length) {
                             this.mandatoryDocuments.add(t.id);
                         }
                     });
@@ -451,6 +506,7 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
                 }
 
                 if (match) {
+                    (match as any).wasSaved = true; // Marcar como guardado para bloquear su edición
                     const isVisible = savedField.visible !== undefined ? savedField.visible : true; // Si está guardado, implícitamente es visible
                     const isRequired = savedField.required;
 
@@ -480,7 +536,7 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
         } else {
             this.filteredTemplates = this.templates.filter(t =>
                 t.name.toLowerCase().includes(term) ||
-                (t.conceptName && t.conceptName.toLowerCase().includes(term))
+                (t.paymentConcepts?.[0]?.concepto || '').toLowerCase().includes(term)
             );
         }
 
@@ -515,9 +571,9 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
             return;
         }
 
-        // Bloqueo 2: Si está bloqueado por uso (tiene cursos), NO se pueden quitar campos que ya estaban guardados
+        // Bloqueo: No se pueden quitar campos que ya estaban guardados (requerimiento de backend)
         // Solo se permite AGREGAR (de false a true), no QUITAR (de true a false)
-        if (this.isLockedByUsage && field.visible && (field as any).wasSaved) {
+        if (field.visible && (field as any).wasSaved) {
             return; // No hacer nada, no permitir desmarcar
         }
 
@@ -530,9 +586,8 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
         // Si el requerimiento está bloqueado, no permitir cambios
         if (this.isRequirementLocked(field)) return;
 
-        // Bloqueo 2: Por Uso
-        // Interpretación: No modificar campos existentes.
-        if (this.isLockedByUsage && (field as any).wasSaved) {
+        // Bloqueo: No modificar requerimiento de campos ya guardados
+        if ((field as any).wasSaved) {
             return;
         }
 
@@ -540,20 +595,64 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
     }
 
     onSelectionChange(event: any) {
-        this.selectedTemplates = event.selectedItems;
+        let items = event.selectedItems || [];
+        const selectedIds = new Set(items.map((t: any) => t.id));
+
+        // Forzar selección de los guardados
+        let forciblyAdded = false;
+        this.savedTemplateIds.forEach(id => {
+            if (!selectedIds.has(id)) {
+                const template = this.templates.find(t => t.id === id);
+                if (template) {
+                    items.push(template);
+                    selectedIds.add(id);
+                    forciblyAdded = true;
+                }
+            }
+        });
+
+        this.selectedTemplates = forciblyAdded ? [...items] : items;
+
+        // Si el usuario desmarca una fila (que no estaba guardada), removerla de los obligatorios
+        this.mandatoryDocuments.forEach(mId => {
+            if (!selectedIds.has(mId) && !this.savedTemplateIds.has(mId)) {
+                this.mandatoryDocuments.delete(mId);
+            }
+        });
     }
 
-    openPreview(template: CertificateTemplate) {
+    // Método helper para la vista
+    isSavedTemplate(templateId: number): boolean {
+        return this.savedTemplateIds.has(templateId);
+    }
+
+    isSavedField(field: RegistrationFieldConfig): boolean {
+        return !!(field as any).wasSaved;
+    }
+
+    openPreview(template: TemplateDocument) {
         this.previewTemplate = template;
         this.showPreviewModal = true;
     }
 
     toggleMandatory(templateId: number, event: Event) {
         event.stopPropagation();
+
+        if (this.savedTemplateIds.has(templateId)) {
+            // No permitir editar obligatoriedad de templates ya guardados
+            return;
+        }
+
         if (this.mandatoryDocuments.has(templateId)) {
             this.mandatoryDocuments.delete(templateId);
         } else {
             this.mandatoryDocuments.add(templateId);
+
+            // Si se marca como obligatorio, seleccionar automáticamente la fila si no estaba seleccionada
+            const template = this.templates.find(t => t.id === templateId);
+            if (template && !this.selectedTemplates.some(t => t.id === templateId)) {
+                this.selectedTemplates = [...this.selectedTemplates, template];
+            }
         }
     }
 
@@ -581,11 +680,17 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
                 required: f.required
             }));
 
+        const documentCourse = this.selectedTemplates.map(t => ({
+            templateDocument: t.id,
+            isRequired: this.isMandatory(t.id)
+        }));
+
         const config: any = {
             name: formValue.name,
             description: formValue.description,
             type: formValue.type,
-            courseConfigField: courseConfigField
+            courseConfigField: courseConfigField,
+            documentCourse: documentCourse
         };
 
         // NOTA: Se eliminó 'availableDocuments' del payload ya que el backend lo rechaza con 400.
