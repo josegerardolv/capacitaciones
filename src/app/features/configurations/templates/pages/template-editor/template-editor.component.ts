@@ -853,6 +853,8 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
                     customImg.elementName = element.name || 'Código QR';
                     customImg.isDynamic = element.qrConfig?.isDynamic;
                     customImg.variableName = element.qrConfig?.variableName;
+                    customImg.qrContent = content;
+                    customImg.qrSize = size;
 
                     this.canvas.add(customImg);
                     this.canvas.renderAll();
@@ -1301,6 +1303,8 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
                     customImg.elementType = 'qr';
                     this.elementCounters['qr']++;
                     customImg.elementName = `CodigoQR${this.elementCounters['qr']}`;
+                    customImg.qrContent = qrContent;
+                    customImg.qrSize = size;
 
                     this.canvas.add(customImg);
                     this.canvas.setActiveObject(customImg);
@@ -2501,10 +2505,13 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
         }
 
         if (obj.elementType === 'qr') {
+            const qrObj = obj as CustomFabricObject;
+            const content = qrObj.qrContent ?? (qrObj.variableName ? `{{${qrObj.variableName}}}` : 'https://example.com');
             element.qrConfig = {
-                content: obj.variableName ? `{{${obj.variableName}}}` : 'https://example.com',
-                isDynamic: obj.isDynamic,
-                variableName: obj.variableName
+                content,
+                size: qrObj.qrSize ?? Math.round(obj.getScaledWidth()),
+                isDynamic: qrObj.isDynamic,
+                variableName: qrObj.variableName
             };
         }
 
@@ -2647,6 +2654,8 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
                 customImg.elementName = oldObj.elementName || 'Código QR';
                 customImg.isDynamic = isDynamic;
                 customImg.variableName = variableName;
+                customImg.qrContent = isDynamic && variableName ? `{{${variableName}}}` : qrContent;
+                customImg.qrSize = qrSize;
 
                 this.canvas.remove(activeObject);
                 this.canvas.add(customImg);
@@ -2660,16 +2669,13 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
     }
 
     private async generateQRCode(content: string, size: number): Promise<string> {
-        // Use the QRCode library if available, otherwise create a placeholder
         try {
-            const QRCode = (window as any).QRCode;
-            if (QRCode) {
-                return await QRCode.toDataURL(content, {
-                    width: size,
-                    margin: 1,
-                    color: { dark: '#000000', light: '#ffffff' }
-                });
-            }
+            const QRCode = await import('qrcode');
+            return await QRCode.toDataURL(content, {
+                width: size,
+                margin: 1,
+                color: { dark: '#000000', light: '#ffffff' }
+            });
         } catch (e) {
             console.warn('QRCode library not available, using placeholder');
         }
