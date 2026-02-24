@@ -121,6 +121,10 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
     displayedTemplates: TemplateDocument[] = [];
     lockedTemplates: any[] = [];
 
+    // Modal de templates
+    showTemplateModal = false;
+    tempSelectedTemplates: any[] = [];
+
     constructor(
         private fb: FormBuilder,
         private templateService: TemplateService,
@@ -598,7 +602,7 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
         field.required = !field.required;
     }
 
-    onSelectionChange(event: any) {
+    onModalSelectionChange(event: any) {
         let items = event.selectedItems || [];
         const selectedIds = new Set(items.map((t: any) => t.id));
 
@@ -615,14 +619,39 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
             }
         });
 
-        this.selectedTemplates = forciblyAdded ? [...items] : items;
+        this.tempSelectedTemplates = forciblyAdded ? [...items] : items;
+    }
 
-        // Si el usuario desmarca una fila (que no estaba guardada), removerla de los obligatorios
+    openTemplateModal() {
+        this.tempSelectedTemplates = [...this.selectedTemplates];
+        this.showTemplateModal = true;
+    }
+
+    closeTemplateModal() {
+        this.showTemplateModal = false;
+        this.tempSelectedTemplates = [];
+    }
+
+    confirmTemplateSelection() {
+        this.selectedTemplates = [...this.tempSelectedTemplates];
+        this.showTemplateModal = false;
+
+        // Limpiar mandatoryDocuments de templates que ya no están seleccionados y no están guardados
+        const selectedIds = new Set(this.selectedTemplates.map((t: any) => t.id));
         this.mandatoryDocuments.forEach(mId => {
             if (!selectedIds.has(mId) && !this.savedTemplateIds.has(mId)) {
                 this.mandatoryDocuments.delete(mId);
             }
         });
+    }
+
+    removeTemplate(template: any) {
+        if (this.isSavedTemplate(template.id)) return;
+
+        this.selectedTemplates = this.selectedTemplates.filter(t => t.id !== template.id);
+        if (this.mandatoryDocuments.has(template.id)) {
+            this.mandatoryDocuments.delete(template.id);
+        }
     }
 
     // Método helper para la vista
