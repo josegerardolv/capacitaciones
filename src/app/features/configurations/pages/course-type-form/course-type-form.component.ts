@@ -77,6 +77,12 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
     // Seguimiento de documentos obligatorios (Conjunto de IDs de Template)
     mandatoryDocuments: Set<number> = new Set();
 
+    // Conjunto de IDs de Template que ya fueron guardados (No Editables)
+    savedTemplateIds: Set<number> = new Set();
+
+    // Mapeo entre templateId y el ID de la relación (document_course_id)
+    documentCoursePivotIds: Map<number, number> = new Map();
+
     // Configuración de Tabla
     tableConfig: TableConfig = {
         selectable: true,
@@ -389,16 +395,19 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
             next: (data) => {
                 this.templates = data;
 
-                this.mandatoryDocuments.clear();
+                this.selectedTemplates = [];
+                this.savedTemplateIds.clear();
 
                 const savedDocuments = (existingData as any)?.documentCourses || (existingData as any)?.documentCourse || existingData?.availableDocuments;
 
                 if (savedDocuments) {
                     const selectedIds = savedDocuments.map((d: any) => {
-                        if (d.templateDocument && typeof d.templateDocument === 'object') {
-                            return d.templateDocument.id;
-                        }
-                        return d.templateId || d.templateDocument;
+                        const tId = (d.templateDocument && typeof d.templateDocument === 'object')
+                            ? d.templateDocument.id
+                            : (d.templateId || d.templateDocument);
+
+                        this.savedTemplateIds.add(tId);
+                        return tId;
                     });
 
                     this.selectedTemplates = this.templates.filter(t => selectedIds.includes(t.id));
@@ -497,6 +506,7 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
                 }
 
                 if (match) {
+                    (match as any).wasSaved = true; // Marcar como guardado para bloquear su edición
                     const isVisible = savedField.visible !== undefined ? savedField.visible : true; // Si está guardado, implícitamente es visible
                     const isRequired = savedField.required;
 
@@ -561,9 +571,9 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
             return;
         }
 
-        // Bloqueo 2: Si está bloqueado por uso (tiene cursos), NO se pueden quitar campos que ya estaban guardados
+        // Bloqueo: No se pueden quitar campos que ya estaban guardados (requerimiento de backend)
         // Solo se permite AGREGAR (de false a true), no QUITAR (de true a false)
-        if (this.isLockedByUsage && field.visible && (field as any).wasSaved) {
+        if (field.visible && (field as any).wasSaved) {
             return; // No hacer nada, no permitir desmarcar
         }
 
@@ -576,9 +586,8 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
         // Si el requerimiento está bloqueado, no permitir cambios
         if (this.isRequirementLocked(field)) return;
 
-        // Bloqueo 2: Por Uso
-        // Interpretación: No modificar campos existentes.
-        if (this.isLockedByUsage && (field as any).wasSaved) {
+        // Bloqueo: No modificar requerimiento de campos ya guardados
+        if ((field as any).wasSaved) {
             return;
         }
 
@@ -586,7 +595,39 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
     }
 
     onSelectionChange(event: any) {
-        this.selectedTemplates = event.selectedItems;
+        let items = event.selectedItems || [];
+        const selectedIds = new Set(items.map((t: any) => t.id));
+
+        // Forzar selección de los guardados
+        let forciblyAdded = false;
+        this.savedTemplateIds.forEach(id => {
+            if (!selectedIds.has(id)) {
+                const template = this.templates.find(t => t.id === id);
+                if (template) {
+                    items.push(template);
+                    selectedIds.add(id);
+                    forciblyAdded = true;
+                }
+            }
+        });
+
+        this.selectedTemplates = forciblyAdded ? [...items] : items;
+
+        // Si el usuario desmarca una fila (que no estaba guardada), removerla de los obligatorios
+        this.mandatoryDocuments.forEach(mId => {
+            if (!selectedIds.has(mId) && !this.savedTemplateIds.has(mId)) {
+                this.mandatoryDocuments.delete(mId);
+            }
+        });
+    }
+
+    // Método helper para la vista
+    isSavedTemplate(templateId: number): boolean {
+        return this.savedTemplateIds.has(templateId);
+    }
+
+    isSavedField(field: RegistrationFieldConfig): boolean {
+        return !!(field as any).wasSaved;
     }
 
     openPreview(template: TemplateDocument) {
@@ -596,10 +637,22 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
 
     toggleMandatory(templateId: number, event: Event) {
         event.stopPropagation();
+
+        if (this.savedTemplateIds.has(templateId)) {
+            // No permitir editar obligatoriedad de templates ya guardados
+            return;
+        }
+
         if (this.mandatoryDocuments.has(templateId)) {
             this.mandatoryDocuments.delete(templateId);
         } else {
             this.mandatoryDocuments.add(templateId);
+
+            // Si se marca como obligatorio, seleccionar automáticamente la fila si no estaba seleccionada
+            const template = this.templates.find(t => t.id === templateId);
+            if (template && !this.selectedTemplates.some(t => t.id === templateId)) {
+                this.selectedTemplates = [...this.selectedTemplates, template];
+            }
         }
     }
 
