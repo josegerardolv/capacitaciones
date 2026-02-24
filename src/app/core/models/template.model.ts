@@ -184,6 +184,18 @@ export interface UpdateTemplateDocumentPayload {
   paymentConcepts?: number[];
 }
 
+export interface CanvasDesign {
+  pageConfig: PageConfig;
+  elements: CanvasElement[];
+  variables: TemplateVariable[];
+}
+
+export interface ConfigureTemplatePayload {
+  fields?: string[];
+  image?: File;
+  qr?: File;
+}
+
 export interface GeneratedCertificate {
   id: number;
   templateId: number;

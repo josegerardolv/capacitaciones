@@ -1,11 +1,12 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import {
   CertificateTemplate, GeneratedCertificate, CertificateData,
   TemplateVariable, PageConfig, Concept,
-  TemplateDocument, CreateTemplateDocumentPayload, UpdateTemplateDocumentPayload
+  TemplateDocument, CreateTemplateDocumentPayload, UpdateTemplateDocumentPayload,
+  CanvasDesign
 } from '../../../../core/models/template.model';
 
 @Injectable({ providedIn: 'root' })
@@ -35,6 +36,56 @@ export class TemplateService {
 
   deleteTemplate(id: number): Observable<any> {
     return this.http.delete<any>(`${this.templateDocUrl}/${id}`);
+  }
+
+  configureTemplate(id: number, fields?: string[], imageFile?: File, qrFile?: File): Observable<TemplateDocument> {
+    const formData = new FormData();
+    if (fields) {
+      formData.append('fields', JSON.stringify(fields));
+    }
+    if (imageFile) {
+      formData.append('image', imageFile);
+    }
+    if (qrFile) {
+      formData.append('qr', qrFile);
+    }
+    return this.http.post<TemplateDocument>(`${this.templateDocUrl}/${id}/configuration`, formData);
+  }
+
+  static base64ToFile(dataUri: string, filename: string): File {
+    const [header, base64] = dataUri.split(',');
+    const mime = header.match(/:(.*?);/)?.[1] || 'image/png';
+    const bytes = atob(base64);
+    const buffer = new Uint8Array(bytes.length);
+    for (let i = 0; i < bytes.length; i++) buffer[i] = bytes.charCodeAt(i);
+    return new File([buffer], filename, { type: mime });
+  }
+
+  uploadMedia(id: number, file: File, type: 'image' | 'qr'): Observable<string> {
+    return this.configureTemplate(
+      id,
+      undefined,
+      type === 'image' ? file : undefined,
+      type === 'qr' ? file : undefined
+    ).pipe(
+      map(doc => {
+        const medias = [...doc.medias].sort((a: any, b: any) => b.id - a.id);
+        return medias[0]?.url || '';
+      })
+    );
+  }
+
+  static serializeDesign(design: CanvasDesign): string[] {
+    return [JSON.stringify(design)];
+  }
+
+  static parseDesign(fields: string[]): CanvasDesign | null {
+    if (!fields?.length) return null;
+    try {
+      return JSON.parse(fields[0]);
+    } catch {
+      return null;
+    }
   }
 
   getTemplate(id: number): Observable<CertificateTemplate | undefined> {
