@@ -10,18 +10,19 @@ import {
     NgZone
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Subscription } from 'rxjs';
+import { Subscription, switchMap, concat, of, tap, last } from 'rxjs';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormBuilder, FormGroup, FormControl, ReactiveFormsModule, Validators, FormsModule } from '@angular/forms';
 import { TemplateService } from '../../services/template.service';
-import { CertificateTemplate } from '../../../../../core/models/template.model';
+import { CertificateTemplate, TemplateDocument, CanvasDesign } from '../../../../../core/models/template.model';
 import { CanvasElement, ElementType, TemplateVariable, PageConfig } from '../../../../../core/models/template.model';
 import { InstitutionalButtonComponent } from '../../../../../shared/components/buttons/institutional-button.component';
 import { PDFGeneratorService, PDFGeneratorInput } from '../../../../../core/services/pdf-generator.service';
 import { InputEnhancedComponent } from '../../../../../shared/components/inputs/input-enhanced.component';
 import { SelectComponent, SelectOption } from '../../../../../shared/components/inputs/select.component';
 import * as fabric from 'fabric';
+import { environment } from 'src/environments/environment';
 
 // Tipos para propiedades personalizadas de Fabric
 interface CustomFabricObject extends fabric.FabricObject {
@@ -57,7 +58,7 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
 
     // Document / Template state
     documentId: number | null = null;
-    // Usamos directamente plantillas (templates)
+    templateDocument: TemplateDocument | null = null;
     template: CertificateTemplate | null = null;
 
     // Fabric.js canvas
@@ -578,23 +579,32 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
 
     // ===== DOCUMENT LOADING =====
     loadDocument(id: number): void {
-        this.templateService.getTemplate(id).subscribe(tpl => {
-            if (tpl) {
-                this.template = tpl;
+        this.templateService.getTemplateById(id).subscribe(doc => {
+            this.templateDocument = doc;
+            const design = TemplateService.parseDesign(doc.fields);
 
-                this.documentForm.patchValue({
-                    name: tpl.name,
-                    description: tpl.description
-                });
+            this.template = {
+                id: doc.id,
+                name: doc.name,
+                description: doc.description,
+                category: doc.category,
+                claveConcepto: '',
+                pageConfig: design?.pageConfig || this.templateService.getDefaultPageConfig(),
+                elements: design?.elements || [],
+                variables: design?.variables || [],
+            } as CertificateTemplate;
 
-                // Wait for canvas initialization
-                const waitForCanvas = setInterval(() => {
-                    if (this.isCanvasInitialized) {
-                        clearInterval(waitForCanvas);
-                        this.loadTemplateToCanvas();
-                    }
-                }, 100);
-            }
+            this.documentForm.patchValue({
+                name: doc.name,
+                description: doc.description
+            });
+
+            const waitForCanvas = setInterval(() => {
+                if (this.isCanvasInitialized) {
+                    clearInterval(waitForCanvas);
+                    this.loadTemplateToCanvas();
+                }
+            }, 100);
         });
     }
 
@@ -726,10 +736,20 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
         return shape;
     }
 
-    /**
-     * Carga un elemento de imagen desde un template existente.
-     * Si no tiene src, crea un placeholder visual.
-     */
+    private resolveMediaUrl(src: string): string {
+        if (src.startsWith('/uploads/')) {
+            return `${environment.apiUrl}${src}`;
+        }
+        return src;
+    }
+
+    private normalizeMediaUrl(src: string): string {
+        if (src.startsWith(environment.apiUrl + '/uploads/')) {
+            return src.replace(environment.apiUrl, '');
+        }
+        return src;
+    }
+
     private createImageObject(element: CanvasElement): void {
         const src = element.imageConfig?.src;
         const isDynamic = element.imageConfig?.isDynamic || false;
@@ -766,7 +786,8 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
             return;
         }
 
-        fabric.FabricImage.fromURL(src, { crossOrigin: 'anonymous' }).then((img) => {
+        const resolvedSrc = this.resolveMediaUrl(src);
+        fabric.FabricImage.fromURL(resolvedSrc, { crossOrigin: 'anonymous' }).then((img) => {
             img.set({
                 left: element.transform.x,
                 top: element.transform.y
@@ -845,7 +866,8 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
         this.backgroundImageSrc = src;
         this.backgroundFit = fit || 'cover';
 
-        fabric.FabricImage.fromURL(src, { crossOrigin: 'anonymous' }).then((img) => {
+        const resolvedSrc = this.resolveMediaUrl(src);
+        fabric.FabricImage.fromURL(resolvedSrc, { crossOrigin: 'anonymous' }).then((img) => {
             this.applyBackgroundFit(img, this.backgroundFit);
         });
     }
@@ -2344,37 +2366,84 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
 
     // ===== SAVE =====
     saveTemplate(): void {
-        if (this.documentForm.invalid || !this.template) {
+        if (this.documentForm.invalid) {
             this.documentForm.markAllAsTouched();
             return;
         }
 
         this.isSaving = true;
 
-        // Convert canvas objects back to CanvasElement format
-        const elements: CanvasElement[] = this.canvasObjects.map(obj => this.fabricObjectToElement(obj)).filter(e => e !== null) as CanvasElement[];
+        const elements: CanvasElement[] = this.canvasObjects
+            .map(obj => this.fabricObjectToElement(obj))
+            .filter(e => e !== null) as CanvasElement[];
 
-        const updatedTemplatePayload = {
-            name: this.documentForm.value.name,
-            description: this.documentForm.value.description,
+        const design: CanvasDesign = {
             pageConfig: {
-                ...this.template!.pageConfig,
+                ...( this.template?.pageConfig || this.templateService.getDefaultPageConfig()),
                 backgroundImage: this.backgroundImageSrc || undefined,
                 backgroundFit: this.backgroundFit
             },
             elements,
-            variables: this.template!.variables || []
+            variables: this.template?.variables || []
         };
 
-        this.templateService.updateTemplate(this.template!.id, updatedTemplatePayload).subscribe({
-            next: () => {
-                this.isSaving = false;
-                this.cancel();
-            },
-            error: () => {
-                this.isSaving = false;
+        const onSaveResult = {
+            next: () => { this.isSaving = false; this.cancel(); },
+            error: () => { this.isSaving = false; }
+        };
+
+        const saveWithUploads = (templateId: number) => {
+            const uploads: { type: 'image' | 'qr'; file: File; replaceFn: (url: string) => void }[] = [];
+
+            if (design.pageConfig.backgroundImage?.startsWith('data:')) {
+                const file = TemplateService.base64ToFile(design.pageConfig.backgroundImage, 'background.png');
+                uploads.push({ type: 'image', file, replaceFn: url => design.pageConfig.backgroundImage = url });
             }
-        });
+
+            for (const el of design.elements) {
+                if (el.imageConfig?.src?.startsWith('data:')) {
+                    const file = TemplateService.base64ToFile(el.imageConfig.src, `img-${el.id}.png`);
+                    uploads.push({ type: 'image', file, replaceFn: url => el.imageConfig!.src = url });
+                }
+            }
+
+            const sendFields = () => {
+                const fields = TemplateService.serializeDesign(design);
+                this.templateService.configureTemplate(templateId, fields).subscribe(onSaveResult);
+            };
+
+            if (uploads.length > 0) {
+                concat(...uploads.map(u =>
+                    this.templateService.uploadMedia(templateId, u.file, u.type).pipe(
+                        tap(url => u.replaceFn(url))
+                    )
+                )).pipe(last()).subscribe({
+                    next: () => sendFields(),
+                    error: () => { this.isSaving = false; }
+                });
+            } else {
+                sendFields();
+            }
+        };
+
+        if (this.templateDocument?.id) {
+            saveWithUploads(this.templateDocument.id);
+        } else {
+            const payload = {
+                name: this.documentForm.value.name || 'Nuevo Template',
+                description: this.documentForm.value.description || '',
+                category: 'GENERAL' as const
+            };
+            this.templateService.createTemplate(payload).subscribe({
+                next: (created) => {
+                    this.templateDocument = created;
+                    saveWithUploads(created.id);
+                },
+                error: () => {
+                    this.isSaving = false;
+                }
+            });
+        }
     }
 
     private fabricObjectToElement(obj: CustomFabricObject): CanvasElement | null {
@@ -2424,8 +2493,9 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
         }
 
         if (obj.elementType === 'image') {
+            const rawSrc = (obj as fabric.FabricImage).getSrc?.() || '';
             element.imageConfig = {
-                src: (obj as fabric.FabricImage).getSrc?.() || '',
+                src: this.normalizeMediaUrl(rawSrc),
                 fit: 'contain'
             };
         }
