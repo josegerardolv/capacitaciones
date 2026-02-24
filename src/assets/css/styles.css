@@ -5152,6 +5152,7 @@ app-institutional-table + app-table-pagination {
   }
 }
 
+
 .institucional-table-pagination-btn {
   padding: 0.75rem 1.25rem;
   font-size: 0.875rem;
@@ -6124,3 +6125,10 @@ app-institutional-table + app-table-pagination {
 /* ===========================================
    FIN DEL ARCHIVO CSS UNIFICADO
    =========================================== */
+.institucional-table-cell .cell-content {
+  display: block;
+  max-width: 250px;
+  white-space: wrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
