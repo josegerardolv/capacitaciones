@@ -43,8 +43,8 @@ export class CourseTypeService {
         return this.http.post<CourseTypeConfig>(this.apiUrl, config);
     }
 
-    updateCourseType(id: number, config: Partial<CourseTypeConfig>): Observable<CourseTypeConfig> {
-        const params = new HttpParams().set('validatedRequired', 'false');
+    updateCourseType(id: number, config: Partial<CourseTypeConfig>, validatedRequired: boolean = true): Observable<CourseTypeConfig> {
+        const params = new HttpParams().set('validatedRequired', validatedRequired.toString());
         return this.http.patch<CourseTypeConfig>(`${this.apiUrl}/${id}`, config, { params });
     }
 

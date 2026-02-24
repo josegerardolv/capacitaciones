@@ -119,6 +119,7 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
     showPreviewModal = false;
     previewTemplate: TemplateDocument | null = null;
     displayedTemplates: TemplateDocument[] = [];
+    lockedTemplates: any[] = [];
 
     constructor(
         private fb: FormBuilder,
@@ -219,6 +220,7 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
     }
 
     onTypeFocus() {
+        if (this.isLockedByUsage) return;
         // Al enfocar, mostramos todas las opciones o filtramos por lo que haya escrito
         const currentVal = this.typeControl.value || '';
         this.filterTypes(currentVal);
@@ -396,6 +398,7 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
                 this.templates = data;
 
                 this.selectedTemplates = [];
+                this.lockedTemplates = [];
                 this.savedTemplateIds.clear();
 
                 const savedDocuments = (existingData as any)?.documentCourses || (existingData as any)?.documentCourse || existingData?.availableDocuments;
@@ -411,6 +414,7 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
                     });
 
                     this.selectedTemplates = this.templates.filter(t => selectedIds.includes(t.id));
+                    this.lockedTemplates = [...this.selectedTemplates]; // Bloquear los templates que ya vienen de BD
 
                     savedDocuments.forEach((doc: any) => {
                         const tId = (doc.templateDocument && typeof doc.templateDocument === 'object')
@@ -698,7 +702,12 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
         this.isLoading = true;
 
         if (this.isEditMode && this.courseTypeId) {
-            this.courseTypeService.updateCourseType(this.courseTypeId, config).subscribe({
+            // Si el backend detecta cursos (isLockedByUsage = true), enviamos validatedRequired = false 
+            // porque nuestro frontend ya restringió la edición a solo agregar (append-only) y queremos que el backend permita el PATCH.
+            // Si isLockedByUsage = false, enviamos validatedRequired = true para que el backend valide por seguridad.
+            const validatedRequired = !this.isLockedByUsage;
+
+            this.courseTypeService.updateCourseType(this.courseTypeId, config, validatedRequired).subscribe({
                 next: () => {
                     this.router.navigate(['/config/config-cursos']);
                     this.isLoading = false;
