@@ -23,7 +23,8 @@ export interface CourseTypeConfig {
     id: number;
     name: string; // ej. 'Capacitación Escolar', 'Licencia Tipo A'
     description: string;
-    status: 'Activo' | 'Inactivo';
+    status?: 'Activo' | 'Inactivo';
+    isActive?: boolean;
     type?: string; // ej. 'Taller', 'Diplomado' (Mapeado desde category en frontend)
     paymentType: 'Gratuito' | 'De Paga'; // Para mostrar en la tabla como en la imagen ('Gratuito'/'De Paga')
 

@@ -129,7 +129,8 @@ export interface SelectionEvent {
                   type="checkbox" 
                   class="institucional-table-checkbox"
                   [checked]="isSelected(item)"
-                  (change)="toggleSelect(item, $event)"
+                  [disabled]="isLocked(item)"
+                  (change)="!isLocked(item) && toggleSelect(item, $event)"
                   (click)="$event.stopPropagation()">
               </td>
               
@@ -192,6 +193,7 @@ export class InstitutionalTableComponent implements AfterContentInit, AfterViewI
   @Input() columns: TableColumn[] = [];
   @Input() config: TableConfig = {};
   @Input() selectedItems: any[] = [];
+  @Input() lockedItems: any[] = [];
   @Input() expandedItems: any[] = [];
   @Input() sortColumn: string | null = '';
   @Input() sortDirection: 'asc' | 'desc' | null = null;
@@ -361,6 +363,10 @@ export class InstitutionalTableComponent implements AfterContentInit, AfterViewI
     return this.expandedItems.includes(item);
   }
 
+  isLocked(item: any): boolean {
+    return this.lockedItems.includes(item);
+  }
+
   toggleSelect(item: any, event: Event): void {
     event.stopPropagation();
     const isSelected = this.isSelected(item);
@@ -390,9 +396,12 @@ export class InstitutionalTableComponent implements AfterContentInit, AfterViewI
       const itemsToAdd = this.displayData.filter(item => !currentSelectionIds.has(this.trackByFn(0, item)));
       newSelection = [...this.selectedItems, ...itemsToAdd];
     } else {
-      // Difference: Remove visible items from existing selection
+      // Difference: Remove visible items from existing selection, EXCEPT completely locked items
       const visibleIds = new Set(this.displayData.map(item => this.trackByFn(0, item)));
-      newSelection = this.selectedItems.filter(item => !visibleIds.has(this.trackByFn(0, item)));
+      newSelection = this.selectedItems.filter(item => {
+          if (this.isLocked(item)) return true; // Mantener siempre seleccionados los bloqueados
+          return !visibleIds.has(this.trackByFn(0, item));
+      });
     }
 
     this.selectionChange.emit({

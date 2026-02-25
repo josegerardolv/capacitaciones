@@ -132,6 +132,26 @@ export class MockCourseTypeService {
         return of(void 0).pipe(delay(500));
     }
 
+    removeCourseType(id: number): Observable<void> {
+        const index = this.courseTypes.findIndex(t => t.id === id);
+        if (index !== -1) {
+            this.courseTypes[index].isActive = false;
+            this.courseTypes[index].status = 'Inactivo';
+            return of(void 0).pipe(delay(500));
+        }
+        throw new Error('Tipo de curso no encontrado');
+    }
+
+    restoreCourseType(id: number): Observable<void> {
+        const index = this.courseTypes.findIndex(t => t.id === id);
+        if (index !== -1) {
+            this.courseTypes[index].isActive = true;
+            this.courseTypes[index].status = 'Activo';
+            return of(void 0).pipe(delay(500));
+        }
+        throw new Error('Tipo de curso no encontrado');
+    }
+
     // Método auxiliar para clonar y modificar campos por defecto fácilmente
     private cloneDefaultsWithOverrides(overrides: { [fieldName: string]: { visible?: boolean; required?: boolean } }): RegistrationFieldConfig[] {
         return DEFAULT_REGISTRATION_FIELDS.map(f => {

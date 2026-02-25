@@ -128,47 +128,49 @@ export class PublicRegistrationComponent implements OnInit {
                         this.currentCourseType = populatedConfig.type || (populatedConfig.name?.toUpperCase().includes('CONSTANCIA') ? 'CONSTANCIA' : 'LICENCIA');
                     }
 
-                    // Poblar templates/documentos disponibles si existen
-                    if (populatedConfig && populatedConfig.availableDocuments) {
+                    // Función helper para procesar la nueva estructura `documentCourse`
+                    const processDocumentCourse = (docArray: any[]) => {
+                        return docArray.map((d: any) => {
+                            let calculatedCost = 0;
+                            // La info del template puede venir empaquetada o ser el ID directo
+                            const templateObj = d.templateDocumentObject || (typeof d.templateDocument === 'object' ? d.templateDocument : null);
+
+                            // Si el doc trae el payment concept o lo trae el objeto empaquetado
+                            const concepts = templateObj?.paymentConcepts || d.paymentConcept ? [d.paymentConcept] : [];
+                            if (concepts && concepts.length > 0 && concepts[0]?.umas) {
+                                calculatedCost = Number(concepts[0].umas) * 117.31;
+                            } else if (d.cost) {
+                                calculatedCost = d.cost; // Fallback legacy
+                            }
+
+                            return {
+                                id: d.id || d.documentCourses || d.templateDocument?.id || d.templateDocument || 'doc_unknown',
+                                name: templateObj?.name || d.name || 'Documento',
+                                description: templateObj?.description || d.description || '',
+                                cost: calculatedCost,
+                                templateId: templateObj?.id || d.templateDocument?.id || d.templateDocument || d.templateId,
+                                isMandatory: d.isRequired !== undefined ? d.isRequired : (d.isMandatory !== undefined ? d.isMandatory : false),
+                                requiresApproval: true
+                            };
+                        });
+                    };
+
+                    // Buscar los documentos en las diferentes profundidades donde el backend pudiera haberlos inyectado
+                    if (populatedConfig && populatedConfig.documentCourse && populatedConfig.documentCourse.length > 0) {
+                        this.availableDocuments = processDocumentCourse(populatedConfig.documentCourse);
+                    } else if (group.course?.documentCourse && group.course.documentCourse.length > 0) {
+                        this.availableDocuments = processDocumentCourse(group.course.documentCourse);
+                    } else if (group.documentCourse && group.documentCourse.length > 0) {
+                        this.availableDocuments = processDocumentCourse(group.documentCourse);
+                    } else if (populatedConfig && populatedConfig.availableDocuments) {
                         this.availableDocuments = populatedConfig.availableDocuments;
                     } else if (group.course?.templates) {
                         this.availableDocuments = group.course.templates;
                     } else if (group.templates) {
                         this.availableDocuments = group.templates;
-                    } else if (group.documentCourse) {
-                        // Soporte para la estructura que acabamos de conectar
-                        this.availableDocuments = group.documentCourse.map((d: any) => {
-                            let calculatedCost = 0;
-                            if (d.templateDocumentObject?.paymentConcepts?.[0]?.umas) {
-                                calculatedCost = Number(d.templateDocumentObject.paymentConcepts[0].umas) * 117.31;
-                            }
-                            return {
-                                id: d.id || d.templateDocument || 'doc_unknown',
-                                name: d.templateDocumentObject?.name || d.name || 'Documento',
-                                description: d.templateDocumentObject?.description || d.description || '',
-                                cost: calculatedCost,
-                                templateId: d.templateDocument,
-                                isMandatory: d.isRequired,
-                                requiresApproval: true
-                            };
-                        });
                     } else if (group.documents) {
-                        // Soporte para estructura previa y nueva desde backend
-                        this.availableDocuments = group.documents.map((d: any) => {
-                            let calculatedCost = d.cost || 0;
-                            if (d.paymentConcept && d.paymentConcept.umas) {
-                                calculatedCost = Number(d.paymentConcept.umas) * 117.31;
-                            }
-                            return {
-                                id: d.documentCourses || d.id || d.name || 'doc_unknown',
-                                name: d.name || 'Documento sin nombre',
-                                description: d.description || '',
-                                cost: calculatedCost, // Conversión a pesos (1 UMA = 117.31)
-                                templateId: d.templateId || d.id,
-                                isMandatory: d.isRequired !== undefined ? d.isRequired : (d.isMandatory !== undefined ? d.isMandatory : false),
-                                requiresApproval: true
-                            };
-                        });
+                        // Fallback absoluto para arrays legacy de 'documents'
+                        this.availableDocuments = processDocumentCourse(group.documents);
                     }
 
                     this.setupFormFields(populatedConfig || {} as any, directFields);
