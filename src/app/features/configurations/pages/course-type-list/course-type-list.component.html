@@ -95,6 +95,11 @@
         [config]="{ variant: 'success', size: 'small', icon: 'check_circle', iconPosition: 'only', title: 'Activar' }"
         [appTooltip]="'Activar'" (buttonClick)="onRestore(item)">
       </app-institutional-button>
+
+      <app-institutional-button *ngIf="item.isActive === false"
+        [config]="{ variant: 'danger', size: 'small', icon: 'delete_forever', iconPosition: 'only', title: 'Eliminar Permanentemente' }"
+        [appTooltip]="'Eliminar Permanentemente'" (buttonClick)="onPermanentDelete(item)">
+      </app-institutional-button>
     </div>
   </ng-template>
 

@@ -209,6 +209,27 @@ export class CourseTypeListComponent implements OnInit {
     this.isConfirmOpen = true;
   }
 
+  onPermanentDelete(item: CourseTypeConfig) {
+    this.confirmConfig = {
+      title: 'Eliminar Permanentemente',
+      message: `¿Estás seguro de eliminar definitivamente "${item.name}"? Esta acción marcará el registro como eliminado en base de datos y no se podrá recuperar fácilmente. Use esta opción solo para catálogos obsoletos.`,
+      type: 'danger',
+      confirmText: 'Eliminar Permanentemente',
+      cancelText: 'Cancelar'
+    };
+    this.pendingAction = () => {
+      this.tableConfig.loading = true;
+      this.courseTypeService.deleteCourseType(item.id).subscribe({
+        next: () => this.loadData(),
+        error: (err) => {
+          console.error('Error deleting course type:', err);
+          this.tableConfig.loading = false;
+        }
+      });
+    };
+    this.isConfirmOpen = true;
+  }
+
   onConfirmAction() {
     if (this.pendingAction) {
       this.pendingAction();
