@@ -127,8 +127,8 @@ export class TemplatesListComponent implements OnInit {
     initColumns() {
         this.tableColumns = [
             { key: 'name', label: 'Nombre', sortable: true, minWidth: '200px' },
-            { key: 'paymentConcepts', label: 'Concepto (Siox)', sortable: false, minWidth: '200px', template: this.conceptTemplate },
-            { key: 'paymentConcepts', label: 'Costo', sortable: false, minWidth: '100px', align: 'right', template: this.costTemplate },
+            { key: 'paymentConcept', label: 'Concepto (Siox)', sortable: false, minWidth: '200px', template: this.conceptTemplate },
+            { key: 'paymentConcept', label: 'Costo', sortable: false, minWidth: '100px', align: 'right', template: this.costTemplate },
             {
                 key: 'category',
                 label: 'Categoría',
@@ -185,7 +185,7 @@ export class TemplatesListComponent implements OnInit {
 
     openEditForm(template: TemplateDocument) {
         this.selectedTemplate = template;
-        const firstConcept = template.paymentConcepts?.[0];
+        const firstConcept = template.paymentConcept;
         const isFree = !firstConcept;
         this.form = this.fb.group({
             name: [template.name, Validators.required],
@@ -224,9 +224,12 @@ export class TemplatesListComponent implements OnInit {
         const payload: CreateTemplateDocumentPayload = {
             name: value.name,
             description: value.description || '',
-            category: value.tipo || 'GENERAL',
-            paymentConcepts: value.isFree ? [] : (value.conceptId ? [value.conceptId] : [])
+            category: value.tipo || 'GENERAL'
         };
+
+        if (!value.isFree && value.conceptId) {
+            payload.paymentConcept = value.conceptId;
+        }
 
         this.templateService.createTemplate(payload).subscribe({
             next: () => {
@@ -248,9 +251,14 @@ export class TemplatesListComponent implements OnInit {
         const payload: UpdateTemplateDocumentPayload = {
             name: value.name,
             description: value.description || '',
-            category: value.tipo || 'GENERAL',
-            paymentConcepts: value.isFree ? [] : (value.conceptId ? [value.conceptId] : [])
+            category: value.tipo || 'GENERAL'
         };
+
+        if (!value.isFree && value.conceptId) {
+            payload.paymentConcept = value.conceptId;
+        } else {
+            payload.paymentConcept = null as any; // Para que el backend sepa que debe borrarse
+        }
 
         this.templateService.updateTemplate(this.selectedTemplate.id, payload).subscribe({
             next: () => {
@@ -283,7 +291,7 @@ export class TemplatesListComponent implements OnInit {
         } else {
             this.filteredTemplates = this.allTemplates.filter(t =>
                 t.name.toLowerCase().includes(term) ||
-                (t.paymentConcepts?.[0]?.concepto || '').toLowerCase().includes(term) ||
+                (t.paymentConcept?.concepto || '').toLowerCase().includes(term) ||
                 (t.description || '').toLowerCase().includes(term)
             );
         }

@@ -61,19 +61,51 @@
     </span>
   </ng-template>
 
+  <ng-template #isActiveTemplate let-item>
+    <span *ngIf="item.isActive !== false"
+      class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+      Activo
+    </span>
+    <span *ngIf="item.isActive === false"
+      class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+      Inactivo
+    </span>
+  </ng-template>
+
 
   <ng-template #actionsTemplate let-item>
     <div class="flex items-center justify-center space-x-2">
-      <app-institutional-button
-        [config]="{ variant: 'warning', size: 'small', icon: 'edit', iconPosition: 'only', title: 'Editar' }"
-        [appTooltip]="'Editar'" (buttonClick)="openEditModal(item)">
+      <app-institutional-button [config]="{ 
+          variant: 'warning', 
+          size: 'small', 
+          icon: 'edit', 
+          iconPosition: 'only', 
+          title: 'Editar',
+          disabled: item.isActive === false
+        }" [appTooltip]="item.isActive === false ? 'No se puede editar un tipo inactivo' : 'Editar'"
+        (buttonClick)="openEditModal(item)">
       </app-institutional-button>
 
-      <app-institutional-button
-        [config]="{ variant: 'danger', size: 'small', icon: 'delete', iconPosition: 'only', title: 'Eliminar' }"
-        [appTooltip]="'Eliminar'" (buttonClick)="onDelete(item)">
+      <app-institutional-button *ngIf="item.isActive !== false"
+        [config]="{ variant: 'danger', size: 'small', icon: 'delete', iconPosition: 'only', title: 'Desactivar' }"
+        [appTooltip]="'Desactivar'" (buttonClick)="onDelete(item)">
+      </app-institutional-button>
+
+      <app-institutional-button *ngIf="item.isActive === false"
+        [config]="{ variant: 'success', size: 'small', icon: 'check_circle', iconPosition: 'only', title: 'Activar' }"
+        [appTooltip]="'Activar'" (buttonClick)="onRestore(item)">
+      </app-institutional-button>
+
+      <app-institutional-button *ngIf="item.isActive === false"
+        [config]="{ variant: 'danger', size: 'small', icon: 'delete_forever', iconPosition: 'only', title: 'Eliminar Permanentemente' }"
+        [appTooltip]="'Eliminar Permanentemente'" (buttonClick)="onPermanentDelete(item)">
       </app-institutional-button>
     </div>
   </ng-template>
+
+  <!-- Modal de Confirmación -->
+  <app-confirmation-modal [isOpen]="isConfirmOpen" [config]="confirmConfig" (confirm)="onConfirmAction()"
+    (modalClose)="isConfirmOpen = false">
+  </app-confirmation-modal>
 
 </div>

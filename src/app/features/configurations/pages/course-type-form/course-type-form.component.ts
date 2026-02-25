@@ -103,7 +103,7 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
     tableColumns: TableColumn[] = [
         { key: 'name', label: 'Código / Nombre', sortable: true, width: '25%' },
         { key: 'description', label: 'Descripción', sortable: true, width: '25%' },
-        { key: 'paymentConcepts', label: 'Concepto de Pago', sortable: false, minWidth: '20%' },
+        { key: 'paymentConcept', label: 'Concepto de Pago', sortable: false, minWidth: '20%' },
         { key: 'mandatory', label: 'Obligatorio', align: 'center', width: '100px' },
         { key: 'cost', label: 'Costo', sortable: false, width: '100px', align: 'right' },
         { key: 'actions', label: 'Vista Previa', align: 'center', width: '100px' }
@@ -119,6 +119,11 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
     showPreviewModal = false;
     previewTemplate: TemplateDocument | null = null;
     displayedTemplates: TemplateDocument[] = [];
+    lockedTemplates: any[] = [];
+
+    // Modal de templates
+    showTemplateModal = false;
+    tempSelectedTemplates: any[] = [];
 
     constructor(
         private fb: FormBuilder,
@@ -178,7 +183,7 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
             const mandatoryCol = this.tableColumns.find(c => c.key === 'mandatory');
             if (mandatoryCol) mandatoryCol.template = this.mandatoryTemplate;
 
-            const conceptCol = this.tableColumns.find(c => c.key === 'paymentConcepts');
+            const conceptCol = this.tableColumns.find(c => c.key === 'paymentConcept');
             if (conceptCol) conceptCol.template = this.conceptTemplate;
         });
     }
@@ -219,6 +224,7 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
     }
 
     onTypeFocus() {
+        if (this.isLockedByUsage) return;
         // Al enfocar, mostramos todas las opciones o filtramos por lo que haya escrito
         const currentVal = this.typeControl.value || '';
         this.filterTypes(currentVal);
@@ -354,8 +360,14 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
                     // Cargar templates DESPUÉS de cargar datos del curso para marcar correctamente seleccionados/obligatorios
                     this.loadTemplates(data);
 
-                    // Verificar si tiene cursos asignados para bloquear edición parcial
-                    this.checkCourseUsage(id);
+                    // Verificar si tiene cursos asignados directamente de la respuesta del backend
+                    if ((data as any).courses && (data as any).courses.length > 0) {
+                        this.isLockedByUsage = true;
+                        this.form.disable(); // Bloquear formulario base (Nombre, Descripción, Tipo)
+                    } else {
+                        this.isLockedByUsage = false;
+                        this.form.enable();
+                    }
                 } else {
                     this.router.navigate(['/config/config-cursos']);
                 }
@@ -368,26 +380,7 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
         });
     }
 
-    checkCourseUsage(id: number) {
-        // Consultar si existen cursos con este courseTypeId
-        // Usamos limit=1 porque solo nos interesa saber si existe alguno (>0)
-        this.coursesService.getCourses(1, 1, '', id).subscribe({
-            next: (resp) => {
-                let count = 0;
-                if (resp.meta && resp.meta.total) count = resp.meta.total;
-                else if (Array.isArray(resp)) count = resp.length;
-                else if (resp.data) count = resp.data.length; // Fallback structure
-
-                if (count > 0) {
-                    this.isLockedByUsage = true;
-                    this.form.disable(); // Bloquear formulario base (Nombre, Descripción, Tipo)
-                }
-            },
-            error: (err) => {
-                console.warn('No se pudo verificar el uso del tipo de curso', err);
-            }
-        });
-    }
+    // La verificación de uso ahora se hace directamente con la respuesta del GET /course-type/{id}
 
     loadTemplates(existingData?: CourseTypeConfig) {
         this.tableConfig.loading = true;
@@ -396,6 +389,7 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
                 this.templates = data;
 
                 this.selectedTemplates = [];
+                this.lockedTemplates = [];
                 this.savedTemplateIds.clear();
 
                 const savedDocuments = (existingData as any)?.documentCourses || (existingData as any)?.documentCourse || existingData?.availableDocuments;
@@ -411,6 +405,7 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
                     });
 
                     this.selectedTemplates = this.templates.filter(t => selectedIds.includes(t.id));
+                    this.lockedTemplates = [...this.selectedTemplates]; // Bloquear los templates que ya vienen de BD
 
                     savedDocuments.forEach((doc: any) => {
                         const tId = (doc.templateDocument && typeof doc.templateDocument === 'object')
@@ -426,7 +421,7 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
 
                     this.templates.forEach(t => {
                         const isSaved = selectedIds.includes(t.id);
-                        if (!isSaved && !t.paymentConcepts?.length) {
+                        if (!isSaved && !t.paymentConcept) {
                             this.mandatoryDocuments.add(t.id);
                         }
                     });
@@ -440,7 +435,7 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
                 } else {
                     this.selectedTemplates = [];
                     this.templates.forEach(t => {
-                        if (!t.paymentConcepts?.length) {
+                        if (!t.paymentConcept) {
                             this.mandatoryDocuments.add(t.id);
                         }
                     });
@@ -536,18 +531,26 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
         } else {
             this.filteredTemplates = this.templates.filter(t =>
                 t.name.toLowerCase().includes(term) ||
-                (t.paymentConcepts?.[0]?.concepto || '').toLowerCase().includes(term)
+                (t.paymentConcept?.concepto || '').toLowerCase().includes(term)
             );
         }
 
-        this.paginationConfig.currentPage = 1;
-        this.paginationConfig.totalItems = this.filteredTemplates.length;
+        // Crear nueva referencia para disparar OnChanges en el componente de paginación
+        this.paginationConfig = {
+            ...this.paginationConfig,
+            currentPage: 1,
+            totalItems: this.filteredTemplates.length
+        };
+
         this.updatePaginatedData();
     }
 
     onPageChange(event: PageChangeEvent) {
-        this.paginationConfig.currentPage = event.page;
-        this.paginationConfig.pageSize = event.pageSize;
+        this.paginationConfig = {
+            ...this.paginationConfig,
+            currentPage: event.page,
+            pageSize: event.pageSize
+        };
         this.updatePaginatedData();
     }
 
@@ -594,7 +597,7 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
         field.required = !field.required;
     }
 
-    onSelectionChange(event: any) {
+    onModalSelectionChange(event: any) {
         let items = event.selectedItems || [];
         const selectedIds = new Set(items.map((t: any) => t.id));
 
@@ -611,14 +614,39 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
             }
         });
 
-        this.selectedTemplates = forciblyAdded ? [...items] : items;
+        this.tempSelectedTemplates = forciblyAdded ? [...items] : items;
+    }
 
-        // Si el usuario desmarca una fila (que no estaba guardada), removerla de los obligatorios
+    openTemplateModal() {
+        this.tempSelectedTemplates = [...this.selectedTemplates];
+        this.showTemplateModal = true;
+    }
+
+    closeTemplateModal() {
+        this.showTemplateModal = false;
+        this.tempSelectedTemplates = [];
+    }
+
+    confirmTemplateSelection() {
+        this.selectedTemplates = [...this.tempSelectedTemplates];
+        this.showTemplateModal = false;
+
+        // Limpiar mandatoryDocuments de templates que ya no están seleccionados y no están guardados
+        const selectedIds = new Set(this.selectedTemplates.map((t: any) => t.id));
         this.mandatoryDocuments.forEach(mId => {
             if (!selectedIds.has(mId) && !this.savedTemplateIds.has(mId)) {
                 this.mandatoryDocuments.delete(mId);
             }
         });
+    }
+
+    removeTemplate(template: any) {
+        if (this.isSavedTemplate(template.id)) return;
+
+        this.selectedTemplates = this.selectedTemplates.filter(t => t.id !== template.id);
+        if (this.mandatoryDocuments.has(template.id)) {
+            this.mandatoryDocuments.delete(template.id);
+        }
     }
 
     // Método helper para la vista
@@ -690,7 +718,7 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
             description: formValue.description,
             type: formValue.type,
             courseConfigField: courseConfigField,
-            documentCourse: documentCourse
+            documentCourses: documentCourse // se cambio de availableDocuments a documentCourses ya que lo tenia en singular
         };
 
         // NOTA: Se eliminó 'availableDocuments' del payload ya que el backend lo rechaza con 400.
@@ -698,7 +726,12 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
         this.isLoading = true;
 
         if (this.isEditMode && this.courseTypeId) {
-            this.courseTypeService.updateCourseType(this.courseTypeId, config).subscribe({
+            // Si el backend detecta cursos (isLockedByUsage = true), enviamos validatedRequired = false 
+            // porque nuestro frontend ya restringió la edición a solo agregar (append-only) y queremos que el backend permita el PATCH.
+            // Si isLockedByUsage = false, enviamos validatedRequired = true para que el backend valide por seguridad.
+            const validatedRequired = !this.isLockedByUsage;
+
+            this.courseTypeService.updateCourseType(this.courseTypeId, config, validatedRequired).subscribe({
                 next: () => {
                     this.router.navigate(['/config/config-cursos']);
                     this.isLoading = false;

@@ -145,8 +145,11 @@ export class ConceptsListComponent implements OnInit {
     }
 
     onPageChange(event: PageChangeEvent) {
-        this.paginationConfig.currentPage = event.page;
-        this.paginationConfig.pageSize = event.pageSize;
+        this.paginationConfig = {
+            ...this.paginationConfig,
+            currentPage: event.page,
+            pageSize: event.pageSize
+        };
         this.updatePaginatedData();
     }
 
@@ -166,7 +169,11 @@ export class ConceptsListComponent implements OnInit {
                 c.concepto.toLowerCase().includes(term)
             );
         }
-        this.paginationConfig.totalItems = this.filteredConcepts.length;
+        this.paginationConfig = {
+            ...this.paginationConfig,
+            totalItems: this.filteredConcepts.length,
+            currentPage: 1
+        };
         this.updatePaginatedData();
     }
 

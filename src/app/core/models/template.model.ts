@@ -170,7 +170,7 @@ export interface TemplateDocument {
   description: string;
   category: 'GENERAL' | 'CONSTANCIA' | 'DIPLOMA';
   fields: string[];
-  paymentConcepts: Concept[];
+  paymentConcept?: Concept;
   medias: any[];
   createdAt: string;
   updatedAt: string;
@@ -180,14 +180,14 @@ export interface CreateTemplateDocumentPayload {
   name: string;
   description: string;
   category: string;
-  paymentConcepts?: number[];
+  paymentConcept?: number;
 }
 
 export interface UpdateTemplateDocumentPayload {
   name?: string;
   description?: string;
   category?: string;
-  paymentConcepts?: number[];
+  paymentConcept?: number;
 }
 
 export interface CanvasDesign {

@@ -122,10 +122,10 @@ export class PersonRegistrationComponent implements OnInit {
                             const docs = populatedConfig.documentCourse || populatedConfig.documentCourses || [];
                             this.currentAvailableDocuments = docs.map((d: any) => {
                                 let calculatedCost = 0;
-                                if (d.templateDocument?.paymentConcepts?.[0]?.umas) {
-                                    calculatedCost = Number(d.templateDocument.paymentConcepts[0].umas) * 117.31;
-                                } else if (d.templateDocumentObject?.paymentConcepts?.[0]?.umas) {
-                                    calculatedCost = Number(d.templateDocumentObject.paymentConcepts[0].umas) * 117.31;
+                                if (d.templateDocument?.paymentConcept?.umas) {
+                                    calculatedCost = Number(d.templateDocument.paymentConcept.umas) * 117.31;
+                                } else if (d.templateDocumentObject?.paymentConcept?.umas) {
+                                    calculatedCost = Number(d.templateDocumentObject.paymentConcept.umas) * 117.31;
                                 }
                                 return {
                                     id: d.id || d.templateDocument?.id || d.templateDocument || 'doc_unknown',
@@ -167,10 +167,10 @@ export class PersonRegistrationComponent implements OnInit {
                                         const docs = config.documentCourse || config.documentCourses || [];
                                         this.currentAvailableDocuments = docs.map((d: any) => {
                                             let calculatedCost = 0;
-                                            if (d.templateDocument?.paymentConcepts?.[0]?.umas) {
-                                                calculatedCost = Number(d.templateDocument.paymentConcepts[0].umas) * 117.31;
-                                            } else if (d.templateDocumentObject?.paymentConcepts?.[0]?.umas) {
-                                                calculatedCost = Number(d.templateDocumentObject.paymentConcepts[0].umas) * 117.31;
+                                            if (d.templateDocument?.paymentConcept?.umas) {
+                                                calculatedCost = Number(d.templateDocument.paymentConcept.umas) * 117.31;
+                                            } else if (d.templateDocumentObject?.paymentConcept?.umas) {
+                                                calculatedCost = Number(d.templateDocumentObject.paymentConcept.umas) * 117.31;
                                             }
                                             return {
                                                 id: d.id || d.templateDocument?.id || d.templateDocument || 'doc_unknown',
