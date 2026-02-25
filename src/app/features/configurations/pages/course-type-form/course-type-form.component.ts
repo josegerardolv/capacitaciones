@@ -718,7 +718,7 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
             description: formValue.description,
             type: formValue.type,
             courseConfigField: courseConfigField,
-            documentCourses: documentCourse // se cambio de availableDocuments a documentCourses ya que lo tenia en singular
+            documentCourse: documentCourse // se revirtió a documentCourse porque el POST/PATCH lo pide en singular
         };
 
         // NOTA: Se eliminó 'availableDocuments' del payload ya que el backend lo rechaza con 400.
