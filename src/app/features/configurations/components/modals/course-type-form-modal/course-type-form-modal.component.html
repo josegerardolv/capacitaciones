@@ -5,13 +5,14 @@ x<app-modal [isOpen]="isOpen" [config]="modalConfig" (modalClose)="onClose()">
 
             <!-- Split Layout: Basic Info (Left) & Fields (Right) -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                
+
                 <!-- Left Side: Basic Info -->
                 <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
                     <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">DATOS TIPO CURSO</h3>
                     <div class="space-y-4">
-                        <app-input-enhanced controlName="name" [control]="form.get('name')" label="Nombre del tipo de curso"
-                            placeholder="Ingresa el nombre del tipo de curso" [required]="true">
+                        <app-input-enhanced controlName="name" [control]="form.get('name')"
+                            label="Nombre del tipo de curso" placeholder="Ingresa el nombre del tipo de curso"
+                            [required]="true">
                         </app-input-enhanced>
 
                         <app-input-enhanced controlName="description" [control]="form.get('description')"
@@ -19,15 +20,16 @@ x<app-modal [isOpen]="isOpen" [config]="modalConfig" (modalClose)="onClose()">
                             [required]="true">
                         </app-input-enhanced>
 
-                        <app-input-enhanced controlName="category" [control]="form.get('category')" label="Tipo de curso"
-                            placeholder="Ingresa el tipo de curso" [required]="true">
+                        <app-input-enhanced controlName="category" [control]="form.get('category')"
+                            label="Tipo de curso" placeholder="Ingresa el tipo de curso" [required]="true">
                         </app-input-enhanced>
                     </div>
                 </div>
 
                 <!-- Right Side: Fields Selection -->
                 <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                    <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">SELECCIONE LOS CAMPOS</h3>
+                    <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">SELECCIONE LOS CAMPOS
+                    </h3>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div *ngFor="let field of registrationFields"
@@ -67,15 +69,17 @@ x<app-modal [isOpen]="isOpen" [config]="modalConfig" (modalClose)="onClose()">
 
                         <!-- Custom Actions Template -->
                         <ng-template #actionsTemplate let-item>
-                            <app-institutional-button [config]="{ variant: 'primary', size: 'small', icon: 'visibility', iconPosition: 'only', customClass: '!bg-transparent !text-[#8B1538] hover:!bg-pink-50 !border-none shadow-none' }"
+                            <app-institutional-button
+                                [config]="{ variant: 'primary', size: 'small', icon: 'visibility', iconPosition: 'only', customClass: '!bg-transparent !text-[#8B1538] hover:!bg-pink-50 !border-none shadow-none' }"
                                 title="Ver Vista Previa" (buttonClick)="openPreview(item)">
                             </app-institutional-button>
                         </ng-template>
 
                         <ng-template #costTemplate let-item>
-                            <span *ngIf="item.paymentConcepts?.[0]?.umas > 0" class="font-medium">{{ item.paymentConcepts[0].umas |
+                            <span *ngIf="item.paymentConcept?.umas > 0" class="font-medium">{{ item.paymentConcept.umas
+                                |
                                 umasToPesos | currency:'MXN' }}</span>
-                            <span *ngIf="!item.paymentConcepts?.length || item.paymentConcepts[0]?.umas === 0"
+                            <span *ngIf="!item.paymentConcept || item.paymentConcept?.umas === 0"
                                 class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
                                 Gratuito
                             </span>
@@ -83,8 +87,9 @@ x<app-modal [isOpen]="isOpen" [config]="modalConfig" (modalClose)="onClose()">
 
                         <ng-template #conceptTemplate let-item>
                             <div class="flex flex-col">
-                                <span class="font-medium text-gray-900">{{ item.paymentConcepts?.[0]?.concepto || 'Sin concepto' }}</span>
-                                <span class="text-xs text-gray-500 font-mono">{{ item.paymentConcepts?.[0]?.clave }}</span>
+                                <span class="font-medium text-gray-900">{{ item.paymentConcept?.concepto || 'Sin
+                                    concepto' }}</span>
+                                <span class="text-xs text-gray-500 font-mono">{{ item.paymentConcept?.clave }}</span>
                             </div>
                         </ng-template>
 

@@ -136,7 +136,7 @@ export class PublicRegistrationComponent implements OnInit {
                             const templateObj = d.templateDocumentObject || (typeof d.templateDocument === 'object' ? d.templateDocument : null);
 
                             // Si el doc trae el payment concept o lo trae el objeto empaquetado
-                            const concepts = templateObj?.paymentConcepts || d.paymentConcept ? [d.paymentConcept] : [];
+                            const concepts = templateObj?.paymentConcept || d.paymentConcept ? [d.paymentConcept] : [];
                             if (concepts && concepts.length > 0 && concepts[0]?.umas) {
                                 calculatedCost = Number(concepts[0].umas) * 117.31;
                             } else if (d.cost) {
