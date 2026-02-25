@@ -103,7 +103,7 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
     tableColumns: TableColumn[] = [
         { key: 'name', label: 'Código / Nombre', sortable: true, width: '25%' },
         { key: 'description', label: 'Descripción', sortable: true, width: '25%' },
-        { key: 'paymentConcepts', label: 'Concepto de Pago', sortable: false, minWidth: '20%' },
+        { key: 'paymentConcept', label: 'Concepto de Pago', sortable: false, minWidth: '20%' },
         { key: 'mandatory', label: 'Obligatorio', align: 'center', width: '100px' },
         { key: 'cost', label: 'Costo', sortable: false, width: '100px', align: 'right' },
         { key: 'actions', label: 'Vista Previa', align: 'center', width: '100px' }
@@ -183,7 +183,7 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
             const mandatoryCol = this.tableColumns.find(c => c.key === 'mandatory');
             if (mandatoryCol) mandatoryCol.template = this.mandatoryTemplate;
 
-            const conceptCol = this.tableColumns.find(c => c.key === 'paymentConcepts');
+            const conceptCol = this.tableColumns.find(c => c.key === 'paymentConcept');
             if (conceptCol) conceptCol.template = this.conceptTemplate;
         });
     }
@@ -421,7 +421,7 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
 
                     this.templates.forEach(t => {
                         const isSaved = selectedIds.includes(t.id);
-                        if (!isSaved && !t.paymentConcepts?.length) {
+                        if (!isSaved && !t.paymentConcept) {
                             this.mandatoryDocuments.add(t.id);
                         }
                     });
@@ -435,7 +435,7 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
                 } else {
                     this.selectedTemplates = [];
                     this.templates.forEach(t => {
-                        if (!t.paymentConcepts?.length) {
+                        if (!t.paymentConcept) {
                             this.mandatoryDocuments.add(t.id);
                         }
                     });
@@ -531,7 +531,7 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
         } else {
             this.filteredTemplates = this.templates.filter(t =>
                 t.name.toLowerCase().includes(term) ||
-                (t.paymentConcepts?.[0]?.concepto || '').toLowerCase().includes(term)
+                (t.paymentConcept?.concepto || '').toLowerCase().includes(term)
             );
         }
 
