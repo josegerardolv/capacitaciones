@@ -548,14 +548,22 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
             );
         }
 
-        this.paginationConfig.currentPage = 1;
-        this.paginationConfig.totalItems = this.filteredTemplates.length;
+        // Crear nueva referencia para disparar OnChanges en el componente de paginación
+        this.paginationConfig = {
+            ...this.paginationConfig,
+            currentPage: 1,
+            totalItems: this.filteredTemplates.length
+        };
+
         this.updatePaginatedData();
     }
 
     onPageChange(event: PageChangeEvent) {
-        this.paginationConfig.currentPage = event.page;
-        this.paginationConfig.pageSize = event.pageSize;
+        this.paginationConfig = {
+            ...this.paginationConfig,
+            currentPage: event.page,
+            pageSize: event.pageSize
+        };
         this.updatePaginatedData();
     }
 

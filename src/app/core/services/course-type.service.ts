@@ -52,4 +52,12 @@ export class CourseTypeService {
         return this.http.delete<void>(`${this.apiUrl}/${id}`);
     }
 
+    removeCourseType(id: number): Observable<void> {
+        return this.http.patch<void>(`${this.apiUrl}/remove/${id}`, {});
+    }
+
+    restoreCourseType(id: number): Observable<void> {
+        return this.http.patch<void>(`${this.apiUrl}/restore/${id}`, {});
+    }
+
 }
