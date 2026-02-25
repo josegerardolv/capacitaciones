@@ -360,8 +360,14 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
                     // Cargar templates DESPUÉS de cargar datos del curso para marcar correctamente seleccionados/obligatorios
                     this.loadTemplates(data);
 
-                    // Verificar si tiene cursos asignados para bloquear edición parcial
-                    this.checkCourseUsage(id);
+                    // Verificar si tiene cursos asignados directamente de la respuesta del backend
+                    if ((data as any).courses && (data as any).courses.length > 0) {
+                        this.isLockedByUsage = true;
+                        this.form.disable(); // Bloquear formulario base (Nombre, Descripción, Tipo)
+                    } else {
+                        this.isLockedByUsage = false;
+                        this.form.enable();
+                    }
                 } else {
                     this.router.navigate(['/config/config-cursos']);
                 }
@@ -374,26 +380,7 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
         });
     }
 
-    checkCourseUsage(id: number) {
-        // Consultar si existen cursos con este courseTypeId
-        // Usamos limit=1 porque solo nos interesa saber si existe alguno (>0)
-        this.coursesService.getCourses(1, 1, '', id).subscribe({
-            next: (resp) => {
-                let count = 0;
-                if (resp.meta && resp.meta.total) count = resp.meta.total;
-                else if (Array.isArray(resp)) count = resp.length;
-                else if (resp.data) count = resp.data.length; // Fallback structure
-
-                if (count > 0) {
-                    this.isLockedByUsage = true;
-                    this.form.disable(); // Bloquear formulario base (Nombre, Descripción, Tipo)
-                }
-            },
-            error: (err) => {
-                console.warn('No se pudo verificar el uso del tipo de curso', err);
-            }
-        });
-    }
+    // La verificación de uso ahora se hace directamente con la respuesta del GET /course-type/{id}
 
     loadTemplates(existingData?: CourseTypeConfig) {
         this.tableConfig.loading = true;
@@ -731,7 +718,7 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
             description: formValue.description,
             type: formValue.type,
             courseConfigField: courseConfigField,
-            documentCourse: documentCourse
+            documentCourses: documentCourse // se cambio de availableDocuments a documentCourses ya que lo tenia en singular
         };
 
         // NOTA: Se eliminó 'availableDocuments' del payload ya que el backend lo rechaza con 400.
