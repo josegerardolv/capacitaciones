@@ -119,6 +119,11 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
     showPreviewModal = false;
     previewTemplate: TemplateDocument | null = null;
     displayedTemplates: TemplateDocument[] = [];
+    lockedTemplates: any[] = [];
+
+    // Modal de templates
+    showTemplateModal = false;
+    tempSelectedTemplates: any[] = [];
 
     constructor(
         private fb: FormBuilder,
@@ -219,6 +224,7 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
     }
 
     onTypeFocus() {
+        if (this.isLockedByUsage) return;
         // Al enfocar, mostramos todas las opciones o filtramos por lo que haya escrito
         const currentVal = this.typeControl.value || '';
         this.filterTypes(currentVal);
@@ -396,6 +402,7 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
                 this.templates = data;
 
                 this.selectedTemplates = [];
+                this.lockedTemplates = [];
                 this.savedTemplateIds.clear();
 
                 const savedDocuments = (existingData as any)?.documentCourses || (existingData as any)?.documentCourse || existingData?.availableDocuments;
@@ -411,6 +418,7 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
                     });
 
                     this.selectedTemplates = this.templates.filter(t => selectedIds.includes(t.id));
+                    this.lockedTemplates = [...this.selectedTemplates]; // Bloquear los templates que ya vienen de BD
 
                     savedDocuments.forEach((doc: any) => {
                         const tId = (doc.templateDocument && typeof doc.templateDocument === 'object')
@@ -540,14 +548,22 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
             );
         }
 
-        this.paginationConfig.currentPage = 1;
-        this.paginationConfig.totalItems = this.filteredTemplates.length;
+        // Crear nueva referencia para disparar OnChanges en el componente de paginación
+        this.paginationConfig = {
+            ...this.paginationConfig,
+            currentPage: 1,
+            totalItems: this.filteredTemplates.length
+        };
+
         this.updatePaginatedData();
     }
 
     onPageChange(event: PageChangeEvent) {
-        this.paginationConfig.currentPage = event.page;
-        this.paginationConfig.pageSize = event.pageSize;
+        this.paginationConfig = {
+            ...this.paginationConfig,
+            currentPage: event.page,
+            pageSize: event.pageSize
+        };
         this.updatePaginatedData();
     }
 
@@ -594,7 +610,7 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
         field.required = !field.required;
     }
 
-    onSelectionChange(event: any) {
+    onModalSelectionChange(event: any) {
         let items = event.selectedItems || [];
         const selectedIds = new Set(items.map((t: any) => t.id));
 
@@ -611,14 +627,39 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
             }
         });
 
-        this.selectedTemplates = forciblyAdded ? [...items] : items;
+        this.tempSelectedTemplates = forciblyAdded ? [...items] : items;
+    }
 
-        // Si el usuario desmarca una fila (que no estaba guardada), removerla de los obligatorios
+    openTemplateModal() {
+        this.tempSelectedTemplates = [...this.selectedTemplates];
+        this.showTemplateModal = true;
+    }
+
+    closeTemplateModal() {
+        this.showTemplateModal = false;
+        this.tempSelectedTemplates = [];
+    }
+
+    confirmTemplateSelection() {
+        this.selectedTemplates = [...this.tempSelectedTemplates];
+        this.showTemplateModal = false;
+
+        // Limpiar mandatoryDocuments de templates que ya no están seleccionados y no están guardados
+        const selectedIds = new Set(this.selectedTemplates.map((t: any) => t.id));
         this.mandatoryDocuments.forEach(mId => {
             if (!selectedIds.has(mId) && !this.savedTemplateIds.has(mId)) {
                 this.mandatoryDocuments.delete(mId);
             }
         });
+    }
+
+    removeTemplate(template: any) {
+        if (this.isSavedTemplate(template.id)) return;
+
+        this.selectedTemplates = this.selectedTemplates.filter(t => t.id !== template.id);
+        if (this.mandatoryDocuments.has(template.id)) {
+            this.mandatoryDocuments.delete(template.id);
+        }
     }
 
     // Método helper para la vista
@@ -698,7 +739,12 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
         this.isLoading = true;
 
         if (this.isEditMode && this.courseTypeId) {
-            this.courseTypeService.updateCourseType(this.courseTypeId, config).subscribe({
+            // Si el backend detecta cursos (isLockedByUsage = true), enviamos validatedRequired = false 
+            // porque nuestro frontend ya restringió la edición a solo agregar (append-only) y queremos que el backend permita el PATCH.
+            // Si isLockedByUsage = false, enviamos validatedRequired = true para que el backend valide por seguridad.
+            const validatedRequired = !this.isLockedByUsage;
+
+            this.courseTypeService.updateCourseType(this.courseTypeId, config, validatedRequired).subscribe({
                 next: () => {
                     this.router.navigate(['/config/config-cursos']);
                     this.isLoading = false;

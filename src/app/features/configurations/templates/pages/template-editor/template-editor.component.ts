@@ -10,18 +10,19 @@ import {
     NgZone
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Subscription } from 'rxjs';
+import { Subscription, switchMap, concat, of, tap, last } from 'rxjs';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormBuilder, FormGroup, FormControl, ReactiveFormsModule, Validators, FormsModule } from '@angular/forms';
 import { TemplateService } from '../../services/template.service';
-import { CertificateTemplate } from '../../../../../core/models/template.model';
+import { CertificateTemplate, TemplateDocument, CanvasDesign } from '../../../../../core/models/template.model';
 import { CanvasElement, ElementType, TemplateVariable, PageConfig } from '../../../../../core/models/template.model';
 import { InstitutionalButtonComponent } from '../../../../../shared/components/buttons/institutional-button.component';
 import { PDFGeneratorService, PDFGeneratorInput } from '../../../../../core/services/pdf-generator.service';
 import { InputEnhancedComponent } from '../../../../../shared/components/inputs/input-enhanced.component';
 import { SelectComponent, SelectOption } from '../../../../../shared/components/inputs/select.component';
 import * as fabric from 'fabric';
+import { environment } from 'src/environments/environment';
 
 // Tipos para propiedades personalizadas de Fabric
 interface CustomFabricObject extends fabric.FabricObject {
@@ -30,6 +31,8 @@ interface CustomFabricObject extends fabric.FabricObject {
     elementName?: string;
     variableName?: string;
     isDynamic?: boolean;
+    // Formas avanzadas: rombo, estrella, etc.
+    shapeVariant?: 'diamond' | 'star' | 'pentagon' | 'hexagon' | 'arrow';
     // Image specific
     imageFit?: 'contain' | 'cover' | 'fill';
     // QR specific
@@ -57,7 +60,7 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
 
     // Document / Template state
     documentId: number | null = null;
-    // Usamos directamente plantillas (templates)
+    templateDocument: TemplateDocument | null = null;
     template: CertificateTemplate | null = null;
 
     // Fabric.js canvas
@@ -440,23 +443,28 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
 
     private setupCanvasEvents(): void {
         // Selection events - wrapped in NgZone.run() for Angular change detection
-        this.canvas.on('selection:created', (e) => {
+        this.canvas.on('selection:created', (e: any) => {
             this.ngZone.run(() => {
-                this.onObjectSelected(e.selected?.[0] as CustomFabricObject);
+                const obj = (e.selected?.[0] ?? e.target ?? this.canvas.getActiveObject()) as CustomFabricObject;
+                this.onObjectSelected(obj);
             });
         });
 
-        this.canvas.on('selection:updated', (e) => {
+        this.canvas.on('selection:updated', (e: any) => {
             this.ngZone.run(() => {
-                this.onObjectSelected(e.selected?.[0] as CustomFabricObject);
+                const obj = (e.selected?.[0] ?? e.target ?? this.canvas.getActiveObject()) as CustomFabricObject;
+                this.onObjectSelected(obj);
             });
         });
 
         this.canvas.on('selection:cleared', () => {
             this.ngZone.run(() => {
                 this.selectedObject = null;
-                // Hide panel when nothing is selected
                 this.showPropertiesPanel = false;
+                // Asegurar que la selección sigue habilitada para permitir reseleccionar
+                if (!this.isPanMode) {
+                    this.canvas.selection = true;
+                }
                 this.cdr.detectChanges();
             });
         });
@@ -469,6 +477,7 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
                 this.updatePropertiesFromObject(e.target as CustomFabricObject);
                 this.clearAlignmentGuides();
                 this.saveHistory();
+                this.cdr.detectChanges();
             });
         });
 
@@ -490,18 +499,21 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
                 this.constrainToMargins(obj);
 
                 this.updatePropertiesFromObject(obj);
+                this.cdr.detectChanges();
             });
         });
 
         this.canvas.on('object:scaling', (e) => {
             this.ngZone.run(() => {
                 this.updatePropertiesFromObject(e.target as CustomFabricObject);
+                this.cdr.detectChanges();
             });
         });
 
         this.canvas.on('object:rotating', (e) => {
             this.ngZone.run(() => {
                 this.updatePropertiesFromObject(e.target as CustomFabricObject);
+                this.cdr.detectChanges();
             });
         });
 
@@ -578,23 +590,32 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
 
     // ===== DOCUMENT LOADING =====
     loadDocument(id: number): void {
-        this.templateService.getTemplate(id).subscribe(tpl => {
-            if (tpl) {
-                this.template = tpl;
+        this.templateService.getTemplateById(id).subscribe(doc => {
+            this.templateDocument = doc;
+            const design = TemplateService.parseDesign(doc.fields);
 
-                this.documentForm.patchValue({
-                    name: tpl.name,
-                    description: tpl.description
-                });
+            this.template = {
+                id: doc.id,
+                name: doc.name,
+                description: doc.description,
+                category: doc.category,
+                claveConcepto: '',
+                pageConfig: design?.pageConfig || this.templateService.getDefaultPageConfig(),
+                elements: design?.elements || [],
+                variables: design?.variables || [],
+            } as CertificateTemplate;
 
-                // Wait for canvas initialization
-                const waitForCanvas = setInterval(() => {
-                    if (this.isCanvasInitialized) {
-                        clearInterval(waitForCanvas);
-                        this.loadTemplateToCanvas();
-                    }
-                }, 100);
-            }
+            this.documentForm.patchValue({
+                name: doc.name,
+                description: doc.description
+            });
+
+            const waitForCanvas = setInterval(() => {
+                if (this.isCanvasInitialized) {
+                    clearInterval(waitForCanvas);
+                    this.loadTemplateToCanvas();
+                }
+            }, 100);
         });
     }
 
@@ -643,6 +664,7 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
             obj.elementId = element.id;
             obj.elementType = element.type;
             obj.elementName = element.name;
+            obj.visible = element.visible !== false;
             this.canvas.add(obj);
         }
     }
@@ -668,6 +690,9 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
         textbox.elementName = element.name;
         textbox.isDynamic = config?.isDynamic;
         textbox.variableName = config?.variableName;
+        if (element.visualStyle?.opacity != null) {
+            textbox.opacity = element.visualStyle.opacity / 100;
+        }
 
         return textbox;
     }
@@ -690,13 +715,20 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
             case 'rectangle':
                 shape = new fabric.Rect(baseConfig) as CustomFabricObject;
                 break;
-            case 'circle':
-                const radius = Math.min(element.transform.width, element.transform.height) / 2;
+            case 'circle': {
+                const savedWidth = element.transform.width;
+                const savedHeight = element.transform.height;
+                const radius = Math.min(savedWidth, savedHeight) / 2;
+                const circleBaseSize = 2 * radius; // Tamaño base del círculo en Fabric
                 shape = new fabric.Circle({
                     ...baseConfig,
                     radius
                 }) as CustomFabricObject;
+                // Aplicar escala para respetar dimensiones guardadas (p. ej. círculo escalado a óvalo)
+                shape.scaleX = savedWidth / circleBaseSize;
+                shape.scaleY = savedHeight / circleBaseSize;
                 break;
+            }
             case 'ellipse':
                 shape = new fabric.Ellipse({
                     ...baseConfig,
@@ -707,14 +739,54 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
             case 'triangle':
                 shape = new fabric.Triangle(baseConfig) as CustomFabricObject;
                 break;
-            case 'line':
-                shape = new fabric.Line([0, 0, element.transform.width, 0], {
+            case 'line': {
+                const lineLength = Math.max(element.transform.width, 1);
+                shape = new fabric.Line([0, 0, lineLength, 0], {
                     left: element.transform.x,
                     top: element.transform.y,
                     stroke: config?.stroke || '#6B7280',
                     strokeWidth: config?.strokeWidth || 2
                 }) as CustomFabricObject;
+                const lineNaturalW = shape.getScaledWidth();
+                const lineNaturalH = Math.max(shape.getScaledHeight(), 1);
+                const lineSavedW = element.transform.width;
+                const lineSavedH = element.transform.height;
+                if (lineNaturalW > 0 && lineNaturalH > 0) {
+                    shape.scaleX = (shape.scaleX || 1) * (lineSavedW / lineNaturalW);
+                    shape.scaleY = (shape.scaleY || 1) * (lineSavedH / lineNaturalH);
+                }
                 break;
+            }
+            case 'polygon': {
+                const variant = config?.shapeVariant;
+                const loadBaseConfig = {
+                    left: element.transform.x,
+                    top: element.transform.y,
+                    fill: config?.fill || '#E5E7EB',
+                    stroke: config?.stroke || '#6B7280',
+                    strokeWidth: config?.strokeWidth || 2
+                };
+                if (variant === 'arrow') {
+                    shape = this.createArrowShape(loadBaseConfig);
+                } else if (variant === 'star') {
+                    shape = this.createStarShape(loadBaseConfig);
+                } else if (variant === 'diamond' || variant === 'pentagon' || variant === 'hexagon') {
+                    shape = this.createPolygonShape(variant, loadBaseConfig);
+                } else {
+                    shape = new fabric.Rect(baseConfig) as CustomFabricObject;
+                    break;
+                }
+                shape.shapeVariant = variant;
+                const savedW = element.transform.width;
+                const savedH = element.transform.height;
+                const naturalW = shape.getScaledWidth();
+                const naturalH = shape.getScaledHeight();
+                if (naturalW > 0 && naturalH > 0) {
+                    shape.scaleX = (shape.scaleX || 1) * (savedW / naturalW);
+                    shape.scaleY = (shape.scaleY || 1) * (savedH / naturalH);
+                }
+                break;
+            }
             default:
                 shape = new fabric.Rect(baseConfig) as CustomFabricObject;
         }
@@ -722,14 +794,42 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
         shape.elementId = element.id;
         shape.elementType = 'shape';
         shape.elementName = element.name;
+        if (element.visualStyle?.opacity != null) {
+            shape.opacity = element.visualStyle.opacity / 100;
+        }
+        if (config?.borderRadius != null && shape.type === 'rect') {
+            (shape as fabric.Rect).set('rx', config.borderRadius);
+            (shape as fabric.Rect).set('ry', config.borderRadius);
+        }
+        if (config?.strokeDashArray && config.strokeDashArray !== 'solid') {
+            const dashPatterns: Record<string, number[]> = {
+                'dashed': [10, 5],
+                'dotted': [2, 4],
+                'dashdot': [10, 5, 2, 5]
+            };
+            shape.set('strokeDashArray', dashPatterns[config.strokeDashArray] || null);
+            (shape as any).strokeDashType = config.strokeDashArray;
+        }
+        if (config?.flipX != null) shape.set('flipX', config.flipX);
+        if (config?.flipY != null) shape.set('flipY', config.flipY);
 
         return shape;
     }
 
-    /**
-     * Carga un elemento de imagen desde un template existente.
-     * Si no tiene src, crea un placeholder visual.
-     */
+    private resolveMediaUrl(src: string): string {
+        if (src.startsWith('/uploads/')) {
+            return `${environment.apiUrl}${src}`;
+        }
+        return src;
+    }
+
+    private normalizeMediaUrl(src: string): string {
+        if (src.startsWith(environment.apiUrl + '/uploads/')) {
+            return src.replace(environment.apiUrl, '');
+        }
+        return src;
+    }
+
     private createImageObject(element: CanvasElement): void {
         const src = element.imageConfig?.src;
         const isDynamic = element.imageConfig?.isDynamic || false;
@@ -759,6 +859,11 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
                 customImg.elementName = element.name || 'Imagen';
                 customImg.isDynamic = isDynamic;
                 customImg.variableName = variableName;
+                customImg.imageFit = (element.imageConfig?.fit === 'cover' || element.imageConfig?.fit === 'fill') ? element.imageConfig.fit : 'contain';
+                if (element.visualStyle?.opacity != null) {
+                    customImg.opacity = element.visualStyle.opacity / 100;
+                }
+                customImg.visible = element.visible !== false;
 
                 this.canvas.add(customImg);
                 this.canvas.renderAll();
@@ -766,7 +871,8 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
             return;
         }
 
-        fabric.FabricImage.fromURL(src, { crossOrigin: 'anonymous' }).then((img) => {
+        const resolvedSrc = this.resolveMediaUrl(src);
+        fabric.FabricImage.fromURL(resolvedSrc, { crossOrigin: 'anonymous' }).then((img) => {
             img.set({
                 left: element.transform.x,
                 top: element.transform.y
@@ -782,6 +888,11 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
             customImg.elementType = 'image';
             customImg.elementName = element.name;
             customImg.isDynamic = false;
+            customImg.imageFit = (element.imageConfig?.fit === 'cover' || element.imageConfig?.fit === 'fill') ? element.imageConfig.fit : 'contain';
+            if (element.visualStyle?.opacity != null) {
+                customImg.opacity = element.visualStyle.opacity / 100;
+            }
+            customImg.visible = element.visible !== false;
 
             this.canvas.add(customImg);
             this.canvas.renderAll();
@@ -802,6 +913,11 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
                 customImg.elementId = element.id;
                 customImg.elementType = 'image';
                 customImg.elementName = element.name || 'Imagen';
+                customImg.imageFit = (element.imageConfig?.fit === 'cover' || element.imageConfig?.fit === 'fill') ? element.imageConfig.fit : 'contain';
+                if (element.visualStyle?.opacity != null) {
+                    customImg.opacity = element.visualStyle.opacity / 100;
+                }
+                customImg.visible = element.visible !== false;
 
                 this.canvas.add(customImg);
                 this.canvas.renderAll();
@@ -811,12 +927,12 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
 
     private createQRObject(element: CanvasElement): void {
         const content = element.qrConfig?.content || 'https://example.com';
-        const size = element.qrConfig?.size || 150;
+        const qrSize = element.qrConfig?.size || Math.min(element.transform.width, element.transform.height, 150) || 150;
 
         // Generate QR using qrcode library
         import('qrcode').then(QRCode => {
             QRCode.toDataURL(content, {
-                width: size,
+                width: qrSize,
                 margin: 1,
                 errorCorrectionLevel: element.qrConfig?.errorCorrectionLevel || 'M'
             }).then((url: string) => {
@@ -832,6 +948,20 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
                     customImg.elementName = element.name || 'Código QR';
                     customImg.isDynamic = element.qrConfig?.isDynamic;
                     customImg.variableName = element.qrConfig?.variableName;
+                    customImg.qrContent = content;
+                    customImg.qrSize = qrSize;
+
+                    const savedW = element.transform.width || qrSize;
+                    const savedH = element.transform.height || qrSize;
+                    const imgW = img.width || 1;
+                    const imgH = img.height || 1;
+                    customImg.scaleX = savedW / imgW;
+                    customImg.scaleY = savedH / imgH;
+
+                    if (element.visualStyle?.opacity != null) {
+                        customImg.opacity = element.visualStyle.opacity / 100;
+                    }
+                    customImg.visible = element.visible !== false;
 
                     this.canvas.add(customImg);
                     this.canvas.renderAll();
@@ -845,7 +975,8 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
         this.backgroundImageSrc = src;
         this.backgroundFit = fit || 'cover';
 
-        fabric.FabricImage.fromURL(src, { crossOrigin: 'anonymous' }).then((img) => {
+        const resolvedSrc = this.resolveMediaUrl(src);
+        fabric.FabricImage.fromURL(resolvedSrc, { crossOrigin: 'anonymous' }).then((img) => {
             this.applyBackgroundFit(img, this.backgroundFit);
         });
     }
@@ -1076,18 +1207,23 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
                 break;
             case 'arrow':
                 shape = this.createArrowShape(baseConfig);
+                shape.shapeVariant = 'arrow';
                 break;
             case 'diamond':
                 shape = this.createPolygonShape('diamond', baseConfig);
+                shape.shapeVariant = 'diamond';
                 break;
             case 'star':
                 shape = this.createStarShape(baseConfig);
+                shape.shapeVariant = 'star';
                 break;
             case 'pentagon':
                 shape = this.createPolygonShape('pentagon', baseConfig);
+                shape.shapeVariant = 'pentagon';
                 break;
             case 'hexagon':
                 shape = this.createPolygonShape('hexagon', baseConfig);
+                shape.shapeVariant = 'hexagon';
                 break;
             default:
                 return;
@@ -1279,6 +1415,8 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
                     customImg.elementType = 'qr';
                     this.elementCounters['qr']++;
                     customImg.elementName = `CodigoQR${this.elementCounters['qr']}`;
+                    customImg.qrContent = qrContent;
+                    customImg.qrSize = size;
 
                     this.canvas.add(customImg);
                     this.canvas.setActiveObject(customImg);
@@ -1833,11 +1971,11 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
             values.charSpacing = textbox.charSpacing || 0;
         }
 
-        // Shape specific
-        if (['rect', 'circle', 'ellipse', 'triangle', 'line', 'polygon'].includes(obj.type || '') || obj.elementType === 'shape') {
-            values.fill = obj.fill as string || '#E5E7EB';
-            values.stroke = obj.stroke as string || '#6B7280';
-            values.strokeWidth = obj.strokeWidth || 2;
+        // Shape specific (incluye polygon y group para formas avanzadas)
+        if (['rect', 'circle', 'ellipse', 'triangle', 'line', 'polygon', 'group'].includes(obj.type || '') || obj.elementType === 'shape') {
+            values.fill = (obj.fill as string) || (obj as any).stroke || '#E5E7EB';
+            values.stroke = (obj.stroke as string) || (obj as any).stroke || '#6B7280';
+            values.strokeWidth = obj.strokeWidth ?? (obj as any).strokeWidth ?? 2;
             values.strokeDashArray = (obj as any).strokeDashType || 'solid';
             values.flipX = obj.flipX || false;
             values.flipY = obj.flipY || false;
@@ -1848,9 +1986,9 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
 
         // Image specific
         if (obj.elementType === 'image' || obj.type === 'image') {
-            const imgObj = obj as fabric.FabricImage;
-            values.imageSrc = imgObj.getSrc?.() || '';
-            values.imageFit = 'contain'; // Default, could be stored in custom property
+            const imgObj = obj as CustomFabricObject;
+            values.imageSrc = (imgObj as fabric.FabricImage).getSrc?.() || '';
+            values.imageFit = imgObj.imageFit || 'contain';
         }
 
         // QR specific
@@ -1864,55 +2002,103 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
         this.elementPropertiesForm.patchValue(values, { emitEvent: false });
     }
 
+    /**
+     * Parsea y valida valores numéricos. Retorna null si el valor es inválido.
+     */
+    private parseNumericValue(value: any, min?: number, max?: number, defaultValue?: number): number | null {
+        const num = typeof value === 'number' ? value : parseFloat(String(value));
+        if (isNaN(num)) return defaultValue ?? null;
+        if (min != null && num < min) return min;
+        if (max != null && num > max) return max;
+        return num;
+    }
+
     onPropertyChange(property: string, value: any): void {
         const activeObject = this.canvas.getActiveObject();
         if (!activeObject) return;
+        // Solo aplicar cambios si estamos editando el objeto actualmente seleccionado.
+        // Evita aplicar valores del formulario anterior al cambiar de selección (blur al hacer clic en otro objeto).
+        if (activeObject !== this.selectedObject) return;
 
         switch (property) {
-            case 'x':
-                // Validate and clamp to margin boundaries
+            case 'x': {
+                const numX = this.parseNumericValue(value, undefined, undefined, activeObject.left ?? 0);
+                if (numX === null) {
+                    this.elementPropertiesForm.patchValue({ x: Math.round(activeObject.left ?? 0) }, { emitEvent: false });
+                    return;
+                }
                 const bounds = this.getMarginBoundaries();
                 const objWidth = activeObject.getScaledWidth();
-                const clampedX = Math.max(bounds.left, Math.min(bounds.right - objWidth, value));
+                const clampedX = Math.max(bounds.left, Math.min(bounds.right - objWidth, numX));
                 activeObject.left = clampedX;
                 activeObject.setCoords();
                 // Update form with clamped value if different
-                if (clampedX !== value) {
+                if (clampedX !== numX) {
                     this.elementPropertiesForm.patchValue({ x: Math.round(clampedX) }, { emitEvent: false });
                 }
                 break;
-            case 'y':
-                // Validate and clamp to margin boundaries
+            }
+            case 'y': {
+                const numY = this.parseNumericValue(value, undefined, undefined, activeObject.top ?? 0);
+                if (numY === null) {
+                    this.elementPropertiesForm.patchValue({ y: Math.round(activeObject.top ?? 0) }, { emitEvent: false });
+                    return;
+                }
                 const boundsY = this.getMarginBoundaries();
                 const objHeight = activeObject.getScaledHeight();
-                const clampedY = Math.max(boundsY.top, Math.min(boundsY.bottom - objHeight, value));
+                const clampedY = Math.max(boundsY.top, Math.min(boundsY.bottom - objHeight, numY));
                 activeObject.top = clampedY;
                 activeObject.setCoords();
                 // Update form with clamped value if different
-                if (clampedY !== value) {
+                if (clampedY !== numY) {
                     this.elementPropertiesForm.patchValue({ y: Math.round(clampedY) }, { emitEvent: false });
                 }
                 break;
-            case 'width':
+            }
+            case 'width': {
+                const numWidth = this.parseNumericValue(value, 1, undefined, activeObject.getScaledWidth());
+                if (numWidth === null) {
+                    this.elementPropertiesForm.patchValue({ width: Math.round(activeObject.getScaledWidth()) }, { emitEvent: false });
+                    return;
+                }
                 const currentWidth = activeObject.getScaledWidth();
-                activeObject.scaleX = (activeObject.scaleX || 1) * (value / currentWidth);
+                activeObject.scaleX = (activeObject.scaleX || 1) * (numWidth / currentWidth);
                 activeObject.setCoords();
                 this.enforceMarginBoundaries(activeObject as CustomFabricObject);
                 break;
-            case 'height':
+            }
+            case 'height': {
+                const numHeight = this.parseNumericValue(value, 1, undefined, activeObject.getScaledHeight());
+                if (numHeight === null) {
+                    this.elementPropertiesForm.patchValue({ height: Math.round(activeObject.getScaledHeight()) }, { emitEvent: false });
+                    return;
+                }
                 const currentHeight = activeObject.getScaledHeight();
-                activeObject.scaleY = (activeObject.scaleY || 1) * (value / currentHeight);
+                activeObject.scaleY = (activeObject.scaleY || 1) * (numHeight / currentHeight);
                 activeObject.setCoords();
                 this.enforceMarginBoundaries(activeObject as CustomFabricObject);
                 break;
-            case 'rotation':
-                activeObject.angle = value;
+            }
+            case 'rotation': {
+                const numRotation = this.parseNumericValue(value, -360, 360, activeObject.angle ?? 0);
+                if (numRotation === null) {
+                    this.elementPropertiesForm.patchValue({ rotation: Math.round(activeObject.angle ?? 0) }, { emitEvent: false });
+                    return;
+                }
+                activeObject.angle = numRotation;
                 activeObject.setCoords();
                 this.enforceMarginBoundaries(activeObject as CustomFabricObject);
                 break;
-            case 'opacity':
-                activeObject.opacity = value / 100;
+            }
+            case 'opacity': {
+                const numOpacity = this.parseNumericValue(value, 0, 100, 100);
+                if (numOpacity === null) {
+                    this.elementPropertiesForm.patchValue({ opacity: Math.round((activeObject.opacity ?? 1) * 100) }, { emitEvent: false });
+                    return;
+                }
+                activeObject.opacity = numOpacity / 100;
                 break;
+            }
             case 'name':
                 // Eliminar espacios del nombre del elemento
                 const sanitizedName = String(value).replace(/\s+/g, '');
@@ -1932,8 +2118,13 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
             case 'fontSize':
                 if (activeObject.type === 'textbox') {
                     const textbox = activeObject as fabric.Textbox;
+                    const numFontSize = this.parseNumericValue(value, 1, 500, textbox.fontSize ?? 16);
+                    if (numFontSize === null) {
+                        this.elementPropertiesForm.patchValue({ fontSize: textbox.fontSize ?? 16 }, { emitEvent: false });
+                        return;
+                    }
                     if (textbox.isEditing) textbox.exitEditing();
-                    textbox.set('fontSize', typeof value === 'string' ? parseInt(value, 10) : value);
+                    textbox.set('fontSize', numFontSize);
                     textbox.dirty = true;
                     textbox.initDimensions();
                 }
@@ -1967,8 +2158,13 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
             case 'lineHeight':
                 if (activeObject.type === 'textbox') {
                     const textbox = activeObject as fabric.Textbox;
+                    const numLineHeight = this.parseNumericValue(value, 0.5, 5, textbox.lineHeight ?? 1.2);
+                    if (numLineHeight === null) {
+                        this.elementPropertiesForm.patchValue({ lineHeight: textbox.lineHeight ?? 1.2 }, { emitEvent: false });
+                        return;
+                    }
                     if (textbox.isEditing) textbox.exitEditing();
-                    textbox.set('lineHeight', value);
+                    textbox.set('lineHeight', numLineHeight);
                     textbox.dirty = true;
                     textbox.initDimensions();
                 }
@@ -1976,8 +2172,13 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
             case 'charSpacing':
                 if (activeObject.type === 'textbox') {
                     const textbox = activeObject as fabric.Textbox;
+                    const numCharSpacing = this.parseNumericValue(value, -50, 500, textbox.charSpacing ?? 0);
+                    if (numCharSpacing === null) {
+                        this.elementPropertiesForm.patchValue({ charSpacing: textbox.charSpacing ?? 0 }, { emitEvent: false });
+                        return;
+                    }
                     if (textbox.isEditing) textbox.exitEditing();
-                    textbox.set('charSpacing', value);
+                    textbox.set('charSpacing', numCharSpacing);
                     textbox.dirty = true;
                     textbox.initDimensions();
                 }
@@ -2012,28 +2213,34 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
                 (activeObject as any).dirty = true;
                 this.canvas.renderAll(); // Forzar la actualización del lienzo
                 break;
-            case 'strokeWidth':
+            case 'strokeWidth': {
+                const numStrokeWidth = this.parseNumericValue(value, 0, 100, activeObject.strokeWidth ?? 2);
+                if (numStrokeWidth === null) {
+                    this.elementPropertiesForm.patchValue({ strokeWidth: activeObject.strokeWidth ?? 2 }, { emitEvent: false });
+                    return;
+                }
                 // Si es un grupo (p. ej. nuestra flecha compuesta), aplicar a sus hijos relevantes
                 if (activeObject.type === 'group') {
                     try {
                         const objs = (activeObject as any).getObjects ? (activeObject as any).getObjects() : (activeObject as any)._objects;
                         (objs || []).forEach((o: any) => {
                             if (o.type === 'line' || o.type === 'polyline' || o.type === 'path') {
-                                o.set('strokeWidth', value);
+                                o.set('strokeWidth', numStrokeWidth);
                                 o.set('dirty', true);
                             }
                             // Si la cabeza es un triángulo y queremos mantener proporción, no tocamos su fill
                         });
                     } catch (e) {
                         // fallback: set on group
-                        activeObject.set('strokeWidth', value);
+                        activeObject.set('strokeWidth', numStrokeWidth);
                     }
                 } else {
-                    activeObject.set('strokeWidth', value);
+                    activeObject.set('strokeWidth', numStrokeWidth);
                 }
                 (activeObject as any).dirty = true;
                 this.canvas.renderAll();
                 break;
+            }
             case 'strokeDashArray':
                 // Convertir el tipo de línea a array de dash
                 const dashPatterns: Record<string, number[] | null> = {
@@ -2066,8 +2273,14 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
                 break;
             case 'borderRadius':
                 if (activeObject.type === 'rect') {
-                    (activeObject as fabric.Rect).set('rx', value);
-                    (activeObject as fabric.Rect).set('ry', value);
+                    const rect = activeObject as fabric.Rect;
+                    const numBorderRadius = this.parseNumericValue(value, 0, 500, rect.rx ?? 0);
+                    if (numBorderRadius === null) {
+                        this.elementPropertiesForm.patchValue({ borderRadius: rect.rx ?? 0 }, { emitEvent: false });
+                        return;
+                    }
+                    rect.set('rx', numBorderRadius);
+                    rect.set('ry', numBorderRadius);
                     (activeObject as any).dirty = true;
                 }
                 break;
@@ -2093,9 +2306,17 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
                 // Store for regeneration
                 (activeObject as CustomFabricObject).qrContent = value;
                 break;
-            case 'qrSize':
-                // Will be applied on regenerate
+            case 'qrSize': {
+                const qrObj = activeObject as CustomFabricObject;
+                const currentQrSize = qrObj.qrSize ?? (Math.round(activeObject.getScaledWidth()) || 150);
+                const numQrSize = this.parseNumericValue(value, 10, 500, currentQrSize);
+                if (numQrSize === null) {
+                    this.elementPropertiesForm.patchValue({ qrSize: currentQrSize }, { emitEvent: false });
+                    return;
+                }
+                qrObj.qrSize = numQrSize;
                 break;
+            }
             case 'isDynamic': {
                 const oldObj = activeObject as CustomFabricObject;
 
@@ -2344,37 +2565,84 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
 
     // ===== SAVE =====
     saveTemplate(): void {
-        if (this.documentForm.invalid || !this.template) {
+        if (this.documentForm.invalid) {
             this.documentForm.markAllAsTouched();
             return;
         }
 
         this.isSaving = true;
 
-        // Convert canvas objects back to CanvasElement format
-        const elements: CanvasElement[] = this.canvasObjects.map(obj => this.fabricObjectToElement(obj)).filter(e => e !== null) as CanvasElement[];
+        const elements: CanvasElement[] = this.canvasObjects
+            .map(obj => this.fabricObjectToElement(obj))
+            .filter(e => e !== null) as CanvasElement[];
 
-        const updatedTemplatePayload = {
-            name: this.documentForm.value.name,
-            description: this.documentForm.value.description,
+        const design: CanvasDesign = {
             pageConfig: {
-                ...this.template!.pageConfig,
+                ...( this.template?.pageConfig || this.templateService.getDefaultPageConfig()),
                 backgroundImage: this.backgroundImageSrc || undefined,
                 backgroundFit: this.backgroundFit
             },
             elements,
-            variables: this.template!.variables || []
+            variables: this.template?.variables || []
         };
 
-        this.templateService.updateTemplate(this.template!.id, updatedTemplatePayload).subscribe({
-            next: () => {
-                this.isSaving = false;
-                this.cancel();
-            },
-            error: () => {
-                this.isSaving = false;
+        const onSaveResult = {
+            next: () => { this.isSaving = false; this.cancel(); },
+            error: () => { this.isSaving = false; }
+        };
+
+        const saveWithUploads = (templateId: number) => {
+            const uploads: { type: 'image' | 'qr'; file: File; replaceFn: (url: string) => void }[] = [];
+
+            if (design.pageConfig.backgroundImage?.startsWith('data:')) {
+                const file = TemplateService.base64ToFile(design.pageConfig.backgroundImage, 'background.png');
+                uploads.push({ type: 'image', file, replaceFn: url => design.pageConfig.backgroundImage = url });
             }
-        });
+
+            for (const el of design.elements) {
+                if (el.imageConfig?.src?.startsWith('data:')) {
+                    const file = TemplateService.base64ToFile(el.imageConfig.src, `img-${el.id}.png`);
+                    uploads.push({ type: 'image', file, replaceFn: url => el.imageConfig!.src = url });
+                }
+            }
+
+            const sendFields = () => {
+                const fields = TemplateService.serializeDesign(design);
+                this.templateService.configureTemplate(templateId, fields).subscribe(onSaveResult);
+            };
+
+            if (uploads.length > 0) {
+                concat(...uploads.map(u =>
+                    this.templateService.uploadMedia(templateId, u.file, u.type).pipe(
+                        tap(url => u.replaceFn(url))
+                    )
+                )).pipe(last()).subscribe({
+                    next: () => sendFields(),
+                    error: () => { this.isSaving = false; }
+                });
+            } else {
+                sendFields();
+            }
+        };
+
+        if (this.templateDocument?.id) {
+            saveWithUploads(this.templateDocument.id);
+        } else {
+            const payload = {
+                name: this.documentForm.value.name || 'Nuevo Template',
+                description: this.documentForm.value.description || '',
+                category: 'GENERAL' as const
+            };
+            this.templateService.createTemplate(payload).subscribe({
+                next: (created) => {
+                    this.templateDocument = created;
+                    saveWithUploads(created.id);
+                },
+                error: () => {
+                    this.isSaving = false;
+                }
+            });
+        }
     }
 
     private fabricObjectToElement(obj: CustomFabricObject): CanvasElement | null {
@@ -2391,6 +2659,9 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
                 height: obj.getScaledHeight(),
                 rotation: obj.angle,
                 zIndex: this.canvas.getObjects().indexOf(obj)
+            },
+            visualStyle: {
+                opacity: Math.round((obj.opacity ?? 1) * 100)
             },
             visible: obj.visible,
             locked: obj.lockMovementX
@@ -2414,27 +2685,44 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
             };
         }
 
-        if (['rect', 'circle', 'ellipse', 'triangle', 'line'].includes(obj.type || '')) {
+        if (['rect', 'circle', 'ellipse', 'triangle', 'line', 'polygon', 'group'].includes(obj.type || '')) {
+            const customObj = obj as CustomFabricObject;
+            const strokeDashType = (obj as any).strokeDashType || 'solid';
+            const shapeType = customObj.shapeVariant
+                ? 'polygon'
+                : this.getShapeType(obj.type || '');
             element.shapeConfig = {
-                type: this.getShapeType(obj.type || ''),
-                fill: obj.fill as string,
-                stroke: obj.stroke as string,
-                strokeWidth: obj.strokeWidth
+                type: shapeType,
+                shapeVariant: customObj.shapeVariant,
+                fill: (obj.fill as string) || (obj as any).stroke || '#E5E7EB',
+                stroke: (obj.stroke as string) || (obj as any).stroke || '#6B7280',
+                strokeWidth: obj.strokeWidth ?? (obj as any).strokeWidth ?? 2,
+                strokeDashArray: strokeDashType,
+                borderRadius: obj.type === 'rect' ? (obj as fabric.Rect).rx : undefined,
+                flipX: obj.flipX,
+                flipY: obj.flipY
             };
         }
 
         if (obj.elementType === 'image') {
+            const imgObj = obj as CustomFabricObject;
+            const rawSrc = (obj as fabric.FabricImage).getSrc?.() || '';
             element.imageConfig = {
-                src: (obj as fabric.FabricImage).getSrc?.() || '',
-                fit: 'contain'
+                src: this.normalizeMediaUrl(rawSrc),
+                fit: imgObj.imageFit || 'contain',
+                isDynamic: imgObj.isDynamic,
+                variableName: imgObj.variableName
             };
         }
 
         if (obj.elementType === 'qr') {
+            const qrObj = obj as CustomFabricObject;
+            const content = qrObj.qrContent ?? (qrObj.variableName ? `{{${qrObj.variableName}}}` : 'https://example.com');
             element.qrConfig = {
-                content: obj.variableName ? `{{${obj.variableName}}}` : 'https://example.com',
-                isDynamic: obj.isDynamic,
-                variableName: obj.variableName
+                content,
+                size: qrObj.qrSize ?? Math.round(obj.getScaledWidth()),
+                isDynamic: qrObj.isDynamic,
+                variableName: qrObj.variableName
             };
         }
 
@@ -2457,7 +2745,7 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
     }
 
     // ===== HELPERS =====
-    getElementIcon(type: string | undefined): string {
+    getElementIcon(type: string | undefined, shapeVariant?: string): string {
         const icons: Record<string, string> = {
             'text': 'text_fields',
             'image': 'image',
@@ -2468,7 +2756,9 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
             'circle': 'circle',
             'ellipse': 'radio_button_unchecked',
             'triangle': 'change_history',
-            'line': 'horizontal_rule'
+            'line': 'horizontal_rule',
+            'polygon': shapeVariant === 'star' ? 'star' : shapeVariant === 'diamond' ? 'diamond' : shapeVariant === 'hexagon' ? 'hexagon' : 'pentagon',
+            'group': 'arrow_forward'
         };
         return icons[type || ''] || 'widgets';
     }
@@ -2480,7 +2770,7 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
     isShapeSelected(): boolean {
         const type = this.selectedObject?.type;
         const elementType = this.selectedObject?.elementType;
-        return ['rect', 'circle', 'ellipse', 'triangle', 'line', 'polygon'].includes(type || '') || elementType === 'shape';
+        return ['rect', 'circle', 'ellipse', 'triangle', 'line', 'polygon', 'group'].includes(type || '') || elementType === 'shape';
     }
 
     isImageSelected(): boolean {
@@ -2577,6 +2867,8 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
                 customImg.elementName = oldObj.elementName || 'Código QR';
                 customImg.isDynamic = isDynamic;
                 customImg.variableName = variableName;
+                customImg.qrContent = isDynamic && variableName ? `{{${variableName}}}` : qrContent;
+                customImg.qrSize = qrSize;
 
                 this.canvas.remove(activeObject);
                 this.canvas.add(customImg);
@@ -2590,16 +2882,13 @@ export class TemplateEditorComponent implements OnInit, AfterViewInit, OnDestroy
     }
 
     private async generateQRCode(content: string, size: number): Promise<string> {
-        // Use the QRCode library if available, otherwise create a placeholder
         try {
-            const QRCode = (window as any).QRCode;
-            if (QRCode) {
-                return await QRCode.toDataURL(content, {
-                    width: size,
-                    margin: 1,
-                    color: { dark: '#000000', light: '#ffffff' }
-                });
-            }
+            const QRCode = await import('qrcode');
+            return await QRCode.toDataURL(content, {
+                width: size,
+                margin: 1,
+                color: { dark: '#000000', light: '#ffffff' }
+            });
         } catch (e) {
             console.warn('QRCode library not available, using placeholder');
         }

@@ -13,6 +13,7 @@ import { BreadcrumbItem } from '../../../../shared/components/breadcrumb/breadcr
 import { TablePaginationComponent, PaginationConfig, PageChangeEvent } from '../../../../shared/components/table-pagination/table-pagination.component';
 
 import { CourseTypeFormModalComponent } from '../../components/modals/course-type-form-modal/course-type-form-modal.component';
+import { ConfirmationModalComponent, ConfirmationConfig } from '../../../../shared/components/modals/confirmation-modal.component';
 import { TableFiltersComponent } from '@/app/shared/components/table-filters/table-filters.component';
 import { TooltipDirective } from '../../../../shared/components/tooltip/tooltip.directive';
 
@@ -33,12 +34,14 @@ import { TooltipDirective } from '../../../../shared/components/tooltip/tooltip.
     ReactiveFormsModule,
     TableFiltersComponent,
     TooltipDirective,
+    ConfirmationModalComponent,
   ],
   templateUrl: './course-type-list.component.html'
 })
 export class CourseTypeListComponent implements OnInit {
   @ViewChild('actionsTemplate', { static: true }) actionsTemplate!: TemplateRef<any>;
   @ViewChild('statusTemplate', { static: true }) statusTemplate!: TemplateRef<any>;
+  @ViewChild('isActiveTemplate', { static: true }) isActiveTemplate!: TemplateRef<any>;
 
   allCourseTypes: CourseTypeConfig[] = []; // Almacena todos los datos
   filteredCourseTypes: CourseTypeConfig[] = []; // Datos filtrados
@@ -69,6 +72,17 @@ export class CourseTypeListComponent implements OnInit {
     { label: 'Tipos de Curso' }
   ];
 
+  // Configuración del Modal de Confirmación
+  isConfirmOpen = false;
+  confirmConfig: ConfirmationConfig = {
+    title: '',
+    message: '',
+    type: 'warning',
+    confirmText: 'Aceptar',
+    cancelText: 'Cancelar'
+  };
+  private pendingAction: (() => void) | null = null;
+
   constructor(
     private courseTypeService: CourseTypeService,
     private router: Router
@@ -84,6 +98,7 @@ export class CourseTypeListComponent implements OnInit {
       { key: 'name', label: 'Nombre', sortable: true, minWidth: '200px' },
       { key: 'description', label: 'Descripción', sortable: true, minWidth: '300px' },
       { key: 'type', label: 'Tipo', template: this.statusTemplate, align: 'center', minWidth: '150px' },
+      { key: 'isActive', label: 'Estado', template: this.isActiveTemplate, align: 'center', minWidth: '120px' },
       { key: 'actions', label: 'Acciones', template: this.actionsTemplate, align: 'center', minWidth: '150px' }
     ];
   }
@@ -148,11 +163,61 @@ export class CourseTypeListComponent implements OnInit {
   }
 
   openEditModal(item: CourseTypeConfig) {
+    if (item.isActive === false) return; // Por seguridad, aunque el botón esté deshabilitado
     this.router.navigate(['/config/config-cursos/editar', item.id]);
   }
 
   onDelete(item: CourseTypeConfig) {
-    if (confirm(`¿Estás seguro de eliminar el tipo de curso "${item.name}"?`)) {
+    this.confirmConfig = {
+      title: 'Desactivar Tipo de Curso',
+      message: `¿Estás seguro de desactivar "${item.name}"? Los cursos ya creados seguirán operando, pero no se podrán crear nuevos de este tipo.`,
+      type: 'danger',
+      confirmText: 'Desactivar',
+      cancelText: 'Cancelar'
+    };
+    this.pendingAction = () => {
+      this.tableConfig.loading = true;
+      this.courseTypeService.removeCourseType(item.id).subscribe({
+        next: () => this.loadData(),
+        error: (err) => {
+          console.error('Error deactivating course type:', err);
+          this.tableConfig.loading = false;
+        }
+      });
+    };
+    this.isConfirmOpen = true;
+  }
+
+  onRestore(item: CourseTypeConfig) {
+    this.confirmConfig = {
+      title: 'Activar Tipo de Curso',
+      message: `¿Deseas activar nuevamente el tipo de curso "${item.name}"?`,
+      type: 'success',
+      confirmText: 'Activar',
+      cancelText: 'Cancelar'
+    };
+    this.pendingAction = () => {
+      this.tableConfig.loading = true;
+      this.courseTypeService.restoreCourseType(item.id).subscribe({
+        next: () => this.loadData(),
+        error: (err) => {
+          console.error('Error restoring course type:', err);
+          this.tableConfig.loading = false;
+        }
+      });
+    };
+    this.isConfirmOpen = true;
+  }
+
+  onPermanentDelete(item: CourseTypeConfig) {
+    this.confirmConfig = {
+      title: 'Eliminar Permanentemente',
+      message: `¿Estás seguro de eliminar definitivamente "${item.name}"? Esta acción marcará el registro como eliminado en base de datos y no se podrá recuperar fácilmente. Use esta opción solo para catálogos obsoletos.`,
+      type: 'danger',
+      confirmText: 'Eliminar Permanentemente',
+      cancelText: 'Cancelar'
+    };
+    this.pendingAction = () => {
       this.tableConfig.loading = true;
       this.courseTypeService.deleteCourseType(item.id).subscribe({
         next: () => this.loadData(),
@@ -161,6 +226,15 @@ export class CourseTypeListComponent implements OnInit {
           this.tableConfig.loading = false;
         }
       });
+    };
+    this.isConfirmOpen = true;
+  }
+
+  onConfirmAction() {
+    if (this.pendingAction) {
+      this.pendingAction();
     }
+    this.isConfirmOpen = false;
+    this.pendingAction = null;
   }
 }

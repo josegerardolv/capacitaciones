@@ -8,14 +8,30 @@
             </div>
 
             <div
-                class="bg-gray-100 rounded-lg p-4 flex items-center justify-center border border-gray-200 min-h-[300px]">
-                <!-- Placeholder para la imagen del Template -->
-                <div class="text-center">
-                    <app-universal-icon name="image" type="bootstrap" [size]="64"
-                        class="text-gray-300 mx-auto mb-2"></app-universal-icon>
-                    <p class="text-gray-400 text-sm">Previsualización no disponible</p>
-                    <p class="text-xs text-gray-400 mt-1">(Aquí se mostraría el documento generado)</p>
+                class="bg-gray-100 rounded-lg p-2 flex items-center justify-center border border-gray-200 min-h-[300px] w-full overflow-hidden">
+
+                <div *ngIf="isGenerating" class="flex flex-col items-center justify-center p-8">
+                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-[#8B1538] mb-4"></div>
+                    <p class="text-gray-500 font-medium">Generando vista previa del documento...</p>
                 </div>
+
+                <!-- Preview del Template si existe -->
+                <ng-container *ngIf="!isGenerating && pdfUrl; else noPdf">
+                    <iframe [src]="pdfUrl" class="w-full h-[65vh] border-0 rounded bg-gray-50 drop-shadow-md"
+                        title="Vista Previa de Template"></iframe>
+                </ng-container>
+
+                <!-- Placeholder para cuando no hay diseño -->
+                <ng-template #noPdf>
+                    <div *ngIf="!isGenerating" class="text-center p-8">
+                        <app-universal-icon name="picture_as_pdf" type="material" [size]="64"
+                            class="text-gray-300 mx-auto mb-2"></app-universal-icon>
+                        <p class="text-gray-400 text-sm">Vista previa no disponible</p>
+                        <p class="text-xs text-gray-400 mt-1">(Este formato aún no tiene un diseño visual configurado)
+                        </p>
+                    </div>
+                </ng-template>
+
             </div>
         </div>
     </div>

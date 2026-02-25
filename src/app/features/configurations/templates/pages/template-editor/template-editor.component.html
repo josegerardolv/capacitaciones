@@ -456,7 +456,7 @@
                                  class="layer-item"
                                  [class.selected]="selectedObject === obj"
                                  (click)="selectLayer(obj)">
-                                <span class="material-symbols-outlined layer-icon">{{ getElementIcon(obj.type) }}</span>
+                                <span class="material-symbols-outlined layer-icon">{{ getElementIcon(obj.type, obj.shapeVariant) }}</span>
                                 <span class="layer-name">{{ obj.elementName || 'Elemento ' + (canvasObjects.length - i) }}</span>
                                 <div class="layer-actions">
                                     <button class="btn-icon-xs" 
@@ -528,7 +528,7 @@
                         Navegación
                     </span>
                     <span *ngIf="selectedObject && !isPanMode" class="status-item">
-                        <span class="material-symbols-outlined">{{ getElementIcon(selectedObject.type) }}</span>
+                        <span class="material-symbols-outlined">{{ getElementIcon(selectedObject.type, selectedObject.shapeVariant) }}</span>
                         {{ selectedObject.elementName }}
                     </span>
                     <span *ngIf="!selectedObject && !isPanMode" class="status-item">
@@ -595,28 +595,28 @@
                                 label="X (px)"
                                 controlName="x"
                                 size="sm"
-                                (inputEvent)="onPropertyChange('x', +elementPropertiesForm.get('x')?.value)">
+                                (blur)="onPropertyChange('x', elementPropertiesForm.get('x')?.value)">
                             </app-input-enhanced>
                             <app-input-enhanced
                                 type="number"
                                 label="Y (px)"
                                 controlName="y"
                                 size="sm"
-                                (inputEvent)="onPropertyChange('y', +elementPropertiesForm.get('y')?.value)">
+                                (blur)="onPropertyChange('y', elementPropertiesForm.get('y')?.value)">
                             </app-input-enhanced>
                             <app-input-enhanced
                                 type="number"
                                 label="Ancho (px)"
                                 controlName="width"
                                 size="sm"
-                                (inputEvent)="onPropertyChange('width', +elementPropertiesForm.get('width')?.value)">
+                                (blur)="onPropertyChange('width', elementPropertiesForm.get('width')?.value)">
                             </app-input-enhanced>
                             <app-input-enhanced
                                 type="number"
                                 label="Alto (px)"
                                 controlName="height"
                                 size="sm"
-                                (inputEvent)="onPropertyChange('height', +elementPropertiesForm.get('height')?.value)">
+                                (blur)="onPropertyChange('height', elementPropertiesForm.get('height')?.value)">
                             </app-input-enhanced>
                         </div>
                         <div class="form-grid-2">
@@ -627,7 +627,7 @@
                                 size="sm"
                                 [min]="-360"
                                 [max]="360"
-                                (inputEvent)="onPropertyChange('rotation', +elementPropertiesForm.get('rotation')?.value)">
+                                (blur)="onPropertyChange('rotation', elementPropertiesForm.get('rotation')?.value)">
                             </app-input-enhanced>
                             <app-input-enhanced
                                 type="number"
@@ -636,7 +636,7 @@
                                 [min]="0"
                                 [max]="100"
                                 size="sm"
-                                (inputEvent)="onPropertyChange('opacity', +elementPropertiesForm.get('opacity')?.value)">
+                                (blur)="onPropertyChange('opacity', elementPropertiesForm.get('opacity')?.value)">
                             </app-input-enhanced>
                         </div>
                     </section>
@@ -741,14 +741,14 @@
                                 label="Interlineado"
                                 controlName="lineHeight"
                                 size="sm"
-                                (inputEvent)="onPropertyChange('lineHeight', +elementPropertiesForm.get('lineHeight')?.value)">
+                                (blur)="onPropertyChange('lineHeight', elementPropertiesForm.get('lineHeight')?.value)">
                             </app-input-enhanced>
                             <app-input-enhanced
                                 type="number"
                                 label="Espaciado"
                                 controlName="charSpacing"
                                 size="sm"
-                                (inputEvent)="onPropertyChange('charSpacing', +elementPropertiesForm.get('charSpacing')?.value)">
+                                (blur)="onPropertyChange('charSpacing', elementPropertiesForm.get('charSpacing')?.value)">
                             </app-input-enhanced>
                         </div>
                     </section>
@@ -794,14 +794,14 @@
                                 label="Grosor de borde"
                                 controlName="strokeWidth"
                                 size="sm"
-                                (inputEvent)="onPropertyChange('strokeWidth', +elementPropertiesForm.get('strokeWidth')?.value)">
+                                (blur)="onPropertyChange('strokeWidth', elementPropertiesForm.get('strokeWidth')?.value)">
                             </app-input-enhanced>
                             <app-input-enhanced *ngIf="selectedObject?.type === 'rect'"
                                 type="number"
                                 label="Radio de esquina"
                                 controlName="borderRadius"
                                 size="sm"
-                                (inputEvent)="onPropertyChange('borderRadius', +elementPropertiesForm.get('borderRadius')?.value)">
+                                (blur)="onPropertyChange('borderRadius', elementPropertiesForm.get('borderRadius')?.value)">
                             </app-input-enhanced>
                         </div>
 
@@ -956,7 +956,7 @@
                                 label="Tamaño del QR (px)"
                                 controlName="qrSize"
                                 size="sm"
-                                (inputEvent)="onPropertyChange('qrSize', +elementPropertiesForm.get('qrSize')?.value)">
+                                (blur)="onPropertyChange('qrSize', elementPropertiesForm.get('qrSize')?.value)">
                             </app-input-enhanced>
                         </div>
 

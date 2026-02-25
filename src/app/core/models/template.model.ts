@@ -53,9 +53,15 @@ export interface ImageConfig {
 // Configuración específica para formas
 export interface ShapeConfig {
   type: 'rectangle' | 'circle' | 'ellipse' | 'triangle' | 'line' | 'polygon';
+  /** Forma avanzada: rombo, estrella, pentágono, hexágono, flecha */
+  shapeVariant?: 'diamond' | 'star' | 'pentagon' | 'hexagon' | 'arrow';
   fill?: string;
   stroke?: string;
   strokeWidth?: number;
+  strokeDashArray?: 'solid' | 'dashed' | 'dotted' | 'dashdot';
+  borderRadius?: number;
+  flipX?: boolean;
+  flipY?: boolean;
 }
 
 // Configuración específica para código QR
@@ -182,6 +188,18 @@ export interface UpdateTemplateDocumentPayload {
   description?: string;
   category?: string;
   paymentConcepts?: number[];
+}
+
+export interface CanvasDesign {
+  pageConfig: PageConfig;
+  elements: CanvasElement[];
+  variables: TemplateVariable[];
+}
+
+export interface ConfigureTemplatePayload {
+  fields?: string[];
+  image?: File;
+  qr?: File;
 }
 
 export interface GeneratedCertificate {
