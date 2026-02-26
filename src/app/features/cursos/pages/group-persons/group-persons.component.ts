@@ -113,6 +113,7 @@ export class GroupPersonsComponent implements OnInit {
 
     // --- BÚSQUEDA ---
     isSearchModalOpen = false;
+    currentSearchTerm: string = '';
 
     // Breadcrumb items (se construyen en ngOnInit según params)
     breadcrumbItems: BreadcrumbItem[] = [];
@@ -205,8 +206,9 @@ export class GroupPersonsComponent implements OnInit {
                 this.allEnrollments = data.map(item => {
                     const flattened: any = {
                         ...item.person,
+                        enrollmentId: item.enrollmentId,
                         responses: item.enrollmentResponse,
-                        documents: item.documentCourses,
+                        documentCoursesEnrollments: item.documentCoursesEnrollments || [],
                         status: item.person.status || (item.isAcepted ? 'Aprobado' : 'Pendiente')
                     };
 
@@ -256,6 +258,7 @@ export class GroupPersonsComponent implements OnInit {
 
     filterData(query: string) {
         const term = query.toLowerCase().trim();
+        this.currentSearchTerm = term;
         if (!term) {
             this.filteredEnrollments = [...this.allEnrollments];
         } else {
@@ -612,7 +615,12 @@ export class GroupPersonsComponent implements OnInit {
         this.openAlert('Visualizando', 'Simulando vista de Constancia...', 'info');
     }
 
-    deletePerson(person: Person) {
+    deletePerson(person: any) {
+        if (!person.enrollmentId) {
+            this.notificationService.showError('Error', 'No se pudo identificar la inscripción a eliminar.');
+            return;
+        }
+
         this.openConfirm({
             title: 'Eliminar Persona',
             message: `¿Está seguro de que desea eliminar a ${person.name} del grupo?`,
@@ -620,7 +628,18 @@ export class GroupPersonsComponent implements OnInit {
             confirmText: 'Eliminar',
             cancelText: 'Cancelar'
         }, () => {
-            this.persons = this.persons.filter(d => d.id !== person.id);
+            this.groupsService.deleteEnrollment(person.enrollmentId).subscribe({
+                next: () => {
+                    this.notificationService.showSuccess('Eliminado', `Se ha eliminado la inscripción de ${person.name}.`);
+                    // Filtrar asincrónicamente
+                    this.allEnrollments = this.allEnrollments.filter(d => d.enrollmentId !== person.enrollmentId);
+                    this.filterData(this.currentSearchTerm || '');
+                },
+                error: (err) => {
+                    console.error('Error deleting enrollment', err);
+                    this.notificationService.showError('Error', 'Ocurrió un error al intentar eliminar la inscripción.');
+                }
+            });
         });
     }
 }

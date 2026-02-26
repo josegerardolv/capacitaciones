@@ -142,6 +142,10 @@ export class GroupsService {
         );
     }
 
+    deleteEnrollment(id: number): Observable<any> {
+        return this.http.delete<any>(`${this.apiUrl}/enrollment/${id}`);
+    }
+
     acceptEnrollment(enrollmentId: number): Observable<any> {
         return this.http.patch(`${this.apiUrl}/enrollment/${enrollmentId}`, { isAcepted: true });
     }

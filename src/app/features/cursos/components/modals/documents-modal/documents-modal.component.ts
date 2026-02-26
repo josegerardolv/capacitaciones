@@ -52,21 +52,46 @@ export class DocumentsModalComponent implements OnInit {
     }
 
     loadDocuments() {
-        if (!this.person || !this.courseTypeId) return;
+        if (!this.person) return;
 
         this.checkSioxStatus();
+
+        // 1. NUEVA FORMA: Leer desde la respuesta del JSON directamente
+        const enrollmentsDocs: any[] = (this.person as any).documentCoursesEnrollments;
+
+        if (enrollmentsDocs && enrollmentsDocs.length > 0) {
+            this.documents = enrollmentsDocs.map(dce => {
+                const docCourse = dce.documentCourse;
+                const template = docCourse?.templateDocument;
+                const payment = template?.paymentConcept;
+                const cost = payment?.umas ? Number(payment.umas) : 0;
+
+                // Mantenemos estado local (emailSent) si ya existía en pantalla
+                const existingDoc = this.documents.find(d => d.id === dce.id.toString());
+
+                return {
+                    id: dce.id.toString(), // Usamos el ID de la relación como univoco
+                    name: template?.name || 'Documento',
+                    description: template?.description || 'Sin descripción',
+                    cost: cost,
+                    isPaid: cost === 0, // Por ahora asumimos verdadero si no cuesta
+                    templateId: template?.id,
+                    emailSent: existingDoc ? existingDoc.emailSent : false,
+                    isLocked: false // O lo que defina la regla de dependencias
+                };
+            });
+            return;
+        }
+
+        // 2. FALLBACK ANTIGUO: (Si la data se carga vieja o no tiene enrollments)
+        if (!this.courseTypeId) return;
 
         this.courseTypeService.getCourseTypeById(this.courseTypeId).subscribe(config => {
             if (!config) return;
 
             const requestedIds = this.person?.requestedDocuments || [];
-
-            // 1. Verificar si los Documentos Obligatorios están pagados
-            // Usamos paidDocumentIds para un control preciso.
             const paidIds = this.person?.paidDocumentIds || [];
-
             const mandatoryDocs = config.availableDocuments.filter(d => d.isMandatory);
-            // Son obligatorios pagados si costo es 0 O si su ID está en la lista de pagados
             const areMandatoryPaid = mandatoryDocs.every(d => d.cost === 0 || paidIds.includes(d.id));
 
             this.documents = config.availableDocuments
@@ -76,19 +101,14 @@ export class DocumentsModalComponent implements OnInit {
                     if (doc.cost === 0) {
                         isPaid = true;
                     } else {
-                        // Verificar si el ID específico está en la lista de pagados
                         isPaid = paidIds.includes(doc.id);
                     }
 
-                    // LÓGICA DE BLOQUEO:
-                    // Si el doc NO es obligatorio Y los obligatorios NO están pagados -> BLOQUEADO
                     const isLocked = !doc.isMandatory && !areMandatoryPaid;
-
-                    // Preservar estado local (emailSent) de la lista existente
                     const existingDoc = this.documents.find(d => d.id === doc.id);
 
                     return {
-                        id: doc.id,
+                        id: doc.id.toString(),
                         name: doc.name,
                         description: doc.description || doc.name,
                         cost: Number(doc.cost) || 0,
@@ -185,45 +205,8 @@ export class DocumentsModalComponent implements OnInit {
     }
 
     private updateDocumentsList() {
-        if (!this.courseTypeId) return;
-
-        this.courseTypeService.getCourseTypeById(this.courseTypeId).subscribe(config => {
-            if (!config) return;
-
-            const requestedIds = this.person?.requestedDocuments || [];
-
-            // Re-calcular estatus de obligatorios al actualizar
-            const paidIds = this.person?.paidDocumentIds || [];
-            const mandatoryDocs = config.availableDocuments.filter(d => d.isMandatory);
-            const areMandatoryPaid = mandatoryDocs.every(d => d.cost === 0 || paidIds.includes(d.id));
-
-            this.documents = config.availableDocuments
-                .filter(doc => requestedIds.includes(doc.id) || doc.isMandatory)
-                .map(doc => {
-                    let isPaid = false;
-                    if (doc.cost === 0) {
-                        isPaid = true;
-                    } else {
-                        isPaid = paidIds.includes(doc.id);
-                    }
-
-                    // LÓGICA DE BLOQUEO
-                    const isLocked = !doc.isMandatory && !areMandatoryPaid;
-
-                    // Preservar estado local (emailSent) de la lista existente
-                    const existingDoc = this.documents.find(d => d.id === doc.id);
-
-                    return {
-                        id: doc.id,
-                        name: doc.name,
-                        description: doc.description || doc.name,
-                        cost: doc.cost || 0,
-                        isPaid: isPaid,
-                        templateId: doc.templateId,
-                        emailSent: existingDoc ? existingDoc.emailSent : false,
-                        isLocked: isLocked
-                    };
-                });
-        });
+        // En el futuro, si el pago de SIOX se verifica, actualizamos la vista
+        // Por ahora, simplemente recargamos la lista con la misma lógica
+        this.loadDocuments();
     }
 }
