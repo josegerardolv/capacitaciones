@@ -356,18 +356,20 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
         this.courseTypeService.getCourseTypeById(id).subscribe({
             next: (data) => {
                 if (data) {
-                    this.fillForm(data);
-                    // Cargar templates DESPUÉS de cargar datos del curso para marcar correctamente seleccionados/obligatorios
-                    this.loadTemplates(data);
+                    // 1. Detectar uso antes que nada para que los locks se apliquen correctamente en fillForm y loadTemplates
+                    const associatedCourses = (data as any).courses || (data as any).groups || [];
 
-                    // Verificar si tiene cursos asignados directamente de la respuesta del backend
-                    if ((data as any).courses && (data as any).courses.length > 0) {
+                    if (associatedCourses && associatedCourses.length > 0) {
                         this.isLockedByUsage = true;
-                        this.form.disable(); // Bloquear formulario base (Nombre, Descripción, Tipo)
+                        this.form.disable();
                     } else {
                         this.isLockedByUsage = false;
                         this.form.enable();
                     }
+
+                    // 2. Llenar formulario y templates
+                    this.fillForm(data);
+                    this.loadTemplates(data);
                 } else {
                     this.router.navigate(['/config/config-cursos']);
                 }
@@ -405,7 +407,8 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
                     });
 
                     this.selectedTemplates = this.templates.filter(t => selectedIds.includes(t.id));
-                    this.lockedTemplates = [...this.selectedTemplates]; // Bloquear los templates que ya vienen de BD
+                    // SOLO bloquear los templates si el tipo de curso está realmente EN USO
+                    this.lockedTemplates = this.isLockedByUsage ? [...this.selectedTemplates] : [];
 
                     savedDocuments.forEach((doc: any) => {
                         const tId = (doc.templateDocument && typeof doc.templateDocument === 'object')
@@ -574,10 +577,10 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
             return;
         }
 
-        // Bloqueo: No se pueden quitar campos que ya estaban guardados (requerimiento de backend)
-        // Solo se permite AGREGAR (de false a true), no QUITAR (de true a false)
-        if (field.visible && (field as any).wasSaved) {
-            return; // No hacer nada, no permitir desmarcar
+        // Bloqueo condicional: Si NO está en uso, permitir cualquier edición.
+        // Si SÍ está en uso, solo permitir AGREGAR (no desmarcar lo ya guardado).
+        if (this.isLockedByUsage && field.visible && (field as any).wasSaved) {
+            return;
         }
 
         field.visible = !field.visible;
@@ -586,11 +589,10 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
     toggleRequired(field: RegistrationFieldConfig, event: Event) {
         event.stopPropagation();
 
-        // Si el requerimiento está bloqueado, no permitir cambios
         if (this.isRequirementLocked(field)) return;
 
-        // Bloqueo: No modificar requerimiento de campos ya guardados
-        if ((field as any).wasSaved) {
+        // Bloqueo condicional: Si está en uso, no modificar requerimiento de guardados.
+        if (this.isLockedByUsage && (field as any).wasSaved) {
             return;
         }
 
@@ -601,20 +603,23 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
         let items = event.selectedItems || [];
         const selectedIds = new Set(items.map((t: any) => t.id));
 
-        // Forzar selección de los guardados
-        let forciblyAdded = false;
-        this.savedTemplateIds.forEach(id => {
-            if (!selectedIds.has(id)) {
-                const template = this.templates.find(t => t.id === id);
-                if (template) {
-                    items.push(template);
-                    selectedIds.add(id);
-                    forciblyAdded = true;
+        // Forzar selección de los guardados SOLO si el curso está en uso
+        if (this.isLockedByUsage) {
+            let forciblyAdded = false;
+            this.savedTemplateIds.forEach(id => {
+                if (!selectedIds.has(id)) {
+                    const template = this.templates.find(t => t.id === id);
+                    if (template) {
+                        items.push(template);
+                        selectedIds.add(id);
+                        forciblyAdded = true;
+                    }
                 }
-            }
-        });
+            });
+            if (forciblyAdded) items = [...items];
+        }
 
-        this.tempSelectedTemplates = forciblyAdded ? [...items] : items;
+        this.tempSelectedTemplates = items;
     }
 
     openTemplateModal() {
@@ -641,7 +646,8 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
     }
 
     removeTemplate(template: any) {
-        if (this.isSavedTemplate(template.id)) return;
+        // Bloqueo condicional: No quitar si ya estaba guardado Y el curso está en uso
+        if (this.isLockedByUsage && this.isSavedTemplate(template.id)) return;
 
         this.selectedTemplates = this.selectedTemplates.filter(t => t.id !== template.id);
         if (this.mandatoryDocuments.has(template.id)) {
@@ -666,8 +672,8 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
     toggleMandatory(templateId: number, event: Event) {
         event.stopPropagation();
 
-        if (this.savedTemplateIds.has(templateId)) {
-            // No permitir editar obligatoriedad de templates ya guardados
+        // Bloqueo condicional: Si está en uso, no permitir editar obligatoriedad de templates ya guardados
+        if (this.isLockedByUsage && this.savedTemplateIds.has(templateId)) {
             return;
         }
 
@@ -694,15 +700,14 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
             return;
         }
 
-        const formValue = this.form.value;
+        // Usar getRawValue() para obtener datos de campos deshabilitados (nombre, descripción)
+        const formValue = this.form.getRawValue();
 
         // Construir courseConfigField
         // SEGÚN INSTRUCCIÓN DE BACKEND (JSON):
-        // NO enviar 'id' (el backend reemplaza/recrea)
-        // NO enviar 'typeCourse' dentro del item
         // Solo enviar { requirementFieldPerson: number, required: boolean }
         const courseConfigField = this.registrationFields
-            .filter(f => f.visible && f.requirementId) // Solo visibles y con ID de requisito
+            .filter(f => f.visible && f.requirementId)
             .map(f => ({
                 requirementFieldPerson: f.requirementId,
                 required: f.required
@@ -718,7 +723,7 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
             description: formValue.description,
             type: formValue.type,
             courseConfigField: courseConfigField,
-            documentCourse: documentCourse // se revirtió a documentCourse porque el POST/PATCH lo pide en singular
+            documentCourse: documentCourse
         };
 
         // NOTA: Se eliminó 'availableDocuments' del payload ya que el backend lo rechaza con 400.
@@ -726,9 +731,8 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
         this.isLoading = true;
 
         if (this.isEditMode && this.courseTypeId) {
-            // Si el backend detecta cursos (isLockedByUsage = true), enviamos validatedRequired = false 
-            // porque nuestro frontend ya restringió la edición a solo agregar (append-only) y queremos que el backend permita el PATCH.
-            // Si isLockedByUsage = false, enviamos validatedRequired = true para que el backend valide por seguridad.
+            // El backend requiere validatedRequired = true para tipos de curso sin cursos asociados
+            // y false para tipos de curso con cursos asociados (para permitir el PATCH parcial).
             const validatedRequired = !this.isLockedByUsage;
 
             this.courseTypeService.updateCourseType(this.courseTypeId, config, validatedRequired).subscribe({

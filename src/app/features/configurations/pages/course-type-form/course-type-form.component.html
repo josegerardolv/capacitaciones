@@ -88,17 +88,17 @@
 
                             <!-- Left: Checkbox & Label (Controls Visibility) -->
                             <div class="flex items-center gap-3"
-                                [ngClass]="{'opacity-50': isVisibilityLocked(field) || isSavedField(field)}"
-                                (click)="!isVisibilityLocked(field) && !isSavedField(field) && toggleField(field)">
+                                [ngClass]="{'opacity-50': isVisibilityLocked(field) || (isLockedByUsage && isSavedField(field))}"
+                                (click)="!isVisibilityLocked(field) && !(isLockedByUsage && isSavedField(field)) && toggleField(field)">
 
                                 <div class="relative flex items-center justify-center h-5 w-5">
                                     <input type="checkbox" [checked]="field.visible"
-                                        [disabled]="isVisibilityLocked(field) || isSavedField(field)"
+                                        [disabled]="isVisibilityLocked(field) || (isLockedByUsage && isSavedField(field))"
                                         class="h-5 w-5 text-[#8B1538] border-gray-300 rounded focus:ring-[#8B1538] transition-all"
-                                        [ngClass]="{'cursor-pointer': !isVisibilityLocked(field) && !isSavedField(field), 'cursor-not-allowed': isVisibilityLocked(field) || isSavedField(field)}">
+                                        [ngClass]="{'cursor-pointer': !isVisibilityLocked(field) && !(isLockedByUsage && isSavedField(field)), 'cursor-not-allowed': isVisibilityLocked(field) || (isLockedByUsage && isSavedField(field))}">
                                 </div>
                                 <span class="text-sm font-medium text-gray-700 select-none"
-                                    [ngClass]="{'cursor-not-allowed': isVisibilityLocked(field) || isSavedField(field), 'cursor-pointer': !isVisibilityLocked(field) && !isSavedField(field)}"
+                                    [ngClass]="{'cursor-not-allowed': isVisibilityLocked(field) || (isLockedByUsage && isSavedField(field)), 'cursor-pointer': !isVisibilityLocked(field) && !(isLockedByUsage && isSavedField(field))}"
                                     title="{{field.label}}">
                                     {{ field.label }}
                                 </span>
@@ -113,14 +113,14 @@
 
                                 <!-- Toggle UI -->
                                 <button type="button"
-                                    (click)="field.visible && !isSavedField(field) && toggleRequired(field, $event)"
-                                    [disabled]="!field.visible || isRequirementLocked(field) || isSavedField(field)"
+                                    (click)="field.visible && !(isLockedByUsage && isSavedField(field)) && toggleRequired(field, $event)"
+                                    [disabled]="!field.visible || isRequirementLocked(field) || (isLockedByUsage && isSavedField(field))"
                                     class="relative inline-flex h-5 w-9 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
                                     [ngClass]="{
                                             'bg-[#8B1538]': field.visible && field.required, 
                                             'bg-gray-200': !field.visible || !field.required,
-                                            'opacity-50 cursor-not-allowed': !field.visible || isRequirementLocked(field) || isSavedField(field),
-                                            'cursor-pointer': field.visible && !isRequirementLocked(field) && !isSavedField(field)
+                                            'opacity-50 cursor-not-allowed': !field.visible || isRequirementLocked(field) || (isLockedByUsage && isSavedField(field)),
+                                            'cursor-pointer': field.visible && !isRequirementLocked(field) && !(isLockedByUsage && isSavedField(field))
                                         }" role="switch" [attr.aria-checked]="field.required">
 
                                     <span aria-hidden="true"
@@ -337,9 +337,9 @@
 <ng-template #mandatoryTemplate let-item>
     <div class="flex justify-center" (click)="$event.stopPropagation()">
         <input type="checkbox" [checked]="isMandatory(item.id)"
-            (change)="!isSavedTemplate(item.id) && toggleMandatory(item.id, $event)"
+            (change)="!(isLockedByUsage && isSavedTemplate(item.id)) && toggleMandatory(item.id, $event)"
             class="h-4 w-4 text-[#8B1538] border-gray-300 rounded focus:ring-[#8B1538]"
-            [ngClass]="{'cursor-pointer': !isSavedTemplate(item.id), 'cursor-not-allowed opacity-40': isSavedTemplate(item.id)}"
-            [disabled]="isSavedTemplate(item.id)">
+            [ngClass]="{'cursor-pointer': !(isLockedByUsage && isSavedTemplate(item.id)), 'cursor-not-allowed opacity-40': isLockedByUsage && isSavedTemplate(item.id)}"
+            [disabled]="isLockedByUsage && isSavedTemplate(item.id)">
     </div>
 </ng-template>
