@@ -103,6 +103,8 @@ export interface TemplateVariable {
   category?: 'participante' | 'curso' | 'institucion' | 'media' | 'otro';
   /** Descripción corta para mostrar en tooltip */
   description?: string;
+  /** Valor de ejemplo (desde enrollment) para vista previa */
+  sampleValue?: string;
 }
 
 // Configuración de página

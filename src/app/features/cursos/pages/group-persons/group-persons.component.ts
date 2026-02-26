@@ -209,7 +209,8 @@ export class GroupPersonsComponent implements OnInit {
                         enrollmentId: item.enrollmentId,
                         responses: item.enrollmentResponse,
                         documentCoursesEnrollments: item.documentCoursesEnrollments || [],
-                        status: item.person.status || (item.isAcepted ? 'Aprobado' : 'Pendiente')
+                        status: item.person.status || (item.isAcepted ? 'Aprobado' : 'Pendiente'),
+                        _rawEnrollment: item // Preservar enrollment completo para generación de PDF
                     };
 
                     // Extraer respuestas dinámicas a la raíz para que la tabla las vea
