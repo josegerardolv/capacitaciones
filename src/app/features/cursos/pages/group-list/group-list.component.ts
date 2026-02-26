@@ -236,7 +236,8 @@ export class GroupListComponent implements OnInit {
 
         const page = this.paginationConfig.currentPage;
         const limit = this.paginationConfig.pageSize;
-        const courseId = this.currentCourse ? this.currentCourse.id : undefined;
+        // Priorizar el param de la ruta antes que el objeto parseado (ya que el curso puede no encontrarse en la pag 1 de cursos)
+        const courseId = this.cursoId ? Number(this.cursoId) : (this.currentCourse ? this.currentCourse.id : undefined);
 
         this.groupsService.getGroups(page, limit, this.currentSearchTerm, courseId)
             .pipe(timeout(5000))
@@ -400,7 +401,7 @@ export class GroupListComponent implements OnInit {
                 limitStudents: Number(formValue.limitStudents),
                 groupStartDate: formValue.date,
                 endInscriptionDate: formValue.linkExpiration || undefined, // Enviar undefined (Si el usuario no selecciona fecha)
-                course: this.currentCourse ? this.currentCourse.id : undefined
+                course: this.cursoId ? Number(this.cursoId) : (this.currentCourse ? this.currentCourse.id : undefined)
             };
 
             this.groupsService.createGroup(rawPayload as any).subscribe({
@@ -430,7 +431,7 @@ export class GroupListComponent implements OnInit {
                 limitStudents: Number(formValue.limitStudents),
                 groupStartDate: formValue.date,
                 endInscriptionDate: formValue.linkExpiration || undefined, // Send undefined
-                course: this.currentCourse ? this.currentCourse.id : undefined
+                course: this.cursoId ? Number(this.cursoId) : (this.currentCourse ? this.currentCourse.id : undefined)
             };
             this.groupsService.updateGroup(this.editingGroupId, payload).subscribe({
                 next: () => {

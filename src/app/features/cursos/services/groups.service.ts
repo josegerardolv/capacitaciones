@@ -70,14 +70,14 @@ export class GroupsService {
                     });
                 }
 
-                // Mapear nombres de documentos solicitados
-                const requestedDocs = item.documentCourse?.map((dc: any) => dc.templateDocumentObject?.name || dc.templateDocument?.name || 'Documento') || [];
+                // Contador de documentos que este alumno en específico está solicitando
+                const documentCount = (item.documentCoursesEnrollments || []).length;
 
                 return {
                     ...item.person,
                     ...dynamicFields,
-                    enrollmentId: item.id,
-                    requestedDocumentsNames: requestedDocs.join(', ')
+                    enrollmentId: item.enrollmentId,
+                    documentCount: documentCount
                 };
             }))
         );
@@ -140,6 +140,10 @@ export class GroupsService {
         return this.http.get<any>(`${this.apiUrl}/group/registro/${uuid}`).pipe(
             map(response => response?.data || response)
         );
+    }
+
+    deleteEnrollment(id: number): Observable<any> {
+        return this.http.delete<any>(`${this.apiUrl}/enrollment/${id}`);
     }
 
     acceptEnrollment(enrollmentId: number): Observable<any> {

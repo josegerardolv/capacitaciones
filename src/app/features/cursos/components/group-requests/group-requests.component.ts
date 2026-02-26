@@ -135,8 +135,8 @@ export class GroupRequestsComponent implements OnChanges {
             });
         }
 
-        // Agregar columna de documentos solicitados
-        columns.push({ key: 'requestedDocumentsNames', label: 'Documentos', sortable: true, minWidth: '150px' });
+        // Agregar columna de cantidad de documentos solicitados
+        columns.push({ key: 'documentCount', label: 'Docs', sortable: true, minWidth: '80px', align: 'center' });
 
         // Columna de acciones siempre al final
         columns.push({ key: 'actions', label: 'Solicitud', align: 'center', template: this.actionsTemplate });
