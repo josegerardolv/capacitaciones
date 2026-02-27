@@ -1,9 +1,10 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, input, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ModalComponent, ModalConfig } from '../../../../../shared/components/modals/modal.component';
 import { InstitutionalButtonComponent } from '../../../../../shared/components/buttons/institutional-button.component';
 import { CourseType } from '../../../../../core/models/group.model';
+import { MailService } from '../../../services/mail.service';
 
 export interface DocumentOption {
     id: string;
@@ -24,9 +25,12 @@ export class DocumentSelectionModalComponent {
     @Input() isOpen = false;
     @Input() courseType: CourseType = 'LICENCIA'; // Lógica predeterminada
     @Input() customDocuments: any[] | null = null; // Aceptando DocumentConfig
+    @Input() group: any | null = null;
+    @Input() recipientEmail: string | null = null;
 
     // Estado interno de documentos
     documents: DocumentOption[] = [];
+    isSending= false;
 
     @Output() modalClose = new EventEmitter<void>();
     @Output() confirm = new EventEmitter<DocumentOption[]>();
@@ -37,6 +41,10 @@ export class DocumentSelectionModalComponent {
         showCloseButton: true,
         padding: true
     };
+
+    constructor(
+        private mailService: MailService,
+    ) {}
 
     ngOnChanges(): void {
         if (this.isOpen) {
@@ -99,6 +107,13 @@ export class DocumentSelectionModalComponent {
 
     onConfirm() {
         const selectedDocs = this.documents.filter(d => d.selected);
+
+        if (!this.recipientEmail) return;
+
         this.confirm.emit(selectedDocs);
+        this.modalClose.emit();
+
+        this.mailService.sendEnrollmentEmail(this.recipientEmail, this.group)
+            .subscribe();
     }
 }

@@ -54,14 +54,15 @@
                 variant: 'success', 
                 size: 'small', 
                 icon: 'check',
-                iconPosition: 'only'}" (buttonClick)="acceptRequest(item.id, item.enrollmentId)">
+                iconPosition: 'only'}"
+                (buttonClick)="acceptRequest(item.id, item.enrollmentId, item.email)">
         </app-institutional-button>
 
         <app-institutional-button [config]="{
                 variant: 'danger', 
                 size: 'small', 
                 icon: 'close',
-                iconPosition: 'only'}" (buttonClick)="rejectRequest(item.id, item.enrollmentId)">
+                iconPosition: 'only'}" (buttonClick)="rejectRequest(item.id, item.enrollmentId, item.email)">
         </app-institutional-button>
     </div>
 </ng-template>

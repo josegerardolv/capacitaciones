@@ -53,9 +53,14 @@
     </app-alert-modal>
 
     <!-- Modal de Selección de Documentos -->
-    <app-document-selection-modal [isOpen]="isDocumentsModalOpen" [courseType]="currentCourseType"
-        [customDocuments]="currentAvailableDocuments" (modalClose)="isDocumentsModalOpen = false"
-        (confirm)="onDocumentsConfirmed($event)">
+    <app-document-selection-modal
+    [isOpen]="isDocumentsModalOpen"
+    [courseType]="currentCourseType"
+    [customDocuments]="currentAvailableDocuments"
+    [group]="currentGroup"
+    [recipientEmail]="personEmail"
+    (modalClose)="isDocumentsModalOpen = false"
+    (confirm)="onDocumentsConfirmed($event)">
     </app-document-selection-modal>
 
 </div>

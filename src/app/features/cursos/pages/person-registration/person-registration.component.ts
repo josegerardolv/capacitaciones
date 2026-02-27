@@ -42,6 +42,8 @@ export class PersonRegistrationComponent implements OnInit {
     breadcrumbItems: BreadcrumbItem[] = [];
     prefilledData: any = null;
     currentPersonId: number | null = null; // ID de la persona encontrada
+    currentGroup: any = null;
+    personEmail: string | null = null;
 
     // Configuración dinámica
     fieldsConfig: Record<string, RegistrationFieldConfig> = {};
@@ -94,6 +96,7 @@ export class PersonRegistrationComponent implements OnInit {
         if (this.groupId) {
             this.groupsService.getGroupById(+this.groupId).subscribe((group: any) => {
                 if (group) {
+                    this.currentGroup = group;
                     this.currentGroupUuid = group.uuid; // Guardar UUID para el payload
                     this.currentCourseType = 'GENERICO';
 
@@ -317,6 +320,7 @@ export class PersonRegistrationComponent implements OnInit {
 
     onPersonSaved(personData: any) {
         this.tempPersonData = personData;
+        this.personEmail = personData.email || null;
 
         // Determine course type for the modal
         // We can get it from the group call in ngOnInit, but let's ensure we have it stored.
