@@ -16,13 +16,15 @@ import { InstitutionalButtonComponent } from '../../../../shared/components/butt
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { InstitutionalCardComponent } from '../../../../shared/components/institutional-card/institutional-card.component';
 import { ModalFormComponent, FormAction } from '../../../../shared/components/forms/modal-form.component';
-import { InputEnhancedComponent } from '@/app/shared/components';
+import { InputEnhancedComponent, DayPickerModule } from '@/app/shared/components';
 import { GroupRequestsComponent } from '../../components/group-requests/group-requests.component';
 import { BreadcrumbComponent } from '../../../../shared/components/breadcrumb/breadcrumb.component';
 import { BreadcrumbItem } from '../../../../shared/components/breadcrumb/breadcrumb.model';
 import { UniversalIconComponent } from '@/app/shared/components';
 import { HttpErrorResponse } from '@angular/common/http';
 import { TableFiltersComponent } from '@/app/shared/components/table-filters/table-filters.component';
+import { CompactDateInputComponent } from '@/app/shared/components/date-pickers/compact-date-input/compact-date-input.component';
+import { TimePickerComponent } from '@/app/shared/components/date-pickers/time-picker/time-picker.component';
 
 @Component({
     selector: 'app-group-list',
@@ -40,12 +42,11 @@ import { TableFiltersComponent } from '@/app/shared/components/table-filters/tab
         ModalFormComponent,
         InputEnhancedComponent,
         GroupRequestsComponent,
-        BreadcrumbComponent,
         UniversalIconComponent,
         BreadcrumbComponent,
-        UniversalIconComponent,
         AlertModalComponent,
-        TableFiltersComponent
+        TableFiltersComponent,
+        DayPickerModule
     ],
     templateUrl: './group-list.component.html'
 })
@@ -59,6 +60,15 @@ export class GroupListComponent implements OnInit {
     @ViewChild('dateTemplate', { static: true }) dateTemplate!: TemplateRef<any>; // Template para Fecha
     @ViewChild('expirationDateTemplate', { static: true }) expirationDateTemplate!: TemplateRef<any>; // Template para Expiración
     @ViewChild('timeTemplate', { static: true }) timeTemplate!: TemplateRef<any>; // Template para Hora
+
+    @ViewChild('datePicker') datePicker?: CompactDateInputComponent;
+    @ViewChild('timePicker') timePicker?: TimePickerComponent;
+    @ViewChild('limitPicker') limitPicker?: CompactDateInputComponent;
+
+    // Referencias para inputs de texto para auto-focus
+    @ViewChild('nameInput') nameInput?: any;
+    @ViewChild('locationInput') locationInput?: any;
+    @ViewChild('quantityInput') quantityInput?: any;
 
     groups: Group[] = [];
     selectedGroups: Group[] = []; // Array de grupos seleccionados (para la tabla institucional)
@@ -86,10 +96,35 @@ export class GroupListComponent implements OnInit {
 
     urlModalActions: FormAction[] = [
         {
+            label: 'Cancelar',
+            type: 'button',
+            variant: 'secondary',
+            action: () => this.isUrlDateModalOpen = false
+        },
+        {
             label: 'Continuar',
             type: 'submit',
             variant: 'primary',
             icon: 'arrow_forward'
+        }
+    ];
+
+    modalActionsPrimary: FormAction[] = [
+        {
+            label: 'Guardar',
+            type: 'submit',
+            variant: 'primary',
+            icon: 'save'
+        }
+    ];
+
+    modalActionsSecondary: FormAction[] = [
+        {
+            label: 'Cancelar',
+            type: 'button',
+            variant: 'outline',
+            icon: 'close',
+            action: () => this.closeModal()
         }
     ];
 
@@ -569,6 +604,30 @@ export class GroupListComponent implements OnInit {
         const month = (d.getUTCMonth() + 1).toString().padStart(2, '0');
         const year = d.getUTCFullYear();
         return `${day}/${month}/${year}`;
+    }
+
+    generateUrlSingle(group: Group) {
+        if (group.inscriptionURL) {
+            this.notificationService.info('Información', 'Este grupo ya tiene una URL generada.');
+            return;
+        }
+
+        if (!group.endInscriptionDate) {
+            const startDate = group.groupStartDate ? new Date(group.groupStartDate) : null;
+            if (startDate) {
+                startDate.setDate(startDate.getDate() - 1);
+                this.maxDateForUrl = startDate.toISOString().split('T')[0];
+            } else {
+                this.maxDateForUrl = '';
+            }
+
+            this.pendingUrlGroups = [group];
+            this.urlForm.reset();
+            this.isUrlDateModalOpen = true;
+            return;
+        }
+
+        this.proceedWithUrlGeneration([group]);
     }
 
     generateUrl() {

@@ -77,66 +77,86 @@
     </app-institutional-card>
 </div>
 
-<app-modal-form [isOpen]="showModal" [title]="modalMode === 'create' ? 'Nuevo Grupo' : 'Editar Grupo'"
-    (modalClose)="closeModal()" (formSubmit)="onGroupModalSubmit()" [formGroup]="groupModalForm" [isLoading]="isSaving"
-    [size]="'xl'">
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <!-- Fila 1 -->
-        <div class="col-span-1">
-            <app-input-enhanced controlName="name" [control]="groupModalForm.get('name')" label="Nombre del grupo"
-                placeholder="Ingresa el nombre del grupo" [required]="true">
-            </app-input-enhanced>
+<app-modal-form *ngIf="showModal" [isOpen]="showModal" [title]="modalMode === 'create' ? 'Nuevo Grupo' : 'Editar Grupo'"
+    (modalClose)="closeModal()" (formSubmit)="onGroupModalSubmit()" [size]="'full'"
+    [primaryActions]="modalActionsPrimary" [secondaryActions]="modalActionsSecondary" [formGroup]="groupModalForm"
+    [isLoading]="!!isSaving">
+
+    <div class="px-10 py-8">
+        <!-- Sección 1: Detalles Generales -->
+        <div class="mb-10">
+            <h3
+                class="text-xs font-bold text-institucional-primario uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
+                <span class="w-1.5 h-1.5 bg-institucional-primario rounded-full"></span>
+                Detalles Generales
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="col-span-1">
+                    <app-input-enhanced controlName="name" [control]="groupModalForm.get('name')"
+                        label="Nombre del grupo" placeholder="Ej. Matutino B" [required]="true" [floating]="true"
+                        [fullWidth]="true">
+                    </app-input-enhanced>
+                </div>
+                <div class="col-span-1">
+                    <app-input-enhanced controlName="location" [control]="groupModalForm.get('location')"
+                        label="Ubicación" placeholder="Ej. Aula 102" [required]="true" [floating]="true"
+                        [fullWidth]="true" [disabled]="!!(groupModalForm.get('name')?.invalid)">
+                    </app-input-enhanced>
+                </div>
+                <div class="col-span-1">
+                    <app-input-enhanced type="number" controlName="limitStudents"
+                        [control]="groupModalForm.get('limitStudents')" label="Cantidad máxima" placeholder="Ej. 30"
+                        [required]="true" [floating]="true" [fullWidth]="true"
+                        [disabled]="!!(groupModalForm.get('location')?.invalid)">
+                    </app-input-enhanced>
+                </div>
+            </div>
         </div>
 
-        <div class="col-span-1">
-            <app-input-enhanced controlName="location" [control]="groupModalForm.get('location')" label="Ubicación"
-                placeholder="Ingresa la ubicación" [required]="true">
-            </app-input-enhanced>
-        </div>
-
-        <!-- Fila 2 -->
-        <div class="col-span-1">
-            <app-input-enhanced type="date" controlName="date" [control]="groupModalForm.get('date')"
-                label="Fecha de inicio curso" placeholder="Selecciona la fecha" [required]="true"
-                [min]="minDateForForm">
-            </app-input-enhanced>
-        </div>
-
-        <div class="col-span-1">
-            <app-input-enhanced type="time" controlName="time" [control]="groupModalForm.get('time')"
-                label="Hora de inicio" placeholder="Selecciona la hora" [required]="true">
-            </app-input-enhanced>
-        </div>
-
-        <div class="col-span-1">
-            <app-input-enhanced type="number" controlName="limitStudents"
-                [control]="groupModalForm.get('limitStudents')" label="Cantidad máxima de personas"
-                placeholder="Ingresa la cantidad máxima de personas" [required]="true">
-            </app-input-enhanced>
-        </div>
-
-        <div class="col-span-1">
-            <app-input-enhanced type="date" controlName="linkExpiration"
-                [control]="groupModalForm.get('linkExpiration')" label="Límite de auto-registro (Opcional)"
-                placeholder="Selecciona fecha límite" [required]="false" [max]="maxDateForForm" [min]="minDateForForm"
-                [extraClasses]="'bg-blue-50 border-blue-200 text-blue-800 font-medium'">
-            </app-input-enhanced>
+        <!-- Sección 2: Programación -->
+        <div>
+            <!-- Programación y Registro - Movida hacia abajo para balancear el espacio -->
+            <h3
+                class="text-xs font-bold text-institucional-primario uppercase tracking-widest flex items-center gap-2 mb-6">
+                <span class="w-1.5 h-1.5 bg-institucional-primario rounded-full"></span>
+                Programación y Registro
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="col-span-1">
+                    <app-compact-date-input #datePicker formControlName="date" label="Fecha de inicio"
+                        placeholder="Selecciona fecha" [required]="true" [minDate]="$any(minDateForForm)"
+                        [floating]="true" [fullWidth]="true" [preferredPosition]="'top'"
+                        [disabled]="!!(groupModalForm.get('limitStudents')?.invalid)"
+                        [hasError]="!!(groupModalForm.get('date')?.invalid && groupModalForm.get('date')?.touched)">
+                    </app-compact-date-input>
+                </div>
+                <div class="col-span-1">
+                    <app-time-picker #timePicker formControlName="time" label="Hora de inicio" placeholder="00:00"
+                        [required]="true" [fullWidth]="true" [floating]="true" [preferredPosition]="'top'"
+                        [disabled]="!!(groupModalForm.get('date')?.invalid)"
+                        [hasError]="!!(groupModalForm.get('time')?.invalid && groupModalForm.get('time')?.touched)"
+                        errorMessage="Requerido">
+                    </app-time-picker>
+                </div>
+                <div class="col-span-1">
+                    <app-compact-date-input #limitPicker formControlName="linkExpiration" label="Límite de registro"
+                        placeholder="Opcional" [required]="false" [maxDate]="$any(maxDateForForm)"
+                        [minDate]="$any(minDateForForm)" [floating]="true" [fullWidth]="true"
+                        [preferredPosition]="'top'" [disabled]="!!(groupModalForm.get('time')?.invalid)"
+                        [hasError]="!!(groupModalForm.get('linkExpiration')?.invalid && groupModalForm.get('linkExpiration')?.touched)">
+                    </app-compact-date-input>
+                </div>
+            </div>
         </div>
 
         <!-- Error de Validación de Fechas -->
-        <div class="col-span-1 md:col-span-3"
+        <div class="mt-8"
             *ngIf="groupModalForm.errors?.['dateError'] && (groupModalForm.touched || groupModalForm.dirty)">
-            <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-r">
-                <div class="flex">
-                    <div class="flex-shrink-0">
-                        <app-universal-icon name="error_outline" class="h-5 w-5 text-red-400"></app-universal-icon>
-                    </div>
-                    <div class="ml-3">
-                        <p class="text-sm text-red-700 font-medium">
-                            {{ groupModalForm.errors?.['dateError'] }}
-                        </p>
-                    </div>
-                </div>
+            <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-r shadow-sm flex items-center gap-3">
+                <app-universal-icon name="error_outline" class="h-5 w-5 text-red-500"></app-universal-icon>
+                <p class="text-sm text-red-700 font-medium">
+                    {{ groupModalForm.errors?.['dateError'] }}
+                </p>
             </div>
         </div>
     </div>
@@ -158,7 +178,12 @@
             <span *ngIf="isGroupExpired(item)" class="text-[9px] font-bold uppercase">Vencido</span>
         </button>
 
-        <span *ngIf="!getGroupUrl(item)" class="text-xs text-gray-400 italic">Sin enlace</span>
+        <!-- Botón para Generar Link si NO existe -->
+        <button *ngIf="!getGroupUrl(item)" (click)="generateUrlSingle(item)"
+            class="transition-colors p-1 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-500 hover:text-institucional-primario"
+            title="Generar enlace">
+            <app-universal-icon name="add_circle" type="material" class="w-5 h-5"></app-universal-icon>
+        </button>
     </div>
 </ng-template>
 
@@ -243,8 +268,8 @@
 </app-alert-modal>
 
 <!-- Modal para pedir fecha de expiración si falta -->
-<app-modal-form [isOpen]="isUrlDateModalOpen" title="Definir Límite de Auto-registro"
-    (modalClose)="isUrlDateModalOpen = false" (formSubmit)="submitUrlGeneration()" [size]="'md'"
+<app-modal-form *ngIf="isUrlDateModalOpen" [isOpen]="isUrlDateModalOpen" title="Definir Límite de Auto-registro"
+    (modalClose)="isUrlDateModalOpen = false" (formSubmit)="submitUrlGeneration()" [size]="'lg'" [position]="'bottom'"
     [primaryActions]="urlModalActions" [formGroup]="urlForm">
     <div class="space-y-4">
         <div class="bg-blue-50 p-4 rounded-md mb-4">
@@ -260,12 +285,13 @@
             </div>
         </div>
 
-        <app-input-enhanced type="date" controlName="expirationDate" label="Fecha Límite de Registro *"
-            placeholder="Selecciona la fecha límite" [required]="true" [max]="maxDateForUrl" [min]="minDateForForm"
-            [extraClasses]="'bg-blue-50 border-blue-200 text-blue-800 font-medium'">
-        </app-input-enhanced>
+        <app-compact-date-input formControlName="expirationDate" label="Fecha Límite de Registro *"
+            placeholder="Selecciona la fecha límite" [required]="true" [maxDate]="$any(maxDateForUrl)"
+            [minDate]="$any(minDateForForm)" [floating]="true" [preferredPosition]="'top'"
+            [hasError]="!!(urlForm.get('expirationDate')?.invalid && urlForm.get('expirationDate')?.touched)">
+        </app-compact-date-input>
         <p class="text-xs text-gray-500 mt-1" *ngIf="maxDateForUrl">
-            Debe ser antes del inicio del curso ({{ formatDateForTable(maxDateForUrl) }})
+            Debe ser antes del inicio del curso ({{ formatDateForDisplay(maxDateForUrl) }})
         </p>
     </div>
 </app-modal-form>
