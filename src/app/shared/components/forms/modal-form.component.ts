@@ -23,11 +23,12 @@ export interface FormAction {
          (click)="onOverlayClick($event)">
       
       <!-- Contenedor del modal -->
-      <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden animate-modal-in"
+      <div class="bg-white rounded-2xl shadow-2xl w-full max-h-[95vh] overflow-hidden animate-modal-in flex flex-col"
            [class.max-w-sm]="size === 'sm'"
            [class.max-w-lg]="size === 'md'"
            [class.max-w-2xl]="size === 'lg'"
            [class.max-w-4xl]="size === 'xl'"
+           [class.h-[70vh]]="size === 'xl' || size === 'full'"
            [class.max-w-6xl]="size === 'full'"
            (click)="$event.stopPropagation()">
         
@@ -49,7 +50,7 @@ export interface FormAction {
         </div>
 
         <!-- Contenido scrolleable -->
-        <div class="max-h-[60vh] overflow-y-auto p-6">
+        <div class="flex-1 overflow-y-auto p-4">
           <div class="p-6">
             <form [formGroup]="formGroup" (ngSubmit)="onSubmit()">
               
@@ -166,7 +167,7 @@ export class ModalFormComponent {
 
   close(): void {
     if (this.isLoading) return;
-    
+
     this.isOpen = false;
     document.body.style.overflow = ''; // Restaurar scroll del body
     this.modalClose.emit();
@@ -184,17 +185,17 @@ export class ModalFormComponent {
     if (action.label === 'Cancelar') {
       this.close();
     }
-    
+
     if (action.action) {
       action.action();
     }
-    
+
     this.actionClick.emit(action);
   }
 
   getButtonClass(variant: string): string {
     const baseClasses = 'inline-flex items-center gap-2 px-6 py-3 font-semibold rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 focus:outline-none focus:ring-4';
-    
+
     switch (variant) {
       case 'primary':
         return `${baseClasses} bg-institucional-primario hover:bg-institucional-primario-dark text-white shadow-lg hover:shadow-xl focus:ring-institucional-secundario focus:ring-opacity-50`;
