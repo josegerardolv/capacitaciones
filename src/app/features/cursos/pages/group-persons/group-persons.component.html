@@ -135,6 +135,15 @@
         " tooltipPosition="top">
       </app-institutional-button>
 
+      <!-- Ver Información (Azul/Cyan) -->
+      <app-institutional-button [config]="{
+          variant: 'primary',
+          icon: 'visibility',
+          iconPosition: 'only',
+          title: 'Ver Información',
+        }" (buttonClick)="openInfoModal(item)" [appTooltip]="'Ver Información'" tooltipPosition="top">
+      </app-institutional-button>
+
       <!-- Eliminar (Rojo) -->
       <app-institutional-button [config]="{
           variant: 'danger',
@@ -155,9 +164,41 @@
     (modalClose)="isAlertOpen = false">
   </app-alert-modal>
 
-  <!-- Modal de Gestión de Documentos (NUEVO) -->
+  <!-- Modal de Gestión de Documentos -->
   <app-documents-modal [isOpen]="isDocumentsModalOpen" [person]="selectedPersonForDocs"
     [enrollment]="$any(selectedPersonForDocs)?._rawEnrollment || null"
     [courseTypeId]="currentGroup?.courseTypeId || null" (onClose)="closeDocumentsModal()">
   </app-documents-modal>
+
+  <!-- Modal de Información de Persona -->
+  <app-modal [isOpen]="isInfoModalOpen" [modalId]="'info-modal'" [config]="{
+      title: 'Persona Inscrita',
+      size: 'lg',
+      showHeader: true,
+      showCloseButton: true,
+      padding: true
+    }" (modalClose)="closeInfoModal()">
+    <div class="px-6 py-4" *ngIf="selectedPersonForInfo">
+      <div class="flex flex-col md:flex-row items-center md:items-start gap-8">
+
+        <!-- Icono de Perfil Pendiente/Genérico (Izquierda) -->
+        <div class="flex-shrink-0 flex items-center justify-center text-[#811B34]">
+          <span class="material-icons" style="font-size: 140px; line-height: 1;">assignment_ind</span>
+        </div>
+
+        <!-- Información (Derecha - Grid Mapeo Dinámico Completo) -->
+        <div class="flex-grow grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-6 w-full text-left">
+
+          <div *ngFor="let field of selectedPersonInfoFields">
+            <p class="font-bold text-gray-900 mb-1">{{ field.label }}:</p>
+            <p class="text-gray-700 text-sm break-words"
+              [ngClass]="{'uppercase': field.label.toLowerCase() === 'curp' || field.label.toLowerCase() === 'licencia'}">
+              {{ field.value }}
+            </p>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </app-modal>
 </div>

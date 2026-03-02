@@ -73,10 +73,18 @@ export class GroupsService {
                 // Contador de documentos que este alumno en específico está solicitando
                 const documentCount = (item.documentCoursesEnrollments || []).length;
 
+                const fullName = [item.person?.name, item.person?.paternal_lastName, item.person?.maternal_lastName]
+                    .filter(Boolean)
+                    .join(' ')
+                    .trim();
+
                 return {
                     ...item.person,
+                    name: fullName || 'Sin Nombre',
                     ...dynamicFields,
                     enrollmentId: item.enrollmentId,
+                    dateReject: item.dateReject,
+                    isAcepted: item.isAcepted,
                     documentCount: documentCount
                 };
             }))
@@ -177,11 +185,11 @@ export class GroupsService {
     }
 
     acceptEnrollment(enrollmentId: number): Observable<any> {
-        return this.http.patch(`${this.apiUrl}/enrollment/${enrollmentId}`, { isAcepted: true, dateReject: null });
+        return this.http.patch(`${this.apiUrl}/enrollment/${enrollmentId}`, { isAcepted: true });
     }
 
     rejectEnrollment(enrollmentId: number): Observable<any> {
-        return this.http.patch(`${this.apiUrl}/enrollment/${enrollmentId}`, { isAcepted: false, dateReject: new Date().toISOString() });
+        return this.http.patch(`${this.apiUrl}/enrollment/${enrollmentId}`, { dateReject: new Date().toISOString() });
     }
 
     /**

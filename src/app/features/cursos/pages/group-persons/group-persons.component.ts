@@ -23,6 +23,7 @@ import { Group } from '../../../../core/models/group.model';
 import { CourseTypeService } from '../../../../core/services/course-type.service';
 import { TableFiltersComponent } from '@/app/shared/components/table-filters/table-filters.component';
 import { DocumentsModalComponent } from '../../components/modals/documents-modal/documents-modal.component';
+import { ModalComponent } from '../../../../shared/components/modals/modal.component';
 
 // ... existing code ...
 
@@ -47,7 +48,8 @@ import { DocumentsModalComponent } from '../../components/modals/documents-modal
         UniversalIconComponent,
         LicenseSearchModalComponent,
         TableFiltersComponent,
-        DocumentsModalComponent
+        DocumentsModalComponent,
+        ModalComponent
     ],
     templateUrl: './group-persons.component.html'
 })
@@ -109,7 +111,10 @@ export class GroupPersonsComponent implements OnInit {
     filteredEnrollments: any[] = [];
     persons: any[] = []; // Los datos finales para la tabla
 
-
+    // ---> NUEVO: Modal de Información
+    isInfoModalOpen = false;
+    selectedPersonForInfo: any | null = null;
+    selectedPersonInfoFields: { label: string, value: any }[] = [];
 
     // --- BÚSQUEDA ---
     isSearchModalOpen = false;
@@ -204,8 +209,15 @@ export class GroupPersonsComponent implements OnInit {
             next: (data: any[]) => {
                 // Adaptamos la estructura: el componente de tabla espera las propiedades a nivel raíz
                 this.allEnrollments = data.map(item => {
+                    // Concatenar nombre completo para mostrar
+                    const fullName = [item.person?.name, item.person?.paternal_lastName, item.person?.maternal_lastName]
+                        .filter(Boolean)
+                        .join(' ')
+                        .trim();
+
                     const flattened: any = {
                         ...item.person,
+                        name: fullName || 'Sin Nombre',
                         enrollmentId: item.enrollmentId,
                         responses: item.enrollmentResponse,
                         documentCoursesEnrollments: item.documentCoursesEnrollments || [],
@@ -234,6 +246,19 @@ export class GroupPersonsComponent implements OnInit {
                                 }
                                 // 2. Siempre guardar por ID por si acaso
                                 flattened[`field_${rfpId}`] = resp.value;
+                            } else {
+                                // Tratar de mapear por el fieldName directamente
+                                const fName = fieldData?.fieldName || resp.courseConfigField?.fieldName;
+                                if (fName) {
+                                    const lower = fName.toLowerCase();
+                                    if (lower.includes('dirección')) flattened['address'] = resp.value;
+                                    else if (lower.includes('sexo')) flattened['sex'] = resp.value;
+                                    else if (lower.includes('telefono') || lower.includes('celular') || lower.includes('contacto')) flattened['phone'] = resp.value;
+                                    else if (lower.includes('licencia')) flattened['license'] = resp.value;
+                                    else if (lower.includes('nuc')) flattened['nuc'] = resp.value;
+                                    else if (lower.includes('correo') || lower.includes('email')) flattened['email'] = resp.value;
+                                    else flattened[fName] = resp.value;
+                                }
                             }
                         });
                     }
@@ -287,74 +312,43 @@ export class GroupPersonsComponent implements OnInit {
         // Columnas por defecto (Respaldo)
         this.tableColumns = [
             { key: 'name', label: 'Nombre Completo', template: this.nameTemplate },
-            { key: 'license', label: 'Licencia' },
             { key: 'curp', label: 'CURP' },
+            { key: 'phone', label: 'Teléfono' },
             { key: 'status', label: 'Estatus', template: this.statusTemplate, align: 'center' },
             { key: 'actions', label: 'Acciones', template: this.actionsTemplate, align: 'center' }
         ];
     }
 
     updateColumns(config: any) {
-        const dynamicColumns: TableColumn[] = [];
+        // Columnas base estrictas solicitadas por reglas de negocio
+        const dynamicColumns: TableColumn[] = [
+            { key: 'name', label: 'Nombre Completo', template: this.nameTemplate },
+            { key: 'curp', label: 'CURP' },
+            { key: 'phone', label: 'Teléfono' }
+        ];
 
-        // 1. Siempre mostrar nombre combinado
-        dynamicColumns.push({ key: 'name', label: 'Nombre Completo', template: this.nameTemplate });
-
-        // 2. Mapear campos visibles de la configuración
-        const addedFields = new Set<string>();
-
+        // Columnas dinámicas limitadas a Licencia y NUC
         if (config.courseConfigField) {
-            const idToFieldName: Record<number, string> = {
-                4: 'address', 5: 'nuc', 6: 'sex', 7: 'email',
-                8: 'phone', 9: 'license', 10: 'curp'
-            };
-            const idToLabel: Record<number, string> = {
-                4: 'Dirección', 5: 'NUC', 6: 'Sexo', 7: 'Email',
-                8: 'Teléfono', 9: 'Licencia', 10: 'CURP'
-            };
-
             config.courseConfigField.forEach((cf: any) => {
-                const fieldData = cf.requirementFieldPerson;
-                const fieldId = typeof fieldData === 'object' ? fieldData.id : fieldData;
-                const fieldName = idToFieldName[fieldId];
+                const configField = cf.requirementFieldPerson;
+                if (configField) {
+                    const label = configField.fieldName || '';
+                    const key = label.toLowerCase();
 
-                if (fieldName && fieldName !== 'name') {
-                    dynamicColumns.push({
-                        key: fieldName,
-                        label: (typeof fieldData === 'object' ? fieldData.fieldName : idToLabel[fieldId]) || fieldName
-                    });
-                    addedFields.add(fieldName);
-                }
-            });
-        } else if (config.registrationFields) {
-            // Legacy / Fallback
-            config.registrationFields.forEach((field: any) => {
-                if (field.visible && !['name', 'paternal_lastName', 'maternal_lastName'].includes(field.fieldName)) {
-                    dynamicColumns.push({
-                        key: field.fieldName,
-                        label: field.label
-                    });
-                    addedFields.add(field.fieldName);
+                    if (key.includes('licencia')) {
+                        if (!dynamicColumns.find(c => c.key === 'license')) {
+                            dynamicColumns.push({ key: 'license', label: label, sortable: true });
+                        }
+                    } else if (key.includes('nuc')) {
+                        if (!dynamicColumns.find(c => c.key === 'nuc')) {
+                            dynamicColumns.push({ key: 'nuc', label: label, sortable: true });
+                        }
+                    }
                 }
             });
         }
 
-        // 3. ASEGURAR CAMPOS BASE (Email, Teléfono, CURP) si no vienen en dinámicos
-        // Por solicitud del usuario, estos son esenciales ahora.
-        const baseEssentials = [
-            { key: 'email', label: 'Email' },
-            { key: 'phone', label: 'Teléfono' },
-            { key: 'curp', label: 'CURP' }
-        ];
-
-        baseEssentials.forEach(base => {
-            if (!addedFields.has(base.key)) {
-                dynamicColumns.push({ key: base.key, label: base.label });
-                addedFields.add(base.key);
-            }
-        });
-
-        // 4. Columnas fijas de sistema al final
+        // Columnas fijas de sistema al final
         dynamicColumns.push({ key: 'status', label: 'Estatus', template: this.statusTemplate, align: 'center' });
         dynamicColumns.push({ key: 'actions', label: 'Acciones', template: this.actionsTemplate, align: 'center' });
 
@@ -658,5 +652,57 @@ export class GroupPersonsComponent implements OnInit {
                 }
             });
         });
+    }
+
+    openInfoModal(person: any) {
+        this.selectedPersonForInfo = person;
+        this.selectedPersonInfoFields = [];
+
+        // Campos base
+        this.selectedPersonInfoFields.push({ label: 'Nombre completo', value: person.name || 'N/A' });
+        if (person.address) this.selectedPersonInfoFields.push({ label: 'Dirección', value: person.address });
+        this.selectedPersonInfoFields.push({ label: 'CURP', value: person.curp || 'N/A' });
+        this.selectedPersonInfoFields.push({ label: 'Número de contacto', value: person.phone || 'N/A' });
+        if (person.email) this.selectedPersonInfoFields.push({ label: 'Correo electrónico', value: person.email });
+        if (person.license) this.selectedPersonInfoFields.push({ label: 'Licencia', value: person.license });
+        if (person.nuc) this.selectedPersonInfoFields.push({ label: 'NUC', value: person.nuc });
+        if (person.sex) this.selectedPersonInfoFields.push({ label: 'Sexo', value: person.sex });
+
+        // Agregar campos capturados dinámicamente que faltan en el mapeo base
+        if (this.currentGroup?.course?.courseType?.courseConfigField) {
+            this.currentGroup.course.courseType.courseConfigField.forEach((cf: any) => {
+                const configField = cf.requirementFieldPerson;
+                if (configField) {
+                    const label = configField.fieldName;
+                    const fieldId = typeof configField === 'object' ? configField.id : configField;
+
+                    // Evitar duplicar campos base agregados manualmente arriba
+                    const labelLower = (label || '').toLowerCase();
+                    const isBaseField = labelLower.includes('dirección') || labelLower.includes('curp') ||
+                        labelLower.includes('telefono') || labelLower.includes('contacto') ||
+                        labelLower.includes('correo') || labelLower.includes('email') ||
+                        labelLower.includes('licencia') || labelLower.includes('nuc') ||
+                        labelLower.includes('sexo');
+
+                    if (!isBaseField && label) {
+                        let value = person[`field_${fieldId}`];
+                        if (!value && person[label]) value = person[label];
+                        if (!value && person.responses) {
+                            const r = person.responses.find((res: any) => res.courseConfigField?.requirementFieldPerson?.id === fieldId);
+                            if (r) value = r.value;
+                        }
+                        this.selectedPersonInfoFields.push({ label: label, value: value || 'N/A' });
+                    }
+                }
+            });
+        }
+
+        this.isInfoModalOpen = true;
+    }
+
+    closeInfoModal() {
+        this.isInfoModalOpen = false;
+        this.selectedPersonForInfo = null;
+        this.selectedPersonInfoFields = [];
     }
 }

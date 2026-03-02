@@ -106,39 +106,33 @@ export class GroupRequestsComponent implements OnChanges {
     }
 
     initColumns() {
-        // Columnas base
+        // Columnas base estrictas solicitadas por reglas de negocio
         const columns: TableColumn[] = [
-            { key: 'name', label: 'Nombre', sortable: true },
+            { key: 'name', label: 'Nombre Completo', sortable: true },
             { key: 'curp', label: 'CURP', sortable: true },
-            { key: 'email', label: 'Correo', sortable: true }
+            { key: 'phone', label: 'Teléfono', sortable: true }
         ];
 
-        // Columnas dinámicas de la configuración del curso
+        // Columnas dinámicas limitadas a Licencia y NUC
         if (this.group?.course?.courseType?.courseConfigField) {
             this.group.course.courseType.courseConfigField.forEach((field: any) => {
                 const configField = field.requirementFieldPerson;
                 if (configField) {
                     const label = configField.fieldName;
-                    let key = label.toLowerCase();
+                    const key = label.toLowerCase();
 
-                    // Normalizar llaves para que coincidan con el flatten de GroupsService
-                    if (key.includes('dirección')) key = 'address';
-                    else if (key.includes('sexo')) key = 'sex';
-                    else if (key.includes('telefono')) key = 'phone';
-                    else if (key.includes('licencia')) key = 'license';
-                    else if (key.includes('nuc')) key = 'nuc';
-                    else if (key.includes('correo') || key.includes('email')) key = 'email';
-
-                    // Evitar duplicados si hay campos core
-                    if (!columns.find(c => c.key === key)) {
-                        columns.push({ key: key, label: label, sortable: true });
+                    if (key.includes('licencia')) {
+                        if (!columns.find(c => c.key === 'license')) {
+                            columns.push({ key: 'license', label: label, sortable: true });
+                        }
+                    } else if (key.includes('nuc')) {
+                        if (!columns.find(c => c.key === 'nuc')) {
+                            columns.push({ key: 'nuc', label: label, sortable: true });
+                        }
                     }
                 }
             });
         }
-
-        // Agregar columna de cantidad de documentos solicitados
-        columns.push({ key: 'documentCount', label: 'Docs', sortable: true, minWidth: '80px', align: 'center' });
 
         // Columna de acciones siempre al final
         columns.push({ key: 'actions', label: 'Solicitud', align: 'center', template: this.actionsTemplate });
