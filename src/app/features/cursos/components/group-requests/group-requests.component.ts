@@ -95,7 +95,9 @@ export class GroupRequestsComponent implements OnChanges {
         if (!this.group) return;
 
         this.groupsService.getRequestsByGroupId(this.group.id).subscribe(data => {
-            this.allRequests = data;
+            // Filtrar las solicitudes que ya fueron rechazadas o aceptadas
+            // Solo queremos las pendientes: (no tienen dateReject) Y (su isAcepted no es true)
+            this.allRequests = data.filter((r: any) => !r.dateReject && r.isAcepted !== true);
             this.selectedRequests = [];
             this.initColumns(); // Re-vinculamos templates
             this.filterData('');

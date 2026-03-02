@@ -23,6 +23,7 @@ import { Router, ActivatedRoute } from '@angular/router';
 })
 export class LicenseSearchModalComponent {
     @Input() isOpen = false;
+    @Input() requireTypeC = false; // Nueva bandera para forzar búsqueda solo de Tipo C
     @Output() modalClose = new EventEmitter<void>();
     @Output() personFound = new EventEmitter<Person>();
     @Output() manualRegistration = new EventEmitter<string>(); // Emite la licencia buscada para registro manual
@@ -59,7 +60,7 @@ export class LicenseSearchModalComponent {
         if (!this.searchLicense.trim()) return;
 
         this.isSearching = true;
-        this.groupsService.searchPersonByLicense(this.searchLicense).subscribe({
+        this.groupsService.searchPersonByLicense(this.searchLicense, this.requireTypeC).subscribe({
             next: (person) => {
                 this.isSearching = false;
 

@@ -210,8 +210,8 @@ export class GroupPersonsComponent implements OnInit {
                         responses: item.enrollmentResponse,
                         documentCoursesEnrollments: item.documentCoursesEnrollments || [],
                         // Mapeo de estatus del curso (CURSANDO, APROBADO, REPROBADO)
-                        // Backend tiene un typo "stauts" según el JSON recibido
-                        status: item.stauts || item.isApproved || 'CURSANDO',
+                        // Para compatibilidad con mocks o el endpoint real
+                        status: item.status || item.isApproved || 'CURSANDO',
                         _rawEnrollment: item // Preservar enrollment completo para generación de PDF
                     };
 

@@ -37,7 +37,7 @@ export interface FormAction {
            (click)="$event.stopPropagation()">
         
         <!-- Header del modal mejorado -->
-        <div class="bg-gradient-institucional p-6 relative z-0">
+        <div class="bg-gradient-institucional rounded-t-2xl p-6 relative z-0">
           <div class="flex items-center justify-between">
             <div>
               <h3 *ngIf="title" class="text-xl font-bold text-white">{{ title }}</h3>
@@ -83,7 +83,7 @@ export interface FormAction {
         </div>
 
         <!-- Footer con acciones mejorado -->
-        <div class="flex items-center justify-between p-6 border-t border-gray-200 bg-gray-50 relative z-0">
+        <div class="flex items-center justify-between p-6 border-t border-gray-200 bg-gray-50 relative z-0 rounded-b-2xl">
           <div class="flex items-center gap-3">
             <!-- Botones secundarios -->
             <button *ngFor="let action of secondaryActions" 

@@ -152,14 +152,21 @@ export class DocumentsModalComponent implements OnInit {
       });
   }
 
-  ngOnChanges() {
-    if (this.isOpen && this.person) {
+  ngOnChanges(changes: any) {
+    if (changes.isOpen) {
+      if (this.isOpen && this.person) {
+        this.loadDocuments();
+      } else if (!this.isOpen) {
+        this.documents = []; // Limpiar para que no muestre datos anteriores
+      }
+    } else if (changes.person && this.isOpen) {
       this.loadDocuments();
     }
   }
 
   close() {
     this.isOpen = false;
+    this.documents = [];
     this.onClose.emit();
   }
 
