@@ -4,6 +4,7 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { DayPickerComponent } from './day-picker/day-picker.component';
 import { RangeDayPickerComponent } from './range-day-picker/range-day-picker.component';
 import { CompactDateInputComponent } from './compact-date-input/compact-date-input.component';
+import { TimePickerComponent } from './time-picker/time-picker.component';
 
 @NgModule({
   imports: [
@@ -11,12 +12,14 @@ import { CompactDateInputComponent } from './compact-date-input/compact-date-inp
     ReactiveFormsModule,
     DayPickerComponent,
     RangeDayPickerComponent,
-    CompactDateInputComponent
+    CompactDateInputComponent,
+    TimePickerComponent
   ],
   exports: [
     DayPickerComponent,
     RangeDayPickerComponent,
-    CompactDateInputComponent
+    CompactDateInputComponent,
+    TimePickerComponent
   ]
 })
 export class DayPickerModule { }

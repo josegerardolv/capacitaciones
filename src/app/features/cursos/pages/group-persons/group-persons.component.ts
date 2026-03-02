@@ -209,7 +209,9 @@ export class GroupPersonsComponent implements OnInit {
                         enrollmentId: item.enrollmentId,
                         responses: item.enrollmentResponse,
                         documentCoursesEnrollments: item.documentCoursesEnrollments || [],
-                        status: item.person.status || (item.isAcepted ? 'Aprobado' : 'Pendiente'),
+                        // Mapeo de estatus del curso (CURSANDO, APROBADO, REPROBADO)
+                        // Backend tiene un typo "stauts" según el JSON recibido
+                        status: item.stauts || item.isApproved || 'CURSANDO',
                         _rawEnrollment: item // Preservar enrollment completo para generación de PDF
                     };
 
@@ -452,29 +454,43 @@ export class GroupPersonsComponent implements OnInit {
 
     // LÓGICA DE NEGOCIO 
 
-    setExamResult(person: Person, result: 'Aprobado' | 'No Aprobado') {
-        if (result === 'Aprobado') {
-            this.openConfirm({
-                title: 'Aprobar Persona',
-                message: `¿Está seguro de que desea APROBAR a ${person.name}?\nEsta acción habilitará la gestión de documentos.`,
-                type: 'success',
-                confirmText: 'Sí, Aprobar',
-                cancelText: 'Cancelar'
-            }, () => {
-                person.status = 'Aprobado';
-                this.notificationService.showSuccess('Aprobado', `La persona ${person.name} ha sido aprobada exitosamente.`);
+    setExamResult(person: any, result: 'APROBADO' | 'REPROBADO') {
+        const title = result === 'APROBADO' ? 'Aprobar Persona' : 'Reprobar Persona';
+        const message = result === 'APROBADO'
+            ? `¿Está seguro de que desea APROBAR a ${person.name}?\nEsta acción habilitará la gestión de documentos.`
+            : `¿Está seguro de que desea REPROBAR a ${person.name}?`;
+        const type = result === 'APROBADO' ? 'success' : 'danger';
+        const confirmBtn = result === 'APROBADO' ? 'Sí, Aprobar' : 'Sí, Reprobar';
+
+        this.openConfirm({
+            title: title,
+            message: message,
+            type: type,
+            confirmText: confirmBtn,
+            cancelText: 'Cancelar'
+        }, () => {
+            if (!person.enrollmentId) {
+                this.notificationService.showError('Error', 'No se encontró ID de inscripción.');
+                return;
+            }
+
+            this.tableConfig.loading = true;
+            this.groupsService.updateEnrollmentStatus(person.enrollmentId, result).subscribe({
+                next: () => {
+                    person.status = result;
+                    this.notificationService.showSuccess(
+                        result === 'APROBADO' ? 'Aprobado' : 'Reprobado',
+                        `El estatus de ${person.name} ha sido actualizado a ${result}.`
+                    );
+                    this.tableConfig.loading = false;
+                },
+                error: (err) => {
+                    console.error('Error updating status', err);
+                    this.notificationService.showError('Error', 'No se pudo actualizar el estatus.');
+                    this.tableConfig.loading = false;
+                }
             });
-        } else {
-            this.openConfirm({
-                title: 'Reprobar Persona',
-                message: `¿Está seguro de que desea REPROBAR a ${person.name}?`,
-                type: 'danger',
-                confirmText: 'Sí, Reprobar',
-                cancelText: 'Cancelar'
-            }, () => {
-                person.status = 'No Aprobado';
-            });
-        }
+        });
     }
 
     requestTarjeton(person: Person) {

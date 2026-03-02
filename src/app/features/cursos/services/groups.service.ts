@@ -142,15 +142,22 @@ export class GroupsService {
         );
     }
 
-    deleteEnrollment(id: number): Observable<any> {
-        return this.http.delete<any>(`${this.apiUrl}/enrollment/${id}`);
-    }
-
     acceptEnrollment(enrollmentId: number): Observable<any> {
         return this.http.patch(`${this.apiUrl}/enrollment/${enrollmentId}`, { isAcepted: true });
     }
 
     rejectEnrollment(enrollmentId: number): Observable<any> {
         return this.http.patch(`${this.apiUrl}/enrollment/${enrollmentId}`, { isAcepted: false });
+    }
+
+    /**
+     * Actualiza el estatus del alumno en el curso (CURSANDO, REPROBANDO, APROBADO)
+     */
+    updateEnrollmentStatus(enrollmentId: number, status: 'CURSANDO' | 'REPROBADO' | 'APROBADO'): Observable<any> {
+        return this.http.patch(`${this.apiUrl}/enrollment/${enrollmentId}`, { isApproved: status });
+    }
+
+    deleteEnrollment(enrollmentId: number): Observable<any> {
+        return this.http.delete(`${this.apiUrl}/enrollment/${enrollmentId}`);
     }
 }

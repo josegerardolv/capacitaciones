@@ -51,6 +51,8 @@ export class DocumentsModalComponent implements OnInit {
   documents: DocumentRow[] = [];
   isCheckingPayment = false;
 
+  private readonly UMA_VALUE = 117.31;
+
   // Alert Config
   isAlertOpen = false;
   alertConfig: AlertConfig = {
@@ -66,9 +68,9 @@ export class DocumentsModalComponent implements OnInit {
     private notificationService: NotificationService,
     private pdfGenerator: PDFGeneratorService,
     private templateService: TemplateService,
-  ) {}
+  ) { }
 
-  ngOnInit() {}
+  ngOnInit() { }
 
   loadDocuments() {
     if (!this.person) return;
@@ -84,7 +86,8 @@ export class DocumentsModalComponent implements OnInit {
         const docCourse = dce.documentCourse;
         const template = docCourse?.templateDocument;
         const payment = template?.paymentConcept;
-        const cost = payment?.umas ? Number(payment.umas) : 0;
+        const umas = payment?.umas ? Number(payment.umas) : 0;
+        const cost = umas * this.UMA_VALUE;
 
         // Mantenemos estado local (emailSent) si ya existía en pantalla
         const existingDoc = this.documents.find(
@@ -139,7 +142,7 @@ export class DocumentsModalComponent implements OnInit {
               id: doc.id.toString(),
               name: doc.name,
               description: doc.description || doc.name,
-              cost: Number(doc.cost) || 0,
+              cost: (Number(doc.cost) || 0) * this.UMA_VALUE,
               isPaid: isPaid,
               templateId: doc.templateId,
               emailSent: existingDoc ? existingDoc.emailSent : false,
