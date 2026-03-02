@@ -107,11 +107,45 @@ export class GroupsService {
         return this.http.delete<void>(`${this.apiUrl}/group/${id}`);
     }
 
-    searchPersonByLicense(license: string): Observable<Person | null> {
-        const params = new HttpParams().set('license', license);
-        // El backend ha habilitado el acceso público a este endpoint (/persons/lookup) para consultas de ciudadanos
-        return this.http.get<Person[]>(`${this.apiUrl}/persons/lookup`, { params })
-            .pipe(map(results => (results && results.length > 0) ? results[0] : null));
+    searchPersonByLicense(license: string, includeTypeCFilter: boolean = false): Observable<Person | null> {
+        let params = new HttpParams().set('numero', license);
+
+        // Agregar filtro de tipo si es requerido (ej. público)
+        if (includeTypeCFilter) {
+            params = params.append('tipo', 'TIPO_C');
+        }
+
+        // Consulta GraphQL real al servicio de licencias a través de nuestro proxy
+        return this.http.get<any>(`${this.apiUrl}/api-licenses/license`, { params }).pipe(
+            map(response => {
+                // El server envía todo envuelto en 'data' por GraphQL
+                const data = response?.data?.licenseByNumber;
+                if (!data || !data.contribuyente) return null;
+
+                const contribuyente = data.contribuyente;
+                const person: Person = {
+                    id: 0, // Nueva persona en el contexto local (se ignorará o creará al registrar)
+                    name: contribuyente.nombre || '',
+                    paternal_lastName: contribuyente.primer_apellido || '',
+                    maternal_lastName: contribuyente.segundo_apellido || '',
+                    license: license,
+                    curp: contribuyente.curp || '',
+                    status: 'Pendiente',
+                    requestTarjeton: false
+                };
+
+                // Tratar de mapear la dirección si viene en el objeto
+                if (contribuyente.ubicacion) {
+                    const u = contribuyente.ubicacion;
+                    let fullAddress = `${u.calle || ''} ${u.numero_exterior || ''}`;
+                    if (u.numero_interior) fullAddress += ` Int. ${u.numero_interior}`;
+                    if (u.colonia) fullAddress += `, Col. ${u.colonia}`;
+                    person.address = fullAddress.trim();
+                }
+
+                return person;
+            })
+        );
     }
 
     createGroup(group: any): Observable<Group> {
@@ -143,18 +177,18 @@ export class GroupsService {
     }
 
     acceptEnrollment(enrollmentId: number): Observable<any> {
-        return this.http.patch(`${this.apiUrl}/enrollment/${enrollmentId}`, { isAcepted: true });
+        return this.http.patch(`${this.apiUrl}/enrollment/${enrollmentId}`, { isAcepted: true, dateReject: null });
     }
 
     rejectEnrollment(enrollmentId: number): Observable<any> {
-        return this.http.patch(`${this.apiUrl}/enrollment/${enrollmentId}`, { isAcepted: false });
+        return this.http.patch(`${this.apiUrl}/enrollment/${enrollmentId}`, { isAcepted: false, dateReject: new Date().toISOString() });
     }
 
     /**
-     * Actualiza el estatus del alumno en el curso (CURSANDO, REPROBANDO, APROBADO)
+     * Actualiza el estatus del alumno en el curso (CURSANDO, REPROBADO, APROBADO)
      */
-    updateEnrollmentStatus(enrollmentId: number, status: 'CURSANDO' | 'REPROBADO' | 'APROBADO'): Observable<any> {
-        return this.http.patch(`${this.apiUrl}/enrollment/${enrollmentId}`, { isApproved: status });
+    updateEnrollmentStatus(enrollmentId: number, isApproved: 'CURSANDO' | 'REPROBADO' | 'APROBADO'): Observable<any> {
+        return this.http.patch(`${this.apiUrl}/enrollment/${enrollmentId}`, { isApproved: isApproved });
     }
 
     deleteEnrollment(enrollmentId: number): Observable<any> {

@@ -96,7 +96,7 @@
     </app-institutional-card>
 
     <!-- Modal de Búsqueda de Licencia (Flujo Previo) -->
-    <app-license-search-modal [isOpen]="isSearchModalOpen" (modalClose)="isSearchModalOpen = false"
+    <app-license-search-modal [isOpen]="isSearchModalOpen" [requireTypeC]="true" (modalClose)="isSearchModalOpen = false"
         (personFound)="onPersonFound($event)" (manualRegistration)="onManualRegistration($event)">
     </app-license-search-modal>
 
