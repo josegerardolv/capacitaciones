@@ -50,6 +50,7 @@ export class PublicRegistrationComponent implements OnInit {
     isDocumentsModalOpen = false;
     isSearchModalOpen = false; // Nuevo estado para el modal de búsqueda
     showForm = false; // Nuevo estado para controlar cuándo mostrar el formulario
+    isFull = false; // Estado para saber si el cupo está lleno
     tempPersonData: any = null; // Renamed from tempDriverData
     currentCourseType: CourseType = 'LICENCIA'; // Fallback
     prefilledData: any = null; // Datos precargados de la búsqueda
@@ -114,6 +115,13 @@ export class PublicRegistrationComponent implements OnInit {
                     slotsAvailable: group.availablePlaces !== undefined ? group.availablePlaces : ((group.limitStudents || 0) - (group.requests || 0)),
                     deadline: this.calculateDeadline(group)
                 };
+
+                if (this.groupInfo.slotsAvailable <= 0) {
+                    this.isFull = true;
+                    this.showForm = false;
+                    this.isSearchModalOpen = false;
+                    return; // Detenemos la renderización de formularios o modales extras
+                }
 
                 // Determinar tipo de curso para campos dinámicos
                 // 1. Priorizar configuración RICH (Ya poblada en el grupo o campos directos del UUID)

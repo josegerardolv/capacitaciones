@@ -17,6 +17,7 @@ import { ModalComponent } from '../../../../shared/components/modals/modal.compo
 import { GroupsService } from '../../services/groups.service';
 import { TableFiltersComponent } from '@/app/shared/components/table-filters/table-filters.component';
 import { MailService } from '../../services/mail.service';
+import { NotificationService } from '../../../../core/services/notification.service';
 
 @Component({
     selector: 'app-group-requests',
@@ -44,6 +45,7 @@ export class GroupRequestsComponent implements OnChanges {
     filteredRequests: Person[] = [];
     requests: Person[] = [];
     selectedRequests: Person[] = [];
+    acceptedCount: number = 0;
 
 
 
@@ -81,7 +83,8 @@ export class GroupRequestsComponent implements OnChanges {
     constructor(
         private fb: FormBuilder,
         private groupsService: GroupsService,
-        private mailService: MailService
+        private mailService: MailService,
+        private notificationService: NotificationService
     ) {
         this.dummyFormGroup = this.fb.group({});
     }
@@ -96,15 +99,33 @@ export class GroupRequestsComponent implements OnChanges {
         this.tableConfig.loading = true;
         if (!this.group) return;
 
-        this.groupsService.getRequestsByGroupId(this.group.id).subscribe(data => {
-            // Filtrar las solicitudes que ya fueron rechazadas o aceptadas
-            // Solo queremos las pendientes: (no tienen dateReject) Y (su isAcepted no es true)
-            this.allRequests = data.filter((r: any) => !r.dateReject && r.isAcepted !== true);
-            this.selectedRequests = [];
-            this.initColumns(); // Re-vinculamos templates
-            this.filterData('');
-            this.tableConfig.loading = false;
+        forkJoin({
+            pending: this.groupsService.getRequestsByGroupId(this.group.id),
+            accepted: this.groupsService.getEnrollmentsByGroupId(this.group.id, true)
+        }).subscribe({
+            next: (results) => {
+                // Solicitudes pendientes o rechazadas
+                const pendingData = results.pending;
+                this.allRequests = pendingData.filter((r: any) => !r.dateReject && r.isAcepted !== true);
+
+                // Calculamos ocupación real (estrictamente aceptados)
+                this.acceptedCount = results.accepted.length;
+
+                this.selectedRequests = [];
+                this.initColumns(); // Re-vinculamos templates
+                this.filterData('');
+                this.tableConfig.loading = false;
+            },
+            error: (err) => {
+                console.error('Error loading group requests', err);
+                this.tableConfig.loading = false;
+            }
         });
+    }
+
+    get isGroupFull(): boolean {
+        if (!this.group || !this.group.limitStudents) return false;
+        return this.acceptedCount >= this.group.limitStudents;
     }
 
     initColumns() {
@@ -186,6 +207,7 @@ export class GroupRequestsComponent implements OnChanges {
             this.groupsService.acceptEnrollment(enrollmentId).subscribe({
                 next: () => {
                     this.allRequests = this.allRequests.filter(r => r.enrollmentId !== enrollmentId);
+                    this.acceptedCount++; // Incrementar el contador local
                     this.filterData('');
                     this.clearSelection();
 
