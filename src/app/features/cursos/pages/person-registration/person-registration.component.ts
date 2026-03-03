@@ -17,6 +17,7 @@ import { Person } from '../../../../core/models/person.model';
 import { CourseType } from '../../../../core/models/group.model';
 import { CourseTypeService } from '../../../../core/services/course-type.service';
 import { CourseTypeConfig, DocumentConfig, RegistrationFieldConfig } from '../../../../core/models/course-type-config.model';
+import { MailService } from '../../services/mail.service';
 
 @Component({
     selector: 'app-person-registration',
@@ -42,6 +43,8 @@ export class PersonRegistrationComponent implements OnInit {
     breadcrumbItems: BreadcrumbItem[] = [];
     prefilledData: any = null;
     currentPersonId: number | null = null; // ID de la persona encontrada
+    currentGroup: any = null;
+    personEmail: string | null = null;
 
     // Configuración dinámica
     fieldsConfig: Record<string, RegistrationFieldConfig> = {};
@@ -63,8 +66,10 @@ export class PersonRegistrationComponent implements OnInit {
         private route: ActivatedRoute,
         private notificationService: NotificationService,
         private groupsService: GroupsService,
-        private courseTypeService: CourseTypeService
+        private courseTypeService: CourseTypeService,
+        private mailService: MailService
     ) { }
+
 
     ngOnInit(): void {
         let route = this.route;
@@ -94,6 +99,7 @@ export class PersonRegistrationComponent implements OnInit {
         if (this.groupId) {
             this.groupsService.getGroupById(+this.groupId).subscribe((group: any) => {
                 if (group) {
+                    this.currentGroup = group;
                     this.currentGroupUuid = group.uuid; // Guardar UUID para el payload
                     this.currentCourseType = 'GENERICO';
 
@@ -317,6 +323,7 @@ export class PersonRegistrationComponent implements OnInit {
 
     onPersonSaved(personData: any) {
         this.tempPersonData = personData;
+        this.personEmail = personData.email || null;
 
         // Determine course type for the modal
         // We can get it from the group call in ngOnInit, but let's ensure we have it stored.
@@ -455,8 +462,22 @@ export class PersonRegistrationComponent implements OnInit {
     }
 
     sendEmail() {
-        this.notificationService.showSuccess('Correo enviado', 'Se ha enviado la orden de pago al conductor.');
-        this.closeAndRedirect();
+        if (!this.personEmail) {
+            this.notificationService.showError('Error', 'No se detectó un correo electrónico válido para enviar la orden de pago.');
+            return;
+        }
+
+        this.notificationService.showInfo('Enviando', 'Enviando correo...');
+        this.mailService.sendEnrollmentEmail(this.personEmail, this.currentGroup).subscribe({
+            next: () => {
+                this.notificationService.showSuccess('Correo enviado', 'Se ha enviado la orden de pago al conductor.');
+                this.closeAndRedirect();
+            },
+            error: (err: any) => {
+                console.error('Error sending email', err);
+                this.notificationService.showError('Error', 'Hubo un problema al enviar el correo.');
+            }
+        });
     }
 
     closeAndRedirect() {
