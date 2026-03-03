@@ -4,7 +4,6 @@ import { FormsModule } from '@angular/forms';
 import { ModalComponent, ModalConfig } from '../../../../../shared/components/modals/modal.component';
 import { InstitutionalButtonComponent } from '../../../../../shared/components/buttons/institutional-button.component';
 import { CourseType } from '../../../../../core/models/group.model';
-import { MailService } from '../../../services/mail.service';
 
 export interface DocumentOption {
     id: string;
@@ -43,7 +42,6 @@ export class DocumentSelectionModalComponent {
     };
 
     constructor(
-        private mailService: MailService,
     ) { }
 
     ngOnChanges(): void {
@@ -110,9 +108,5 @@ export class DocumentSelectionModalComponent {
 
         this.confirm.emit(selectedDocs);
         this.modalClose.emit();
-
-        if (this.recipientEmail) {
-            this.mailService.sendEnrollmentEmail(this.recipientEmail, this.group).subscribe();
-        }
     }
 }
