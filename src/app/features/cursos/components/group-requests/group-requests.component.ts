@@ -189,7 +189,7 @@ export class GroupRequestsComponent implements OnChanges {
                     this.filterData('');
                     this.clearSelection();
 
-                    if (email){
+                    if (email) {
                         this.mailService.sendAcceptanceEmail(email, this.group).subscribe();
                     }
                 },
@@ -217,7 +217,7 @@ export class GroupRequestsComponent implements OnChanges {
                     this.filterData('');
                     this.clearSelection();
 
-                    if (email){
+                    if (email) {
                         this.mailService.sendRejectionEmail(email, this.group).subscribe();
                     }
                 },
@@ -252,6 +252,18 @@ export class GroupRequestsComponent implements OnChanges {
                 next: () => {
                     // Remover todos los procesados de la lista local usando enrollmentId
                     const processedEnrollmentIds = requestsToProcess.map(r => r.enrollmentId);
+
+                    // Novedad: Enviar correos a los procesados
+                    requestsToProcess.forEach(r => {
+                        if (r.email) {
+                            if (isAccept) {
+                                this.mailService.sendAcceptanceEmail(r.email, this.group).subscribe();
+                            } else {
+                                this.mailService.sendRejectionEmail(r.email, this.group).subscribe();
+                            }
+                        }
+                    });
+
                     this.allRequests = this.allRequests.filter(r => !processedEnrollmentIds.includes(r.enrollmentId));
                     this.filterData('');
                     this.clearSelection();

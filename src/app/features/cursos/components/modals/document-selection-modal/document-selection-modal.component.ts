@@ -30,7 +30,7 @@ export class DocumentSelectionModalComponent {
 
     // Estado interno de documentos
     documents: DocumentOption[] = [];
-    isSending= false;
+    isSending = false;
 
     @Output() modalClose = new EventEmitter<void>();
     @Output() confirm = new EventEmitter<DocumentOption[]>();
@@ -44,7 +44,7 @@ export class DocumentSelectionModalComponent {
 
     constructor(
         private mailService: MailService,
-    ) {}
+    ) { }
 
     ngOnChanges(): void {
         if (this.isOpen) {
@@ -108,12 +108,11 @@ export class DocumentSelectionModalComponent {
     onConfirm() {
         const selectedDocs = this.documents.filter(d => d.selected);
 
-        if (!this.recipientEmail) return;
-
         this.confirm.emit(selectedDocs);
         this.modalClose.emit();
 
-        this.mailService.sendEnrollmentEmail(this.recipientEmail, this.group)
-            .subscribe();
+        if (this.recipientEmail) {
+            this.mailService.sendEnrollmentEmail(this.recipientEmail, this.group).subscribe();
+        }
     }
 }
