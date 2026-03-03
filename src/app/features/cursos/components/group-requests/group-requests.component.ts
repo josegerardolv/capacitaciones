@@ -16,6 +16,7 @@ import { ConfirmationModalComponent, ConfirmationConfig } from '../../../../shar
 import { ModalComponent } from '../../../../shared/components/modals/modal.component';
 import { GroupsService } from '../../services/groups.service';
 import { TableFiltersComponent } from '@/app/shared/components/table-filters/table-filters.component';
+import { MailService } from '../../services/mail.service';
 
 @Component({
     selector: 'app-group-requests',
@@ -79,7 +80,8 @@ export class GroupRequestsComponent implements OnChanges {
 
     constructor(
         private fb: FormBuilder,
-        private groupsService: GroupsService
+        private groupsService: GroupsService,
+        private mailService: MailService
     ) {
         this.dummyFormGroup = this.fb.group({});
     }
@@ -168,7 +170,7 @@ export class GroupRequestsComponent implements OnChanges {
         this.pendingConfirmAction = null;
     }
 
-    acceptRequest(personId: number, enrollmentId?: number) {
+    acceptRequest(personId: number, enrollmentId?: number, email?: string) {
         if (!enrollmentId) {
             console.error('No enrollment ID provided');
             return;
@@ -186,13 +188,17 @@ export class GroupRequestsComponent implements OnChanges {
                     this.allRequests = this.allRequests.filter(r => r.enrollmentId !== enrollmentId);
                     this.filterData('');
                     this.clearSelection();
+
+                    if (email){
+                        this.mailService.sendAcceptanceEmail(email, this.group).subscribe();
+                    }
                 },
                 error: (err) => console.error('Error accepting enrollment', err)
             });
         });
     }
 
-    rejectRequest(personId: number, enrollmentId?: number) {
+    rejectRequest(personId: number, enrollmentId?: number, email?: string) {
         if (!enrollmentId) {
             console.error('No enrollment ID provided');
             return;
@@ -210,6 +216,10 @@ export class GroupRequestsComponent implements OnChanges {
                     this.allRequests = this.allRequests.filter(r => r.enrollmentId !== enrollmentId);
                     this.filterData('');
                     this.clearSelection();
+
+                    if (email){
+                        this.mailService.sendRejectionEmail(email, this.group).subscribe();
+                    }
                 },
                 error: (err) => console.error('Error rejecting enrollment', err)
             });
