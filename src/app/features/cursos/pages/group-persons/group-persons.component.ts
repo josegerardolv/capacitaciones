@@ -207,6 +207,12 @@ export class GroupPersonsComponent implements OnInit {
     loadPersons() {
         if (!this.currentGroupId) return;
         this.tableConfig.loading = true;
+        this.allEnrollments = [];
+        this.filteredEnrollments = [];
+        this.persons = [];
+        this.acceptedCount = 0;
+        this.isGroupFull = false;
+
         this.groupsService.getEnrollmentsByGroupId(+this.currentGroupId).subscribe({
             next: (data: any[]) => {
                 // Adaptamos la estructura: el componente de tabla espera las propiedades a nivel raíz

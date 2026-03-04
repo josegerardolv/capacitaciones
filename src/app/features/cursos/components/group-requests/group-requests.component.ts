@@ -97,19 +97,23 @@ export class GroupRequestsComponent implements OnChanges {
 
     loadGroupRequests() {
         this.tableConfig.loading = true;
+        this.allRequests = [];
+        this.filteredRequests = [];
+        this.requests = [];
+        this.selectedRequests = [];
+        this.acceptedCount = 0;
+
         if (!this.group) return;
 
-        forkJoin({
-            pending: this.groupsService.getRequestsByGroupId(this.group.id),
-            accepted: this.groupsService.getEnrollmentsByGroupId(this.group.id, true)
-        }).subscribe({
-            next: (results) => {
-                // Solicitudes pendientes o rechazadas
-                const pendingData = results.pending;
-                this.allRequests = pendingData.filter((r: any) => !r.dateReject && r.isAcepted !== true);
+        // NOTA: Se ha eliminado la consulta doble ineficiente (N+1). 
+        // Ahora el conteo de ocupación se lee directamente de la propiedad `acceptedCount` del grupo,
+        // la cual debe ser proporcionada por el backend en el endpoint `/group/search` o `/group/{id}`.
+        this.acceptedCount = this.group.acceptedCount || 0;
 
-                // Calculamos ocupación real (estrictamente aceptados)
-                this.acceptedCount = results.accepted.length;
+        this.groupsService.getRequestsByGroupId(this.group.id).subscribe({
+            next: (pendingData) => {
+                // Solicitudes pendientes o rechazadas
+                this.allRequests = pendingData.filter((r: any) => !r.dateReject && r.isAcepted !== true);
 
                 this.selectedRequests = [];
                 this.initColumns(); // Re-vinculamos templates
