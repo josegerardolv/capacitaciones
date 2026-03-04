@@ -57,6 +57,23 @@
                     </div>
                 </div>
 
+                <!-- ESTADO: CUPO AGOTADO -->
+                <div *ngIf="isFull" class="bg-red-50 border-l-4 border-red-500 p-4 mb-6">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <i class="material-icons text-red-500">warning</i>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-red-700 font-bold">
+                                Cupo Agotado
+                            </p>
+                            <p class="text-sm text-red-600">
+                                El grupo ya ha alcanzado su límite de aforo disponible.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- ESTADO: REGISTRO EXITOSO -->
                 <div *ngIf="registrationSuccess" class="py-12 text-center animate-in fade-in duration-500">
                     <div class="mb-6 flex justify-center">
@@ -80,14 +97,15 @@
                     </div>
                 </div>
 
-                <!-- Mostramos el formulario solo si showForm es true Y no ha expirado Y no ha terminado el registro -->
-                <app-person-form *ngIf="showForm && !isExpired && !registrationSuccess"
+                <!-- Mostramos el formulario solo si showForm es true Y no ha expirado Y no ha terminado el registro Y no está lleno -->
+                <app-person-form *ngIf="showForm && !isExpired && !isFull && !registrationSuccess"
                     [submitLabel]="'Solicitar registro'" [fieldsConfig]="fieldsConfig" [initialData]="prefilledData"
                     [showCancel]="false" (saved)="onPersonRegistered($event)">
                 </app-person-form>
 
                 <!-- Mensaje de carga o estado inicial si no hay form ni modal -->
-                <div *ngIf="!showForm && !isSearchModalOpen" class="text-center text-gray-500 py-8">
+                <div *ngIf="!showForm && !isSearchModalOpen && !isFull && !registrationSuccess && !isExpired"
+                    class="text-center text-gray-500 py-8">
                     <p>Iniciando registro, favor de esperar...</p>
                 </div>
             </div>
@@ -96,8 +114,9 @@
     </app-institutional-card>
 
     <!-- Modal de Búsqueda de Licencia (Flujo Previo) -->
-    <app-license-search-modal [isOpen]="isSearchModalOpen" [requireTypeC]="true" (modalClose)="isSearchModalOpen = false"
-        (personFound)="onPersonFound($event)" (manualRegistration)="onManualRegistration($event)">
+    <app-license-search-modal [isOpen]="isSearchModalOpen" [requireTypeC]="true" [allowClose]="false"
+        (modalClose)="isSearchModalOpen = false" (personFound)="onPersonFound($event)"
+        (manualRegistration)="onManualRegistration($event)">
     </app-license-search-modal>
 
 
