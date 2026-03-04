@@ -17,6 +17,7 @@ import { ModalComponent } from '../../../../shared/components/modals/modal.compo
 import { GroupsService } from '../../services/groups.service';
 import { TableFiltersComponent } from '@/app/shared/components/table-filters/table-filters.component';
 import { MailService } from '../../services/mail.service';
+import { NotificationService } from '../../../../core/services/notification.service';
 
 @Component({
     selector: 'app-group-requests',
@@ -44,6 +45,7 @@ export class GroupRequestsComponent implements OnChanges {
     filteredRequests: Person[] = [];
     requests: Person[] = [];
     selectedRequests: Person[] = [];
+    acceptedCount: number = 0;
 
 
 
@@ -81,7 +83,8 @@ export class GroupRequestsComponent implements OnChanges {
     constructor(
         private fb: FormBuilder,
         private groupsService: GroupsService,
-        private mailService: MailService
+        private mailService: MailService,
+        private notificationService: NotificationService
     ) {
         this.dummyFormGroup = this.fb.group({});
     }
@@ -94,17 +97,39 @@ export class GroupRequestsComponent implements OnChanges {
 
     loadGroupRequests() {
         this.tableConfig.loading = true;
+        this.allRequests = [];
+        this.filteredRequests = [];
+        this.requests = [];
+        this.selectedRequests = [];
+        this.acceptedCount = 0;
+
         if (!this.group) return;
 
-        this.groupsService.getRequestsByGroupId(this.group.id).subscribe(data => {
-            // Filtrar las solicitudes que ya fueron rechazadas o aceptadas
-            // Solo queremos las pendientes: (no tienen dateReject) Y (su isAcepted no es true)
-            this.allRequests = data.filter((r: any) => !r.dateReject && r.isAcepted !== true);
-            this.selectedRequests = [];
-            this.initColumns(); // Re-vinculamos templates
-            this.filterData('');
-            this.tableConfig.loading = false;
+        // NOTA: Se ha eliminado la consulta doble ineficiente (N+1). 
+        // Ahora el conteo de ocupación se lee directamente de la propiedad `acceptedCount` del grupo,
+        // la cual debe ser proporcionada por el backend en el endpoint `/group/search` o `/group/{id}`.
+        this.acceptedCount = this.group.acceptedCount || 0;
+
+        this.groupsService.getRequestsByGroupId(this.group.id).subscribe({
+            next: (pendingData) => {
+                // Solicitudes pendientes o rechazadas
+                this.allRequests = pendingData.filter((r: any) => !r.dateReject && r.isAcepted !== true);
+
+                this.selectedRequests = [];
+                this.initColumns(); // Re-vinculamos templates
+                this.filterData('');
+                this.tableConfig.loading = false;
+            },
+            error: (err) => {
+                console.error('Error loading group requests', err);
+                this.tableConfig.loading = false;
+            }
         });
+    }
+
+    get isGroupFull(): boolean {
+        if (!this.group || !this.group.limitStudents) return false;
+        return this.acceptedCount >= this.group.limitStudents;
     }
 
     initColumns() {
@@ -186,6 +211,7 @@ export class GroupRequestsComponent implements OnChanges {
             this.groupsService.acceptEnrollment(enrollmentId).subscribe({
                 next: () => {
                     this.allRequests = this.allRequests.filter(r => r.enrollmentId !== enrollmentId);
+                    this.acceptedCount++; // Incrementar el contador local
                     this.filterData('');
                     this.clearSelection();
 

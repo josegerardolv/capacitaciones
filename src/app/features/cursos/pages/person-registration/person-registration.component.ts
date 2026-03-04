@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule, ActivatedRoute } from '@angular/router';
+import { forkJoin } from 'rxjs';
 import { PersonFormComponent } from '../../components/person-form/person-form.component';
 import { AlertModalComponent, AlertConfig } from '../../../../shared/components/modals/alert-modal.component';
 import { DocumentSelectionModalComponent, DocumentOption } from '../../components/modals/document-selection-modal/document-selection-modal.component';
@@ -45,6 +46,8 @@ export class PersonRegistrationComponent implements OnInit {
     currentPersonId: number | null = null; // ID de la persona encontrada
     currentGroup: any = null;
     personEmail: string | null = null;
+    isGroupFull: boolean = false;
+    acceptedCount: number = 0;
 
     // Configuración dinámica
     fieldsConfig: Record<string, RegistrationFieldConfig> = {};
@@ -97,11 +100,24 @@ export class PersonRegistrationComponent implements OnInit {
         });
 
         if (this.groupId) {
-            this.groupsService.getGroupById(+this.groupId).subscribe((group: any) => {
+            forkJoin({
+                group: this.groupsService.getGroupById(+this.groupId),
+                accepted: this.groupsService.getEnrollmentsByGroupId(+this.groupId, true)
+            }).subscribe(({ group, accepted }: any) => {
                 if (group) {
                     this.currentGroup = group;
                     this.currentGroupUuid = group.uuid; // Guardar UUID para el payload
                     this.currentCourseType = 'GENERICO';
+
+                    // Verificación de Ocupación
+                    this.acceptedCount = accepted.length;
+                    this.isGroupFull = this.acceptedCount >= group.limitStudents;
+
+                    if (this.isGroupFull) {
+                        this.showForm = false;
+                        this.isSearchModalOpen = false;
+                        return; // Detenemos la secuencia
+                    }
 
                     // 1. INTENTAR USAR CONFIGURACIÓN YA POBLADA (RICH)
                     // Si el grupo ya trae el courseConfigField con relaciones, lo usamos de inmediato.
@@ -322,6 +338,11 @@ export class PersonRegistrationComponent implements OnInit {
     currentCourseType: CourseType = 'LICENCIA'; // Default
 
     onPersonSaved(personData: any) {
+        if (this.isGroupFull) {
+            this.notificationService.showError('Cupo Agotado', 'El grupo está lleno. No se pueden realizar más inscripciones.');
+            return;
+        }
+
         this.tempPersonData = personData;
         this.personEmail = personData.email || null;
 

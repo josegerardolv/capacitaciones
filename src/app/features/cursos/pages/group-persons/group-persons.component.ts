@@ -61,6 +61,8 @@ export class GroupPersonsComponent implements OnInit {
     currentGroup: Group | null = null; // Almacenar detalles completos del grupo
     courseLabel: string = '';
     groupLabel: string = '';
+    isGroupFull: boolean = false;
+    acceptedCount: number = 0;
 
     // Referencias a Templates del HTML
     @ViewChild('nameTemplate', { static: true }) nameTemplate!: TemplateRef<any>;
@@ -205,6 +207,12 @@ export class GroupPersonsComponent implements OnInit {
     loadPersons() {
         if (!this.currentGroupId) return;
         this.tableConfig.loading = true;
+        this.allEnrollments = [];
+        this.filteredEnrollments = [];
+        this.persons = [];
+        this.acceptedCount = 0;
+        this.isGroupFull = false;
+
         this.groupsService.getEnrollmentsByGroupId(+this.currentGroupId).subscribe({
             next: (data: any[]) => {
                 // Adaptamos la estructura: el componente de tabla espera las propiedades a nivel raíz
@@ -266,6 +274,13 @@ export class GroupPersonsComponent implements OnInit {
                     return flattened;
                 });
                 this.filterData('');
+
+                // Calcular estado de ocupación global
+                this.acceptedCount = this.allEnrollments.length;
+                if (this.currentGroup && this.currentGroup.limitStudents) {
+                    this.isGroupFull = this.acceptedCount >= this.currentGroup.limitStudents;
+                }
+
                 this.tableConfig.loading = false;
             },
             error: (err) => {
