@@ -275,8 +275,11 @@ export class GroupPersonsComponent implements OnInit {
                 });
                 this.filterData('');
 
-                // Calcular estado de ocupación global
-                this.acceptedCount = this.allEnrollments.length;
+                // Calcular estado de ocupación global (Priorizar conteo total del server)
+                this.acceptedCount = (this.currentGroup && this.currentGroup.acceptedCount !== undefined)
+                    ? this.currentGroup.acceptedCount
+                    : this.allEnrollments.length;
+
                 if (this.currentGroup && this.currentGroup.limitStudents) {
                     this.isGroupFull = this.acceptedCount >= this.currentGroup.limitStudents;
                 }
@@ -639,6 +642,41 @@ export class GroupPersonsComponent implements OnInit {
         }
 
         this.openAlert('Visualizando', 'Simulando vista de Constancia...', 'info');
+    }
+
+    cancelPerson(person: any) {
+        if (!person.enrollmentId) {
+            this.notificationService.showError('Error', 'No se pudo identificar la inscripción a cancelar.');
+            return;
+        }
+
+        this.openConfirm({
+            title: 'Cancelar Inscripción',
+            message: `Esta acción dará de baja a ${person.name} y liberará 1 lugar del cupo del grupo.\n¿Desea continuar?`,
+            type: 'danger',
+            confirmText: 'Cancelar Inscripción',
+            cancelText: 'Volver'
+        }, () => {
+            this.groupsService.cancelEnrollment(person.enrollmentId).subscribe({
+                next: () => {
+                    this.notificationService.showSuccess('Cancelado', `Se ha dado de baja la inscripción de ${person.name}.`);
+                    // Filtrar de la tabla local
+                    this.allEnrollments = this.allEnrollments.filter(d => d.enrollmentId !== person.enrollmentId);
+
+                    // Actualizar el conteo de ocupación de forma instantánea
+                    this.acceptedCount = Math.max(0, this.acceptedCount - 1);
+                    if (this.currentGroup && this.currentGroup.limitStudents) {
+                        this.isGroupFull = this.acceptedCount >= this.currentGroup.limitStudents;
+                    }
+
+                    this.filterData(this.currentSearchTerm || '');
+                },
+                error: (err) => {
+                    console.error('Error canceling enrollment', err);
+                    this.notificationService.showError('Error', 'Ocurrió un error al intentar cancelar la inscripción.');
+                }
+            });
+        });
     }
 
     deletePerson(person: any) {

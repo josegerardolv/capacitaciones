@@ -455,6 +455,7 @@ export class PublicRegistrationComponent implements OnInit {
             // Backend update: Send separate groupId and groupUuid fields
             groupUuid: this.groupData.uuid || this.currentGroupUuid,
             isAcepted: false,
+            isActive: false,
             dateReject: null,
             personId: this.currentPersonId,
             person: personDataForPayload,

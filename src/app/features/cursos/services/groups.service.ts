@@ -185,7 +185,11 @@ export class GroupsService {
     }
 
     acceptEnrollment(enrollmentId: number): Observable<any> {
-        return this.http.patch(`${this.apiUrl}/enrollment/${enrollmentId}`, { isAcepted: true });
+        return this.http.patch(`${this.apiUrl}/enrollment/${enrollmentId}`, { isAcepted: true, isActive: true });
+    }
+
+    cancelEnrollment(enrollmentId: number): Observable<any> {
+        return this.http.patch(`${this.apiUrl}/enrollment/${enrollmentId}`, { isActive: false });
     }
 
     rejectEnrollment(enrollmentId: number): Observable<any> {

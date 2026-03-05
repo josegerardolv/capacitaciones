@@ -18,6 +18,7 @@ import { GroupsService } from '../../services/groups.service';
 import { TableFiltersComponent } from '@/app/shared/components/table-filters/table-filters.component';
 import { MailService } from '../../services/mail.service';
 import { NotificationService } from '../../../../core/services/notification.service';
+import { InstitutionalBadgeComponent } from '../../../../shared/components/badge/institutional-badge.component';
 
 @Component({
     selector: 'app-group-requests',
@@ -29,8 +30,8 @@ import { NotificationService } from '../../../../core/services/notification.serv
         ConfirmationModalComponent,
         TablePaginationComponent,
         ReactiveFormsModule,
-        ReactiveFormsModule,
         ModalComponent,
+        InstitutionalBadgeComponent,
         TableFiltersComponent],
     templateUrl: './group-requests.component.html'
 })
@@ -46,6 +47,9 @@ export class GroupRequestsComponent implements OnChanges {
     requests: Person[] = [];
     selectedRequests: Person[] = [];
     acceptedCount: number = 0;
+    pendingRequestsCount: number = 0;
+    rejectCount: number = 0;
+    availablePlaces: number = 0;
 
 
 
@@ -109,6 +113,9 @@ export class GroupRequestsComponent implements OnChanges {
         // Ahora el conteo de ocupación se lee directamente de la propiedad `acceptedCount` del grupo,
         // la cual debe ser proporcionada por el backend en el endpoint `/group/search` o `/group/{id}`.
         this.acceptedCount = this.group.acceptedCount || 0;
+        this.pendingRequestsCount = this.group.pendingRequestsCount || 0;
+        this.rejectCount = this.group.rejectCount || 0;
+        this.availablePlaces = this.group.availablePlaces || (this.group.limitStudents - this.acceptedCount);
 
         this.groupsService.getRequestsByGroupId(this.group.id).subscribe({
             next: (pendingData) => {
