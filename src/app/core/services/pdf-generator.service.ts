@@ -70,7 +70,7 @@ export class PDFGeneratorService {
   private readonly DEFAULT_DPI = 96;
   private readonly MM_TO_INCH = 25.4;
 
-  constructor() {}
+  constructor() { }
 
   /**
    * Genera un PDF directamente desde un canvas de Fabric.js
@@ -533,13 +533,24 @@ export class PDFGeneratorService {
 
   /**
    * Sustituye variables en formato {{variable}} en un texto
+   * En preview, mantiene los hooks si faltan. En producción (real), imprime vacío.
    */
   private substituteVariables(
     text: string,
     variables: Record<string, string>,
   ): string {
+    const isPreview = variables['__IS_PREVIEW__'] === '1';
+
     return text.replace(/\{\{(\w+)\}\}/g, (match, varName) => {
-      return variables[varName] !== undefined ? variables[varName] : match;
+      const val = variables[varName];
+      // Si el valor existe y no es la palabra "null" (que a veces manda BD)
+      if (val !== undefined && val !== null && String(val) !== "null") {
+        return String(val);
+      }
+
+      // Si estamos en diseño previo, mostramos las llaves crudas {{campo}}
+      // Si es un documento real y faltó el dato, lo desaparecemos imprimiendo vacío
+      return isPreview ? match : "";
     });
   }
 
@@ -638,41 +649,14 @@ export class PDFGeneratorService {
     const previewData: Record<string, string> = {};
 
     for (const variable of variables) {
-      switch (variable.type) {
-        case "text":
-          previewData[variable.name] =
-            variable.defaultValue || `[${variable.label}]`;
-          break;
-        case "date":
-          previewData[variable.name] =
-            variable.defaultValue || new Date().toLocaleDateString("es-MX");
-          break;
-        case "number":
-          previewData[variable.name] = variable.defaultValue || "12345";
-          break;
-        case "image":
-          previewData[variable.name] = variable.defaultValue || "";
-          break;
+      // Si la variable tiene un valor por defecto explícito, lo usamos, de lo contrario dejamos que se vea el hook crudo {{variable}}
+      if (variable.defaultValue) {
+        previewData[variable.name] = variable.defaultValue;
       }
     }
 
-    // Variables comunes para previsualización
+    // Variables comunes para previsualización (Se dejan solo APIs para evitar que fallen imágenes/QRs)
     const commonDefaults: Record<string, string> = {
-      nombre: "Juan Pérez García",
-      nombre_completo: "Juan Pérez García",
-      curso: "Capacitación en Angular",
-      fecha: new Date().toLocaleDateString("es-MX", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      }),
-      fecha_emision: new Date().toLocaleDateString("es-MX"),
-      folio: "CERT-2025-00001",
-      vigencia: "2 años",
-      instructor: "Lic. María López",
-      duracion: "40 horas",
-      calificacion: "95",
-      institucion: "Secretaría de Movilidad",
       qr_validacion_api:
         "https://validacion.oaxaca.gob.mx/verificar/CERT-2025-00001",
       imagen_api: "https://via.placeholder.com/150",
