@@ -415,6 +415,7 @@ export class PersonRegistrationComponent implements OnInit {
         const enrollmentPayload: any = {
             groupId: Number(groupId),
             isAcepted: true,
+            isActive: true,
             dateReject: null,
             personId: this.currentPersonId,
             person: personDataForPayload,

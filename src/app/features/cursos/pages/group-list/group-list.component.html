@@ -213,7 +213,7 @@
 
 <!-- Plantilla para Acciones -->
 <ng-template #actionsTemplate let-item>
-    <div class="flex items-center justify-center space-x-3">
+    <div class="flex items-center justify-center space-x-3 py-1.5">
         <app-institutional-button [config]="{
                 variant: 'info',
                 size: 'small', 
@@ -222,7 +222,7 @@
                 iconPosition: 'only'}" [appTooltip]="'Ver detalles'" tooltipPosition="top"
             (buttonClick)="viewPersons(item)">
         </app-institutional-button>
-        <div class="relative">
+        <div class="relative mt-1">
             <app-institutional-button [config]="{
                 variant: 'secondary',
                 size: 'small', 
@@ -231,9 +231,9 @@
                 iconPosition: 'only'}" [appTooltip]="'Solicitudes pendientes'" tooltipPosition="top"
                 (buttonClick)="openRequests(item)">
             </app-institutional-button>
-            <span *ngIf="item.requests > 0"
-                class="absolute -top-2 -right-2 inline-flex items-center justify-center bg-red-600 text-white text-xs font-semibold rounded-full px-2 py-0.5">{{
-                item.requests }}</span>
+            <span *ngIf="item.pendingRequestsCount > 0"
+                class="absolute -top-2.5 -right-2.5 inline-flex items-center justify-center bg-red-600 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] px-1 shadow-sm border border-white">{{
+                item.pendingRequestsCount }}</span>
         </div>
         <app-institutional-button [config]="{
                 variant: 'warning',

@@ -204,30 +204,24 @@ export class GroupListComponent implements OnInit {
         const startDate = new Date(group.groupStartDate);
         startDate.setHours(0, 0, 0, 0);
 
-        // 5. Finalizado (El curso ya pasó)
+        // 3. Finalizado (El curso ya pasó)
         if (today > startDate) {
             return { text: 'Finalizado', type: 'neutral' }; // Gris
         }
 
-        // 4. En Curso (El curso es hoy)
+        // 2. En Curso (El curso es hoy)
         if (today.getTime() === startDate.getTime()) {
             return { text: 'En curso', type: 'info' }; // Azul
         }
 
-        if (group.endInscriptionDate) {
-            const endDate = new Date(group.endInscriptionDate);
-            endDate.setHours(0, 0, 0, 0);
+        // 1. Próximo a Iniciar (Faltan días para arrancar el curso)
+        const diffTime = startDate.getTime() - today.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-            // 2. Cierre Próximo (Faltan 1, 2 o 3 días para el cierre)
-            const diffTime = endDate.getTime() - today.getTime();
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        if (diffDays === 1) return { text: 'Inicia mañana', type: 'warning' };
+        if (diffDays <= 3 && diffDays > 1) return { text: `Inicia en ${diffDays} días`, type: 'warning' };
 
-            if (diffDays === 0) return { text: 'Cierra hoy', type: 'warning' };
-            if (diffDays === 1) return { text: 'En 1 día', type: 'warning' };
-            if (diffDays <= 3 && diffDays > 1) return { text: `En ${diffDays} días`, type: 'warning' };
-        }
-
-        // 1. Registro Abierto (Aún falta para el cierre o no tiene cierre)
+        // Falta más de 3 días para iniciar
         return { text: 'Abierto', type: 'success' }; // Verde
     }
 
