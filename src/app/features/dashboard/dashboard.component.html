@@ -44,7 +44,7 @@
   <!-- Tabla de Cursos a Impartir (Ancho completo) -->
   <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
     <div class="flex items-center justify-between mb-4">
-      <h2 class="text-xl font-bold text-gray-800">Grupos Proximos a  Iniciar</h2>
+      <h2 class="text-xl font-bold text-gray-800">Grupos Proximos a Iniciar</h2>
     </div>
     <app-institutional-table [data]="upcomingCourses" [columns]="tableColumns" [config]="tableConfig">
     </app-institutional-table>
@@ -52,18 +52,20 @@
 
   <ng-template #statusTemplate let-item>
     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" [ngClass]="{
-        'bg-green-100 text-green-800': item.status === 'Abierto' || item.status === 'Activo',
-        'bg-yellow-100 text-yellow-800': item.status === 'Pendiente' || item.status === 'Por abrir',
-        'bg-red-100 text-red-800': item.status === 'Cerrado' || item.status === 'Cancelado',
-        'bg-gray-100 text-gray-800': !item.status || item.status === 'Inactivo'
+        'bg-green-100 text-green-800': item.status?.type === 'success',
+        'bg-yellow-100 text-yellow-800': item.status?.type === 'warning',
+        'bg-red-100 text-red-800': item.status?.type === 'danger',
+        'bg-blue-100 text-blue-800': item.status?.type === 'info',
+        'bg-gray-100 text-gray-800': !item.status?.type || item.status?.type === 'neutral'
       }">
       <span class="w-2 h-2 mr-1 rounded-full" [ngClass]="{
-        'bg-green-400': item.status === 'Abierto' || item.status === 'Activo',
-        'bg-yellow-400': item.status === 'Pendiente' || item.status === 'Por abrir',
-        'bg-red-400': item.status === 'Cerrado' || item.status === 'Cancelado',
-        'bg-gray-400': !item.status || item.status === 'Inactivo'
+        'bg-green-400': item.status?.type === 'success',
+        'bg-yellow-400': item.status?.type === 'warning',
+        'bg-red-400': item.status?.type === 'danger',
+        'bg-blue-400': item.status?.type === 'info',
+        'bg-gray-400': !item.status?.type || item.status?.type === 'neutral'
       }"></span>
-      {{ item.status || 'Desconocido' }}
+      {{ item.status?.text || 'Desconocido' }}
     </span>
   </ng-template>
 

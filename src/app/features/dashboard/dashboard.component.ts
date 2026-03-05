@@ -111,6 +111,35 @@ export class DashboardComponent implements OnInit, OnDestroy {
         };
     }
 
+    getDynamicGroupStatus(group: Group): { text: string, type: 'success' | 'warning' | 'danger' | 'info' | 'neutral' } {
+        if (!group.groupStartDate) return { text: 'Sin fecha', type: 'neutral' };
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const startDate = new Date(group.groupStartDate);
+        startDate.setHours(0, 0, 0, 0);
+
+        if (today > startDate) return { text: 'Finalizado', type: 'neutral' };
+        if (today.getTime() === startDate.getTime()) return { text: 'En curso', type: 'info' };
+
+        if (group.endInscriptionDate) {
+            const endDate = new Date(group.endInscriptionDate);
+            endDate.setHours(0, 0, 0, 0);
+
+            if (today > endDate) return { text: 'Cerrado', type: 'danger' };
+
+            const diffTime = endDate.getTime() - today.getTime();
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+            if (diffDays === 0) return { text: 'Cierra hoy', type: 'warning' };
+            if (diffDays === 1) return { text: 'En 1 día', type: 'warning' };
+            if (diffDays <= 3 && diffDays > 1) return { text: `En ${diffDays} días`, type: 'warning' };
+        }
+
+        return { text: 'Abierto', type: 'success' };
+    }
+
     private initTableData() {
         this.tableColumns = [
             { key: 'group', label: 'Grupo', sortable: true, minWidth: '100px' },
@@ -119,6 +148,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
             { key: 'participants', label: 'Cantidad', sortable: true },
             { key: 'date', label: 'Fecha', sortable: true, template: this.dateTemplate },
             { key: 'time', label: 'Hora' },
+            { key: 'status', label: 'Estatus', template: this.statusTemplate }
         ];
 
         // Cargar datos reales desde el servicio
@@ -181,7 +211,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
                         participants: g.limitStudents,
                         date: g.groupStartDate,
                         time: g.schedule,
-                        status: g.status
+                        status: this.getDynamicGroupStatus(g)
                     };
                 }).slice(0, 10); // Mostrar solo los 5 más recientes
                 this.tableConfig.loading = false;

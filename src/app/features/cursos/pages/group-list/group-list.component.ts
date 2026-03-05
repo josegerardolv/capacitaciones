@@ -195,6 +195,77 @@ export class GroupListComponent implements OnInit {
         return expirationDate < today;
     }
 
+    getDynamicGroupStatus(group: Group): { text: string, type: 'success' | 'warning' | 'danger' | 'info' | 'neutral' } {
+        if (!group.groupStartDate) return { text: 'Sin fecha', type: 'neutral' };
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const startDate = new Date(group.groupStartDate);
+        startDate.setHours(0, 0, 0, 0);
+
+        // 5. Finalizado (El curso ya pasó)
+        if (today > startDate) {
+            return { text: 'Finalizado', type: 'neutral' }; // Gris
+        }
+
+        // 4. En Curso (El curso es hoy)
+        if (today.getTime() === startDate.getTime()) {
+            return { text: 'En curso', type: 'info' }; // Azul
+        }
+
+        if (group.endInscriptionDate) {
+            const endDate = new Date(group.endInscriptionDate);
+            endDate.setHours(0, 0, 0, 0);
+
+            // 2. Cierre Próximo (Faltan 1, 2 o 3 días para el cierre)
+            const diffTime = endDate.getTime() - today.getTime();
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+            if (diffDays === 0) return { text: 'Cierra hoy', type: 'warning' };
+            if (diffDays === 1) return { text: 'En 1 día', type: 'warning' };
+            if (diffDays <= 3 && diffDays > 1) return { text: `En ${diffDays} días`, type: 'warning' };
+        }
+
+        // 1. Registro Abierto (Aún falta para el cierre o no tiene cierre)
+        return { text: 'Abierto', type: 'success' }; // Verde
+    }
+
+    getLinkStatus(group: Group): { state: 'create_blue' | 'create_red' | 'copy_green' | 'copy_red', icon: string, tooltip: string, colorClass: string } {
+        const isExpired = this.isGroupExpired(group);
+        const hasUrl = !!this.getGroupUrl(group);
+
+        if (!hasUrl && !isExpired) {
+            return { state: 'create_blue', icon: 'add_circle', tooltip: 'Generar enlace', colorClass: 'text-blue-600 hover:text-blue-800' };
+        }
+        if (!hasUrl && isExpired) {
+            return { state: 'create_red', icon: 'add_circle', tooltip: 'Fecha vencida. Actualiza la fecha para generar enlace', colorClass: 'text-red-500 hover:text-red-700' };
+        }
+        if (hasUrl && !isExpired) {
+            return { state: 'copy_green', icon: 'link', tooltip: 'Copiar enlace', colorClass: 'text-green-500 hover:text-green-700' };
+        }
+        if (hasUrl && isExpired) {
+            return { state: 'copy_red', icon: 'link_off', tooltip: 'Enlace vencido. Actualiza la fecha para reactivar', colorClass: 'text-red-500 hover:text-red-700' };
+        }
+        return { state: 'create_blue', icon: 'add_circle', tooltip: 'Generar enlace', colorClass: 'text-gray-500' };
+    }
+
+    handleLinkAction(group: Group) {
+        const status = this.getLinkStatus(group);
+        if (status.state === 'create_blue') {
+            this.generateUrlSingle(group);
+        } else if (status.state === 'copy_green') {
+            this.copyUrl(this.getGroupUrl(group));
+        } else {
+            // Manejar estados rojos (bloqueados por fecha expirada) con el Modal
+            this.openAlert(
+                'Enlace Bloqueado por Fecha',
+                'No es posible generar o usar este enlace porque la <b>Fecha Límite de Inscripción</b> del grupo ya está vencida.<br><br>Para reactivar el enlace para los participantes, ve a "Editar" y asigna una nueva fecha límite en el futuro.',
+                'warning'
+            );
+        }
+    }
+
     get canGenerateUrl(): boolean {
         // Habilitar si hay al menos uno seleccionado que NO tenga URL generada (ni guardada ni dinámica vía UUID)
         return this.selectedGroups.length > 0 && this.selectedGroups.some(g => !this.getGroupUrl(g));
