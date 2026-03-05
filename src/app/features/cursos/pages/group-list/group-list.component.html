@@ -39,7 +39,7 @@
                 </app-institutional-button>
 
                 <app-institutional-button (buttonClick)="generateUrl()" [config]="{
-                    variant: 'secondary',
+                    variant: 'info',
                     icon: 'link',
                     title: 'Generar URL',
                     disabled: !canGenerateUrl
@@ -165,38 +165,33 @@
 <app-group-requests [isOpen]="isRequestsModalOpen" [group]="selectedRequestGroup" (close)="isRequestsModalOpen = false">
 </app-group-requests>
 
-<!-- Plantillas para columnas -->
 <ng-template #urlTemplate let-item>
     <div class="flex items-center justify-center">
-        <!-- Botón para Copiar Link (Si ya existe) -->
-        <button *ngIf="getGroupUrl(item)" (click)="copyUrl(getGroupUrl(item))"
-            class="transition-colors p-1 rounded-full hover:bg-gray-100 flex items-center gap-1"
-            [ngClass]="isGroupExpired(item) ? 'text-red-400 hover:text-red-600' : 'text-gray-500 hover:text-gray-700'"
-            [title]="isGroupExpired(item) ? 'Enlace Vencido (Haz clic para copiar)' : 'Copiar enlace'">
-            <app-universal-icon [name]="isGroupExpired(item) ? 'link_off' : 'link'" type="material"
-                class="w-5 h-5"></app-universal-icon>
-            <span *ngIf="isGroupExpired(item)" class="text-[9px] font-bold uppercase">Vencido</span>
-        </button>
-
-        <!-- Botón para Generar Link si NO existe -->
-        <button *ngIf="!getGroupUrl(item)" (click)="generateUrlSingle(item)"
-            class="transition-colors p-1 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-500 hover:text-institucional-primario"
-            title="Generar enlace">
-            <app-universal-icon name="add_circle" type="material" class="w-5 h-5"></app-universal-icon>
+        <!-- Botón Unificado con 4 estados (Verde/Rojo, Generar/Copiar) -->
+        <button (click)="handleLinkAction(item)"
+            class="transition-colors p-1 rounded-full hover:bg-gray-100 flex items-center justify-center"
+            [ngClass]="getLinkStatus(item).colorClass" [title]="getLinkStatus(item).tooltip">
+            <app-universal-icon [name]="getLinkStatus(item).icon" type="material" class="w-5 h-5"></app-universal-icon>
         </button>
     </div>
 </ng-template>
 
 <ng-template #statusTemplate let-item>
     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" [ngClass]="{
-            'bg-green-100 text-green-800': item.status === 'Activo',
-            'bg-gray-100 text-gray-800': item.status === 'Inactivo'
+            'bg-green-100 text-green-800': getDynamicGroupStatus(item).type === 'success',
+            'bg-yellow-100 text-yellow-800': getDynamicGroupStatus(item).type === 'warning',
+            'bg-red-100 text-red-800': getDynamicGroupStatus(item).type === 'danger',
+            'bg-blue-100 text-blue-800': getDynamicGroupStatus(item).type === 'info',
+            'bg-gray-100 text-gray-800': getDynamicGroupStatus(item).type === 'neutral'
           }">
         <span class="w-2 h-2 mr-1 rounded-full" [ngClass]="{
-                'bg-green-400': item.status === 'Activo',
-                'bg-gray-400': item.status === 'Inactivo'
+                'bg-green-400': getDynamicGroupStatus(item).type === 'success',
+                'bg-yellow-400': getDynamicGroupStatus(item).type === 'warning',
+                'bg-red-400': getDynamicGroupStatus(item).type === 'danger',
+                'bg-blue-400': getDynamicGroupStatus(item).type === 'info',
+                'bg-gray-400': getDynamicGroupStatus(item).type === 'neutral'
               }"></span>
-        {{ item.status }}
+        {{ getDynamicGroupStatus(item).text }}
     </span>
 </ng-template>
 

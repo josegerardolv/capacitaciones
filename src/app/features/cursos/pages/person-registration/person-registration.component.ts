@@ -412,11 +412,9 @@ export class PersonRegistrationComponent implements OnInit {
             // 3. Cualquier otro campo (ej. address, sex si no son requerimientos) se IGNORA para evitar Error 400
         });
 
-        const enrollmentPayload = {
-            // Backend update: Send separate groupId and groupUuid fields
+        const enrollmentPayload: any = {
             groupId: Number(groupId),
-            groupUuid: this.currentGroupUuid,
-            isAcepted: true, // En vista privada se acepta automáticamente (se puede ajustar según regla de negocio)
+            isAcepted: true,
             dateReject: null,
             personId: this.currentPersonId,
             person: personDataForPayload,

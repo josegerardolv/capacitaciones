@@ -459,7 +459,7 @@ export class PublicRegistrationComponent implements OnInit {
             personId: this.currentPersonId,
             person: personDataForPayload,
             responses: responses,
-            documents: personData.requestedDocuments || []
+            documentCourseIds: personData.requestedDocuments || []
         };
 
         // Solo enviar groupId si fue obtenido (evita desvíos si es null)
