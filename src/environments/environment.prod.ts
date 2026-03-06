@@ -1,19 +1,19 @@
 export const environment = {
   production: true,
-  apiUrl: 'https://your-production-api-url.com',
+  apiUrl: 'https://capacitacion.p1.ws.semovi.dev',
   oauth: {
-    clientId: 'your_production_client_id',
-    redirectUri: 'https://your-production-url.com/auth/callback',
-    scopes: ['read', 'write', 'admin', 'user_management'],
-    authorizationUrl: 'https://your-production-api-url.com/oauth/authorize',
-    tokenUrl: 'https://your-production-api-url.com/oauth/token',
-    introspectUrl: 'https://your-production-api-url.com/oauth/introspect',
-    revokeUrl: 'https://your-production-api-url.com/oauth/revoke'
+    clientId: 'client_Rrj33R_Ia1H9dOOGFKfxlC6IMnj2jOOflBF7ReLmfEA',
+    redirectUri: 'https://capacitacion.v1.ui.semovi.dev/callback',
+    scopes: ['read', 'write', 'admin'],
+    authorizationUrl: 'https://capacitacion.p1.ws.semovi.dev/oauth/authorize',
+    tokenUrl: 'https://capacitacion.p1.ws.semovi.dev/oauth/token',
+    revokeUrl: 'https://capacitacion.p1.ws.semovi.dev/oauth/revoke',
+    introspectUrl: 'https://capacitacion.p1.ws.semovi.dev/oauth/introspect'
   },
   app: {
     name: 'OAuth SEMOVI',
     version: '0.0.1',
     description: 'Sistema de Capacitaciones OAuth 2.0 para SEMOVI'
   },
-  useMockAuth: false // EN PROD SIEMPRE FALSO: Usar servicios reales
+  useMocks: false
 };
