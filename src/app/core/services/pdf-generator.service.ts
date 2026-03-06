@@ -604,6 +604,9 @@ export class PDFGeneratorService {
     return src;
   }
 
+  /** Caché en memoria para evitar descargar la misma imagen de fondo/logo repetidas veces */
+  private imageCache = new Map<string, string>();
+
   /**
    * Carga una imagen desde una URL y la convierte a data URL (base64)
    * jsPDF requiere data URLs o base64 para agregar imágenes
@@ -612,6 +615,11 @@ export class PDFGeneratorService {
     // Si ya es data URL, retornar directamente
     if (url.startsWith("data:")) {
       return Promise.resolve(url);
+    }
+
+    // Verificar si ya está en caché local para apertura instantánea en preview
+    if (this.imageCache.has(url)) {
+      return Promise.resolve(this.imageCache.get(url)!);
     }
 
     return new Promise((resolve) => {
@@ -625,7 +633,11 @@ export class PDFGeneratorService {
           const ctx = canvas.getContext("2d");
           if (ctx) {
             ctx.drawImage(img, 0, 0);
-            resolve(canvas.toDataURL("image/png"));
+            const dataUrl = canvas.toDataURL("image/png");
+
+            // Guardar en caché para futuras vistas previas
+            this.imageCache.set(url, dataUrl);
+            resolve(dataUrl);
           } else {
             resolve(null);
           }
@@ -657,6 +669,7 @@ export class PDFGeneratorService {
 
     // Variables comunes para previsualización (Se dejan solo APIs para evitar que fallen imágenes/QRs)
     const commonDefaults: Record<string, string> = {
+      __IS_PREVIEW__: "1",// Bandera para identificar que estamos en previsualización
       qr_validacion_api:
         "https://validacion.oaxaca.gob.mx/verificar/CERT-2025-00001",
       imagen_api: "https://via.placeholder.com/150",
