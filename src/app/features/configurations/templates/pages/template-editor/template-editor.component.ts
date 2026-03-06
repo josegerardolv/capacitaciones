@@ -487,6 +487,23 @@ export class TemplateEditorComponent
   private initFabricCanvas(): void {
     if (!this.canvasRef?.nativeElement) return;
 
+    // Incluir propiedades personalizadas en serialización (necesario para undo/redo)
+    (fabric.FabricObject as any).customProperties = [
+      "elementId",
+      "elementType",
+      "elementName",
+      "variableName",
+      "isDynamic",
+      "shapeVariant",
+      "imageFit",
+      "qrContent",
+      "qrSize",
+      "strokeDashType",
+      "isMarginGuide",
+      "isGridLine",
+      "isAlignmentGuide",
+    ];
+
     this.canvas = new fabric.Canvas(this.canvasRef.nativeElement, {
       width: this.canvasWidth,
       height: this.canvasHeight,
@@ -806,27 +823,40 @@ export class TemplateEditorComponent
     this.canvas.backgroundColor =
       this.template.pageConfig.backgroundColor || "#ffffff";
 
+    // Promesas a esperar antes de resetear el historial (fondo + elementos async)
+    const loadPromises: Promise<void>[] = [];
+
     // Load background image if exists
     if (this.template.pageConfig.backgroundImage) {
-      this.loadBackgroundImage(
-        this.template.pageConfig.backgroundImage,
-        this.template.pageConfig.backgroundFit,
+      loadPromises.push(
+        this.loadBackgroundImage(
+          this.template.pageConfig.backgroundImage,
+          this.template.pageConfig.backgroundFit,
+        ),
       );
     }
 
-    // Load elements
+    // Load elements (algunos son async: image, qr)
     this.template.elements.forEach((element) => {
-      this.createFabricObject(element);
+      const result = this.createFabricObject(element);
+      if (result instanceof Promise) {
+        loadPromises.push(result);
+      }
     });
 
     // Initialize filtered variables for search
     this.initFilteredVariables();
 
     this.canvas.renderAll();
-    this.saveHistory();
+
+    // Resetear historial solo cuando todo haya cargado (fondo + elementos async)
+    Promise.all(loadPromises).then(() => {
+      this.canvas.renderAll();
+      this.resetHistoryWithCurrentState();
+    });
   }
 
-  private createFabricObject(element: CanvasElement): void {
+  private createFabricObject(element: CanvasElement): Promise<void> | void {
     let obj: CustomFabricObject | null = null;
 
     switch (element.type) {
@@ -834,14 +864,12 @@ export class TemplateEditorComponent
         obj = this.createTextObject(element);
         break;
       case "image":
-        this.createImageObject(element);
-        return; // async
+        return this.createImageObject(element);
       case "shape":
         obj = this.createShapeObject(element);
         break;
       case "qr":
-        this.createQRObject(element);
-        return; // async
+        return this.createQRObject(element);
     }
 
     if (obj) {
@@ -1022,7 +1050,7 @@ export class TemplateEditorComponent
     return src;
   }
 
-  private createImageObject(element: CanvasElement): void {
+  private createImageObject(element: CanvasElement): Promise<void> {
     const src = element.imageConfig?.src;
     const isDynamic = element.imageConfig?.isDynamic || false;
     const variableName = element.imageConfig?.variableName || "";
@@ -1034,7 +1062,7 @@ export class TemplateEditorComponent
         element.transform.height || 132,
       );
 
-      fabric.FabricImage.fromURL(placeholderDataUrl).then((img) => {
+      return fabric.FabricImage.fromURL(placeholderDataUrl).then((img) => {
         img.set({
           left: element.transform.x,
           top: element.transform.y,
@@ -1064,11 +1092,12 @@ export class TemplateEditorComponent
         this.canvas.add(customImg);
         this.canvas.renderAll();
       });
-      return;
     }
 
     const resolvedSrc = this.resolveMediaUrl(src);
-    fabric.FabricImage.fromURL(resolvedSrc, { crossOrigin: "anonymous" })
+    return fabric.FabricImage.fromURL(resolvedSrc, {
+      crossOrigin: "anonymous",
+    })
       .then((img) => {
         img.set({
           left: element.transform.x,
@@ -1105,7 +1134,7 @@ export class TemplateEditorComponent
           element.transform.height || 132,
         );
 
-        fabric.FabricImage.fromURL(placeholderDataUrl).then((img) => {
+        return fabric.FabricImage.fromURL(placeholderDataUrl).then((img) => {
           img.set({
             left: element.transform.x,
             top: element.transform.y,
@@ -1131,7 +1160,7 @@ export class TemplateEditorComponent
       });
   }
 
-  private createQRObject(element: CanvasElement): void {
+  private createQRObject(element: CanvasElement): Promise<void> {
     const content = element.qrConfig?.content || "https://example.com";
     const qrSize =
       element.qrConfig?.size ||
@@ -1139,13 +1168,13 @@ export class TemplateEditorComponent
       150;
 
     // Generate QR using qrcode library
-    import("qrcode").then((QRCode) => {
-      QRCode.toDataURL(content, {
+    return import("qrcode").then((QRCode) => {
+      return QRCode.toDataURL(content, {
         width: qrSize,
         margin: 1,
         errorCorrectionLevel: element.qrConfig?.errorCorrectionLevel || "M",
       }).then((url: string) => {
-        fabric.FabricImage.fromURL(url).then((img) => {
+        return fabric.FabricImage.fromURL(url).then((img) => {
           img.set({
             left: element.transform.x,
             top: element.transform.y,
@@ -1180,16 +1209,19 @@ export class TemplateEditorComponent
   }
 
   // ===== BACKGROUND IMAGE =====
-  loadBackgroundImage(src: string, fit?: "cover" | "contain" | "fill"): void {
+  loadBackgroundImage(
+    src: string,
+    fit?: "cover" | "contain" | "fill",
+  ): Promise<void> {
     this.backgroundImageSrc = src;
     this.backgroundFit = fit || "cover";
 
     const resolvedSrc = this.resolveMediaUrl(src);
-    fabric.FabricImage.fromURL(resolvedSrc, { crossOrigin: "anonymous" }).then(
-      (img) => {
-        this.applyBackgroundFit(img, this.backgroundFit);
-      },
-    );
+    return fabric.FabricImage.fromURL(resolvedSrc, {
+      crossOrigin: "anonymous",
+    }).then((img) => {
+      this.applyBackgroundFit(img, this.backgroundFit);
+    });
   }
 
   private applyBackgroundFit(
@@ -2958,6 +2990,16 @@ export class TemplateEditorComponent
   }
 
   // ===== HISTORY (UNDO/REDO) =====
+  /**
+   * Resetea el historial y guarda solo el estado actual.
+   * Usar al cargar un template para editar: undo/redo solo deben afectar la sesión actual.
+   */
+  private resetHistoryWithCurrentState(): void {
+    this.history = [];
+    this.historyIndex = -1;
+    this.saveHistory();
+  }
+
   private saveHistory(): void {
     if (this.isHistoryAction) return;
 
