@@ -225,10 +225,14 @@ export class GroupListComponent implements OnInit {
         return { text: 'Abierto', type: 'success' }; // Verde
     }
 
-    getLinkStatus(group: Group): { state: 'create_blue' | 'create_red' | 'copy_green' | 'copy_red', icon: string, tooltip: string, colorClass: string } {
+    getLinkStatus(group: Group): { state: 'create_blue' | 'create_red' | 'copy_green' | 'copy_red' | 'full_grey', icon: string, tooltip: string, colorClass: string } {
         const isExpired = this.isGroupExpired(group);
         const hasUrl = !!this.getGroupUrl(group);
+        const isFull = group.acceptedCount !== undefined && group.limitStudents !== undefined && group.acceptedCount >= group.limitStudents;
 
+        if (isFull) {
+            return { state: 'full_grey', icon: 'link', tooltip: 'Cupo lleno. Alcanzó su límite máximo.', colorClass: 'text-gray-400 hover:text-gray-500' };
+        }
         if (!hasUrl && !isExpired) {
             return { state: 'create_blue', icon: 'add_circle', tooltip: 'Generar enlace', colorClass: 'text-blue-600 hover:text-blue-800' };
         }
@@ -250,11 +254,19 @@ export class GroupListComponent implements OnInit {
             this.generateUrlSingle(group);
         } else if (status.state === 'copy_green') {
             this.copyUrl(this.getGroupUrl(group));
+        } else if (status.state === 'full_grey') {
+            this.openAlert(
+                'Cupo Lleno',
+                `El grupo ha alcanzado su límite máximo de alumnos (<b>${group.limitStudents}</b>).<br><br>El enlace de registro público ya está inactivo y no se admitirán nuevas solicitudes a menos que liberes un lugar o aumentes la capacidad.`,
+                'warning'
+            );
         } else {
             // Manejar estados rojos (bloqueados por fecha expirada) con el Modal
             this.openAlert(
-                'Enlace Bloqueado por Fecha',
-                'No es posible generar o usar este enlace porque la <b>Fecha Límite de Inscripción</b> del grupo ya está vencida.<br><br>Para reactivar el enlace para los participantes, ve a "Editar" y asigna una nueva fecha límite en el futuro.',
+                'Acción no permitida',
+                'No puedes interactuar con el enlace de registro porque la <b>fecha límite</b> (' +
+                this.formatDateForTable(group.endInscriptionDate) +
+                ') ya se ha vencido.<br><br>Por favor, edita las fechas del grupo si deseas continuar admitiendo registros.',
                 'warning'
             );
         }
