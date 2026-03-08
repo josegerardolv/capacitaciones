@@ -82,16 +82,32 @@ export class PersonRegistrationComponent implements OnInit {
             route = route.parent!;
         }
 
+        const courseName = this.route.snapshot.queryParamMap.get('courseName');
+        const courseLabel = courseName ? courseName : (this.cursoId ? `Curso ${this.cursoId}` : 'Curso');
+        let cleanCourseLabel = courseLabel.replace(/^Curso[:\s]+/i, '').trim();
+        const shortCourseName = cleanCourseLabel.length > 30 ? cleanCourseLabel.substring(0, 30) + '...' : cleanCourseLabel;
+
         this.breadcrumbItems = [
-            { label: 'Cursos', url: '/cursos' },
+            { label: `Curso: ${shortCourseName}`, url: '/cursos' }
         ];
-        if (this.cursoId) {
-            this.breadcrumbItems.push({ label: 'Grupos', url: `/cursos/${this.cursoId}/grupos` });
-        } else {
-            this.breadcrumbItems.push({ label: 'Grupos', url: '/cursos' });
-        }
-        this.breadcrumbItems.push({ label: 'Personas', url: this.cursoId && this.groupId ? `/cursos/${this.cursoId}/grupos/${this.groupId}/conductores` : '/cursos' });
-        this.breadcrumbItems.push({ label: 'Agregar' });
+
+        const groupLabelParam = this.route.snapshot.queryParamMap.get('groupLabel');
+
+        // El nombre del grupo lo cargaremos cuando tengamos los detalles del grupo más abajo
+        // Pero dejamos el placeholder del query params o rápido si no hay nombre aún
+        this.breadcrumbItems.push({
+            label: groupLabelParam ? `Grupo: ${groupLabelParam.replace(/^Grupo[:\s]+/i, '').trim()}` : `Grupo: Cargando...`,
+            url: `/cursos/${this.cursoId}/grupos`,
+            queryParams: { courseName: courseLabel }
+        });
+
+        this.breadcrumbItems.push({
+            label: 'Personas',
+            url: this.cursoId && this.groupId ? `/cursos/${this.cursoId}/grupos/${this.groupId}/conductores` : '/cursos',
+            queryParams: { courseName: courseLabel, groupLabel: groupLabelParam } // pass back to preserve state
+        });
+
+        this.breadcrumbItems.push({ label: 'Nueva persona' });
 
         this.route.queryParams.subscribe(params => {
             if (Object.keys(params).length > 0) {
@@ -108,6 +124,25 @@ export class PersonRegistrationComponent implements OnInit {
                     this.currentGroup = group;
                     this.currentGroupUuid = group.uuid; // Guardar UUID para el payload
                     this.currentCourseType = 'GENERICO';
+
+                    // Actualizar nombre del grupo en las migas de pan ahora que lo tenemos
+                    if (this.breadcrumbItems.length > 1) {
+                        const rawGroupName = group.name ? group.name.replace(/^Grupo[:\s]+/i, '').trim() : `Grupo ${group.id}`;
+                        const shortGroupName = rawGroupName.length > 25 ? rawGroupName.substring(0, 25) + '...' : rawGroupName;
+                        this.breadcrumbItems[1].label = `Grupo: ${shortGroupName}`;
+
+                        // Update the query param in the "Personas" breadcrumb to send the actual name back
+                        if (this.breadcrumbItems.length > 2 && this.breadcrumbItems[2].queryParams) {
+                            this.breadcrumbItems[2].queryParams.groupLabel = shortGroupName;
+                        }
+                    }
+
+                    // Actualizar nombre del curso en las migas de pan si el backend lo trae (Respaldo robusto para F5/Recarga)
+                    if (group.course && group.course.name && this.breadcrumbItems.length > 0) {
+                        const rawCourseName = group.course.name.replace(/^Curso[:\s]+/i, '').trim();
+                        const shortCourseName = rawCourseName.length > 30 ? rawCourseName.substring(0, 30) + '...' : rawCourseName;
+                        this.breadcrumbItems[0].label = `Curso: ${shortCourseName}`;
+                    }
 
                     // Verificación de Ocupación
                     this.acceptedCount = accepted.length;
@@ -504,7 +539,7 @@ export class PersonRegistrationComponent implements OnInit {
         this.isAlertOpen = false;
         // Redirigir a la lista de conductores
         // Redirigir a la lista de conductores (../ relativa a la ruta actual 'nuevo')
-        this.router.navigate(['../'], { relativeTo: this.route });
+        this.router.navigate(['../'], { relativeTo: this.route, queryParamsHandling: 'preserve' });
     }
 
     onCancel() {

@@ -147,16 +147,15 @@ export class GroupPersonsComponent implements OnInit {
 
         // Construir breadcrumbs
         this.courseLabel = courseName ? courseName : (this.cursoId ? `Curso ${this.cursoId}` : 'Curso');
+        let cleanCourseLabel = this.courseLabel.replace(/^Curso[:\s]+/i, '').trim();
+        const shortCourseName = cleanCourseLabel.length > 30 ? cleanCourseLabel.substring(0, 30) + '...' : cleanCourseLabel;
 
         this.breadcrumbItems = [
-            { label: 'Cursos', url: '/cursos' },
-            { label: this.courseLabel }
+            { label: `Curso: ${shortCourseName}`, url: '/cursos' }
         ];
 
         if (this.cursoId) {
-            this.breadcrumbItems.push({ label: 'Grupos', url: `/cursos/${this.cursoId}/grupos` });
-        } else {
-            this.breadcrumbItems.push({ label: 'Grupos', url: '/cursos' });
+            // Ya no ponemos "Grupos" solo
         }
 
         if (groupLabel) {
@@ -164,7 +163,15 @@ export class GroupPersonsComponent implements OnInit {
         } else if (this.currentGroupId) {
             this.groupLabel = `Grupo ${this.currentGroupId}`;
         }
-        this.breadcrumbItems.push({ label: this.groupLabel || 'Detalle' });
+
+        const rawGroupName = this.groupLabel ? this.groupLabel.replace(/^Grupo[:\s]+/i, '').trim() : 'Detalle';
+        const shortGroupName = rawGroupName.length > 25 ? rawGroupName.substring(0, 25) + '...' : rawGroupName;
+
+        this.breadcrumbItems.push({
+            label: `Grupo: ${shortGroupName}`,
+            url: `/cursos/${this.cursoId}/grupos`,
+            queryParams: { courseName: this.courseLabel }
+        });
         this.breadcrumbItems.push({ label: 'Personas' });
 
         this.initColumns();
@@ -178,7 +185,27 @@ export class GroupPersonsComponent implements OnInit {
             if (group) {
                 this.currentGroup = group;
                 // Actualizar etiqueta si está disponible
-                if (group.name) this.groupLabel = `Grupo ${group.name}`;
+                if (group.name) {
+                    this.groupLabel = `Grupo ${group.name}`;
+                    if (this.breadcrumbItems.length > 1) {
+                        const rawGroupName = group.name.replace(/^Grupo[:\s]+/i, '').trim();
+                        const shortGroupName = rawGroupName.length > 25 ? rawGroupName.substring(0, 25) + '...' : rawGroupName;
+                        this.breadcrumbItems[1].label = `Grupo: ${shortGroupName}`;
+                    }
+                }
+
+                // Extraer el nombre del curso de manera segura desde Backend (Respaldo robusto para F5/Recarga)
+                if (group.course && group.course.name && this.breadcrumbItems.length > 0) {
+                    const rawCourseName = group.course.name.replace(/^Curso[:\s]+/i, '').trim();
+                    const shortCourseName = rawCourseName.length > 30 ? rawCourseName.substring(0, 30) + '...' : rawCourseName;
+                    this.breadcrumbItems[0].label = `Curso: ${shortCourseName}`;
+
+                    // Asegurar que pasamos este nombre en el botón de ir al grupo (Back navigation state preserver)
+                    this.courseLabel = group.course.name;
+                    if (this.breadcrumbItems.length > 1 && this.breadcrumbItems[1].queryParams) {
+                        this.breadcrumbItems[1].queryParams.courseName = this.courseLabel;
+                    }
+                }
 
                 // 1. Priorizar configuración RICH (Ya poblada en el grupo)
                 const populatedConfig = group.course?.courseType;
@@ -395,7 +422,11 @@ export class GroupPersonsComponent implements OnInit {
                         if (needsSearch) {
                             this.isSearchModalOpen = true;
                         } else {
-                            this.router.navigate(['nuevo'], { relativeTo: this.route });
+                            this.router.navigate(['nuevo'], {
+                                relativeTo: this.route,
+                                queryParamsHandling: 'merge',
+                                queryParams: { groupLabel: this.groupLabel }
+                            });
                         }
                     } else {
                         this.isSearchModalOpen = true;
@@ -410,9 +441,9 @@ export class GroupPersonsComponent implements OnInit {
     }
 
     onPersonFound(person: Person) {
-        // SI SE ENCUENTRA: Navegar con datos precargados
         this.router.navigate(['nuevo'], {
             relativeTo: this.route,
+            queryParamsHandling: 'merge',
             queryParams: {
                 found: 'true',
                 name: person.name,
@@ -421,18 +452,20 @@ export class GroupPersonsComponent implements OnInit {
                 license: person.license,
                 curp: person.curp,
                 sex: person.sex,
-                address: person.address
+                address: person.address,
+                groupLabel: this.groupLabel
             }
         });
         this.isSearchModalOpen = false;
     }
 
     onManualRegistration(license: string) {
-        // NO SE ENCUENTRA o RESPALDO: Navegar solo con licencia
         this.router.navigate(['nuevo'], {
             relativeTo: this.route,
+            queryParamsHandling: 'merge',
             queryParams: {
-                license: license
+                license: license,
+                groupLabel: this.groupLabel
             }
         });
         this.isSearchModalOpen = false;

@@ -114,8 +114,6 @@ export class CourseListComponent implements OnInit {
         this.initForms();
         this.initColumns();
         this.loadCourseTypes();
-
-        this.loadCourseTypes();
     }
 
     initForms() {
@@ -130,8 +128,8 @@ export class CourseListComponent implements OnInit {
     loadCourseTypes(term: string = '') {
         // Usamos getCourseTypes (que apunta a /search) si hay término, o getActiveCourseTypes si no
         const request = term
-            ? this.courseTypeService.getCourseTypes(1, 100, term)
-            : this.courseTypeService.getActiveCourseTypes(100);
+            ? this.courseTypeService.getCourseTypes(1, 10, term)
+            : this.courseTypeService.getActiveCourseTypes(10);
 
         request.pipe(
             timeout(5000),

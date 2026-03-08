@@ -302,10 +302,11 @@ export class GroupListComponent implements OnInit {
 
         if (this.cursoId) {
             this.courseLabel = this.courseNameFromQuery ? this.courseNameFromQuery : this.cursoId;
+            let cleanCourseLabel = this.courseLabel.replace(/^Curso[:\s]+/i, '').trim();
+            const shortCourseName = cleanCourseLabel.length > 30 ? cleanCourseLabel.substring(0, 30) + '...' : cleanCourseLabel;
             this.breadcrumbItems = [
-                { label: 'Cursos', url: '/cursos' },
-                { label: `Curso ${this.courseLabel}` },
-                { label: 'Grupos', url: `/cursos/${this.cursoId}/grupos` }
+                { label: `Curso: ${shortCourseName}`, url: '/cursos' },
+                { label: 'Grupos' }
             ];
 
             // Cargar detalles del curso para obtener courseTypeId, LUEGO cargar grupos

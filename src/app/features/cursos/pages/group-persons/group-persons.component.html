@@ -12,12 +12,9 @@
       </div>
 
       <div class="min-w-0">
-        <h1 class="text-2xl md:text-3xl font-extrabold text-gray-900">
-          Personas inscritas
-          {{
-          "al grupo " +
-          (this.groupLabel ? this.groupLabel || "id" + this.groupId : "")
-          }}
+        <h1 class="text-2xl md:text-3xl font-extrabold text-gray-900 truncate" [title]="this.groupLabel || ''">
+          Grupo: {{ this.groupLabel ? (this.groupLabel.replace('Grupo:', '').replace('Grupo', '').trim()) :
+          (this.groupId ? this.groupId : 'Detalle del Grupo') }}
         </h1>
         <p class="text-sm text-gray-500 mt-1">
           Gestiona las personas del grupo
