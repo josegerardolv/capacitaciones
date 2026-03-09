@@ -7,10 +7,10 @@
   <li *ngFor="let item of items; let last = last">
     <div class="flex items-center">
       <span class="mx-2 text-gray-400">/</span>
-      <a [routerLink]="item.url" [class.font-bold]="last" [class.text-primary-700]="last" [class.text-gray-500]="!last" [class.hover:text-primary-700]="!last">
+      <a [routerLink]="item.url" [queryParams]="item.queryParams" [class.font-bold]="last"
+        [class.text-primary-700]="last" [class.text-gray-500]="!last" [class.hover:text-primary-700]="!last">
         {{ item.label }}
       </a>
     </div>
   </li>
 </ol>
-
