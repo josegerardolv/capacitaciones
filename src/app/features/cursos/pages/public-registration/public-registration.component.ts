@@ -138,8 +138,8 @@ export class PublicRegistrationComponent implements OnInit {
                         this.currentCourseType = populatedConfig.type || (populatedConfig.name?.toUpperCase().includes('CONSTANCIA') ? 'CONSTANCIA' : 'LICENCIA');
                     }
 
-                    // Función helper para procesar la nueva estructura `documentCourse` / `documents`
-                    const processDocumentCourse = (docArray: any[]) => {
+                    // Función helper para procesar la nueva estructura `documentCourses` / `documents`
+                    const processDocumentCourses = (docArray: any[]) => {
                         return docArray.map((d: any) => {
                             let calculatedCost = 0;
 
@@ -173,12 +173,12 @@ export class PublicRegistrationComponent implements OnInit {
                     };
 
                     // Buscar los documentos en las diferentes profundidades donde el backend pudiera haberlos inyectado
-                    if (populatedConfig && populatedConfig.documentCourse && populatedConfig.documentCourse.length > 0) {
-                        this.availableDocuments = processDocumentCourse(populatedConfig.documentCourse);
-                    } else if (group.course?.documentCourse && group.course.documentCourse.length > 0) {
-                        this.availableDocuments = processDocumentCourse(group.course.documentCourse);
-                    } else if (group.documentCourse && group.documentCourse.length > 0) {
-                        this.availableDocuments = processDocumentCourse(group.documentCourse);
+                    if (populatedConfig && populatedConfig.documentCourses && populatedConfig.documentCourses.length > 0) {
+                        this.availableDocuments = processDocumentCourses(populatedConfig.documentCourses);
+                    } else if (group.course?.documentCourses && group.course.documentCourses.length > 0) {
+                        this.availableDocuments = processDocumentCourses(group.course.documentCourses);
+                    } else if (group.documentCourses && group.documentCourses.length > 0) {
+                        this.availableDocuments = processDocumentCourses(group.documentCourses);
                     } else if (populatedConfig && populatedConfig.availableDocuments) {
                         this.availableDocuments = populatedConfig.availableDocuments;
                     } else if (group.course?.templates) {
@@ -187,7 +187,7 @@ export class PublicRegistrationComponent implements OnInit {
                         this.availableDocuments = group.templates;
                     } else if (group.documents) {
                         // Fallback absoluto para arrays legacy de 'documents'
-                        this.availableDocuments = processDocumentCourse(group.documents);
+                        this.availableDocuments = processDocumentCourses(group.documents);
                     }
 
                     this.setupFormFields(populatedConfig || {} as any, directFields);

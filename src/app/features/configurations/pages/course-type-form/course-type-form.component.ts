@@ -394,7 +394,7 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
                 this.lockedTemplates = [];
                 this.savedTemplateIds.clear();
 
-                const savedDocuments = (existingData as any)?.documentCourses || (existingData as any)?.documentCourse || existingData?.availableDocuments;
+                const savedDocuments = (existingData as any)?.documentCourses || existingData?.availableDocuments;
 
                 if (savedDocuments) {
                     const selectedIds = savedDocuments.map((d: any) => {
@@ -713,7 +713,7 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
                 required: f.required
             }));
 
-        const documentCourse = this.selectedTemplates.map(t => ({
+        const documentCourses = this.selectedTemplates.map(t => ({
             templateDocument: t.id,
             isRequired: this.isMandatory(t.id)
         }));
@@ -723,7 +723,7 @@ export class CourseTypeFormComponent implements OnInit, AfterViewInit {
             description: formValue.description,
             type: formValue.type,
             courseConfigField: courseConfigField,
-            documentCourse: documentCourse
+            documentCourse: documentCourses // Enviamos como singular según requerimiento de escritura
         };
 
         // NOTA: Se eliminó 'availableDocuments' del payload ya que el backend lo rechaza con 400.

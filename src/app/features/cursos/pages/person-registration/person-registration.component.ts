@@ -175,8 +175,8 @@ export class PersonRegistrationComponent implements OnInit {
                                     cost: calculatedCost
                                 };
                             });
-                        } else if (populatedConfig.documentCourse || populatedConfig.documentCourses) {
-                            const docs = populatedConfig.documentCourse || populatedConfig.documentCourses || [];
+                        } else if (populatedConfig.documentCourses) {
+                            const docs = populatedConfig.documentCourses || [];
                             this.currentAvailableDocuments = docs.map((d: any) => {
                                 let calculatedCost = 0;
                                 if (d.templateDocument?.paymentConcept?.umas) {
@@ -220,8 +220,8 @@ export class PersonRegistrationComponent implements OnInit {
                                                 cost: calculatedCost
                                             };
                                         });
-                                    } else if (config.documentCourse || config.documentCourses) {
-                                        const docs = config.documentCourse || config.documentCourses || [];
+                                    } else if (config.documentCourses) {
+                                        const docs = config.documentCourses || [];
                                         this.currentAvailableDocuments = docs.map((d: any) => {
                                             let calculatedCost = 0;
                                             if (d.templateDocument?.paymentConcept?.umas) {

@@ -25,6 +25,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { TableFiltersComponent } from '@/app/shared/components/table-filters/table-filters.component';
 import { CompactDateInputComponent } from '@/app/shared/components/date-pickers/compact-date-input/compact-date-input.component';
 import { TimePickerComponent } from '@/app/shared/components/date-pickers/time-picker/time-picker.component';
+import { ReportsService } from '../../../../core/services/reports.service';
 
 @Component({
     selector: 'app-group-list',
@@ -272,14 +273,21 @@ export class GroupListComponent implements OnInit {
         }
     }
 
+    get groupsToGenerateCount(): number {
+        // Solo contamos los que NO tienen URL
+        return this.selectedGroups.filter(g => !this.getGroupUrl(g)).length;
+    }
+
     get canGenerateUrl(): boolean {
-        // Habilitar si hay al menos uno seleccionado que NO tenga URL generada (ni guardada ni dinámica vía UUID)
-        return this.selectedGroups.length > 0 && this.selectedGroups.some(g => !this.getGroupUrl(g));
+        // Habilitar si hay al menos uno seleccionado que NO tenga URL generada
+        return this.groupsToGenerateCount > 0;
     }
 
     get canExport(): boolean {
-        return this.selectedGroups.length > 0;
+        return this.groups.length > 0;
     }
+
+    showExportMenu = false;
 
     currentCourse: any = null; // Almacenar objeto completo del curso
 
@@ -289,7 +297,8 @@ export class GroupListComponent implements OnInit {
         private router: Router,
         private route: ActivatedRoute,
         private notificationService: NotificationService,
-        private fb: FormBuilder
+        private fb: FormBuilder,
+        private reportsService: ReportsService
     ) { }
 
     ngOnInit(): void {
@@ -709,46 +718,52 @@ export class GroupListComponent implements OnInit {
     }
 
     generateUrl() {
-        // Filtramos grupos que ya están seleccionados pero no tienen URL (doble validación)
-        const groupsToGenerate = this.selectedGroups.filter(g => !g.inscriptionURL);
+        const groupsToGenerate = this.selectedGroups.filter(g => !this.getGroupUrl(g));
 
         if (groupsToGenerate.length === 0) {
-            this.notificationService.info('Información', 'Todos los grupos seleccionados ya tienen una URL generada.');
+            this.notificationService.info('Información', 'Los grupos seleccionados ya tienen una URL generada.');
             return;
         }
 
         const missingDateGroups = groupsToGenerate.filter(g => !g.endInscriptionDate);
+        const hasDateGroups = groupsToGenerate.filter(g => !!g.endInscriptionDate);
+
+        // REGLA: No permitir mezcla de "Con Fecha" y "Sin fecha" en generación masiva
+        if (missingDateGroups.length > 0 && hasDateGroups.length > 0) {
+            this.openAlert(
+                'Selección Inconsistente',
+                'Has seleccionado grupos que ya tienen "Límite de registro" y otros que están "Sin límite".<br><br>Por favor, selecciona primero solo los que están <b>Sin límite</b> para definir su fecha manualmente, y después los que ya cumplen las mismas condiciones.',
+                'warning'
+            );
+            return;
+        }
 
         if (missingDateGroups.length > 0) {
-            // Regla de Negocio: Si falta fecha, SOLO se puede procesar uno a la vez
             if (missingDateGroups.length > 1) {
                 this.notificationService.warning(
-                    'Selección Múltiple no permitida',
-                    'Has seleccionado varios grupos que no tienen "Fecha Límite" configurada. Por favor, selecciona solo uno para establecer su fecha individualmente.'
+                    'Establecer Fechas',
+                    'Has seleccionado varios grupos "Sin límite". Por favor, procesa uno a la vez para establecer su fecha límite individualmente.'
                 );
                 return;
             }
 
-            // Calcular fecha máxima más estricta (fecha de inicio del grupo único)
             const group = missingDateGroups[0];
             const startDate = group.groupStartDate ? new Date(group.groupStartDate) : null;
 
             if (startDate) {
-                // Restar 1 día para que el límite sea "estrictamente antes" (Usuario: "si es 31, elegir hasta 30")
                 startDate.setDate(startDate.getDate() - 1);
                 this.maxDateForUrl = startDate.toISOString().split('T')[0];
             } else {
                 this.maxDateForUrl = '';
             }
 
-            // Preparar modal
-            this.pendingUrlGroups = missingDateGroups; // Será un array de 1 elemento
+            this.pendingUrlGroups = missingDateGroups;
             this.urlForm.reset();
             this.isUrlDateModalOpen = true;
             return;
         }
 
-        this.proceedWithUrlGeneration(groupsToGenerate);
+        this.proceedWithUrlGeneration(hasDateGroups);
     }
 
     submitUrlGeneration() {
@@ -885,7 +900,32 @@ export class GroupListComponent implements OnInit {
     }
 
     exportData() {
-        this.notificationService.info('Exportar', 'Descargando reporte de grupos...');
+        if (!this.canExport) return;
+        this.showExportMenu = !this.showExportMenu;
+    }
+
+    exportAs(format: 'csv' | 'excel') {
+        this.showExportMenu = false;
+        const courseId = this.cursoId ? Number(this.cursoId) : undefined;
+        const filename = `reporte-grupos-${new Date().getTime()}`;
+        const extension = format === 'excel' ? 'xlsx' : 'csv';
+
+        this.notificationService.info('Exportando', `Generando archivo ${format.toUpperCase()}...`);
+
+        const request$ = format === 'csv'
+            ? this.reportsService.exportGroupsCSV(courseId)
+            : this.reportsService.exportGroupsExcel(courseId);
+
+        request$.subscribe({
+            next: (blob) => {
+                this.reportsService.downloadFile(blob, `${filename}.${extension}`);
+                this.notificationService.success('Completado', 'El archivo se ha descargado correctamente.');
+            },
+            error: (err) => {
+                console.error(`Error exporting ${format}:`, err);
+                this.notificationService.error('Error', `No se pudo generar el reporte en formato ${format.toUpperCase()}.`);
+            }
+        });
     }
 
     private formatDuration(minutes: number | undefined): string {

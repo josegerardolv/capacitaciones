@@ -41,20 +41,18 @@ export interface CourseTypeConfig {
         required: boolean;
     }>;
 
-    // Vínculo con templates (Nuevo formato Backend)
-    documentCourse?: Array<{
-        id?: number;
-        templateDocument: number;
-        isRequired: boolean;
-        isActive?: boolean;
-    }>;
-
-    // Variante plural observada en algunos endpoints y con objetos anidados
+    // Vínculo con templates (Formato Backend Estandarizado Plural para Lectura)
     documentCourses?: Array<{
         id?: number;
         templateDocument: number | { id: number; name: string };
         isRequired: boolean;
         isActive?: boolean;
+    }>;
+
+    // Variante Singular requerida únicamente para ESCRITURA (POST/PATCH)
+    documentCourse?: Array<{
+        templateDocument: number;
+        isRequired: boolean;
     }>;
 
     createdAt: string;
