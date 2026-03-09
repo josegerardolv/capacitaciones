@@ -275,7 +275,7 @@ export class GroupListComponent implements OnInit {
     }
 
     get groupsToGenerateCount(): number {
-        // REGLA Winston: Solo contamos los que CUMPLEN la condición (Sin URL Y con Fecha Límite)
+        //Solo contamos los que CUMPLEN la condición (Sin URL Y con Fecha Límite)
         return this.selectedGroups.filter(g => !this.getGroupUrl(g) && !!g.endInscriptionDate).length;
     }
 
@@ -622,6 +622,16 @@ export class GroupListComponent implements OnInit {
             expirationDate: ['', [Validators.required]]
         });
 
+        // Auto-submit al elegir fecha si es generación individual o guiada
+        this.urlForm.get('expirationDate')?.valueChanges.subscribe(val => {
+            if (val && this.isUrlDateModalOpen && this.urlForm.valid) {
+                // Pequeño delay para que el usuario vea la selección antes de cerrar
+                setTimeout(() => {
+                    if (this.isUrlDateModalOpen) this.submitUrlGeneration();
+                }, 300);
+            }
+        });
+
         // Escuchar cambios en la fecha del curso para actualizar el límite máximo
         this.groupModalForm.get('date')?.valueChanges.subscribe(dateVal => {
             if (dateVal) {
@@ -723,7 +733,7 @@ export class GroupListComponent implements OnInit {
             return;
         }
 
-        this.proceedWithUrlGeneration([group]);
+        this.proceedWithUrlGeneration([group], true);
     }
 
     generateUrl() {
@@ -748,8 +758,8 @@ export class GroupListComponent implements OnInit {
             return;
         }
 
-        // Proceder directamente con los listos
-        this.proceedWithUrlGeneration(readyToGenerate);
+        // Proceder directamente con los listos (Generación Masiva: Requiere Confirmación)
+        this.proceedWithUrlGeneration(readyToGenerate, false);
     }
     submitUrlGeneration() {
         if (this.urlForm.invalid) {
@@ -767,13 +777,24 @@ export class GroupListComponent implements OnInit {
 
         // Combinamos los que acabamos de poner fecha con los que ya tenían
         const allGroupsToProcess = [...this.readyUrlGroups, ...this.pendingUrlGroups];
-        this.proceedWithUrlGeneration(allGroupsToProcess, dateVal);
+
+        // Resetear estados del modal antes de proceder
         this.isUrlDateModalOpen = false;
-        this.readyUrlGroups = []; // Limpiar
+        this.readyUrlGroups = [];
+
+        // Ejecutar (Viene de modal individual: Skip Confirm)
+        this.proceedWithUrlGeneration(allGroupsToProcess, true);
     }
 
+    proceedWithUrlGeneration(groupsToGenerate: Group[], skipConfirm: boolean = false) {
+        if (groupsToGenerate.length === 0) return;
 
-    proceedWithUrlGeneration(groupsToGenerate: Group[], forcedExpirationDate?: string) {
+        // Si se indica skipConfirm (flujo individual/manual), ir directo al grano
+        if (skipConfirm) {
+            this.executeUrlGeneration(groupsToGenerate);
+            return;
+        }
+
         const excludedCount = this.selectedGroups.length - groupsToGenerate.length;
 
         let message = `Se generarán enlaces para ${groupsToGenerate.length} grupo(s).`;
@@ -791,75 +812,86 @@ export class GroupListComponent implements OnInit {
             confirmText: 'Generar Todo',
             cancelText: 'Cancelar'
         }, () => {
-            this.tableConfig.loading = true;
-            // ... resto de la lógica se mantiene igual
-
-            // Creamos un array de flujos encadenados: Generar UUID (si falta) -> Actualizar con URL
-            const updateObservables = groupsToGenerate.map(group => {
-                // Paso al backend: Si NO tiene uuid, lo generamos primero
-                let uuidAction$: Observable<any> = of({ uuid: group.uuid });
-
-                if (!group.uuid) {
-                    uuidAction$ = this.groupsService.generateGroupUuid(group.id);
-                }
-
-                return uuidAction$.pipe(
-                    switchMap((response: any) => {
-                        // El backend suele devolver el objeto actualizado o un objeto con el nuevo uuid
-                        // Si no viene en el body, lo buscamos en el grupo original (si ya existía)
-                        const uuid = response?.uuid || response?.data?.uuid || group.uuid;
-
-                        if (!uuid) {
-                            throw new Error(`El servidor no proporcionó un código único para el grupo ${group.name}`);
-                        }
-
-                        // Construcción de URL con el UUID obtenido
-                        const origin = window.location.origin;
-                        const newUrl = `${origin}/public/register/${uuid}`;
-
-                        // Extraer ID del curso manejando objeto o número
-                        const courseId = (typeof group.course === 'object' && group.course !== null)
-                            ? (group.course as any).id
-                            : group.course;
-
-                        // Construir payload estándar según Swagger (SIN inscriptionURL)
-                        const payload: any = {
-                            name: group.name,
-                            location: group.location,
-                            schedule: group.schedule,
-                            limitStudents: group.limitStudents,
-                            groupStartDate: group.groupStartDate,
-                            endInscriptionDate: group.endInscriptionDate, // Ya viene asignado desde el modal si faltaba
-                            course: courseId
-                        };
-
-                        // Si el backend permite recibir el uuid en el body, lo incluimos
-                        if (uuid) payload.uuid = uuid;
-
-                        return this.groupsService.updateGroup(group.id, payload);
-                    })
-                );
-            });
-
-            if (updateObservables.length > 0) {
-                forkJoin(updateObservables).subscribe({
-                    next: () => {
-                        this.tableConfig.loading = false;
-                        this.notificationService.success('URL Generada', `Se han activado ${updateObservables.length} enlaces correctamente.`);
-                        this.selectedGroups = [];
-                        this.loadGroups();
-                    },
-                    error: (err) => {
-                        this.tableConfig.loading = false;
-                        console.error('Error in link generation chain:', err);
-                        this.notificationService.error('Error', 'No se pudieron generar los enlaces. Verifica la conexión con el servidor.');
-                    }
-                });
-            } else {
-                this.tableConfig.loading = false;
-                this.notificationService.info('Información', 'No había grupos pendientes de generar enlace.');
-            }
+            this.executeUrlGeneration(groupsToGenerate);
         });
+    }
+
+    /**
+     * Lógica core de generación de UUID y actualización de grupos
+     */
+    private executeUrlGeneration(groupsToGenerate: Group[]) {
+        this.tableConfig.loading = true;
+
+        // Creamos un array de flujos encadenados: Generar UUID (si falta) -> Actualizar con URL
+        const updateObservables = groupsToGenerate.map(group => {
+            // Paso al backend: Si NO tiene uuid, lo generamos primero
+            let uuidAction$: Observable<any> = of({ uuid: group.uuid });
+
+            if (!group.uuid) {
+                uuidAction$ = this.groupsService.generateGroupUuid(group.id);
+            }
+
+            return uuidAction$.pipe(
+                switchMap((response: any) => {
+                    const uuid = response?.uuid || response?.data?.uuid || group.uuid;
+
+                    if (!uuid) {
+                        throw new Error(`El servidor no proporcionó un código único para el grupo ${group.name}`);
+                    }
+
+                    // Construcción de URL con el UUID obtenido
+                    const origin = window.location.origin;
+                    const newUrl = `${origin}/public/register/${uuid}`;
+
+                    const courseId = (typeof group.course === 'object' && group.course !== null)
+                        ? (group.course as any).id
+                        : group.course;
+
+                    const payload: any = {
+                        name: group.name,
+                        location: group.location,
+                        schedule: group.schedule,
+                        limitStudents: group.limitStudents,
+                        groupStartDate: group.groupStartDate,
+                        endInscriptionDate: group.endInscriptionDate,
+                        course: courseId
+                    };
+
+                    if (uuid) payload.uuid = uuid;
+
+                    return this.groupsService.updateGroup(group.id, payload);
+                })
+            );
+        });
+
+        if (updateObservables.length > 0) {
+            forkJoin(updateObservables).subscribe({
+                next: () => {
+                    this.tableConfig.loading = false;
+                    const count = groupsToGenerate.length;
+                    const title = count === 1 ? 'URL Generada' : 'URLs Generadas';
+                    const message = count === 1
+                        ? `Se ha activado el enlace para el grupo "${groupsToGenerate[0].name}" correctamente.`
+                        : `Se han activado ${count} enlaces correctamente.`;
+
+                    this.openAlert(title, message, 'success');
+
+                    this.selectedGroups = [];
+                    this.loadGroups();
+                },
+                error: (err) => {
+                    this.tableConfig.loading = false;
+                    console.error('Error in link generation chain:', err);
+                    this.openAlert(
+                        'Error de Generación',
+                        'Ocurrió un problema al intentar generar los enlaces. Por favor, verifica la configuración del grupo o intenta más tarde.',
+                        'danger'
+                    );
+                }
+            });
+        } else {
+            this.tableConfig.loading = false;
+        }
     }
 
     // --- SELECTION LOGIC ---

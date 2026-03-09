@@ -392,7 +392,7 @@ export class InstitutionalTableComponent implements AfterContentInit, AfterViewI
     let newSelection: any[];
 
     if (isChecked) {
-      // Union: Add ALL visible items to existing selection (Winston: selection for export)
+      // Union: Add ALL visible items to existing selection
       const currentSelectionIds = new Set(this.selectedItems.map(item => this.trackByFn(0, item)));
       const itemsToAdd = this.displayData.filter(item => !currentSelectionIds.has(this.trackByFn(0, item)));
       newSelection = [...this.selectedItems, ...itemsToAdd];
