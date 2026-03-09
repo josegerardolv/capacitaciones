@@ -88,23 +88,21 @@ export class PersonRegistrationComponent implements OnInit {
         const shortCourseName = cleanCourseLabel.length > 30 ? cleanCourseLabel.substring(0, 30) + '...' : cleanCourseLabel;
 
         this.breadcrumbItems = [
-            { label: `Curso: ${shortCourseName}`, url: '/cursos' }
+            { label: 'Cursos', url: '/cursos' },
+            {
+                label: `Curso: ${shortCourseName}`,
+                url: `/cursos/${this.cursoId}/grupos`,
+                queryParams: { courseName: courseLabel }
+            }
         ];
 
         const groupLabelParam = this.route.snapshot.queryParamMap.get('groupLabel');
 
         // El nombre del grupo lo cargaremos cuando tengamos los detalles del grupo más abajo
-        // Pero dejamos el placeholder del query params o rápido si no hay nombre aún
         this.breadcrumbItems.push({
             label: groupLabelParam ? `Grupo: ${groupLabelParam.replace(/^Grupo[:\s]+/i, '').trim()}` : `Grupo: Cargando...`,
-            url: `/cursos/${this.cursoId}/grupos`,
-            queryParams: { courseName: courseLabel }
-        });
-
-        this.breadcrumbItems.push({
-            label: 'Personas',
-            url: this.cursoId && this.groupId ? `/cursos/${this.cursoId}/grupos/${this.groupId}/conductores` : '/cursos',
-            queryParams: { courseName: courseLabel, groupLabel: groupLabelParam } // pass back to preserve state
+            url: `/cursos/${this.cursoId}/grupos/${this.groupId}/conductores`,
+            queryParams: { courseName: courseLabel, groupLabel: groupLabelParam }
         });
 
         this.breadcrumbItems.push({ label: 'Nueva persona' });
@@ -116,10 +114,7 @@ export class PersonRegistrationComponent implements OnInit {
         });
 
         if (this.groupId) {
-            forkJoin({
-                group: this.groupsService.getGroupById(+this.groupId),
-                accepted: this.groupsService.getEnrollmentsByGroupId(+this.groupId, true)
-            }).subscribe(({ group, accepted }: any) => {
+            this.groupsService.getGroupById(+this.groupId).subscribe((group: any) => {
                 if (group) {
                     this.currentGroup = group;
                     this.currentGroupUuid = group.uuid; // Guardar UUID para el payload
@@ -129,24 +124,27 @@ export class PersonRegistrationComponent implements OnInit {
                     if (this.breadcrumbItems.length > 1) {
                         const rawGroupName = group.name ? group.name.replace(/^Grupo[:\s]+/i, '').trim() : `Grupo ${group.id}`;
                         const shortGroupName = rawGroupName.length > 25 ? rawGroupName.substring(0, 25) + '...' : rawGroupName;
-                        this.breadcrumbItems[1].label = `Grupo: ${shortGroupName}`;
-
-                        // Update the query param in the "Personas" breadcrumb to send the actual name back
-                        if (this.breadcrumbItems.length > 2 && this.breadcrumbItems[2].queryParams) {
-                            this.breadcrumbItems[2].queryParams.groupLabel = shortGroupName;
-                        }
+                        this.breadcrumbItems[2].label = `Grupo: ${shortGroupName}`;
                     }
 
                     // Actualizar nombre del curso en las migas de pan si el backend lo trae (Respaldo robusto para F5/Recarga)
-                    if (group.course && group.course.name && this.breadcrumbItems.length > 0) {
+                    if (group.course && group.course.name && this.breadcrumbItems.length > 1) {
                         const rawCourseName = group.course.name.replace(/^Curso[:\s]+/i, '').trim();
                         const shortCourseName = rawCourseName.length > 30 ? rawCourseName.substring(0, 30) + '...' : rawCourseName;
-                        this.breadcrumbItems[0].label = `Curso: ${shortCourseName}`;
+                        this.breadcrumbItems[1].label = `Curso: ${shortCourseName}`;
                     }
 
-                    // Verificación de Ocupación
-                    this.acceptedCount = accepted.length;
-                    this.isGroupFull = this.acceptedCount >= group.limitStudents;
+                    // Optimización de Cupo: Usar contadores directos del servidor (Sin latencia de descarga)
+                    this.acceptedCount = group.acceptedCount || 0;
+                    const pendingCount = group.pendingRequestsCount || 0;
+
+                    if (group.availablePlaces !== undefined) {
+                        this.isGroupFull = group.availablePlaces <= 0;
+                    } else if (group.limitStudents) {
+                        this.isGroupFull = (this.acceptedCount + pendingCount) >= group.limitStudents;
+                    } else {
+                        this.isGroupFull = false;
+                    }
 
                     if (this.isGroupFull) {
                         this.showForm = false;

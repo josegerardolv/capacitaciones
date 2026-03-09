@@ -91,6 +91,7 @@ export class GroupListComponent implements OnInit {
     isUrlDateModalOpen = false;
     urlForm!: FormGroup; // FormGroup para el modal
     pendingUrlGroups: Group[] = [];
+    readyUrlGroups: Group[] = [];
     maxDateForUrl: string = ''; // Restricción para el selector
     maxDateForForm: string = ''; // Restricción para el selector en Formulario de Grupo
     minDateForForm: string = ''; // Restricción para fecha de inicio (Hoy)
@@ -274,18 +275,26 @@ export class GroupListComponent implements OnInit {
     }
 
     get groupsToGenerateCount(): number {
-        // Solo contamos los que NO tienen URL
-        return this.selectedGroups.filter(g => !this.getGroupUrl(g)).length;
+        // REGLA Winston: Solo contamos los que CUMPLEN la condición (Sin URL Y con Fecha Límite)
+        return this.selectedGroups.filter(g => !this.getGroupUrl(g) && !!g.endInscriptionDate).length;
     }
 
     get canGenerateUrl(): boolean {
-        // Habilitar si hay al menos uno seleccionado que NO tenga URL generada
-        return this.groupsToGenerateCount > 0;
+        // Habilitar si hay al menos un grupo seleccionado que NO tenga URL
+        // Esto permite que el usuario le pique y el sistema le mande el mensaje informativo si faltan fechas
+        return this.selectedGroups.some(g => !this.getGroupUrl(g));
     }
 
     get canExport(): boolean {
-        return this.groups.length > 0;
+        // Habilitar Exportar si hay al menos un grupo seleccionado
+        return this.selectedGroups.length > 0;
     }
+
+    groupSelectionPredicate = (item: any): boolean => {
+        // Regla: Marcar todo solo debe seleccionar los que están listos para Generar URL
+        // (Sin URL y con fecha límite establecida)
+        return !this.getGroupUrl(item) && !!item.endInscriptionDate;
+    };
 
     showExportMenu = false;
 
@@ -314,8 +323,8 @@ export class GroupListComponent implements OnInit {
             let cleanCourseLabel = this.courseLabel.replace(/^Curso[:\s]+/i, '').trim();
             const shortCourseName = cleanCourseLabel.length > 30 ? cleanCourseLabel.substring(0, 30) + '...' : cleanCourseLabel;
             this.breadcrumbItems = [
-                { label: `Curso: ${shortCourseName}`, url: '/cursos' },
-                { label: 'Grupos' }
+                { label: 'Cursos', url: '/cursos' },
+                { label: `Curso: ${shortCourseName}` }
             ];
 
             // Cargar detalles del curso para obtener courseTypeId, LUEGO cargar grupos
@@ -718,54 +727,30 @@ export class GroupListComponent implements OnInit {
     }
 
     generateUrl() {
-        const groupsToGenerate = this.selectedGroups.filter(g => !this.getGroupUrl(g));
+        // REGLA: El botón masivo solo procesa grupos que YA están listos (Sin URL y con Fecha)
+        const readyToGenerate = this.selectedGroups.filter(g => !this.getGroupUrl(g) && !!g.endInscriptionDate);
 
-        if (groupsToGenerate.length === 0) {
-            this.notificationService.info('Información', 'Los grupos seleccionados ya tienen una URL generada.');
-            return;
-        }
+        if (readyToGenerate.length === 0) {
+            const hasMissingDate = this.selectedGroups.some(g => !this.getGroupUrl(g) && !g.endInscriptionDate);
 
-        const missingDateGroups = groupsToGenerate.filter(g => !g.endInscriptionDate);
-        const hasDateGroups = groupsToGenerate.filter(g => !!g.endInscriptionDate);
-
-        // REGLA: No permitir mezcla de "Con Fecha" y "Sin fecha" en generación masiva
-        if (missingDateGroups.length > 0 && hasDateGroups.length > 0) {
-            this.openAlert(
-                'Selección Inconsistente',
-                'Has seleccionado grupos que ya tienen "Límite de registro" y otros que están "Sin límite".<br><br>Por favor, selecciona primero solo los que están <b>Sin límite</b> para definir su fecha manualmente, y después los que ya cumplen las mismas condiciones.',
-                'warning'
-            );
-            return;
-        }
-
-        if (missingDateGroups.length > 0) {
-            if (missingDateGroups.length > 1) {
-                this.notificationService.warning(
-                    'Establecer Fechas',
-                    'Has seleccionado varios grupos "Sin límite". Por favor, procesa uno a la vez para establecer su fecha límite individualmente.'
+            if (hasMissingDate) {
+                this.openAlert(
+                    'Configuración Individual Requerida',
+                    'Los grupos seleccionados no tienen una "Fecha Límite" establecida. Estos deben configurarse y generarse por separado de forma individual.',
+                    'info'
                 );
-                return;
-            }
-
-            const group = missingDateGroups[0];
-            const startDate = group.groupStartDate ? new Date(group.groupStartDate) : null;
-
-            if (startDate) {
-                startDate.setDate(startDate.getDate() - 1);
-                this.maxDateForUrl = startDate.toISOString().split('T')[0];
             } else {
-                this.maxDateForUrl = '';
+                this.notificationService.info(
+                    'Información',
+                    'No hay grupos seleccionados candidatos para generar URL (ya tienen enlace o no cumplen los requisitos).'
+                );
             }
-
-            this.pendingUrlGroups = missingDateGroups;
-            this.urlForm.reset();
-            this.isUrlDateModalOpen = true;
             return;
         }
 
-        this.proceedWithUrlGeneration(hasDateGroups);
+        // Proceder directamente con los listos
+        this.proceedWithUrlGeneration(readyToGenerate);
     }
-
     submitUrlGeneration() {
         if (this.urlForm.invalid) {
             this.urlForm.markAllAsTouched();
@@ -780,23 +765,34 @@ export class GroupListComponent implements OnInit {
             g.endInscriptionDate = dateVal;
         });
 
-        // Combinar con los que ya tenían fecha (si existieran en un flujo mixto, aunque aquí pendingUrlGroups son los que faltaban)
-        // En este flujo, si entramos al modal, es porque SOLO había grupos sin fecha (o el usuario seleccionó uno sin fecha).
-        // Procedemos a generar URLs para estos.
-        this.proceedWithUrlGeneration(this.pendingUrlGroups);
+        // Combinamos los que acabamos de poner fecha con los que ya tenían
+        const allGroupsToProcess = [...this.readyUrlGroups, ...this.pendingUrlGroups];
+        this.proceedWithUrlGeneration(allGroupsToProcess, dateVal);
         this.isUrlDateModalOpen = false;
+        this.readyUrlGroups = []; // Limpiar
     }
 
-    proceedWithUrlGeneration(groupsToGenerate: Group[]) {
-        // Confirmar generación masiva
+
+    proceedWithUrlGeneration(groupsToGenerate: Group[], forcedExpirationDate?: string) {
+        const excludedCount = this.selectedGroups.length - groupsToGenerate.length;
+
+        let message = `Se generarán enlaces para ${groupsToGenerate.length} grupo(s).`;
+
+        if (excludedCount > 0) {
+            message += `\n\nNota: Se omitirán ${excludedCount} grupo(s) de la selección por no tener una fecha límite configurada o por ya tener un enlace activo.`;
+        }
+
+        message += `\n\n¿Deseas continuar con la generación masiva?`;
+
         this.openConfirm({
-            title: 'Generar URL Pública',
-            message: `Se generarán enlaces de registro para ${groupsToGenerate.length} grupo(s).\n\nEstos enlaces respetarán la "Fecha Límite de Auto-registro" configurada.\n¿Continuar?`,
+            title: 'Confirmar Generación Masiva',
+            message: message,
             type: 'info',
-            confirmText: 'Generar',
+            confirmText: 'Generar Todo',
             cancelText: 'Cancelar'
         }, () => {
             this.tableConfig.loading = true;
+            // ... resto de la lógica se mantiene igual
 
             // Creamos un array de flujos encadenados: Generar UUID (si falta) -> Actualizar con URL
             const updateObservables = groupsToGenerate.map(group => {
