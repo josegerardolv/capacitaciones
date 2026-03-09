@@ -151,12 +151,13 @@ export class GroupPersonsComponent implements OnInit {
         const shortCourseName = cleanCourseLabel.length > 30 ? cleanCourseLabel.substring(0, 30) + '...' : cleanCourseLabel;
 
         this.breadcrumbItems = [
-            { label: `Curso: ${shortCourseName}`, url: '/cursos' }
+            { label: 'Cursos', url: '/cursos' },
+            {
+                label: `Curso: ${shortCourseName}`,
+                url: `/cursos/${this.cursoId}/grupos`,
+                queryParams: { courseName: this.courseLabel }
+            }
         ];
-
-        if (this.cursoId) {
-            // Ya no ponemos "Grupos" solo
-        }
 
         if (groupLabel) {
             this.groupLabel = groupLabel;
@@ -168,11 +169,8 @@ export class GroupPersonsComponent implements OnInit {
         const shortGroupName = rawGroupName.length > 25 ? rawGroupName.substring(0, 25) + '...' : rawGroupName;
 
         this.breadcrumbItems.push({
-            label: `Grupo: ${shortGroupName}`,
-            url: `/cursos/${this.cursoId}/grupos`,
-            queryParams: { courseName: this.courseLabel }
+            label: `Grupo: ${shortGroupName}`
         });
-        this.breadcrumbItems.push({ label: 'Personas' });
 
         this.initColumns();
         this.loadGroupDetails();
@@ -187,24 +185,35 @@ export class GroupPersonsComponent implements OnInit {
                 // Actualizar etiqueta si está disponible
                 if (group.name) {
                     this.groupLabel = `Grupo ${group.name}`;
-                    if (this.breadcrumbItems.length > 1) {
+                    if (this.breadcrumbItems.length > 2) {
                         const rawGroupName = group.name.replace(/^Grupo[:\s]+/i, '').trim();
                         const shortGroupName = rawGroupName.length > 25 ? rawGroupName.substring(0, 25) + '...' : rawGroupName;
-                        this.breadcrumbItems[1].label = `Grupo: ${shortGroupName}`;
+                        this.breadcrumbItems[2].label = `Grupo: ${shortGroupName}`;
                     }
                 }
 
                 // Extraer el nombre del curso de manera segura desde Backend (Respaldo robusto para F5/Recarga)
-                if (group.course && group.course.name && this.breadcrumbItems.length > 0) {
+                if (group.course && group.course.name && this.breadcrumbItems.length > 1) {
                     const rawCourseName = group.course.name.replace(/^Curso[:\s]+/i, '').trim();
                     const shortCourseName = rawCourseName.length > 30 ? rawCourseName.substring(0, 30) + '...' : rawCourseName;
-                    this.breadcrumbItems[0].label = `Curso: ${shortCourseName}`;
+                    this.breadcrumbItems[1].label = `Curso: ${shortCourseName}`;
 
                     // Asegurar que pasamos este nombre en el botón de ir al grupo (Back navigation state preserver)
                     this.courseLabel = group.course.name;
-                    if (this.breadcrumbItems.length > 1 && this.breadcrumbItems[1].queryParams) {
-                        this.breadcrumbItems[1].queryParams.courseName = this.courseLabel;
+                    if (this.breadcrumbItems.length > 2 && this.breadcrumbItems[2].queryParams) {
+                        this.breadcrumbItems[2].queryParams.courseName = this.courseLabel;
                     }
+                }
+
+                // Optimización de Cupo: Calcular inmediatamente usando los contadores directos del backend
+                this.acceptedCount = group.acceptedCount || 0;
+                const pendingCount = group.pendingRequestsCount || 0;
+
+                // Si el backend nos da availablePlaces lo usamos, si no calculamos (incluyendo pendientes si el usuario así lo prefiere)
+                if (group.availablePlaces !== undefined) {
+                    this.isGroupFull = group.availablePlaces <= 0;
+                } else if (group.limitStudents) {
+                    this.isGroupFull = (this.acceptedCount + pendingCount) >= group.limitStudents;
                 }
 
                 // 1. Priorizar configuración RICH (Ya poblada en el grupo)
@@ -237,8 +246,7 @@ export class GroupPersonsComponent implements OnInit {
         this.allEnrollments = [];
         this.filteredEnrollments = [];
         this.persons = [];
-        this.acceptedCount = 0;
-        this.isGroupFull = false;
+        // NO reseteamos acceptedCount ni isGroupFull aquí para evitar parpadeo si ya los puso loadGroupDetails
 
         this.groupsService.getEnrollmentsByGroupId(+this.currentGroupId).subscribe({
             next: (data: any[]) => {
@@ -303,12 +311,12 @@ export class GroupPersonsComponent implements OnInit {
                 this.filterData('');
 
                 // Calcular estado de ocupación global (Priorizar conteo total del server)
-                this.acceptedCount = (this.currentGroup && this.currentGroup.acceptedCount !== undefined)
-                    ? this.currentGroup.acceptedCount
-                    : this.allEnrollments.length;
-
-                if (this.currentGroup && this.currentGroup.limitStudents) {
-                    this.isGroupFull = this.acceptedCount >= this.currentGroup.limitStudents;
+                // Si el server no mandó el contador, usamos el tamaño del array
+                if (this.currentGroup && this.currentGroup.acceptedCount === undefined) {
+                    this.acceptedCount = this.allEnrollments.length;
+                    if (this.currentGroup.limitStudents) {
+                        this.isGroupFull = this.acceptedCount >= this.currentGroup.limitStudents;
+                    }
                 }
 
                 this.tableConfig.loading = false;

@@ -98,7 +98,8 @@
 
         <!-- Tabla -->
         <app-institutional-table [data]="groups" [columns]="tableColumns" [config]="tableConfig"
-            [selectedItems]="selectedGroups" (selectionChange)="onSelectionChange($event)">
+            [selectedItems]="selectedGroups" [selectionPredicate]="groupSelectionPredicate"
+            (selectionChange)="onSelectionChange($event)">
         </app-institutional-table>
 
         <!-- Paginación inferior -->
@@ -107,7 +108,6 @@
                 [showPaginationControls]="true" (pageChange)="onPageChange($event)">
             </app-table-pagination>
         </div>
-
     </app-institutional-card>
 </div>
 
@@ -296,11 +296,11 @@
     (modalClose)="isAlertOpen = false">
 </app-alert-modal>
 
-<!-- Modal para pedir fecha de expiración si falta -->
 <app-modal-form *ngIf="isUrlDateModalOpen" [isOpen]="isUrlDateModalOpen" title="Definir Límite de Auto-registro"
     (modalClose)="isUrlDateModalOpen = false" (formSubmit)="submitUrlGeneration()" [size]="'lg'" [position]="'bottom'"
-    [primaryActions]="urlModalActions" [formGroup]="urlForm">
-    <div class="space-y-4">
+    [primaryActions]="urlModalActions.slice(1)" [secondaryActions]="urlModalActions.slice(0,1)" [formGroup]="urlForm">
+
+    <div class="space-y-6">
         <div class="bg-blue-50 p-4 rounded-md mb-4">
             <div class="flex">
                 <div class="flex-shrink-0">
@@ -314,11 +314,12 @@
             </div>
         </div>
 
-        <app-compact-date-input formControlName="expirationDate" label="Fecha Límite de Registro *"
+        <app-compact-date-input formControlName="expirationDate" label="Fecha Límite de Registro"
             placeholder="Selecciona la fecha límite" [required]="true" [maxDate]="$any(maxDateForUrl)"
             [minDate]="$any(minDateForForm)" [floating]="true" [preferredPosition]="'top'"
             [hasError]="!!(urlForm.get('expirationDate')?.invalid && urlForm.get('expirationDate')?.touched)">
         </app-compact-date-input>
+
         <p class="text-xs text-gray-500 mt-1" *ngIf="maxDateForUrl">
             Debe ser antes del inicio del curso ({{ formatDateForDisplay(maxDateForUrl) }})
         </p>

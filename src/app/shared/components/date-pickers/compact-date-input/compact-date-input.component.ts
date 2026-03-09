@@ -57,7 +57,18 @@ import { UniversalIconComponent } from '@/app/shared/components/universal-icon/u
               <span class="text-sm truncate" [class.text-gray-400]="!selectedDate" [class.text-gray-900]="selectedDate" [style.marginTop]="floating && selectedDate ? '0.5rem' : '0'">
                 {{ getDisplayText() }}
               </span>
-              <app-universal-icon name="calendar_today" type="material" [size]="20" class="text-gray-400 flex-shrink-0"></app-universal-icon>
+              <div class="flex items-center gap-2">
+                <!-- Botón de limpiar -->
+                <button 
+                  *ngIf="selectedDate && clearable && !disabled" 
+                  type="button"
+                  class="text-gray-400 hover:text-red-500 transition-colors p-1 rounded-full hover:bg-gray-100 flex items-center justify-center"
+                  (click)="clearDate($event)"
+                  title="Limpiar fecha">
+                  <app-universal-icon name="close" type="material" [size]="16"></app-universal-icon>
+                </button>
+                <app-universal-icon name="calendar_today" type="material" [size]="20" class="text-gray-400 flex-shrink-0"></app-universal-icon>
+              </div>
             </div>
           </div>
 
@@ -166,6 +177,7 @@ export class CompactDateInputComponent implements ControlValueAccessor, AfterVie
   @Input() controlName = '';
   @Input() disabled: boolean = false;
   @Input() preferredPosition: 'auto' | 'top' | 'bottom' = 'auto';
+  @Input() clearable: boolean = true;
 
   @Output() dateChange = new EventEmitter<Date | null>();
 
@@ -313,5 +325,14 @@ export class CompactDateInputComponent implements ControlValueAccessor, AfterVie
     this.onChange(date);
     this.dateChange.emit(date);
     this.closeCalendar();
+  }
+
+  clearDate(event?: Event): void {
+    if (event) {
+      event.stopPropagation();
+    }
+    this.selectedDate = null;
+    this.onChange(null);
+    this.dateChange.emit(null);
   }
 }

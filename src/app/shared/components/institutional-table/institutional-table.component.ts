@@ -197,6 +197,7 @@ export class InstitutionalTableComponent implements AfterContentInit, AfterViewI
   @Input() expandedItems: any[] = [];
   @Input() sortColumn: string | null = '';
   @Input() sortDirection: 'asc' | 'desc' | null = null;
+  @Input() selectionPredicate: (item: any) => boolean = () => true;
 
   @Output() sort = new EventEmitter<SortEvent>();
   @Output() selectionChange = new EventEmitter<SelectionEvent>();
@@ -391,7 +392,7 @@ export class InstitutionalTableComponent implements AfterContentInit, AfterViewI
     let newSelection: any[];
 
     if (isChecked) {
-      // Union: Add visible items to existing selection (avoid duplicates)
+      // Union: Add ALL visible items to existing selection (Winston: selection for export)
       const currentSelectionIds = new Set(this.selectedItems.map(item => this.trackByFn(0, item)));
       const itemsToAdd = this.displayData.filter(item => !currentSelectionIds.has(this.trackByFn(0, item)));
       newSelection = [...this.selectedItems, ...itemsToAdd];
@@ -399,8 +400,8 @@ export class InstitutionalTableComponent implements AfterContentInit, AfterViewI
       // Difference: Remove visible items from existing selection, EXCEPT completely locked items
       const visibleIds = new Set(this.displayData.map(item => this.trackByFn(0, item)));
       newSelection = this.selectedItems.filter(item => {
-          if (this.isLocked(item)) return true; // Mantener siempre seleccionados los bloqueados
-          return !visibleIds.has(this.trackByFn(0, item));
+        if (this.isLocked(item)) return true;
+        return !visibleIds.has(this.trackByFn(0, item));
       });
     }
 
