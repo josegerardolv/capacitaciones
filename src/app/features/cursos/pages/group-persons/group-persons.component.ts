@@ -23,6 +23,7 @@ import { Group } from '../../../../core/models/group.model';
 import { CourseTypeService } from '../../../../core/services/course-type.service';
 import { TableFiltersComponent } from '@/app/shared/components/table-filters/table-filters.component';
 import { DocumentsModalComponent } from '../../components/modals/documents-modal/documents-modal.component';
+import { ModalComponent } from '../../../../shared/components/modals/modal.component';
 
 // ... existing code ...
 
@@ -47,7 +48,8 @@ import { DocumentsModalComponent } from '../../components/modals/documents-modal
         UniversalIconComponent,
         LicenseSearchModalComponent,
         TableFiltersComponent,
-        DocumentsModalComponent
+        DocumentsModalComponent,
+        ModalComponent
     ],
     templateUrl: './group-persons.component.html'
 })
@@ -59,6 +61,8 @@ export class GroupPersonsComponent implements OnInit {
     currentGroup: Group | null = null; // Almacenar detalles completos del grupo
     courseLabel: string = '';
     groupLabel: string = '';
+    isGroupFull: boolean = false;
+    acceptedCount: number = 0;
 
     // Referencias a Templates del HTML
     @ViewChild('nameTemplate', { static: true }) nameTemplate!: TemplateRef<any>;
@@ -109,10 +113,14 @@ export class GroupPersonsComponent implements OnInit {
     filteredEnrollments: any[] = [];
     persons: any[] = []; // Los datos finales para la tabla
 
-
+    // ---> NUEVO: Modal de Información
+    isInfoModalOpen = false;
+    selectedPersonForInfo: any | null = null;
+    selectedPersonInfoFields: { label: string, value: any }[] = [];
 
     // --- BÚSQUEDA ---
     isSearchModalOpen = false;
+    currentSearchTerm: string = '';
 
     // Breadcrumb items (se construyen en ngOnInit según params)
     breadcrumbItems: BreadcrumbItem[] = [];
@@ -139,25 +147,30 @@ export class GroupPersonsComponent implements OnInit {
 
         // Construir breadcrumbs
         this.courseLabel = courseName ? courseName : (this.cursoId ? `Curso ${this.cursoId}` : 'Curso');
+        let cleanCourseLabel = this.courseLabel.replace(/^Curso[:\s]+/i, '').trim();
+        const shortCourseName = cleanCourseLabel.length > 30 ? cleanCourseLabel.substring(0, 30) + '...' : cleanCourseLabel;
 
         this.breadcrumbItems = [
             { label: 'Cursos', url: '/cursos' },
-            { label: this.courseLabel }
+            {
+                label: `Curso: ${shortCourseName}`,
+                url: `/cursos/${this.cursoId}/grupos`,
+                queryParams: { courseName: this.courseLabel }
+            }
         ];
-
-        if (this.cursoId) {
-            this.breadcrumbItems.push({ label: 'Grupos', url: `/cursos/${this.cursoId}/grupos` });
-        } else {
-            this.breadcrumbItems.push({ label: 'Grupos', url: '/cursos' });
-        }
 
         if (groupLabel) {
             this.groupLabel = groupLabel;
         } else if (this.currentGroupId) {
             this.groupLabel = `Grupo ${this.currentGroupId}`;
         }
-        this.breadcrumbItems.push({ label: this.groupLabel || 'Detalle' });
-        this.breadcrumbItems.push({ label: 'Personas' });
+
+        const rawGroupName = this.groupLabel ? this.groupLabel.replace(/^Grupo[:\s]+/i, '').trim() : 'Detalle';
+        const shortGroupName = rawGroupName.length > 25 ? rawGroupName.substring(0, 25) + '...' : rawGroupName;
+
+        this.breadcrumbItems.push({
+            label: `Grupo: ${shortGroupName}`
+        });
 
         this.initColumns();
         this.loadGroupDetails();
@@ -170,7 +183,38 @@ export class GroupPersonsComponent implements OnInit {
             if (group) {
                 this.currentGroup = group;
                 // Actualizar etiqueta si está disponible
-                if (group.name) this.groupLabel = `Grupo ${group.name}`;
+                if (group.name) {
+                    this.groupLabel = `Grupo ${group.name}`;
+                    if (this.breadcrumbItems.length > 2) {
+                        const rawGroupName = group.name.replace(/^Grupo[:\s]+/i, '').trim();
+                        const shortGroupName = rawGroupName.length > 25 ? rawGroupName.substring(0, 25) + '...' : rawGroupName;
+                        this.breadcrumbItems[2].label = `Grupo: ${shortGroupName}`;
+                    }
+                }
+
+                // Extraer el nombre del curso de manera segura desde Backend (Respaldo robusto para F5/Recarga)
+                if (group.course && group.course.name && this.breadcrumbItems.length > 1) {
+                    const rawCourseName = group.course.name.replace(/^Curso[:\s]+/i, '').trim();
+                    const shortCourseName = rawCourseName.length > 30 ? rawCourseName.substring(0, 30) + '...' : rawCourseName;
+                    this.breadcrumbItems[1].label = `Curso: ${shortCourseName}`;
+
+                    // Asegurar que pasamos este nombre en el botón de ir al grupo (Back navigation state preserver)
+                    this.courseLabel = group.course.name;
+                    if (this.breadcrumbItems.length > 2 && this.breadcrumbItems[2].queryParams) {
+                        this.breadcrumbItems[2].queryParams.courseName = this.courseLabel;
+                    }
+                }
+
+                // Optimización de Cupo: Calcular inmediatamente usando los contadores directos del backend
+                this.acceptedCount = group.acceptedCount || 0;
+                const pendingCount = group.pendingRequestsCount || 0;
+
+                // Si el backend nos da availablePlaces lo usamos, si no calculamos (incluyendo pendientes si el usuario así lo prefiere)
+                if (group.availablePlaces !== undefined) {
+                    this.isGroupFull = group.availablePlaces <= 0;
+                } else if (group.limitStudents) {
+                    this.isGroupFull = (this.acceptedCount + pendingCount) >= group.limitStudents;
+                }
 
                 // 1. Priorizar configuración RICH (Ya poblada en el grupo)
                 const populatedConfig = group.course?.courseType;
@@ -199,15 +243,31 @@ export class GroupPersonsComponent implements OnInit {
     loadPersons() {
         if (!this.currentGroupId) return;
         this.tableConfig.loading = true;
+        this.allEnrollments = [];
+        this.filteredEnrollments = [];
+        this.persons = [];
+        // NO reseteamos acceptedCount ni isGroupFull aquí para evitar parpadeo si ya los puso loadGroupDetails
+
         this.groupsService.getEnrollmentsByGroupId(+this.currentGroupId).subscribe({
             next: (data: any[]) => {
                 // Adaptamos la estructura: el componente de tabla espera las propiedades a nivel raíz
                 this.allEnrollments = data.map(item => {
+                    // Concatenar nombre completo para mostrar
+                    const fullName = [item.person?.name, item.person?.paternal_lastName, item.person?.maternal_lastName]
+                        .filter(Boolean)
+                        .join(' ')
+                        .trim();
+
                     const flattened: any = {
                         ...item.person,
+                        name: fullName || 'Sin Nombre',
+                        enrollmentId: item.enrollmentId,
                         responses: item.enrollmentResponse,
-                        documents: item.documentCourses,
-                        status: item.person.status || (item.isAcepted ? 'Aprobado' : 'Pendiente')
+                        documentCoursesEnrollments: item.documentCoursesEnrollments || [],
+                        // Mapeo de estatus del curso (CURSANDO, APROBADO, REPROBADO)
+                        // Para compatibilidad con mocks o el endpoint real
+                        status: item.status || item.isApproved || 'CURSANDO',
+                        _rawEnrollment: item // Preservar enrollment completo para generación de PDF
                     };
 
                     // Extraer respuestas dinámicas a la raíz para que la tabla las vea
@@ -229,6 +289,19 @@ export class GroupPersonsComponent implements OnInit {
                                 }
                                 // 2. Siempre guardar por ID por si acaso
                                 flattened[`field_${rfpId}`] = resp.value;
+                            } else {
+                                // Tratar de mapear por el fieldName directamente
+                                const fName = fieldData?.fieldName || resp.courseConfigField?.fieldName;
+                                if (fName) {
+                                    const lower = fName.toLowerCase();
+                                    if (lower.includes('dirección')) flattened['address'] = resp.value;
+                                    else if (lower.includes('sexo')) flattened['sex'] = resp.value;
+                                    else if (lower.includes('telefono') || lower.includes('celular') || lower.includes('contacto')) flattened['phone'] = resp.value;
+                                    else if (lower.includes('licencia')) flattened['license'] = resp.value;
+                                    else if (lower.includes('nuc')) flattened['nuc'] = resp.value;
+                                    else if (lower.includes('correo') || lower.includes('email')) flattened['email'] = resp.value;
+                                    else flattened[fName] = resp.value;
+                                }
                             }
                         });
                     }
@@ -236,6 +309,16 @@ export class GroupPersonsComponent implements OnInit {
                     return flattened;
                 });
                 this.filterData('');
+
+                // Calcular estado de ocupación global (Priorizar conteo total del server)
+                // Si el server no mandó el contador, usamos el tamaño del array
+                if (this.currentGroup && this.currentGroup.acceptedCount === undefined) {
+                    this.acceptedCount = this.allEnrollments.length;
+                    if (this.currentGroup.limitStudents) {
+                        this.isGroupFull = this.acceptedCount >= this.currentGroup.limitStudents;
+                    }
+                }
+
                 this.tableConfig.loading = false;
             },
             error: (err) => {
@@ -256,6 +339,7 @@ export class GroupPersonsComponent implements OnInit {
 
     filterData(query: string) {
         const term = query.toLowerCase().trim();
+        this.currentSearchTerm = term;
         if (!term) {
             this.filteredEnrollments = [...this.allEnrollments];
         } else {
@@ -281,74 +365,43 @@ export class GroupPersonsComponent implements OnInit {
         // Columnas por defecto (Respaldo)
         this.tableColumns = [
             { key: 'name', label: 'Nombre Completo', template: this.nameTemplate },
-            { key: 'license', label: 'Licencia' },
             { key: 'curp', label: 'CURP' },
+            { key: 'phone', label: 'Teléfono' },
             { key: 'status', label: 'Estatus', template: this.statusTemplate, align: 'center' },
             { key: 'actions', label: 'Acciones', template: this.actionsTemplate, align: 'center' }
         ];
     }
 
     updateColumns(config: any) {
-        const dynamicColumns: TableColumn[] = [];
+        // Columnas base estrictas solicitadas por reglas de negocio
+        const dynamicColumns: TableColumn[] = [
+            { key: 'name', label: 'Nombre Completo', template: this.nameTemplate },
+            { key: 'curp', label: 'CURP' },
+            { key: 'phone', label: 'Teléfono' }
+        ];
 
-        // 1. Siempre mostrar nombre combinado
-        dynamicColumns.push({ key: 'name', label: 'Nombre Completo', template: this.nameTemplate });
-
-        // 2. Mapear campos visibles de la configuración
-        const addedFields = new Set<string>();
-
+        // Columnas dinámicas limitadas a Licencia y NUC
         if (config.courseConfigField) {
-            const idToFieldName: Record<number, string> = {
-                4: 'address', 5: 'nuc', 6: 'sex', 7: 'email',
-                8: 'phone', 9: 'license', 10: 'curp'
-            };
-            const idToLabel: Record<number, string> = {
-                4: 'Dirección', 5: 'NUC', 6: 'Sexo', 7: 'Email',
-                8: 'Teléfono', 9: 'Licencia', 10: 'CURP'
-            };
-
             config.courseConfigField.forEach((cf: any) => {
-                const fieldData = cf.requirementFieldPerson;
-                const fieldId = typeof fieldData === 'object' ? fieldData.id : fieldData;
-                const fieldName = idToFieldName[fieldId];
+                const configField = cf.requirementFieldPerson;
+                if (configField) {
+                    const label = configField.fieldName || '';
+                    const key = label.toLowerCase();
 
-                if (fieldName && fieldName !== 'name') {
-                    dynamicColumns.push({
-                        key: fieldName,
-                        label: (typeof fieldData === 'object' ? fieldData.fieldName : idToLabel[fieldId]) || fieldName
-                    });
-                    addedFields.add(fieldName);
-                }
-            });
-        } else if (config.registrationFields) {
-            // Legacy / Fallback
-            config.registrationFields.forEach((field: any) => {
-                if (field.visible && !['name', 'paternal_lastName', 'maternal_lastName'].includes(field.fieldName)) {
-                    dynamicColumns.push({
-                        key: field.fieldName,
-                        label: field.label
-                    });
-                    addedFields.add(field.fieldName);
+                    if (key.includes('licencia')) {
+                        if (!dynamicColumns.find(c => c.key === 'license')) {
+                            dynamicColumns.push({ key: 'license', label: label, sortable: true });
+                        }
+                    } else if (key.includes('nuc')) {
+                        if (!dynamicColumns.find(c => c.key === 'nuc')) {
+                            dynamicColumns.push({ key: 'nuc', label: label, sortable: true });
+                        }
+                    }
                 }
             });
         }
 
-        // 3. ASEGURAR CAMPOS BASE (Email, Teléfono, CURP) si no vienen en dinámicos
-        // Por solicitud del usuario, estos son esenciales ahora.
-        const baseEssentials = [
-            { key: 'email', label: 'Email' },
-            { key: 'phone', label: 'Teléfono' },
-            { key: 'curp', label: 'CURP' }
-        ];
-
-        baseEssentials.forEach(base => {
-            if (!addedFields.has(base.key)) {
-                dynamicColumns.push({ key: base.key, label: base.label });
-                addedFields.add(base.key);
-            }
-        });
-
-        // 4. Columnas fijas de sistema al final
+        // Columnas fijas de sistema al final
         dynamicColumns.push({ key: 'status', label: 'Estatus', template: this.statusTemplate, align: 'center' });
         dynamicColumns.push({ key: 'actions', label: 'Acciones', template: this.actionsTemplate, align: 'center' });
 
@@ -377,7 +430,11 @@ export class GroupPersonsComponent implements OnInit {
                         if (needsSearch) {
                             this.isSearchModalOpen = true;
                         } else {
-                            this.router.navigate(['nuevo'], { relativeTo: this.route });
+                            this.router.navigate(['nuevo'], {
+                                relativeTo: this.route,
+                                queryParamsHandling: 'merge',
+                                queryParams: { groupLabel: this.groupLabel }
+                            });
                         }
                     } else {
                         this.isSearchModalOpen = true;
@@ -392,9 +449,9 @@ export class GroupPersonsComponent implements OnInit {
     }
 
     onPersonFound(person: Person) {
-        // SI SE ENCUENTRA: Navegar con datos precargados
         this.router.navigate(['nuevo'], {
             relativeTo: this.route,
+            queryParamsHandling: 'merge',
             queryParams: {
                 found: 'true',
                 name: person.name,
@@ -403,18 +460,20 @@ export class GroupPersonsComponent implements OnInit {
                 license: person.license,
                 curp: person.curp,
                 sex: person.sex,
-                address: person.address
+                address: person.address,
+                groupLabel: this.groupLabel
             }
         });
         this.isSearchModalOpen = false;
     }
 
     onManualRegistration(license: string) {
-        // NO SE ENCUENTRA o RESPALDO: Navegar solo con licencia
         this.router.navigate(['nuevo'], {
             relativeTo: this.route,
+            queryParamsHandling: 'merge',
             queryParams: {
-                license: license
+                license: license,
+                groupLabel: this.groupLabel
             }
         });
         this.isSearchModalOpen = false;
@@ -448,29 +507,43 @@ export class GroupPersonsComponent implements OnInit {
 
     // LÓGICA DE NEGOCIO 
 
-    setExamResult(person: Person, result: 'Aprobado' | 'No Aprobado') {
-        if (result === 'Aprobado') {
-            this.openConfirm({
-                title: 'Aprobar Persona',
-                message: `¿Está seguro de que desea APROBAR a ${person.name}?\nEsta acción habilitará la gestión de documentos.`,
-                type: 'success',
-                confirmText: 'Sí, Aprobar',
-                cancelText: 'Cancelar'
-            }, () => {
-                person.status = 'Aprobado';
-                this.notificationService.showSuccess('Aprobado', `La persona ${person.name} ha sido aprobada exitosamente.`);
+    setExamResult(person: any, result: 'APROBADO' | 'REPROBADO') {
+        const title = result === 'APROBADO' ? 'Aprobar Persona' : 'Reprobar Persona';
+        const message = result === 'APROBADO'
+            ? `¿Está seguro de que desea APROBAR a ${person.name}?\nEsta acción habilitará la gestión de documentos.`
+            : `¿Está seguro de que desea REPROBAR a ${person.name}?`;
+        const type = result === 'APROBADO' ? 'success' : 'danger';
+        const confirmBtn = result === 'APROBADO' ? 'Sí, Aprobar' : 'Sí, Reprobar';
+
+        this.openConfirm({
+            title: title,
+            message: message,
+            type: type,
+            confirmText: confirmBtn,
+            cancelText: 'Cancelar'
+        }, () => {
+            if (!person.enrollmentId) {
+                this.notificationService.showError('Error', 'No se encontró ID de inscripción.');
+                return;
+            }
+
+            this.tableConfig.loading = true;
+            this.groupsService.updateEnrollmentStatus(person.enrollmentId, result).subscribe({
+                next: () => {
+                    person.status = result;
+                    this.notificationService.showSuccess(
+                        result === 'APROBADO' ? 'Aprobado' : 'Reprobado',
+                        `El estatus de ${person.name} ha sido actualizado a ${result}.`
+                    );
+                    this.tableConfig.loading = false;
+                },
+                error: (err) => {
+                    console.error('Error updating status', err);
+                    this.notificationService.showError('Error', 'No se pudo actualizar el estatus.');
+                    this.tableConfig.loading = false;
+                }
             });
-        } else {
-            this.openConfirm({
-                title: 'Reprobar Persona',
-                message: `¿Está seguro de que desea REPROBAR a ${person.name}?`,
-                type: 'danger',
-                confirmText: 'Sí, Reprobar',
-                cancelText: 'Cancelar'
-            }, () => {
-                person.status = 'No Aprobado';
-            });
-        }
+        });
     }
 
     requestTarjeton(person: Person) {
@@ -612,7 +685,47 @@ export class GroupPersonsComponent implements OnInit {
         this.openAlert('Visualizando', 'Simulando vista de Constancia...', 'info');
     }
 
-    deletePerson(person: Person) {
+    cancelPerson(person: any) {
+        if (!person.enrollmentId) {
+            this.notificationService.showError('Error', 'No se pudo identificar la inscripción a cancelar.');
+            return;
+        }
+
+        this.openConfirm({
+            title: 'Cancelar Inscripción',
+            message: `Esta acción dará de baja a ${person.name} y liberará 1 lugar del cupo del grupo.\n¿Desea continuar?`,
+            type: 'danger',
+            confirmText: 'Cancelar Inscripción',
+            cancelText: 'Volver'
+        }, () => {
+            this.groupsService.cancelEnrollment(person.enrollmentId).subscribe({
+                next: () => {
+                    this.notificationService.showSuccess('Cancelado', `Se ha dado de baja la inscripción de ${person.name}.`);
+                    // Filtrar de la tabla local
+                    this.allEnrollments = this.allEnrollments.filter(d => d.enrollmentId !== person.enrollmentId);
+
+                    // Actualizar el conteo de ocupación de forma instantánea
+                    this.acceptedCount = Math.max(0, this.acceptedCount - 1);
+                    if (this.currentGroup && this.currentGroup.limitStudents) {
+                        this.isGroupFull = this.acceptedCount >= this.currentGroup.limitStudents;
+                    }
+
+                    this.filterData(this.currentSearchTerm || '');
+                },
+                error: (err) => {
+                    console.error('Error canceling enrollment', err);
+                    this.notificationService.showError('Error', 'Ocurrió un error al intentar cancelar la inscripción.');
+                }
+            });
+        });
+    }
+
+    deletePerson(person: any) {
+        if (!person.enrollmentId) {
+            this.notificationService.showError('Error', 'No se pudo identificar la inscripción a eliminar.');
+            return;
+        }
+
         this.openConfirm({
             title: 'Eliminar Persona',
             message: `¿Está seguro de que desea eliminar a ${person.name} del grupo?`,
@@ -620,7 +733,70 @@ export class GroupPersonsComponent implements OnInit {
             confirmText: 'Eliminar',
             cancelText: 'Cancelar'
         }, () => {
-            this.persons = this.persons.filter(d => d.id !== person.id);
+            this.groupsService.deleteEnrollment(person.enrollmentId).subscribe({
+                next: () => {
+                    this.notificationService.showSuccess('Eliminado', `Se ha eliminado la inscripción de ${person.name}.`);
+                    // Filtrar asincrónicamente
+                    this.allEnrollments = this.allEnrollments.filter(d => d.enrollmentId !== person.enrollmentId);
+                    this.filterData(this.currentSearchTerm || '');
+                },
+                error: (err) => {
+                    console.error('Error deleting enrollment', err);
+                    this.notificationService.showError('Error', 'Ocurrió un error al intentar eliminar la inscripción.');
+                }
+            });
         });
+    }
+
+    openInfoModal(person: any) {
+        this.selectedPersonForInfo = person;
+        this.selectedPersonInfoFields = [];
+
+        // Campos base
+        this.selectedPersonInfoFields.push({ label: 'Nombre completo', value: person.name || 'N/A' });
+        if (person.address) this.selectedPersonInfoFields.push({ label: 'Dirección', value: person.address });
+        this.selectedPersonInfoFields.push({ label: 'CURP', value: person.curp || 'N/A' });
+        this.selectedPersonInfoFields.push({ label: 'Número de contacto', value: person.phone || 'N/A' });
+        if (person.email) this.selectedPersonInfoFields.push({ label: 'Correo electrónico', value: person.email });
+        if (person.license) this.selectedPersonInfoFields.push({ label: 'Licencia', value: person.license });
+        if (person.nuc) this.selectedPersonInfoFields.push({ label: 'NUC', value: person.nuc });
+        if (person.sex) this.selectedPersonInfoFields.push({ label: 'Sexo', value: person.sex });
+
+        // Agregar campos capturados dinámicamente que faltan en el mapeo base
+        if (this.currentGroup?.course?.courseType?.courseConfigField) {
+            this.currentGroup.course.courseType.courseConfigField.forEach((cf: any) => {
+                const configField = cf.requirementFieldPerson;
+                if (configField) {
+                    const label = configField.fieldName;
+                    const fieldId = typeof configField === 'object' ? configField.id : configField;
+
+                    // Evitar duplicar campos base agregados manualmente arriba
+                    const labelLower = (label || '').toLowerCase();
+                    const isBaseField = labelLower.includes('dirección') || labelLower.includes('curp') ||
+                        labelLower.includes('telefono') || labelLower.includes('contacto') ||
+                        labelLower.includes('correo') || labelLower.includes('email') ||
+                        labelLower.includes('licencia') || labelLower.includes('nuc') ||
+                        labelLower.includes('sexo');
+
+                    if (!isBaseField && label) {
+                        let value = person[`field_${fieldId}`];
+                        if (!value && person[label]) value = person[label];
+                        if (!value && person.responses) {
+                            const r = person.responses.find((res: any) => res.courseConfigField?.requirementFieldPerson?.id === fieldId);
+                            if (r) value = r.value;
+                        }
+                        this.selectedPersonInfoFields.push({ label: label, value: value || 'N/A' });
+                    }
+                }
+            });
+        }
+
+        this.isInfoModalOpen = true;
+    }
+
+    closeInfoModal() {
+        this.isInfoModalOpen = false;
+        this.selectedPersonForInfo = null;
+        this.selectedPersonInfoFields = [];
     }
 }

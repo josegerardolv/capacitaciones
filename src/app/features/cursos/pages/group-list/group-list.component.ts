@@ -16,13 +16,16 @@ import { InstitutionalButtonComponent } from '../../../../shared/components/butt
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { InstitutionalCardComponent } from '../../../../shared/components/institutional-card/institutional-card.component';
 import { ModalFormComponent, FormAction } from '../../../../shared/components/forms/modal-form.component';
-import { InputEnhancedComponent } from '@/app/shared/components';
+import { InputEnhancedComponent, DayPickerModule } from '@/app/shared/components';
 import { GroupRequestsComponent } from '../../components/group-requests/group-requests.component';
 import { BreadcrumbComponent } from '../../../../shared/components/breadcrumb/breadcrumb.component';
 import { BreadcrumbItem } from '../../../../shared/components/breadcrumb/breadcrumb.model';
 import { UniversalIconComponent } from '@/app/shared/components';
 import { HttpErrorResponse } from '@angular/common/http';
 import { TableFiltersComponent } from '@/app/shared/components/table-filters/table-filters.component';
+import { CompactDateInputComponent } from '@/app/shared/components/date-pickers/compact-date-input/compact-date-input.component';
+import { TimePickerComponent } from '@/app/shared/components/date-pickers/time-picker/time-picker.component';
+import { ReportsService } from '../../../../core/services/reports.service';
 
 @Component({
     selector: 'app-group-list',
@@ -40,12 +43,11 @@ import { TableFiltersComponent } from '@/app/shared/components/table-filters/tab
         ModalFormComponent,
         InputEnhancedComponent,
         GroupRequestsComponent,
-        BreadcrumbComponent,
         UniversalIconComponent,
         BreadcrumbComponent,
-        UniversalIconComponent,
         AlertModalComponent,
-        TableFiltersComponent
+        TableFiltersComponent,
+        DayPickerModule
     ],
     templateUrl: './group-list.component.html'
 })
@@ -59,6 +61,15 @@ export class GroupListComponent implements OnInit {
     @ViewChild('dateTemplate', { static: true }) dateTemplate!: TemplateRef<any>; // Template para Fecha
     @ViewChild('expirationDateTemplate', { static: true }) expirationDateTemplate!: TemplateRef<any>; // Template para Expiración
     @ViewChild('timeTemplate', { static: true }) timeTemplate!: TemplateRef<any>; // Template para Hora
+
+    @ViewChild('datePicker') datePicker?: CompactDateInputComponent;
+    @ViewChild('timePicker') timePicker?: TimePickerComponent;
+    @ViewChild('limitPicker') limitPicker?: CompactDateInputComponent;
+
+    // Referencias para inputs de texto para auto-focus
+    @ViewChild('nameInput') nameInput?: any;
+    @ViewChild('locationInput') locationInput?: any;
+    @ViewChild('quantityInput') quantityInput?: any;
 
     groups: Group[] = [];
     selectedGroups: Group[] = []; // Array de grupos seleccionados (para la tabla institucional)
@@ -80,16 +91,42 @@ export class GroupListComponent implements OnInit {
     isUrlDateModalOpen = false;
     urlForm!: FormGroup; // FormGroup para el modal
     pendingUrlGroups: Group[] = [];
+    readyUrlGroups: Group[] = [];
     maxDateForUrl: string = ''; // Restricción para el selector
     maxDateForForm: string = ''; // Restricción para el selector en Formulario de Grupo
     minDateForForm: string = ''; // Restricción para fecha de inicio (Hoy)
 
     urlModalActions: FormAction[] = [
         {
+            label: 'Cancelar',
+            type: 'button',
+            variant: 'secondary',
+            action: () => this.isUrlDateModalOpen = false
+        },
+        {
             label: 'Continuar',
             type: 'submit',
             variant: 'primary',
             icon: 'arrow_forward'
+        }
+    ];
+
+    modalActionsPrimary: FormAction[] = [
+        {
+            label: 'Guardar',
+            type: 'submit',
+            variant: 'primary',
+            icon: 'save'
+        }
+    ];
+
+    modalActionsSecondary: FormAction[] = [
+        {
+            label: 'Cancelar',
+            type: 'button',
+            variant: 'outline',
+            icon: 'close',
+            action: () => this.closeModal()
         }
     ];
 
@@ -160,14 +197,106 @@ export class GroupListComponent implements OnInit {
         return expirationDate < today;
     }
 
+    getDynamicGroupStatus(group: Group): { text: string, type: 'success' | 'warning' | 'danger' | 'info' | 'neutral' } {
+        if (!group.groupStartDate) return { text: 'Sin fecha', type: 'neutral' };
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const startDate = new Date(group.groupStartDate);
+        startDate.setHours(0, 0, 0, 0);
+
+        // 3. Finalizado (El curso ya pasó)
+        if (today > startDate) {
+            return { text: 'Finalizado', type: 'neutral' }; // Gris
+        }
+
+        // 2. En Curso (El curso es hoy)
+        if (today.getTime() === startDate.getTime()) {
+            return { text: 'En curso', type: 'info' }; // Azul
+        }
+
+        // 1. Próximo a Iniciar (Faltan días para arrancar el curso)
+        const diffTime = startDate.getTime() - today.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        if (diffDays === 1) return { text: 'Inicia mañana', type: 'warning' };
+        if (diffDays <= 3 && diffDays > 1) return { text: `Inicia en ${diffDays} días`, type: 'warning' };
+
+        // Falta más de 3 días para iniciar
+        return { text: 'Abierto', type: 'success' }; // Verde
+    }
+
+    getLinkStatus(group: Group): { state: 'create_blue' | 'create_red' | 'copy_green' | 'copy_red' | 'full_grey', icon: string, tooltip: string, colorClass: string } {
+        const isExpired = this.isGroupExpired(group);
+        const hasUrl = !!this.getGroupUrl(group);
+        const isFull = group.acceptedCount !== undefined && group.limitStudents !== undefined && group.acceptedCount >= group.limitStudents;
+
+        if (isFull) {
+            return { state: 'full_grey', icon: 'link', tooltip: 'Cupo lleno. Alcanzó su límite máximo.', colorClass: 'text-gray-400 hover:text-gray-500' };
+        }
+        if (!hasUrl && !isExpired) {
+            return { state: 'create_blue', icon: 'add_circle', tooltip: 'Generar enlace', colorClass: 'text-blue-600 hover:text-blue-800' };
+        }
+        if (!hasUrl && isExpired) {
+            return { state: 'create_red', icon: 'add_circle', tooltip: 'Fecha vencida. Actualiza la fecha para generar enlace', colorClass: 'text-red-500 hover:text-red-700' };
+        }
+        if (hasUrl && !isExpired) {
+            return { state: 'copy_green', icon: 'link', tooltip: 'Copiar enlace', colorClass: 'text-green-500 hover:text-green-700' };
+        }
+        if (hasUrl && isExpired) {
+            return { state: 'copy_red', icon: 'link_off', tooltip: 'Enlace vencido. Actualiza la fecha para reactivar', colorClass: 'text-red-500 hover:text-red-700' };
+        }
+        return { state: 'create_blue', icon: 'add_circle', tooltip: 'Generar enlace', colorClass: 'text-gray-500' };
+    }
+
+    handleLinkAction(group: Group) {
+        const status = this.getLinkStatus(group);
+        if (status.state === 'create_blue') {
+            this.generateUrlSingle(group);
+        } else if (status.state === 'copy_green') {
+            this.copyUrl(this.getGroupUrl(group));
+        } else if (status.state === 'full_grey') {
+            this.openAlert(
+                'Cupo Lleno',
+                `El grupo ha alcanzado su límite máximo de alumnos (<b>${group.limitStudents}</b>).<br><br>El enlace de registro público ya está inactivo y no se admitirán nuevas solicitudes a menos que liberes un lugar o aumentes la capacidad.`,
+                'warning'
+            );
+        } else {
+            // Manejar estados rojos (bloqueados por fecha expirada) con el Modal
+            this.openAlert(
+                'Acción no permitida',
+                'No puedes interactuar con el enlace de registro porque la <b>fecha límite</b> (' +
+                this.formatDateForTable(group.endInscriptionDate) +
+                ') ya se ha vencido.<br><br>Por favor, edita las fechas del grupo si deseas continuar admitiendo registros.',
+                'warning'
+            );
+        }
+    }
+
+    get groupsToGenerateCount(): number {
+        //Solo contamos los que CUMPLEN la condición (Sin URL Y con Fecha Límite)
+        return this.selectedGroups.filter(g => !this.getGroupUrl(g) && !!g.endInscriptionDate).length;
+    }
+
     get canGenerateUrl(): boolean {
-        // Habilitar si hay al menos uno seleccionado que NO tenga URL generada (ni guardada ni dinámica vía UUID)
-        return this.selectedGroups.length > 0 && this.selectedGroups.some(g => !this.getGroupUrl(g));
+        // Habilitar si hay al menos un grupo seleccionado que NO tenga URL
+        // Esto permite que el usuario le pique y el sistema le mande el mensaje informativo si faltan fechas
+        return this.selectedGroups.some(g => !this.getGroupUrl(g));
     }
 
     get canExport(): boolean {
+        // Habilitar Exportar si hay al menos un grupo seleccionado
         return this.selectedGroups.length > 0;
     }
+
+    groupSelectionPredicate = (item: any): boolean => {
+        // Regla: Marcar todo solo debe seleccionar los que están listos para Generar URL
+        // (Sin URL y con fecha límite establecida)
+        return !this.getGroupUrl(item) && !!item.endInscriptionDate;
+    };
+
+    showExportMenu = false;
 
     currentCourse: any = null; // Almacenar objeto completo del curso
 
@@ -177,7 +306,8 @@ export class GroupListComponent implements OnInit {
         private router: Router,
         private route: ActivatedRoute,
         private notificationService: NotificationService,
-        private fb: FormBuilder
+        private fb: FormBuilder,
+        private reportsService: ReportsService
     ) { }
 
     ngOnInit(): void {
@@ -190,10 +320,11 @@ export class GroupListComponent implements OnInit {
 
         if (this.cursoId) {
             this.courseLabel = this.courseNameFromQuery ? this.courseNameFromQuery : this.cursoId;
+            let cleanCourseLabel = this.courseLabel.replace(/^Curso[:\s]+/i, '').trim();
+            const shortCourseName = cleanCourseLabel.length > 30 ? cleanCourseLabel.substring(0, 30) + '...' : cleanCourseLabel;
             this.breadcrumbItems = [
                 { label: 'Cursos', url: '/cursos' },
-                { label: `Curso ${this.courseLabel}` },
-                { label: 'Grupos', url: `/cursos/${this.cursoId}/grupos` }
+                { label: `Curso: ${shortCourseName}` }
             ];
 
             // Cargar detalles del curso para obtener courseTypeId, LUEGO cargar grupos
@@ -236,7 +367,8 @@ export class GroupListComponent implements OnInit {
 
         const page = this.paginationConfig.currentPage;
         const limit = this.paginationConfig.pageSize;
-        const courseId = this.currentCourse ? this.currentCourse.id : undefined;
+        // Priorizar el param de la ruta antes que el objeto parseado (ya que el curso puede no encontrarse en la pag 1 de cursos)
+        const courseId = this.cursoId ? Number(this.cursoId) : (this.currentCourse ? this.currentCourse.id : undefined);
 
         this.groupsService.getGroups(page, limit, this.currentSearchTerm, courseId)
             .pipe(timeout(5000))
@@ -400,7 +532,7 @@ export class GroupListComponent implements OnInit {
                 limitStudents: Number(formValue.limitStudents),
                 groupStartDate: formValue.date,
                 endInscriptionDate: formValue.linkExpiration || undefined, // Enviar undefined (Si el usuario no selecciona fecha)
-                course: this.currentCourse ? this.currentCourse.id : undefined
+                course: this.cursoId ? Number(this.cursoId) : (this.currentCourse ? this.currentCourse.id : undefined)
             };
 
             this.groupsService.createGroup(rawPayload as any).subscribe({
@@ -430,7 +562,7 @@ export class GroupListComponent implements OnInit {
                 limitStudents: Number(formValue.limitStudents),
                 groupStartDate: formValue.date,
                 endInscriptionDate: formValue.linkExpiration || undefined, // Send undefined
-                course: this.currentCourse ? this.currentCourse.id : undefined
+                course: this.cursoId ? Number(this.cursoId) : (this.currentCourse ? this.currentCourse.id : undefined)
             };
             this.groupsService.updateGroup(this.editingGroupId, payload).subscribe({
                 next: () => {
@@ -488,6 +620,16 @@ export class GroupListComponent implements OnInit {
         // Inicializar form para URL
         this.urlForm = this.fb.group({
             expirationDate: ['', [Validators.required]]
+        });
+
+        // Auto-submit al elegir fecha si es generación individual o guiada
+        this.urlForm.get('expirationDate')?.valueChanges.subscribe(val => {
+            if (val && this.isUrlDateModalOpen && this.urlForm.valid) {
+                // Pequeño delay para que el usuario vea la selección antes de cerrar
+                setTimeout(() => {
+                    if (this.isUrlDateModalOpen) this.submitUrlGeneration();
+                }, 300);
+            }
         });
 
         // Escuchar cambios en la fecha del curso para actualizar el límite máximo
@@ -570,49 +712,55 @@ export class GroupListComponent implements OnInit {
         return `${day}/${month}/${year}`;
     }
 
-    generateUrl() {
-        // Filtramos grupos que ya están seleccionados pero no tienen URL (doble validación)
-        const groupsToGenerate = this.selectedGroups.filter(g => !g.inscriptionURL);
-
-        if (groupsToGenerate.length === 0) {
-            this.notificationService.info('Información', 'Todos los grupos seleccionados ya tienen una URL generada.');
+    generateUrlSingle(group: Group) {
+        if (group.inscriptionURL) {
+            this.notificationService.info('Información', 'Este grupo ya tiene una URL generada.');
             return;
         }
 
-        const missingDateGroups = groupsToGenerate.filter(g => !g.endInscriptionDate);
-
-        if (missingDateGroups.length > 0) {
-            // Regla de Negocio: Si falta fecha, SOLO se puede procesar uno a la vez
-            if (missingDateGroups.length > 1) {
-                this.notificationService.warning(
-                    'Selección Múltiple no permitida',
-                    'Has seleccionado varios grupos que no tienen "Fecha Límite" configurada. Por favor, selecciona solo uno para establecer su fecha individualmente.'
-                );
-                return;
-            }
-
-            // Calcular fecha máxima más estricta (fecha de inicio del grupo único)
-            const group = missingDateGroups[0];
+        if (!group.endInscriptionDate) {
             const startDate = group.groupStartDate ? new Date(group.groupStartDate) : null;
-
             if (startDate) {
-                // Restar 1 día para que el límite sea "estrictamente antes" (Usuario: "si es 31, elegir hasta 30")
                 startDate.setDate(startDate.getDate() - 1);
                 this.maxDateForUrl = startDate.toISOString().split('T')[0];
             } else {
                 this.maxDateForUrl = '';
             }
 
-            // Preparar modal
-            this.pendingUrlGroups = missingDateGroups; // Será un array de 1 elemento
+            this.pendingUrlGroups = [group];
             this.urlForm.reset();
             this.isUrlDateModalOpen = true;
             return;
         }
 
-        this.proceedWithUrlGeneration(groupsToGenerate);
+        this.proceedWithUrlGeneration([group], true);
     }
 
+    generateUrl() {
+        // REGLA: El botón masivo solo procesa grupos que YA están listos (Sin URL y con Fecha)
+        const readyToGenerate = this.selectedGroups.filter(g => !this.getGroupUrl(g) && !!g.endInscriptionDate);
+
+        if (readyToGenerate.length === 0) {
+            const hasMissingDate = this.selectedGroups.some(g => !this.getGroupUrl(g) && !g.endInscriptionDate);
+
+            if (hasMissingDate) {
+                this.openAlert(
+                    'Configuración Individual Requerida',
+                    'Los grupos seleccionados no tienen una "Fecha Límite" establecida. Estos deben configurarse y generarse por separado de forma individual.',
+                    'info'
+                );
+            } else {
+                this.notificationService.info(
+                    'Información',
+                    'No hay grupos seleccionados candidatos para generar URL (ya tienen enlace o no cumplen los requisitos).'
+                );
+            }
+            return;
+        }
+
+        // Proceder directamente con los listos (Generación Masiva: Requiere Confirmación)
+        this.proceedWithUrlGeneration(readyToGenerate, false);
+    }
     submitUrlGeneration() {
         if (this.urlForm.invalid) {
             this.urlForm.markAllAsTouched();
@@ -627,90 +775,123 @@ export class GroupListComponent implements OnInit {
             g.endInscriptionDate = dateVal;
         });
 
-        // Combinar con los que ya tenían fecha (si existieran en un flujo mixto, aunque aquí pendingUrlGroups son los que faltaban)
-        // En este flujo, si entramos al modal, es porque SOLO había grupos sin fecha (o el usuario seleccionó uno sin fecha).
-        // Procedemos a generar URLs para estos.
-        this.proceedWithUrlGeneration(this.pendingUrlGroups);
+        // Combinamos los que acabamos de poner fecha con los que ya tenían
+        const allGroupsToProcess = [...this.readyUrlGroups, ...this.pendingUrlGroups];
+
+        // Resetear estados del modal antes de proceder
         this.isUrlDateModalOpen = false;
+        this.readyUrlGroups = [];
+
+        // Ejecutar (Viene de modal individual: Skip Confirm)
+        this.proceedWithUrlGeneration(allGroupsToProcess, true);
     }
 
-    proceedWithUrlGeneration(groupsToGenerate: Group[]) {
-        // Confirmar generación masiva
+    proceedWithUrlGeneration(groupsToGenerate: Group[], skipConfirm: boolean = false) {
+        if (groupsToGenerate.length === 0) return;
+
+        // Si se indica skipConfirm (flujo individual/manual), ir directo al grano
+        if (skipConfirm) {
+            this.executeUrlGeneration(groupsToGenerate);
+            return;
+        }
+
+        const excludedCount = this.selectedGroups.length - groupsToGenerate.length;
+
+        let message = `Se generarán enlaces para ${groupsToGenerate.length} grupo(s).`;
+
+        if (excludedCount > 0) {
+            message += `\n\nNota: Se omitirán ${excludedCount} grupo(s) de la selección por no tener una fecha límite configurada o por ya tener un enlace activo.`;
+        }
+
+        message += `\n\n¿Deseas continuar con la generación masiva?`;
+
         this.openConfirm({
-            title: 'Generar URL Pública',
-            message: `Se generarán enlaces de registro para ${groupsToGenerate.length} grupo(s).\n\nEstos enlaces respetarán la "Fecha Límite de Auto-registro" configurada.\n¿Continuar?`,
+            title: 'Confirmar Generación Masiva',
+            message: message,
             type: 'info',
-            confirmText: 'Generar',
+            confirmText: 'Generar Todo',
             cancelText: 'Cancelar'
         }, () => {
-            this.tableConfig.loading = true;
-
-            // Creamos un array de flujos encadenados: Generar UUID (si falta) -> Actualizar con URL
-            const updateObservables = groupsToGenerate.map(group => {
-                // Paso al backend: Si NO tiene uuid, lo generamos primero
-                let uuidAction$: Observable<any> = of({ uuid: group.uuid });
-
-                if (!group.uuid) {
-                    uuidAction$ = this.groupsService.generateGroupUuid(group.id);
-                }
-
-                return uuidAction$.pipe(
-                    switchMap((response: any) => {
-                        // El backend suele devolver el objeto actualizado o un objeto con el nuevo uuid
-                        // Si no viene en el body, lo buscamos en el grupo original (si ya existía)
-                        const uuid = response?.uuid || response?.data?.uuid || group.uuid;
-
-                        if (!uuid) {
-                            throw new Error(`El servidor no proporcionó un código único para el grupo ${group.name}`);
-                        }
-
-                        // Construcción de URL con el UUID obtenido
-                        const origin = window.location.origin;
-                        const newUrl = `${origin}/public/register/${uuid}`;
-
-                        // Extraer ID del curso manejando objeto o número
-                        const courseId = (typeof group.course === 'object' && group.course !== null)
-                            ? (group.course as any).id
-                            : group.course;
-
-                        // Construir payload estándar según Swagger (SIN inscriptionURL)
-                        const payload: any = {
-                            name: group.name,
-                            location: group.location,
-                            schedule: group.schedule,
-                            limitStudents: group.limitStudents,
-                            groupStartDate: group.groupStartDate,
-                            endInscriptionDate: group.endInscriptionDate, // Ya viene asignado desde el modal si faltaba
-                            course: courseId
-                        };
-
-                        // Si el backend permite recibir el uuid en el body, lo incluimos
-                        if (uuid) payload.uuid = uuid;
-
-                        return this.groupsService.updateGroup(group.id, payload);
-                    })
-                );
-            });
-
-            if (updateObservables.length > 0) {
-                forkJoin(updateObservables).subscribe({
-                    next: () => {
-                        this.tableConfig.loading = false;
-                        this.notificationService.success('URL Generada', `Se han activado ${updateObservables.length} enlaces correctamente.`);
-                        this.selectedGroups = [];
-                        this.loadGroups();
-                    },
-                    error: (err) => {
-                        this.tableConfig.loading = false;
-                        console.error('Error in link generation chain:', err);
-                        this.notificationService.error('Error', 'No se pudieron generar los enlaces. Verifica la conexión con el servidor.');
-                    }
-                });
-            } else {
-                this.tableConfig.loading = false;
-                this.notificationService.info('Información', 'No había grupos pendientes de generar enlace.');
-            }
+            this.executeUrlGeneration(groupsToGenerate);
         });
+    }
+
+    /**
+     * Lógica core de generación de UUID y actualización de grupos
+     */
+    private executeUrlGeneration(groupsToGenerate: Group[]) {
+        this.tableConfig.loading = true;
+
+        // Creamos un array de flujos encadenados: Generar UUID (si falta) -> Actualizar con URL
+        const updateObservables = groupsToGenerate.map(group => {
+            // Paso al backend: Si NO tiene uuid, lo generamos primero
+            let uuidAction$: Observable<any> = of({ uuid: group.uuid });
+
+            if (!group.uuid) {
+                uuidAction$ = this.groupsService.generateGroupUuid(group.id);
+            }
+
+            return uuidAction$.pipe(
+                switchMap((response: any) => {
+                    const uuid = response?.uuid || response?.data?.uuid || group.uuid;
+
+                    if (!uuid) {
+                        throw new Error(`El servidor no proporcionó un código único para el grupo ${group.name}`);
+                    }
+
+                    // Construcción de URL con el UUID obtenido
+                    const origin = window.location.origin;
+                    const newUrl = `${origin}/public/register/${uuid}`;
+
+                    const courseId = (typeof group.course === 'object' && group.course !== null)
+                        ? (group.course as any).id
+                        : group.course;
+
+                    const payload: any = {
+                        name: group.name,
+                        location: group.location,
+                        schedule: group.schedule,
+                        limitStudents: group.limitStudents,
+                        groupStartDate: group.groupStartDate,
+                        endInscriptionDate: group.endInscriptionDate,
+                        course: courseId
+                    };
+
+                    if (uuid) payload.uuid = uuid;
+
+                    return this.groupsService.updateGroup(group.id, payload);
+                })
+            );
+        });
+
+        if (updateObservables.length > 0) {
+            forkJoin(updateObservables).subscribe({
+                next: () => {
+                    this.tableConfig.loading = false;
+                    const count = groupsToGenerate.length;
+                    const title = count === 1 ? 'URL Generada' : 'URLs Generadas';
+                    const message = count === 1
+                        ? `Se ha activado el enlace para el grupo "${groupsToGenerate[0].name}" correctamente.`
+                        : `Se han activado ${count} enlaces correctamente.`;
+
+                    this.openAlert(title, message, 'success');
+
+                    this.selectedGroups = [];
+                    this.loadGroups();
+                },
+                error: (err) => {
+                    this.tableConfig.loading = false;
+                    console.error('Error in link generation chain:', err);
+                    this.openAlert(
+                        'Error de Generación',
+                        'Ocurrió un problema al intentar generar los enlaces. Por favor, verifica la configuración del grupo o intenta más tarde.',
+                        'danger'
+                    );
+                }
+            });
+        } else {
+            this.tableConfig.loading = false;
+        }
     }
 
     // --- SELECTION LOGIC ---
@@ -747,7 +928,32 @@ export class GroupListComponent implements OnInit {
     }
 
     exportData() {
-        this.notificationService.info('Exportar', 'Descargando reporte de grupos...');
+        if (!this.canExport) return;
+        this.showExportMenu = !this.showExportMenu;
+    }
+
+    exportAs(format: 'csv' | 'excel') {
+        this.showExportMenu = false;
+        const courseId = this.cursoId ? Number(this.cursoId) : undefined;
+        const filename = `reporte-grupos-${new Date().getTime()}`;
+        const extension = format === 'excel' ? 'xlsx' : 'csv';
+
+        this.notificationService.info('Exportando', `Generando archivo ${format.toUpperCase()}...`);
+
+        const request$ = format === 'csv'
+            ? this.reportsService.exportGroupsCSV(courseId)
+            : this.reportsService.exportGroupsExcel(courseId);
+
+        request$.subscribe({
+            next: (blob) => {
+                this.reportsService.downloadFile(blob, `${filename}.${extension}`);
+                this.notificationService.success('Completado', 'El archivo se ha descargado correctamente.');
+            },
+            error: (err) => {
+                console.error(`Error exporting ${format}:`, err);
+                this.notificationService.error('Error', `No se pudo generar el reporte en formato ${format.toUpperCase()}.`);
+            }
+        });
     }
 
     private formatDuration(minutes: number | undefined): string {

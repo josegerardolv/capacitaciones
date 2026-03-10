@@ -26,10 +26,10 @@ export interface GalleryItem {
         <!-- Botón cerrar (diseño mejorado) -->
         <button type="button"
           aria-label="Cerrar galería"
-          class="absolute top-6 right-6 z-10 text-white hover:text-gray-200 bg-gradient-to-r from-institucional-primario/70 to-institucional-vino/80 hover:from-institucional-primario/80 hover:to-institucional-vino/90 rounded-2xl focus:outline-none focus:ring-4 focus:ring-white/30 ring-offset-0 flex items-center justify-center w-14 h-14 p-0 transition-all duration-300 hover:scale-110 group shadow-2xl backdrop-blur-lg"
+          class="absolute top-6 right-6 z-10 text-white bg-institucional-vino hover:bg-[#7a1231] rounded-2xl focus:outline-none focus:ring-4 focus:ring-white/80 ring-offset-0 flex items-center justify-center w-15 h-15 p-0 transition-all duration-300 hover:scale-200 group shadow-2xl"
           style="box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.5);"
           (click)="$event.stopPropagation(); close()">
-          <span class="material-symbols-outlined text-2xl leading-none block pointer-events-none group-hover:rotate-90 transition-transform duration-300">close</span>
+          <span class="material-symbols-outlined text-2xl leading-none block pointer-events-none transition-transform duration-300">close</span>
         </button>
         
         <!-- Información de navegación -->
@@ -63,10 +63,10 @@ export interface GalleryItem {
              (click)="$event.stopPropagation()">
           
           <!-- Imagen principal -->
-          <div class="relative max-w-full max-h-[80vh] flex items-center justify-center">
+          <div class="relative max-w-full max-h-[80vh] flex items-center justify-center mt-4">
             <img [src]="currentItem.src" 
                  [alt]="currentItem.alt || currentItem.title || 'Imagen'"
-                 class="max-w-full max-h-full object-contain rounded-3xl shadow-2xl transform transition-all duration-500 hover:scale-105"
+                 class="max-w-[90vw] max-h-[80vh] object-contain rounded-xl shadow-2xl transform transition-all duration-500"
                  style="box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.1);"
                  (load)="onImageLoad()"
                  (error)="onImageError()">
@@ -85,13 +85,13 @@ export interface GalleryItem {
           
           <!-- Información de la imagen -->
           <div *ngIf="currentItem.title || currentItem.description" 
-               class="mt-6 text-center max-w-2xl bg-gradient-to-r from-institucional-primario/70 to-institucional-vino/80 backdrop-blur-lg rounded-2xl p-6 shadow-2xl">
+               class="mt-4 text-center max-w-[90vw] bg-[#9D2449]/80 backdrop-blur-md rounded-xl py-3 px-6 shadow-xl flex items-center gap-4 border border-white/20">
             <h3 *ngIf="currentItem.title" 
-                class="text-2xl font-bold text-white mb-3 bg-gradient-to-r from-white to-institucional-neutro-claro bg-clip-text text-transparent">
-              {{ currentItem.title }}
+                class="text-xl font-medium text-white whitespace-nowrap tracking-wide drop-shadow-sm">
+              {{ currentItem.title }}:
             </h3>
             <p *ngIf="currentItem.description" 
-               class="text-gray-200 text-base font-medium leading-relaxed">
+               class="text-gray-100 text-sm font-medium whitespace-nowrap flex-1 overflow-hidden text-ellipsis">
               {{ currentItem.description }}
             </p>
           </div>

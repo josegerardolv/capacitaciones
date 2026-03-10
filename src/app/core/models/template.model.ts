@@ -103,6 +103,8 @@ export interface TemplateVariable {
   category?: 'participante' | 'curso' | 'institucion' | 'media' | 'otro';
   /** Descripción corta para mostrar en tooltip */
   description?: string;
+  /** Valor de ejemplo (desde enrollment) para vista previa */
+  sampleValue?: string;
 }
 
 // Configuración de página
@@ -170,7 +172,7 @@ export interface TemplateDocument {
   description: string;
   category: 'GENERAL' | 'CONSTANCIA' | 'DIPLOMA';
   fields: string[];
-  paymentConcepts: Concept[];
+  paymentConcept?: Concept;
   medias: any[];
   createdAt: string;
   updatedAt: string;
@@ -180,14 +182,14 @@ export interface CreateTemplateDocumentPayload {
   name: string;
   description: string;
   category: string;
-  paymentConcepts?: number[];
+  paymentConcept?: number;
 }
 
 export interface UpdateTemplateDocumentPayload {
   name?: string;
   description?: string;
   category?: string;
-  paymentConcepts?: number[];
+  paymentConcept?: number;
 }
 
 export interface CanvasDesign {

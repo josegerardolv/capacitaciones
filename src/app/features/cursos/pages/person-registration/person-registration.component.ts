@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule, ActivatedRoute } from '@angular/router';
+import { forkJoin } from 'rxjs';
 import { PersonFormComponent } from '../../components/person-form/person-form.component';
 import { AlertModalComponent, AlertConfig } from '../../../../shared/components/modals/alert-modal.component';
 import { DocumentSelectionModalComponent, DocumentOption } from '../../components/modals/document-selection-modal/document-selection-modal.component';
@@ -17,6 +18,7 @@ import { Person } from '../../../../core/models/person.model';
 import { CourseType } from '../../../../core/models/group.model';
 import { CourseTypeService } from '../../../../core/services/course-type.service';
 import { CourseTypeConfig, DocumentConfig, RegistrationFieldConfig } from '../../../../core/models/course-type-config.model';
+import { MailService } from '../../services/mail.service';
 
 @Component({
     selector: 'app-person-registration',
@@ -42,6 +44,10 @@ export class PersonRegistrationComponent implements OnInit {
     breadcrumbItems: BreadcrumbItem[] = [];
     prefilledData: any = null;
     currentPersonId: number | null = null; // ID de la persona encontrada
+    currentGroup: any = null;
+    personEmail: string | null = null;
+    isGroupFull: boolean = false;
+    acceptedCount: number = 0;
 
     // Configuración dinámica
     fieldsConfig: Record<string, RegistrationFieldConfig> = {};
@@ -63,8 +69,10 @@ export class PersonRegistrationComponent implements OnInit {
         private route: ActivatedRoute,
         private notificationService: NotificationService,
         private groupsService: GroupsService,
-        private courseTypeService: CourseTypeService
+        private courseTypeService: CourseTypeService,
+        private mailService: MailService
     ) { }
+
 
     ngOnInit(): void {
         let route = this.route;
@@ -74,16 +82,30 @@ export class PersonRegistrationComponent implements OnInit {
             route = route.parent!;
         }
 
+        const courseName = this.route.snapshot.queryParamMap.get('courseName');
+        const courseLabel = courseName ? courseName : (this.cursoId ? `Curso ${this.cursoId}` : 'Curso');
+        let cleanCourseLabel = courseLabel.replace(/^Curso[:\s]+/i, '').trim();
+        const shortCourseName = cleanCourseLabel.length > 30 ? cleanCourseLabel.substring(0, 30) + '...' : cleanCourseLabel;
+
         this.breadcrumbItems = [
             { label: 'Cursos', url: '/cursos' },
+            {
+                label: `Curso: ${shortCourseName}`,
+                url: `/cursos/${this.cursoId}/grupos`,
+                queryParams: { courseName: courseLabel }
+            }
         ];
-        if (this.cursoId) {
-            this.breadcrumbItems.push({ label: 'Grupos', url: `/cursos/${this.cursoId}/grupos` });
-        } else {
-            this.breadcrumbItems.push({ label: 'Grupos', url: '/cursos' });
-        }
-        this.breadcrumbItems.push({ label: 'Personas', url: this.cursoId && this.groupId ? `/cursos/${this.cursoId}/grupos/${this.groupId}/conductores` : '/cursos' });
-        this.breadcrumbItems.push({ label: 'Agregar' });
+
+        const groupLabelParam = this.route.snapshot.queryParamMap.get('groupLabel');
+
+        // El nombre del grupo lo cargaremos cuando tengamos los detalles del grupo más abajo
+        this.breadcrumbItems.push({
+            label: groupLabelParam ? `Grupo: ${groupLabelParam.replace(/^Grupo[:\s]+/i, '').trim()}` : `Grupo: Cargando...`,
+            url: `/cursos/${this.cursoId}/grupos/${this.groupId}/conductores`,
+            queryParams: { courseName: courseLabel, groupLabel: groupLabelParam }
+        });
+
+        this.breadcrumbItems.push({ label: 'Nueva persona' });
 
         this.route.queryParams.subscribe(params => {
             if (Object.keys(params).length > 0) {
@@ -94,8 +116,41 @@ export class PersonRegistrationComponent implements OnInit {
         if (this.groupId) {
             this.groupsService.getGroupById(+this.groupId).subscribe((group: any) => {
                 if (group) {
+                    this.currentGroup = group;
                     this.currentGroupUuid = group.uuid; // Guardar UUID para el payload
                     this.currentCourseType = 'GENERICO';
+
+                    // Actualizar nombre del grupo en las migas de pan ahora que lo tenemos
+                    if (this.breadcrumbItems.length > 1) {
+                        const rawGroupName = group.name ? group.name.replace(/^Grupo[:\s]+/i, '').trim() : `Grupo ${group.id}`;
+                        const shortGroupName = rawGroupName.length > 25 ? rawGroupName.substring(0, 25) + '...' : rawGroupName;
+                        this.breadcrumbItems[2].label = `Grupo: ${shortGroupName}`;
+                    }
+
+                    // Actualizar nombre del curso en las migas de pan si el backend lo trae (Respaldo robusto para F5/Recarga)
+                    if (group.course && group.course.name && this.breadcrumbItems.length > 1) {
+                        const rawCourseName = group.course.name.replace(/^Curso[:\s]+/i, '').trim();
+                        const shortCourseName = rawCourseName.length > 30 ? rawCourseName.substring(0, 30) + '...' : rawCourseName;
+                        this.breadcrumbItems[1].label = `Curso: ${shortCourseName}`;
+                    }
+
+                    // Optimización de Cupo: Usar contadores directos del servidor (Sin latencia de descarga)
+                    this.acceptedCount = group.acceptedCount || 0;
+                    const pendingCount = group.pendingRequestsCount || 0;
+
+                    if (group.availablePlaces !== undefined) {
+                        this.isGroupFull = group.availablePlaces <= 0;
+                    } else if (group.limitStudents) {
+                        this.isGroupFull = (this.acceptedCount + pendingCount) >= group.limitStudents;
+                    } else {
+                        this.isGroupFull = false;
+                    }
+
+                    if (this.isGroupFull) {
+                        this.showForm = false;
+                        this.isSearchModalOpen = false;
+                        return; // Detenemos la secuencia
+                    }
 
                     // 1. INTENTAR USAR CONFIGURACIÓN YA POBLADA (RICH)
                     // Si el grupo ya trae el courseConfigField con relaciones, lo usamos de inmediato.
@@ -118,14 +173,14 @@ export class PersonRegistrationComponent implements OnInit {
                                     cost: calculatedCost
                                 };
                             });
-                        } else if (populatedConfig.documentCourse || populatedConfig.documentCourses) {
-                            const docs = populatedConfig.documentCourse || populatedConfig.documentCourses || [];
+                        } else if (populatedConfig.documentCourses) {
+                            const docs = populatedConfig.documentCourses || [];
                             this.currentAvailableDocuments = docs.map((d: any) => {
                                 let calculatedCost = 0;
-                                if (d.templateDocument?.paymentConcepts?.[0]?.umas) {
-                                    calculatedCost = Number(d.templateDocument.paymentConcepts[0].umas) * 117.31;
-                                } else if (d.templateDocumentObject?.paymentConcepts?.[0]?.umas) {
-                                    calculatedCost = Number(d.templateDocumentObject.paymentConcepts[0].umas) * 117.31;
+                                if (d.templateDocument?.paymentConcept?.umas) {
+                                    calculatedCost = Number(d.templateDocument.paymentConcept.umas) * 117.31;
+                                } else if (d.templateDocumentObject?.paymentConcept?.umas) {
+                                    calculatedCost = Number(d.templateDocumentObject.paymentConcept.umas) * 117.31;
                                 }
                                 return {
                                     id: d.id || d.templateDocument?.id || d.templateDocument || 'doc_unknown',
@@ -163,14 +218,14 @@ export class PersonRegistrationComponent implements OnInit {
                                                 cost: calculatedCost
                                             };
                                         });
-                                    } else if (config.documentCourse || config.documentCourses) {
-                                        const docs = config.documentCourse || config.documentCourses || [];
+                                    } else if (config.documentCourses) {
+                                        const docs = config.documentCourses || [];
                                         this.currentAvailableDocuments = docs.map((d: any) => {
                                             let calculatedCost = 0;
-                                            if (d.templateDocument?.paymentConcepts?.[0]?.umas) {
-                                                calculatedCost = Number(d.templateDocument.paymentConcepts[0].umas) * 117.31;
-                                            } else if (d.templateDocumentObject?.paymentConcepts?.[0]?.umas) {
-                                                calculatedCost = Number(d.templateDocumentObject.paymentConcepts[0].umas) * 117.31;
+                                            if (d.templateDocument?.paymentConcept?.umas) {
+                                                calculatedCost = Number(d.templateDocument.paymentConcept.umas) * 117.31;
+                                            } else if (d.templateDocumentObject?.paymentConcept?.umas) {
+                                                calculatedCost = Number(d.templateDocumentObject.paymentConcept.umas) * 117.31;
                                             }
                                             return {
                                                 id: d.id || d.templateDocument?.id || d.templateDocument || 'doc_unknown',
@@ -316,7 +371,13 @@ export class PersonRegistrationComponent implements OnInit {
     currentCourseType: CourseType = 'LICENCIA'; // Default
 
     onPersonSaved(personData: any) {
+        if (this.isGroupFull) {
+            this.notificationService.showError('Cupo Agotado', 'El grupo está lleno. No se pueden realizar más inscripciones.');
+            return;
+        }
+
         this.tempPersonData = personData;
+        this.personEmail = personData.email || null;
 
         // Determine course type for the modal
         // We can get it from the group call in ngOnInit, but let's ensure we have it stored.
@@ -384,11 +445,10 @@ export class PersonRegistrationComponent implements OnInit {
             // 3. Cualquier otro campo (ej. address, sex si no son requerimientos) se IGNORA para evitar Error 400
         });
 
-        const enrollmentPayload = {
-            // Backend update: Send separate groupId and groupUuid fields
+        const enrollmentPayload: any = {
             groupId: Number(groupId),
-            groupUuid: this.currentGroupUuid,
-            isAcepted: true, // En vista privada se acepta automáticamente (se puede ajustar según regla de negocio)
+            isAcepted: true,
+            isActive: true,
             dateReject: null,
             personId: this.currentPersonId,
             person: personDataForPayload,
@@ -455,15 +515,29 @@ export class PersonRegistrationComponent implements OnInit {
     }
 
     sendEmail() {
-        this.notificationService.showSuccess('Correo enviado', 'Se ha enviado la orden de pago al conductor.');
-        this.closeAndRedirect();
+        if (!this.personEmail) {
+            this.notificationService.showError('Error', 'No se detectó un correo electrónico válido para enviar la orden de pago.');
+            return;
+        }
+
+        this.notificationService.showInfo('Enviando', 'Enviando correo...');
+        this.mailService.sendEnrollmentEmail(this.personEmail, this.currentGroup).subscribe({
+            next: () => {
+                this.notificationService.showSuccess('Correo enviado', 'Se ha enviado la orden de pago al conductor.');
+                this.closeAndRedirect();
+            },
+            error: (err: any) => {
+                console.error('Error sending email', err);
+                this.notificationService.showError('Error', 'Hubo un problema al enviar el correo.');
+            }
+        });
     }
 
     closeAndRedirect() {
         this.isAlertOpen = false;
         // Redirigir a la lista de conductores
         // Redirigir a la lista de conductores (../ relativa a la ruta actual 'nuevo')
-        this.router.navigate(['../'], { relativeTo: this.route });
+        this.router.navigate(['../'], { relativeTo: this.route, queryParamsHandling: 'preserve' });
     }
 
     onCancel() {

@@ -222,6 +222,7 @@ import { UniversalIconComponent } from '../universal-icon/universal-icon.compone
 
                   <!-- Mi Perfil -->
                   <a
+                  *ngIf="false"
                     routerLink="/profile"
                     (click)="closeUserMenu()"
                     role="menuitem"

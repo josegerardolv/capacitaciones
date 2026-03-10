@@ -54,7 +54,7 @@ export const SIDEBAR_MENU_CONFIG: MenuItem[] = [
     children: [
       {
         id: 'config-cursos',
-        label: 'Configuración Tipo de Cursos',
+        label: 'Tipo de Cursos',
         icon: 'person',
         iconType: 'bootstrap',
         route: '/config/config-cursos',
@@ -70,20 +70,20 @@ export const SIDEBAR_MENU_CONFIG: MenuItem[] = [
       },
       {
         id: 'concepto',
-        label: 'Configuración de Conceptos',
-        icon: 'file-text',
-        iconType: 'bootstrap',
+        label: 'Conceptos',
+        icon: 'paid',
+        iconType: 'material',
         route: '/config/concepto',
         roles: ['admin', 'SUPER_ADMINISTRADOR']
       },
-      {
-        id: 'encuesta',
-        label: 'Encuesta',
-        icon: 'clipboard-data',
-        iconType: 'bootstrap',
-        route: '/config/encuesta',
-        roles: ['admin', 'SUPER_ADMINISTRADOR']
-      }
+      // {
+      //   id: 'encuesta',
+      //   label: 'Encuesta',
+      //   icon: 'clipboard-data',
+      //   iconType: 'bootstrap',
+      //   route: '/config/encuesta',
+      //   roles: ['admin', 'SUPER_ADMINISTRADOR']
+      // }
     ]
   }
 ];

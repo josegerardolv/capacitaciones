@@ -114,8 +114,6 @@ export class CourseListComponent implements OnInit {
         this.initForms();
         this.initColumns();
         this.loadCourseTypes();
-
-        this.loadCourseTypes();
     }
 
     initForms() {
@@ -127,10 +125,18 @@ export class CourseListComponent implements OnInit {
         });
     }
 
-    loadCourseTypes() {
-        // Usamos getActiveCourseTypes con un límite alto (100) para asegurar que se vean todos en el dropdown del modal
-        this.courseTypeService.getActiveCourseTypes(100).pipe(
-            timeout(5000)
+    loadCourseTypes(term: string = '') {
+        // Usamos getCourseTypes (que apunta a /search) si hay término, o getActiveCourseTypes si no
+        const request = term
+            ? this.courseTypeService.getCourseTypes(1, 10, term)
+            : this.courseTypeService.getActiveCourseTypes(10);
+
+        request.pipe(
+            timeout(5000),
+            catchError(err => {
+                console.error('Error loading course types', err);
+                return of({ data: [] });
+            })
         ).subscribe({
             next: (response) => {
                 const types = response.data || response.items || response.results || (Array.isArray(response) ? response : []);
@@ -138,16 +144,17 @@ export class CourseListComponent implements OnInit {
                     value: t.id,
                     label: t.name
                 }));
-                this.loadCourses(); // Cargar cursos después de tener los tipos
-            },
-            error: (err) => {
-                console.error('Error loading course types', err);
-                // Si falla, intentamos cargar cursos de todas formas, pero la tabla se quedará cargando si no lo manejamos.
-                // Mejor llamamos a loadCourses igual para que intente y su error handler desactive el loading,
-                // O desactivamos el loading aquí si loadCourses no se llama.
-                this.loadCourses();
+
+                // Si es la carga inicial (sin término), cargamos los cursos
+                if (!term && this.courses.length === 0) {
+                    this.loadCourses();
+                }
             }
         });
+    }
+
+    onCourseTypeSearch(term: string) {
+        this.loadCourseTypes(term);
     }
 
     initColumns() {
@@ -313,6 +320,7 @@ export class CourseListComponent implements OnInit {
     openForm() {
         this.modalMode = 'create';
         this.courseModalForm.reset();
+        this.courseModalForm.get('courseTypeId')?.enable();
         this.showModal = true;
     }
 
@@ -320,6 +328,7 @@ export class CourseListComponent implements OnInit {
         this.modalMode = 'edit';
         this.editingCourseId = course.id;
         this.courseModalForm.patchValue(course);
+        this.courseModalForm.get('courseTypeId')?.disable();
         this.showModal = true;
     }
 
@@ -336,7 +345,7 @@ export class CourseListComponent implements OnInit {
         }
 
         this.isSaving = true;
-        const formValue = this.courseModalForm.value;
+        const formValue = this.courseModalForm.getRawValue();
 
         if (this.modalMode === 'create') {
             this.coursesService.createCourse(formValue).subscribe({

@@ -16,6 +16,9 @@ import { ConfirmationModalComponent, ConfirmationConfig } from '../../../../shar
 import { ModalComponent } from '../../../../shared/components/modals/modal.component';
 import { GroupsService } from '../../services/groups.service';
 import { TableFiltersComponent } from '@/app/shared/components/table-filters/table-filters.component';
+import { MailService } from '../../services/mail.service';
+import { NotificationService } from '../../../../core/services/notification.service';
+import { InstitutionalBadgeComponent } from '../../../../shared/components/badge/institutional-badge.component';
 
 @Component({
     selector: 'app-group-requests',
@@ -27,8 +30,8 @@ import { TableFiltersComponent } from '@/app/shared/components/table-filters/tab
         ConfirmationModalComponent,
         TablePaginationComponent,
         ReactiveFormsModule,
-        ReactiveFormsModule,
         ModalComponent,
+        InstitutionalBadgeComponent,
         TableFiltersComponent],
     templateUrl: './group-requests.component.html'
 })
@@ -43,6 +46,10 @@ export class GroupRequestsComponent implements OnChanges {
     filteredRequests: Person[] = [];
     requests: Person[] = [];
     selectedRequests: Person[] = [];
+    acceptedCount: number = 0;
+    pendingRequestsCount: number = 0;
+    rejectCount: number = 0;
+    availablePlaces: number = 0;
 
 
 
@@ -79,7 +86,9 @@ export class GroupRequestsComponent implements OnChanges {
 
     constructor(
         private fb: FormBuilder,
-        private groupsService: GroupsService
+        private groupsService: GroupsService,
+        private mailService: MailService,
+        private notificationService: NotificationService
     ) {
         this.dummyFormGroup = this.fb.group({});
     }
@@ -92,51 +101,72 @@ export class GroupRequestsComponent implements OnChanges {
 
     loadGroupRequests() {
         this.tableConfig.loading = true;
+        this.allRequests = [];
+        this.filteredRequests = [];
+        this.requests = [];
+        this.selectedRequests = [];
+        this.acceptedCount = 0;
+
         if (!this.group) return;
 
-        this.groupsService.getRequestsByGroupId(this.group.id).subscribe(data => {
-            this.allRequests = data;
-            this.selectedRequests = [];
-            this.initColumns(); // Re-vinculamos templates
-            this.filterData('');
-            this.tableConfig.loading = false;
+        // NOTA: Se ha eliminado la consulta doble ineficiente (N+1). 
+        // Ahora el conteo de ocupación se lee directamente de la propiedad `acceptedCount` del grupo,
+        // la cual debe ser proporcionada por el backend en el endpoint `/group/search` o `/group/{id}`.
+        this.acceptedCount = this.group.acceptedCount || 0;
+        this.pendingRequestsCount = this.group.pendingRequestsCount || 0;
+        this.rejectCount = this.group.rejectCount || 0;
+        this.availablePlaces = this.group.availablePlaces || (this.group.limitStudents - this.acceptedCount);
+
+        this.groupsService.getRequestsByGroupId(this.group.id).subscribe({
+            next: (pendingData) => {
+                // Solicitudes pendientes o rechazadas
+                this.allRequests = pendingData.filter((r: any) => !r.dateReject && r.isAcepted !== true);
+
+                this.selectedRequests = [];
+                this.initColumns(); // Re-vinculamos templates
+                this.filterData('');
+                this.tableConfig.loading = false;
+            },
+            error: (err) => {
+                console.error('Error loading group requests', err);
+                this.tableConfig.loading = false;
+            }
         });
     }
 
+    get isGroupFull(): boolean {
+        if (!this.group || !this.group.limitStudents) return false;
+        return this.acceptedCount >= this.group.limitStudents;
+    }
+
     initColumns() {
-        // Columnas base
+        // Columnas base estrictas solicitadas por reglas de negocio
         const columns: TableColumn[] = [
-            { key: 'name', label: 'Nombre', sortable: true },
+            { key: 'name', label: 'Nombre Completo', sortable: true },
             { key: 'curp', label: 'CURP', sortable: true },
-            { key: 'email', label: 'Correo', sortable: true }
+            { key: 'phone', label: 'Teléfono', sortable: true }
         ];
 
-        // Columnas dinámicas de la configuración del curso
+        // Columnas dinámicas limitadas a Licencia y NUC
         if (this.group?.course?.courseType?.courseConfigField) {
             this.group.course.courseType.courseConfigField.forEach((field: any) => {
                 const configField = field.requirementFieldPerson;
                 if (configField) {
                     const label = configField.fieldName;
-                    let key = label.toLowerCase();
+                    const key = label.toLowerCase();
 
-                    // Normalizar llaves para que coincidan con el flatten de GroupsService
-                    if (key.includes('dirección')) key = 'address';
-                    else if (key.includes('sexo')) key = 'sex';
-                    else if (key.includes('telefono')) key = 'phone';
-                    else if (key.includes('licencia')) key = 'license';
-                    else if (key.includes('nuc')) key = 'nuc';
-                    else if (key.includes('correo') || key.includes('email')) key = 'email';
-
-                    // Evitar duplicados si hay campos core
-                    if (!columns.find(c => c.key === key)) {
-                        columns.push({ key: key, label: label, sortable: true });
+                    if (key.includes('licencia')) {
+                        if (!columns.find(c => c.key === 'license')) {
+                            columns.push({ key: 'license', label: label, sortable: true });
+                        }
+                    } else if (key.includes('nuc')) {
+                        if (!columns.find(c => c.key === 'nuc')) {
+                            columns.push({ key: 'nuc', label: label, sortable: true });
+                        }
                     }
                 }
             });
         }
-
-        // Agregar columna de documentos solicitados
-        columns.push({ key: 'requestedDocumentsNames', label: 'Documentos', sortable: true, minWidth: '150px' });
 
         // Columna de acciones siempre al final
         columns.push({ key: 'actions', label: 'Solicitud', align: 'center', template: this.actionsTemplate });
@@ -172,7 +202,7 @@ export class GroupRequestsComponent implements OnChanges {
         this.pendingConfirmAction = null;
     }
 
-    acceptRequest(personId: number, enrollmentId?: number) {
+    acceptRequest(personId: number, enrollmentId?: number, email?: string) {
         if (!enrollmentId) {
             console.error('No enrollment ID provided');
             return;
@@ -188,15 +218,20 @@ export class GroupRequestsComponent implements OnChanges {
             this.groupsService.acceptEnrollment(enrollmentId).subscribe({
                 next: () => {
                     this.allRequests = this.allRequests.filter(r => r.enrollmentId !== enrollmentId);
+                    this.acceptedCount++; // Incrementar el contador local
                     this.filterData('');
                     this.clearSelection();
+
+                    if (email) {
+                        this.mailService.sendAcceptanceEmail(email, this.group).subscribe();
+                    }
                 },
                 error: (err) => console.error('Error accepting enrollment', err)
             });
         });
     }
 
-    rejectRequest(personId: number, enrollmentId?: number) {
+    rejectRequest(personId: number, enrollmentId?: number, email?: string) {
         if (!enrollmentId) {
             console.error('No enrollment ID provided');
             return;
@@ -214,6 +249,10 @@ export class GroupRequestsComponent implements OnChanges {
                     this.allRequests = this.allRequests.filter(r => r.enrollmentId !== enrollmentId);
                     this.filterData('');
                     this.clearSelection();
+
+                    if (email) {
+                        this.mailService.sendRejectionEmail(email, this.group).subscribe();
+                    }
                 },
                 error: (err) => console.error('Error rejecting enrollment', err)
             });
@@ -246,6 +285,18 @@ export class GroupRequestsComponent implements OnChanges {
                 next: () => {
                     // Remover todos los procesados de la lista local usando enrollmentId
                     const processedEnrollmentIds = requestsToProcess.map(r => r.enrollmentId);
+
+                    // Novedad: Enviar correos a los procesados
+                    requestsToProcess.forEach(r => {
+                        if (r.email) {
+                            if (isAccept) {
+                                this.mailService.sendAcceptanceEmail(r.email, this.group).subscribe();
+                            } else {
+                                this.mailService.sendRejectionEmail(r.email, this.group).subscribe();
+                            }
+                        }
+                    });
+
                     this.allRequests = this.allRequests.filter(r => !processedEnrollmentIds.includes(r.enrollmentId));
                     this.filterData('');
                     this.clearSelection();

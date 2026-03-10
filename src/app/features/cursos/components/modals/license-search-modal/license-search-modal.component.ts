@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { InstitutionalButtonComponent } from '../../../../../shared/components/buttons/institutional-button.component';
@@ -21,8 +21,11 @@ import { Router, ActivatedRoute } from '@angular/router';
     ],
     templateUrl: './license-search-modal.component.html'
 })
-export class LicenseSearchModalComponent {
+export class LicenseSearchModalComponent implements OnInit {
     @Input() isOpen = false;
+    @Input() requireTypeC = false; // Nueva bandera para forzar búsqueda solo de Tipo C
+    @Input() allowClose = true; // Controlar si se puede cerrar el modal sin acción
+
     @Output() modalClose = new EventEmitter<void>();
     @Output() personFound = new EventEmitter<Person>();
     @Output() manualRegistration = new EventEmitter<string>(); // Emite la licencia buscada para registro manual
@@ -50,7 +53,12 @@ export class LicenseSearchModalComponent {
         private groupsService: GroupsService
     ) { }
 
+    ngOnInit() {
+        this.modalConfig.showCloseButton = this.allowClose;
+    }
+
     close() {
+        if (!this.allowClose) return; // Prevenir cierre forzado si no está permitido
         this.searchLicense = '';
         this.modalClose.emit();
     }
@@ -59,7 +67,7 @@ export class LicenseSearchModalComponent {
         if (!this.searchLicense.trim()) return;
 
         this.isSearching = true;
-        this.groupsService.searchPersonByLicense(this.searchLicense).subscribe({
+        this.groupsService.searchPersonByLicense(this.searchLicense, this.requireTypeC).subscribe({
             next: (person) => {
                 this.isSearching = false;
 

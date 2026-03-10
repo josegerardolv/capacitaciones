@@ -13,7 +13,11 @@ export interface Group {
     limitStudents: number;
     autoRegisterLimit?: number;
     inscriptionURL?: string;
-    requests: number;
+    requests: number; // Mantenemos por retrocompatibilidad momentánea, pero migrar a pendingRequestsCount
+    pendingRequestsCount?: number; // Requerido: Enviado por Backend en /group/search
+    acceptedCount?: number; // Requerido: Enviado por Backend en /group/search (para control de cupo)
+    rejectCount?: number; // Agregado: para el conteo de solicitudes rechazadas
+    availablePlaces?: number; // Agregado: lugares disponibles actuales
     status: 'Activo' | 'Inactivo';
     selected?: boolean;
 

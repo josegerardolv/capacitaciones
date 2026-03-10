@@ -75,46 +75,75 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     private initMetrics() {
         this.graduationMetric = {
-            title: 'Cursos impartidos',
+            title: 'Cursos Impartidos Anauales',
             value: '125',
-            subtitle: 'Cursos impartidos',
+            subtitle: 'Cursos Impartidos Anuales',
             icon: this.sanitizer.bypassSecurityTrustHtml('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-9 h-9"><path d="M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82zM12 3L1 9l11 6 9-4.91V17h2V9L12 3z"/></svg>') as any,
             color: 'guinda'
         };
 
         this.personMetric = {
-            title: 'Total de participantes',
+            title: 'Total de Participantes Anuales',
             value: '1,284',
-            subtitle: 'Total de participantes',
+            subtitle: 'Total de Participantes Anuales',
             icon: this.sanitizer.bypassSecurityTrustHtml('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-9 h-9"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>') as any,
             color: 'guinda'
         };
 
         this.finishMetric = {
-            title: 'Porcentaje de aprobación',
-            value: '82%',
-            subtitle: 'Porcentaje de aprobación',
+            title: 'Porcentaje de Aprobación Anual',
+            value: '20%',
+            subtitle: 'Porcentaje de Aprobación Anual',
             icon: this.sanitizer.bypassSecurityTrustHtml('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-9 h-9"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>') as any,
             color: 'guinda',
             progress: {
-                percentage: 82,
+                percentage: 20,
                 label: 'Porcentaeje de aprobación'
             }
         };
 
         this.calendarMetric = {
-            title: 'Grupos activos actualmente',
+            title: 'Grupos activos',
             value: '18',
-            subtitle: 'Grupos activos actualmente',
+            subtitle: 'Grupos activos',
             icon: this.sanitizer.bypassSecurityTrustHtml('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-9 h-9"><path d="M20 3h-1V1h-2v2H7V1H5v2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 18H4V8h16v13z"/></svg>') as any,
             color: 'guinda'
         };
     }
 
+    getDynamicGroupStatus(group: Group): { text: string, type: 'success' | 'warning' | 'danger' | 'info' | 'neutral' } {
+        if (!group.groupStartDate) return { text: 'Sin fecha', type: 'neutral' };
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const startDate = new Date(group.groupStartDate);
+        startDate.setHours(0, 0, 0, 0);
+
+        if (today > startDate) return { text: 'Finalizado', type: 'neutral' };
+        if (today.getTime() === startDate.getTime()) return { text: 'En curso', type: 'info' };
+
+        if (group.endInscriptionDate) {
+            const endDate = new Date(group.endInscriptionDate);
+            endDate.setHours(0, 0, 0, 0);
+
+            if (today > endDate) return { text: 'Cerrado', type: 'danger' };
+
+            const diffTime = endDate.getTime() - today.getTime();
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+            if (diffDays === 0) return { text: 'Cierra hoy', type: 'warning' };
+            if (diffDays === 1) return { text: 'En 1 día', type: 'warning' };
+            if (diffDays <= 3 && diffDays > 1) return { text: `En ${diffDays} días`, type: 'warning' };
+        }
+
+        return { text: 'Abierto', type: 'success' };
+    }
+
     private initTableData() {
         this.tableColumns = [
-            { key: 'course', label: 'Curso', sortable: true, minWidth: '100px' },
             { key: 'group', label: 'Grupo', sortable: true, minWidth: '100px' },
+            { key: 'course', label: 'Curso', sortable: true, minWidth: '100px' },
             { key: 'location', label: 'Ubicación', sortable: true },
             { key: 'participants', label: 'Cantidad', sortable: true },
             { key: 'date', label: 'Fecha', sortable: true, template: this.dateTemplate },
@@ -182,9 +211,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
                         participants: g.limitStudents,
                         date: g.groupStartDate,
                         time: g.schedule,
-                        status: g.status
+                        status: this.getDynamicGroupStatus(g)
                     };
-                }).slice(0, 5); // Mostrar solo los 5 más recientes
+                }).slice(0, 10); // Mostrar solo los 5 más recientes
                 this.tableConfig.loading = false;
             },
             error: (err) => {

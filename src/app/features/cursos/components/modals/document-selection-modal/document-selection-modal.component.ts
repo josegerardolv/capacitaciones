@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, input, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ModalComponent, ModalConfig } from '../../../../../shared/components/modals/modal.component';
@@ -24,9 +24,12 @@ export class DocumentSelectionModalComponent {
     @Input() isOpen = false;
     @Input() courseType: CourseType = 'LICENCIA'; // Lógica predeterminada
     @Input() customDocuments: any[] | null = null; // Aceptando DocumentConfig
+    @Input() group: any | null = null;
+    @Input() recipientEmail: string | null = null;
 
     // Estado interno de documentos
     documents: DocumentOption[] = [];
+    isSending = false;
 
     @Output() modalClose = new EventEmitter<void>();
     @Output() confirm = new EventEmitter<DocumentOption[]>();
@@ -37,6 +40,9 @@ export class DocumentSelectionModalComponent {
         showCloseButton: true,
         padding: true
     };
+
+    constructor(
+    ) { }
 
     ngOnChanges(): void {
         if (this.isOpen) {
@@ -99,6 +105,8 @@ export class DocumentSelectionModalComponent {
 
     onConfirm() {
         const selectedDocs = this.documents.filter(d => d.selected);
+
         this.confirm.emit(selectedDocs);
+        this.modalClose.emit();
     }
 }

@@ -50,6 +50,7 @@ export class PublicRegistrationComponent implements OnInit {
     isDocumentsModalOpen = false;
     isSearchModalOpen = false; // Nuevo estado para el modal de búsqueda
     showForm = false; // Nuevo estado para controlar cuándo mostrar el formulario
+    isFull = false; // Estado para saber si el cupo está lleno
     tempPersonData: any = null; // Renamed from tempDriverData
     currentCourseType: CourseType = 'LICENCIA'; // Fallback
     prefilledData: any = null; // Datos precargados de la búsqueda
@@ -69,12 +70,14 @@ export class PublicRegistrationComponent implements OnInit {
     ngOnInit() {
         const idParam = this.route.snapshot.paramMap.get('id');
 
-        // Procesar el grupo directamente (Sin descargar lista maestra por seguridad)
+        // Procesar el grupo directamente solo por UUID para la vista pública
         if (idParam) {
-            if (!isNaN(Number(idParam))) {
-                this.loadGroupData(Number(idParam), false);
-            } else {
+            const isUuid = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(idParam);
+
+            if (isUuid) {
                 this.loadGroupData(idParam, true);
+            } else {
+                this.showError('Enlace Inválido', 'El enlace proporcionado no es válido para el registro público. Por favor, solicite el enlace correcto al administrador.');
             }
         }
     }
@@ -115,6 +118,13 @@ export class PublicRegistrationComponent implements OnInit {
                     deadline: this.calculateDeadline(group)
                 };
 
+                if (this.groupInfo.slotsAvailable <= 0) {
+                    this.isFull = true;
+                    this.showForm = false;
+                    this.isSearchModalOpen = false;
+                    return; // Detenemos la renderización de formularios o modales extras
+                }
+
                 // Determinar tipo de curso para campos dinámicos
                 // 1. Priorizar configuración RICH (Ya poblada en el grupo o campos directos del UUID)
                 const populatedConfig = group.course?.courseType;
@@ -128,47 +138,56 @@ export class PublicRegistrationComponent implements OnInit {
                         this.currentCourseType = populatedConfig.type || (populatedConfig.name?.toUpperCase().includes('CONSTANCIA') ? 'CONSTANCIA' : 'LICENCIA');
                     }
 
-                    // Poblar templates/documentos disponibles si existen
-                    if (populatedConfig && populatedConfig.availableDocuments) {
+                    // Función helper para procesar la nueva estructura `documentCourses` / `documents`
+                    const processDocumentCourses = (docArray: any[]) => {
+                        return docArray.map((d: any) => {
+                            let calculatedCost = 0;
+
+                            // Extraer concepto de pago de la nueva estructura plana o empaquetada
+                            let concept = d.paymentConcept;
+                            if (!concept && d.templateDocumentObject && d.templateDocumentObject.paymentConcept) {
+                                concept = d.templateDocumentObject.paymentConcept;
+                            } else if (!concept && d.templateDocument && d.templateDocument.paymentConcept) {
+                                concept = d.templateDocument.paymentConcept;
+                            }
+
+                            if (concept && concept.umas) {
+                                calculatedCost = Number(concept.umas) * 117.31;
+                            } else if (d.cost) {
+                                calculatedCost = d.cost; // Fallback legacy
+                            }
+
+                            // Extraer template object para descripciones y nombres legacy
+                            const templateObj = d.templateDocumentObject || (typeof d.templateDocument === 'object' ? d.templateDocument : null);
+
+                            return {
+                                id: d.id || d.documentCourses || templateObj?.id || d.templateDocument || 'doc_unknown',
+                                name: d.name || templateObj?.name || 'Documento',
+                                description: d.description || templateObj?.description || '',
+                                cost: calculatedCost,
+                                templateId: d.templateId || templateObj?.id || d.templateDocument?.id || d.templateDocument,
+                                isMandatory: d.isRequired !== undefined ? d.isRequired : (d.isMandatory !== undefined ? d.isMandatory : false),
+                                requiresApproval: true
+                            };
+                        });
+                    };
+
+                    // Buscar los documentos en las diferentes profundidades donde el backend pudiera haberlos inyectado
+                    if (populatedConfig && populatedConfig.documentCourses && populatedConfig.documentCourses.length > 0) {
+                        this.availableDocuments = processDocumentCourses(populatedConfig.documentCourses);
+                    } else if (group.course?.documentCourses && group.course.documentCourses.length > 0) {
+                        this.availableDocuments = processDocumentCourses(group.course.documentCourses);
+                    } else if (group.documentCourses && group.documentCourses.length > 0) {
+                        this.availableDocuments = processDocumentCourses(group.documentCourses);
+                    } else if (populatedConfig && populatedConfig.availableDocuments) {
                         this.availableDocuments = populatedConfig.availableDocuments;
                     } else if (group.course?.templates) {
                         this.availableDocuments = group.course.templates;
                     } else if (group.templates) {
                         this.availableDocuments = group.templates;
-                    } else if (group.documentCourse) {
-                        // Soporte para la estructura que acabamos de conectar
-                        this.availableDocuments = group.documentCourse.map((d: any) => {
-                            let calculatedCost = 0;
-                            if (d.templateDocumentObject?.paymentConcepts?.[0]?.umas) {
-                                calculatedCost = Number(d.templateDocumentObject.paymentConcepts[0].umas) * 117.31;
-                            }
-                            return {
-                                id: d.id || d.templateDocument || 'doc_unknown',
-                                name: d.templateDocumentObject?.name || d.name || 'Documento',
-                                description: d.templateDocumentObject?.description || d.description || '',
-                                cost: calculatedCost,
-                                templateId: d.templateDocument,
-                                isMandatory: d.isRequired,
-                                requiresApproval: true
-                            };
-                        });
                     } else if (group.documents) {
-                        // Soporte para estructura previa y nueva desde backend
-                        this.availableDocuments = group.documents.map((d: any) => {
-                            let calculatedCost = d.cost || 0;
-                            if (d.paymentConcept && d.paymentConcept.umas) {
-                                calculatedCost = Number(d.paymentConcept.umas) * 117.31;
-                            }
-                            return {
-                                id: d.documentCourses || d.id || d.name || 'doc_unknown',
-                                name: d.name || 'Documento sin nombre',
-                                description: d.description || '',
-                                cost: calculatedCost, // Conversión a pesos (1 UMA = 117.31)
-                                templateId: d.templateId || d.id,
-                                isMandatory: d.isRequired !== undefined ? d.isRequired : (d.isMandatory !== undefined ? d.isMandatory : false),
-                                requiresApproval: true
-                            };
-                        });
+                        // Fallback absoluto para arrays legacy de 'documents'
+                        this.availableDocuments = processDocumentCourses(group.documents);
                     }
 
                     this.setupFormFields(populatedConfig || {} as any, directFields);
@@ -217,14 +236,8 @@ export class PublicRegistrationComponent implements OnInit {
         this.alertConfig = {
             title: title,
             message: message,
-            type: 'danger',
-            actions: [
-                {
-                    label: 'Volver al Inicio',
-                    variant: 'primary',
-                    action: () => this.router.navigate(['/'])
-                }
-            ]
+            type: 'danger'
+            // actions list removed as public users don't have a 'home' to return to.
         };
         this.isAlertOpen = true;
     }
@@ -275,15 +288,21 @@ export class PublicRegistrationComponent implements OnInit {
             exp = new Date(expirationStr + 'T23:59:59');
         }
 
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        const now = new Date();
 
-        if (today > exp) {
+        // Si la fecha actual supera a la expiración exacta (hasta el último segundo de ese día)
+        if (now.getTime() > exp.getTime()) {
             this.isExpired = true;
             return 'Enlace Vencido';
         }
 
-        const diffTime = exp.getTime() - today.getTime();
+        const todayMidnight = new Date();
+        todayMidnight.setHours(0, 0, 0, 0);
+
+        const expMidnight = new Date(exp);
+        expMidnight.setHours(0, 0, 0, 0);
+
+        const diffTime = expMidnight.getTime() - todayMidnight.getTime();
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
         if (isNaN(diffDays)) return 'Sin vigencia';
@@ -436,6 +455,7 @@ export class PublicRegistrationComponent implements OnInit {
             // Backend update: Send separate groupId and groupUuid fields
             groupUuid: this.groupData.uuid || this.currentGroupUuid,
             isAcepted: false,
+            isActive: false,
             dateReject: null,
             personId: this.currentPersonId,
             person: personDataForPayload,

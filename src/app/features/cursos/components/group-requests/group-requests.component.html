@@ -13,9 +13,31 @@
                     [showPaginationControls]="false" (pageChange)="onPageChange($event)">
                 </app-table-pagination>
 
+                <!-- Indicadores de Conteo -->
+                <!-- Indicadores de Conteo -->
+                <div
+                    class="flex flex-wrap gap-2 items-center justify-center md:justify-end mt-2 md:mt-0 ml-auto whitespace-nowrap">
+                    <app-institutional-badge [config]="{variant: 'success', icon: 'check_circle', size: 'medium'}">
+                        Aceptadas {{ acceptedCount }}
+                    </app-institutional-badge>
+
+                    <app-institutional-badge
+                        [config]="{variant: 'warning', icon: 'notifications_active', size: 'medium'}">
+                        Pendientes {{ pendingRequestsCount }}
+                    </app-institutional-badge>
+
+                    <app-institutional-badge [config]="{variant: 'danger', icon: 'cancel', size: 'medium'}">
+                        Rechazadas {{ rejectCount }}
+                    </app-institutional-badge>
+
+                    <app-institutional-badge [config]="{variant: 'info', icon: 'people', size: 'medium'}">
+                        Disponibles {{ availablePlaces }}/{{ group?.limitStudents || '0' }}
+                    </app-institutional-badge>
+                </div>
+
                 <!-- Bulk Actions Toolbar -->
                 <div class="flex gap-3 justify-end" *ngIf="showBulkActions">
-                    <app-institutional-button [config]="{variant: 'success', icon: 'check'}"
+                    <app-institutional-button [config]="{variant: 'success', icon: 'check', disabled: isGroupFull}"
                         (buttonClick)="processSelected('accept')">
                         Aceptar Seleccionados
                     </app-institutional-button>
@@ -54,14 +76,15 @@
                 variant: 'success', 
                 size: 'small', 
                 icon: 'check',
-                iconPosition: 'only'}" (buttonClick)="acceptRequest(item.id, item.enrollmentId)">
+                disabled: isGroupFull,
+                iconPosition: 'only'}" (buttonClick)="acceptRequest(item.id, item.enrollmentId, item.email)">
         </app-institutional-button>
 
         <app-institutional-button [config]="{
                 variant: 'danger', 
                 size: 'small', 
                 icon: 'close',
-                iconPosition: 'only'}" (buttonClick)="rejectRequest(item.id, item.enrollmentId)">
+                iconPosition: 'only'}" (buttonClick)="rejectRequest(item.id, item.enrollmentId, item.email)">
         </app-institutional-button>
     </div>
 </ng-template>

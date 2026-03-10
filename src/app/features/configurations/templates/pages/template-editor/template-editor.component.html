@@ -415,24 +415,23 @@
                             </button>
                         </div>
                         
+                        <!-- Lista plana de variables (desde grupos/enrollments o requirements) -->
                         <div *ngIf="filteredVariables.length === 0" class="empty-state">
                             <span class="material-symbols-outlined">search_off</span>
                             <p *ngIf="variableSearchTerm">No se encontraron variables</p>
                             <p *ngIf="!variableSearchTerm">No hay variables disponibles</p>
                         </div>
-
                         <div class="variable-list">
                             <button *ngFor="let variable of filteredVariables" 
                                     class="variable-btn"
                                     [class.variable-image]="variable.type === 'image'"
                                     [class.variable-qr]="variable.type === 'qr'"
                                     [disabled]="!canInsertVariable(variable)"
-                                    [title]="variable.description || variable.label"
+                                    [title]="(canInsertVariable(variable) ? 'Clic para insertar en el lienzo' : 'Seleccione un cuadro de texto en el lienzo para insertar')"
                                     (click)="insertVariable(variable)">
                                 <span class="material-symbols-outlined var-icon">{{ variable.icon || 'data_object' }}</span>
                                 <div class="var-info">
                                     <span class="var-label">{{ variable.label }}</span>
-                                    <code class="var-code">{{"{{" + variable.name + "}}"}}</code>
                                 </div>
                                 <span *ngIf="variable.type === 'image'" class="var-type-badge type-image">IMG</span>
                                 <span *ngIf="variable.type === 'qr'" class="var-type-badge type-qr">QR</span>

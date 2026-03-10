@@ -4,6 +4,7 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormControl } 
 import { InstitutionalButtonComponent } from '../../../../shared/components/buttons/institutional-button.component';
 import { InputEnhancedComponent } from '@/app/shared/components/inputs/input-enhanced.component';
 import { SelectComponent, SelectOption } from '@/app/shared/components/inputs/select.component';
+import { NotificationService } from '../../../../core/services/notification.service';
 
 @Component({
     selector: 'app-person-form',
@@ -12,8 +13,8 @@ import { SelectComponent, SelectOption } from '@/app/shared/components/inputs/se
     templateUrl: './person-form.component.html'
 })
 export class PersonFormComponent implements OnInit {
-    // fieldsConfig expected shape: { [fieldName: string]: { visible?: boolean; required?: boolean } }
-    @Input() fieldsConfig: Record<string, { visible?: boolean; required?: boolean }> | null = null;
+    // fieldsConfig expected shape: { [fieldName: string]: { visible?: boolean; required?: boolean, label?: string } }
+    @Input() fieldsConfig: Record<string, { visible?: boolean; required?: boolean, label?: string }> | null = null;
     @Input() initialData: any = null; // Para edición futura
     @Input() submitLabel: string = 'Guardar'; // Texto del botón de guardado
     @Input() showCancel: boolean = true; // Mostrar/Ocultar botón cancelar
@@ -33,7 +34,10 @@ export class PersonFormComponent implements OnInit {
         return this.form.get(key) as FormControl;
     }
 
-    constructor(private fb: FormBuilder) {
+    constructor(
+        private fb: FormBuilder,
+        private notificationService: NotificationService
+    ) {
         this.form = this.fb.group({
             name: ['', Validators.required],
             paternal_lastName: [''],
@@ -171,7 +175,28 @@ export class PersonFormComponent implements OnInit {
             this.saved.emit(this.form.value);
         } else {
             this.form.markAllAsTouched();
+            this.notificationService.showWarning('Formulario Incompleto', 'Por favor, complete todos los campos marcados como obligatorios.');
         }
+    }
+
+    private getFieldLabel(key: string): string {
+        if (this.fieldsConfig && this.fieldsConfig[key] && this.fieldsConfig[key]['label']) {
+            return this.fieldsConfig[key]['label'];
+        }
+
+        const labels: Record<string, string> = {
+            'name': 'Nombre',
+            'paternal_lastName': 'Primer Apellido',
+            'maternal_lastName': 'Segundo Apellido',
+            'curp': 'CURP',
+            'address': 'Dirección',
+            'sex': 'Sexo',
+            'nuc': 'NUC',
+            'phone': 'Teléfono',
+            'email': 'Correo electrónico',
+            'license': 'Licencia'
+        };
+        return labels[key] || key;
     }
 
     onCancel() {

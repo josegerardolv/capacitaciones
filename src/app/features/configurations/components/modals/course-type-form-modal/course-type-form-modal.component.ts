@@ -76,7 +76,7 @@ export class CourseTypeFormModalComponent implements OnInit {
   tableColumns: TableColumn[] = [
     { key: 'name', label: 'Nombre', sortable: true, width: '220px' },
     { key: 'category', label: 'Tipo', sortable: true, width: '150px', template: this.categoryTemplate },
-    { key: 'paymentConcepts', label: 'Concepto (Siox)', sortable: false, minWidth: '300px' },
+    { key: 'paymentConcept', label: 'Concepto (Siox)', sortable: false, minWidth: '300px' },
     { key: 'mandatory', label: 'Obligatorio', align: 'center', width: '100px', template: this.mandatoryTemplate }, // Nueva Columna
     { key: 'cost', label: 'Costo', sortable: false, width: '130px', align: 'right' },
     { key: 'actions', label: 'Documento', align: 'center', width: '120px' }
@@ -127,7 +127,7 @@ export class CourseTypeFormModalComponent implements OnInit {
       const mandatoryCol = this.tableColumns.find(c => c.key === 'mandatory');
       if (mandatoryCol) mandatoryCol.template = this.mandatoryTemplate;
 
-      const conceptCol = this.tableColumns.find(c => c.key === 'paymentConcepts');
+      const conceptCol = this.tableColumns.find(c => c.key === 'paymentConcept');
       if (conceptCol) conceptCol.template = this.conceptTemplate;
     });
   }
@@ -149,7 +149,7 @@ export class CourseTypeFormModalComponent implements OnInit {
           });
 
           this.templates.forEach(t => {
-            if (!t.paymentConcepts?.length) {
+            if (!t.paymentConcept) {
               this.mandatoryDocuments.add(t.id);
             }
           });
@@ -163,7 +163,7 @@ export class CourseTypeFormModalComponent implements OnInit {
           this.mandatoryDocuments.clear();
 
           this.templates.forEach(t => {
-            if (!t.paymentConcepts?.length) {
+            if (!t.paymentConcept) {
               this.mandatoryDocuments.add(t.id);
             }
           });
@@ -282,7 +282,7 @@ export class CourseTypeFormModalComponent implements OnInit {
       name: t.name,
       description: t.description || t.name,
       templateId: t.id,
-      cost: t.paymentConcepts?.[0]?.umas || 0,
+      cost: t.paymentConcept?.umas || 0,
       requiresApproval: false,
       isMandatory: this.mandatoryDocuments.has(t.id) // Guardar estado
     }));
