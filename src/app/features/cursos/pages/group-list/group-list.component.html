@@ -196,7 +196,7 @@
     </div>
 </app-modal-form>
 
-<app-group-requests [isOpen]="isRequestsModalOpen" [group]="selectedRequestGroup" (close)="isRequestsModalOpen = false">
+<app-group-requests [isOpen]="isRequestsModalOpen" [group]="selectedRequestGroup" (close)="isRequestsModalOpen = false" (requestsUpdated)="loadGroups()">
 </app-group-requests>
 
 <ng-template #urlTemplate let-item>
