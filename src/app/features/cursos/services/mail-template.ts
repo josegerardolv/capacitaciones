@@ -12,8 +12,8 @@ export function getEmailTemplate(title: string, bodyContent: string): string {
 <body>
     <div class="email-container">
         <div class="email-header">
-            <img src="https://resource.semovioaxaca.gob.mx/assets/images/logo-semovi-horizontal.png" alt="SEMOVI" style="max-width: 180px; margin-bottom: 15px; display: block; margin-left: auto; margin-right: auto;">
-            <h1>${title}</h1>
+            <img src="https://resource.semovioaxaca.gob.mx/assets/images/logo-semovi-horizontal-light.png" alt="SEMOVI" style="max-width: 280px; margin-bottom: 20px; display: block; margin-left: auto; margin-right: auto;">
+            <h1 style="font-size: 24px; margin-top: 10px;">${title}</h1>
         </div>
         <div class="email-body">
             ${bodyContent}
