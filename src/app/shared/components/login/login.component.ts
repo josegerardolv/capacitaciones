@@ -136,7 +136,7 @@ import { AppConfigService } from '../../../core/services/app-config.service';
               <div class="h-6 w-6 bg-guinda-600 rounded-lg flex items-center justify-center shadow-sm">
                 <img src="assets/images/icons/icono-gobernacion.svg" alt="SEMOVI Logo" class="h-4 w-4">
               </div>
-              <span class="font-medium">© 2025 SEMOVI Oaxaca</span>
+              <span class="font-medium">© {{ currentYear }} SEMOVI Oaxaca</span>
             </div>
             <p class="text-xs text-gray-500 mt-2">
               <!-- TODO: Cambiar por el nombre del sistema -->
@@ -152,6 +152,10 @@ export class LoginComponent implements OnInit {
   loginForm: FormGroup;
   isLoading = false;
   loginError = '';
+
+  get currentYear(): number {
+    return new Date().getFullYear();
+  }
 
   constructor(
     private fb: FormBuilder,
