@@ -24,7 +24,7 @@ import { CourseTypeService } from '../../../../core/services/course-type.service
 import { TableFiltersComponent } from '@/app/shared/components/table-filters/table-filters.component';
 import { DocumentsModalComponent } from '../../components/modals/documents-modal/documents-modal.component';
 import { ModalComponent } from '../../../../shared/components/modals/modal.component';
-
+import { MailService } from '../../services/mail.service';
 // ... existing code ...
 
 
@@ -130,7 +130,8 @@ export class GroupPersonsComponent implements OnInit {
         private route: ActivatedRoute,
         private notificationService: NotificationService,
         private groupsService: GroupsService,
-        private courseTypeService: CourseTypeService
+        private courseTypeService: CourseTypeService,
+        private mailService: MailService
     ) { }
 
     ngOnInit(): void {
@@ -659,11 +660,27 @@ export class GroupPersonsComponent implements OnInit {
         }, () => {
             this.groupsService.cancelEnrollment(person.enrollmentId).subscribe({
                 next: () => {
-                    this.notificationService.showSuccess('Cancelado', `Se ha dado de baja la inscripción de ${person.name}.`);
-                    // Filtrar de la tabla local
-                    this.allEnrollments = this.allEnrollments.filter(d => d.enrollmentId !== person.enrollmentId);
 
-                    // Actualizar el conteo de ocupación de forma instantánea
+                    // ✅ ENVIAR CORREO
+                    if (person.email) {
+                        this.mailService.sendRemovalEmail(person.email, this.currentGroup)
+                            .subscribe({
+                                next: () => console.log('Correo de cancelación enviado'),
+                                error: (err) => console.error('Error enviando correo', err)
+                            });
+                    }
+
+                    this.notificationService.showSuccess(
+                        'Cancelado',
+                        `Se ha dado de baja la inscripción de ${person.name}.`
+                    );
+
+                    // Filtrar de la tabla local
+                    this.allEnrollments = this.allEnrollments.filter(
+                        d => d.enrollmentId !== person.enrollmentId
+                    );
+
+                    // Actualizar cupo
                     this.acceptedCount = Math.max(0, this.acceptedCount - 1);
                     if (this.currentGroup && this.currentGroup.limitStudents) {
                         this.isGroupFull = this.acceptedCount >= this.currentGroup.limitStudents;
@@ -673,7 +690,10 @@ export class GroupPersonsComponent implements OnInit {
                 },
                 error: (err) => {
                     console.error('Error canceling enrollment', err);
-                    this.notificationService.showError('Error', 'Ocurrió un error al intentar cancelar la inscripción.');
+                    this.notificationService.showError(
+                        'Error',
+                        'Ocurrió un error al intentar cancelar la inscripción.'
+                    );
                 }
             });
         });
