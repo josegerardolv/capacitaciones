@@ -8,6 +8,7 @@ import { DomSanitizer } from '@angular/platform-browser';
 import { InstitutionalTableComponent, TableColumn, TableConfig } from '../../shared/components/institutional-table/institutional-table.component';
 import { GroupsService } from '../cursos/services/groups.service';
 import { CoursesService } from '../cursos/services/courses.service';
+import { DashboardService } from './services/dashboard.service';
 import { Group } from '../../core/models/group.model';
 
 @Component({
@@ -46,7 +47,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
         private authService: AuthService,
         private sanitizer: DomSanitizer,
         private groupsService: GroupsService,
-        private coursesService: CoursesService
+        private coursesService: CoursesService,
+        private dashboardService: DashboardService
     ) { }
 
     ngOnInit(): void {
@@ -54,6 +56,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.startClock();
         this.initMetrics();
         this.initTableData();
+        this.loadStatistics();
     }
 
     ngOnDestroy(): void {
@@ -75,40 +78,64 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     private initMetrics() {
         this.graduationMetric = {
-            title: 'Cursos Impartidos Anauales',
-            value: '125',
-            subtitle: 'Cursos Impartidos Anuales',
+            title: 'Cursos Creados',
+            value: '0',
+            subtitle: 'Cursos creados',
             icon: this.sanitizer.bypassSecurityTrustHtml('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-9 h-9"><path d="M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82zM12 3L1 9l11 6 9-4.91V17h2V9L12 3z"/></svg>') as any,
             color: 'guinda'
         };
 
         this.personMetric = {
-            title: 'Total de Participantes Anuales',
-            value: '1,284',
-            subtitle: 'Total de Participantes Anuales',
+            title: 'Participantes Aceptados',
+            value: '0',
+            subtitle: 'Personas aceptadas',
             icon: this.sanitizer.bypassSecurityTrustHtml('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-9 h-9"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>') as any,
             color: 'guinda'
         };
 
         this.finishMetric = {
-            title: 'Porcentaje de Aprobación Anual',
-            value: '20%',
-            subtitle: 'Porcentaje de Aprobación Anual',
+            title: 'Índice de Aprobación',
+            value: '0%',
+            subtitle: 'Aprobación',
             icon: this.sanitizer.bypassSecurityTrustHtml('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-9 h-9"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>') as any,
             color: 'guinda',
             progress: {
-                percentage: 20,
-                label: 'Porcentaeje de aprobación'
+                percentage: 0,
+                label: 'Aprobación Promedio'
             }
         };
 
         this.calendarMetric = {
-            title: 'Grupos activos',
-            value: '18',
+            title: 'Grupos Próximos',
+            value: '0',
             subtitle: 'Grupos activos',
             icon: this.sanitizer.bypassSecurityTrustHtml('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-9 h-9"><path d="M20 3h-1V1h-2v2H7V1H5v2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 18H4V8h16v13z"/></svg>') as any,
             color: 'guinda'
         };
+    }
+
+    private loadStatistics() {
+        this.dashboardService.getDashboardStatistics().subscribe({
+            next: (stats) => {
+                this.graduationMetric = { ...this.graduationMetric, value: stats.coursesCreatedCurrentYear.toString() };
+                this.personMetric = { ...this.personMetric, value: stats.acceptedEnrollmentsTotal.toLocaleString() };
+
+                const parsedRate = isNaN(stats.enrollmentApprovalRate) ? 0 : Number(stats.enrollmentApprovalRate).toFixed(1);
+                this.finishMetric = {
+                    ...this.finishMetric,
+                    value: `${parsedRate}%`,
+                    progress: {
+                        percentage: Number(parsedRate),
+                        label: 'Porcentaje de aprobación'
+                    }
+                };
+
+                this.calendarMetric = { ...this.calendarMetric, value: stats.activeUpcomingGroups.toString() };
+            },
+            error: (err) => {
+                console.error('Error fetching dashboard statistics:', err);
+            }
+        });
     }
 
     getDynamicGroupStatus(group: Group): { text: string, type: 'success' | 'warning' | 'danger' | 'info' | 'neutral' } {
@@ -158,8 +185,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
             courses: this.coursesService.getCourses()
         }).subscribe({
             next: ({ groups: groupsResponse, courses: coursesResponse }) => {
-                console.log('Datos cargados en Dashboard:', { groupsResponse, coursesResponse });
-
                 // 1. Extraer Lista de Grupos (Manejo de Paginación vs Array Directo)
                 let groups: Group[] = [];
                 if (Array.isArray(groupsResponse)) {
@@ -171,7 +196,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
                 }
 
                 // 2. Extraer Lista de Cursos (Manejo de Paginación vs Array Directo)
-                // CoursesService ahora devuelve metadatos también.
                 let courses: any[] = [];
                 if (Array.isArray(coursesResponse)) {
                     courses = coursesResponse;
@@ -181,25 +205,19 @@ export class DashboardComponent implements OnInit, OnDestroy {
                     courses = coursesResponse.items;
                 }
 
-                // 3. Actualizar Métricas (Usando datos reales del Backend)
-                this.calendarMetric = { ...this.calendarMetric, value: groups.length.toString() };
-                this.graduationMetric = { ...this.graduationMetric, value: courses.length.toString() };
-
-                // Participantes: Suma de 'limitStudents' (o 'activeStudents' si existiera en el futuro)
-                const totalParticipants = groups.reduce((sum, g) => sum + (Number(g.limitStudents) || 0), 0);
-                this.personMetric = { ...this.personMetric, value: totalParticipants.toLocaleString() };
+                // AVISO: Anteriormente aquí se calculaban las métricas del dashboard (calendarMetric, graduationMetric, personMetric)
+                // de forma ineficiente leyendo y sumando todos los cursos devueltos por la API de grupos (Ej. groups.reduce).
+                // Eso se ha delegado al backend endpoint nuevo /statistics/dashboard y se carga vía la función loadStatistics().
 
                 // 3. Mapeo para Tabla (Manejo de Relaciones Dinámicas)
+                // Aquí en el futuro lo más recomendable es que el backend envíe un endpoint "/dashboard/upcoming-groups" 
+                // para evitar traerse los miles de grupos solo para mostrar 10.
                 this.upcomingCourses = groups.map((g: Group) => {
-                    // Resolver Nombre del Curso
-                    // El backend puede enviar 'course' como Número (ID) o como Objeto completo.
                     let courseName = 'Curso no encontrado';
 
                     if (g.course && typeof g.course === 'object' && (g.course as any).name) {
-                        // Caso: Objeto poblado
                         courseName = (g.course as any).name;
                     } else {
-                        // Caso: ID, buscamos en el catálogo de Cursos cargado previamente
                         const courseFound = courses.find(c => c.id === Number(g.course));
                         if (courseFound) courseName = courseFound.name;
                     }
@@ -213,7 +231,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
                         time: g.schedule,
                         status: this.getDynamicGroupStatus(g)
                     };
-                }).slice(0, 10); // Mostrar solo los 5 más recientes
+                }).slice(0, 10); // Mostrar solo los 10 más recientes
                 this.tableConfig.loading = false;
             },
             error: (err) => {
@@ -223,3 +241,4 @@ export class DashboardComponent implements OnInit, OnDestroy {
         });
     }
 }
+
