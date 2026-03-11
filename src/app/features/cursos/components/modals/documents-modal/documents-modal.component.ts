@@ -27,6 +27,8 @@ export interface DocumentRow {
   templateId?: number;
   emailSent?: boolean; // Mantiene el estado local del envío de correo
   isLocked?: boolean; // Propiedad para la lógica de dependencias (bloqueo)
+  stripeUrl?: string; // Cache de la URL de pago para evitar múltiples llamadas
+  stripePdf?: string; // Cache del PDF de Stripe
 }
 
 @Component({
@@ -91,6 +93,16 @@ export class DocumentsModalComponent implements OnInit {
         const umas = payment?.umas ? Number(payment.umas) : 0;
         const cost = umas * this.UMA_VALUE;
 
+        const paymentsList = dce.payments || [];
+        const hasPaidStatus = paymentsList.some((p: any) => p.isPaid === true || p.status === 'PAID' || p.status === 'succeeded');
+        
+        const isPaidFlag = (cost === 0) ? true : hasPaidStatus;
+
+        // Si ya hay un pagó generado pendiente de pagar, podemos precargar el url en el cache
+        const pendingPayment = paymentsList.find((p: any) => p.stripeUrl && p.status === 'PENDING');
+        const defaultStripeUrl = pendingPayment ? pendingPayment.stripeUrl : undefined;
+        // El PDF no viene en ese objeto, pero podríamos derivarlo o dejarlo undefined
+
         // Mantenemos estado local (emailSent) si ya existía en pantalla
         const existingDoc = this.documents.find(
           (d) => d.id === dce.id.toString(),
@@ -101,10 +113,12 @@ export class DocumentsModalComponent implements OnInit {
           name: template?.name || "Documento",
           description: template?.description || "Sin descripción",
           cost: cost,
-          isPaid: cost === 0, // Por ahora asumimos verdadero si no cuesta
+          isPaid: isPaidFlag,
           templateId: template?.id,
           emailSent: existingDoc ? existingDoc.emailSent : false,
           isLocked: false, // O lo que defina la regla de dependencias
+          stripeUrl: existingDoc?.stripeUrl || defaultStripeUrl,
+          stripePdf: existingDoc?.stripePdf 
         };
       });
       return;
@@ -173,70 +187,93 @@ export class DocumentsModalComponent implements OnInit {
   }
 
   printPaymentOrder(doc: DocumentRow) {
-    // Build actions dynamically based on state
-    const actions: any[] = [];
-
-    // 1. Download Option (Always available)
-    actions.push({
-      label: "Descargar PDF",
-      variant: "secondary",
-      action: () => {
-        this.downloadPaymentOrder(doc);
-        this.isAlertOpen = false;
-      },
-    });
-
-    // 2. Email Option (Only if not sent yet)
-    if (!doc.emailSent) {
-      actions.unshift({
-        // Add to start (Primary)
-        label: "Enviar por Correo",
-        variant: "primary",
-        action: () => {
-          this.sendPaymentOrderEmail(doc);
-          this.isAlertOpen = false;
-        },
-      });
-    }
-
-    this.alertConfig = {
-      title: doc.emailSent ? "Orden de Pago Enviada" : "Generar Orden de Pago",
-      message: doc.emailSent
-        ? `La orden de pago ya fue enviada a ${this.person?.email}.<br>¿Desea descargar una copia PDF?`
-        : `Seleccione cómo desea entregar la Línea de Captura para: <strong>${doc.name}</strong>`,
-      type: "info",
-      actions: actions,
-    };
-    this.isAlertOpen = true;
-  }
-
-  private sendPaymentOrderEmail(doc: DocumentRow) {
     if (!this.person?.id) {
-        this.notificationService.showError("Error", "No se encontró el ID de la persona para enviar el correo.");
+        this.notificationService.showError("Error", "No se encontró el ID de la persona para generar el pago.");
         return;
     }
 
-    this.notificationService.showSuccess("Enviando", "Enviando orden de pago por correo...");
-    const subject = `Orden de Pago: ${doc.name}`;
+    const enrollmentData = this.enrollment || (this.person as any)?._rawEnrollment;
+    if (!enrollmentData) {
+      this.notificationService.showError("Error", "No se encontraron datos de inscripción.");
+      return;
+    }
 
-    this.mailService.sendWithTemplate(this.person.id, 'constancia', subject).subscribe({
-        next: () => {
-            doc.emailSent = true;
-            this.notificationService.showSuccess(
-              "Enviado",
-              `La orden de pago se envió a: ${this.person?.email}`,
-            );
+    const dce = enrollmentData.documentCoursesEnrollments?.find((d: any) => d.id?.toString() === doc.id);
+    const templateDoc = dce?.documentCourse?.templateDocument;
+    
+    const fullName = [this.person.name, this.person.paternal_lastName, this.person.maternal_lastName]
+        .filter(Boolean).join(" ").trim();
+
+    // 1. Si ya generamos los links en esta sesión, mostramos el modal directamente sin llamar a la API
+    if (doc.stripeUrl && doc.stripePdf) {
+        this.showStripeModal(doc, doc.stripeUrl, doc.stripePdf, fullName);
+        return;
+    }
+
+    // Construir el payload que espera el endpoint /stripe/invoice
+    const payload = {
+        customer: {
+            email: this.person.email,
+            name: fullName,
+            personId: Number(this.person.id)
+        },
+        invoice: {
+            paymentConceptID: Number(templateDoc?.paymentConcept?.id) || 0,
+            description: doc.name
+        },
+        enrollment: Number(enrollmentData.enrollmentId || enrollmentData.id) || 0,
+        documentCourseEnrollment: Number(dce?.id) || 0
+    };
+
+    this.notificationService.showSuccess("Generando", "Contactando a Stripe para generar la línea de captura...");
+
+    this.mailService.sendStripeInvoice(payload).subscribe({
+        next: (response: any) => {
+            // 2. Guardamos en cache local para no volver a pedirlo
+            doc.stripeUrl = response.url;
+            doc.stripePdf = response.pdf;
+            this.showStripeModal(doc, response.url, response.pdf, fullName);
         },
         error: (err: any) => {
-            console.error(err);
-            if (err.status === 404) {
-               this.notificationService.showError("Error 404", "La plantilla 'constancia' no existe en el servidor Backend.");
-            } else {
-               const errorMsg = err.error?.message || "No se pudo enviar la orden de pago.";
-               this.notificationService.showError("Error del Servidor", errorMsg);
-            }
+            console.error("Error en Stripe Invoice:", err);
+            const errorMsg = err.error?.message || "Ocurrió un error al contactar el servidor de pagos.";
+            this.alertConfig = {
+              title: "Error de Pago",
+              message: errorMsg,
+              type: "danger",
+              actions: [ { label: 'Entendido', variant: 'outline', action: () => { this.isAlertOpen = false; } } ]
+            };
+            this.isAlertOpen = true;
         }
     });
+  }
+
+  private showStripeModal(doc: DocumentRow, url: string, pdf: string, fullName: string) {
+      this.alertConfig = {
+          title: "Línea de Captura",
+          message: `Seleccione cómo desea entregar la Línea de Captura para: <strong>${doc.name}</strong>`,
+          type: "success",
+          actions: [
+            { 
+              label: 'Enviar por Correo', 
+              variant: 'primary', 
+              action: () => { 
+                  this.isAlertOpen = false;
+                  this.notificationService.showSuccess("Enviando", "Mandando el enlace de pago por correo...");
+                  this.mailService.sendPaymentUrlByMail(this.person?.email || '', doc.name, fullName, url).subscribe({
+                      next: () => this.notificationService.showSuccess("Enviado", `Línea de pago enviada a ${this.person?.email || 'su correo'}`),
+                      error: () => this.notificationService.showError("Error", "Ocurrió un problema al enviar el correo")
+                  });
+              } 
+            },
+            { 
+              label: 'Descargar PDF', 
+              variant: 'secondary', 
+              action: () => { window.open(pdf, '_blank'); this.isAlertOpen = false; } 
+            }
+          ]
+      };
+      this.isAlertOpen = true;
   }
 
   private downloadPaymentOrder(doc: DocumentRow) {

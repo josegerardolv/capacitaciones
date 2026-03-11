@@ -144,4 +144,28 @@ export class MailService {
 
     return this.http.post(`${environment.apiUrl}/mail/send-with-template-json`, payload);
   }
+
+  sendStripeInvoice(payload: any): Observable<any> {
+    return this.http.post(`${environment.apiUrl}/stripe/invoice`, payload);
+  }
+
+  sendPaymentUrlByMail(recipientEmail: string, courseName: string, studentName: string, stripeUrl: string): Observable<any> {
+    const body = `
+        <p>Hola <strong>${studentName}</strong>,</p>
+        <p>Se ha generado tu línea de captura para el curso o constancia: <strong>${courseName}</strong>.</p>
+        <p>Puedes realizar tu pago de manera rápida y segura con tarjeta bancaria usando el siguiente enlace de cobro:</p>
+        <div style="text-align: center; margin: 30px 0;">
+            <a href="${stripeUrl}" style="background-color: #6a1b31; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold; font-family: sans-serif; display: inline-block;">Pagar en Línea ahora</a>
+        </div>
+        <p>Si prefieres pagar en efectivo (OXXO/Bancos), presiona el enlace y busca la opción de descargar formato en formato PDF o descárgalo directamente desde el sistema de Capacitaciones.</p>
+    `;
+
+    const html = getEmailTemplate("Línea de Pago de Formato", body);
+
+    return this.http.post(`${environment.apiUrl}/mail/send`, {
+      to: recipientEmail,
+      subject: `Línea de Captura Generada: ${courseName}`,
+      html,
+    });
+  }
 }

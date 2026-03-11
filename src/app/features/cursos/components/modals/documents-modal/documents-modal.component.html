@@ -130,13 +130,13 @@
                         size: 'small',
                         icon: 'print',
                         iconPosition: 'only',
-                        disabled: doc.isLocked,
+                        disabled: doc.isLocked || doc.isPaid,
                       }"
                       [appTooltip]="
                         doc.isLocked
                           ? 'Debe cubrir los documentos obligatorios primero'
                           : doc.isPaid
-                            ? 'Reimprimir Orden de Pago'
+                            ? 'Pago completado'
                             : 'Imprimir Orden de Pago'
                       "
                       tooltipPosition="top"
