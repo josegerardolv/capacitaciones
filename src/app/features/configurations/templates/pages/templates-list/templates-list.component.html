@@ -43,7 +43,13 @@
             (globalSearchChange)="filterData($event)">
         </app-table-filters>
 
-        <app-institutional-table [data]="templates" [columns]="tableColumns" [config]="tableConfig">
+        <app-institutional-table 
+            [data]="templates" 
+            [columns]="tableColumns" 
+            [config]="tableConfig"
+            [sortColumn]="sortColumn"
+            [sortDirection]="sortDirection"
+            (sort)="onSort($event)">
         </app-institutional-table>
         <app-table-pagination [config]="paginationConfig" [showPageSizeSelector]="false" [showPaginationControls]="true"
             (pageChange)="onPageChange($event)">
