@@ -76,7 +76,7 @@ import { InstitutionalButtonComponent } from '../buttons/institutional-button.co
                 class="flex-shrink-0 transition-colors duration-200 text-white">
               </app-universal-icon>
               </div>
-              <span class="font-medium">© 2025 SEMOVI Oaxaca</span>
+              <span class="font-medium">© {{ currentYear }} SEMOVI Oaxaca</span>
             </div>
             <p class="text-xs text-gray-500 mt-2">
               Sistema de Soporte Técnico - <span class="font-semibold">Versión 1.0.0</span>
@@ -89,6 +89,7 @@ import { InstitutionalButtonComponent } from '../buttons/institutional-button.co
     styles: []
 })
 export class NotFoundComponent {
+  get currentYear(): number { return new Date().getFullYear(); }
   constructor(private router: Router) {}
 
   goHome(): void {

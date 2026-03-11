@@ -39,6 +39,7 @@ export class GroupRequestsComponent implements OnChanges {
     @Input() isOpen = false;
     @Input() group: Group | null = null;
     @Output() close = new EventEmitter<void>();
+    @Output() requestsUpdated = new EventEmitter<void>();
 
     @ViewChild('actionsTemplate', { static: true }) actionsTemplate!: TemplateRef<any>;
 
@@ -221,6 +222,7 @@ export class GroupRequestsComponent implements OnChanges {
                     this.acceptedCount++; // Incrementar el contador local
                     this.filterData('');
                     this.clearSelection();
+                    this.requestsUpdated.emit(); // <---- EMITIR CAMBIO
 
                     if (email) {
                         this.mailService.sendAcceptanceEmail(email, this.group).subscribe();
@@ -249,6 +251,7 @@ export class GroupRequestsComponent implements OnChanges {
                     this.allRequests = this.allRequests.filter(r => r.enrollmentId !== enrollmentId);
                     this.filterData('');
                     this.clearSelection();
+                    this.requestsUpdated.emit(); // <---- EMITIR CAMBIO
 
                     if (email) {
                         this.mailService.sendRejectionEmail(email, this.group).subscribe();
@@ -300,6 +303,7 @@ export class GroupRequestsComponent implements OnChanges {
                     this.allRequests = this.allRequests.filter(r => !processedEnrollmentIds.includes(r.enrollmentId));
                     this.filterData('');
                     this.clearSelection();
+                    this.requestsUpdated.emit(); // <---- EMITIR CAMBIO
                 },
                 error: (err) => console.error('Error processing bulk requests', err)
             });

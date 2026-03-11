@@ -460,43 +460,29 @@ export class PersonRegistrationComponent implements OnInit {
 
         this.groupsService.createEnrollment(enrollmentPayload).subscribe({
             next: (response) => {
-                let message = `La persona <strong>${personData.name}</strong> ha sido inscrita correctamente.`;
+                let messageText = `La persona ${personData.name} ha sido inscrita correctamente.`;
 
-                // 2. Agregamos nota sobre Tarjetón si fue solicitado
                 if (personData.requestTarjeton) {
-                    message += `<br><br>
-                                <span class="text-sm text-gray-600">
-                                * Solicitud de Tarjetón registrada. La línea de pago del Tarjetón se generará 
-                                automáticamente <strong>una vez que apruebe el curso</strong>.
-                                </span>`;
+                    messageText += `\n\n(Nota: La solicitud de Tarjetón ha sido registrada. La línea de pago se generará y enviará al correo de la persona al aprobar el curso).`;
                 }
 
-                // 3. Configuramos el Modal con botones de acción
                 this.alertConfig = {
-                    title: '¡Registro Exitoso!',
-                    message: message, // AlertModal might not check type safely, but we kept string logic below
+                    title: '¡Inscripción Exitosa!',
+                    message: messageText,
                     type: 'success',
                     actions: [
                         {
-                            label: 'Descargar Orden de Pago',
+                            label: 'Enterado',
                             variant: 'primary',
-                            action: () => this.downloadPaymentOrder()
+                            action: () => this.closeAndRedirect()
                         },
                         {
-                            label: 'Enviar por Correo',
+                            label: 'Enviar a Correo',
                             variant: 'secondary',
                             action: () => this.sendEmail()
                         }
                     ]
                 };
-
-                // Sobreescribimos el mensaje con texto plano si el modal no soporta HTML (según código previo y comentarios)
-                // Usamos la lógica de texto que había antes
-                if (personData.requestTarjeton) {
-                    this.alertConfig.message = `Persona registrada.\n\nLa línea del CURSO está lista.\n\n(Nota: La línea del Tarjetón se generará y enviará al correo de la persona al aprobar el curso).`;
-                } else {
-                    this.alertConfig.message = `Persona registrada.\n\nLa línea de pago del CURSO está lista para entrega.`;
-                }
 
                 this.isAlertOpen = true;
             },
@@ -509,21 +495,16 @@ export class PersonRegistrationComponent implements OnInit {
     }
 
     // Acciones del Modal
-    downloadPaymentOrder() {
-        this.notificationService.showSuccess('Descarga iniciada', 'La orden de pago se está descargando.');
-        this.closeAndRedirect();
-    }
-
     sendEmail() {
         if (!this.personEmail) {
-            this.notificationService.showError('Error', 'No se detectó un correo electrónico válido para enviar la orden de pago.');
+            this.notificationService.showError('Error', 'No se detectó un correo electrónico válido para enviar la notificación.');
             return;
         }
 
         this.notificationService.showInfo('Enviando', 'Enviando correo...');
         this.mailService.sendEnrollmentEmail(this.personEmail, this.currentGroup).subscribe({
             next: () => {
-                this.notificationService.showSuccess('Correo enviado', 'Se ha enviado la orden de pago al conductor.');
+                this.notificationService.showSuccess('Correo enviado', 'Se ha enviado la confirmación al conductor.');
                 this.closeAndRedirect();
             },
             error: (err: any) => {

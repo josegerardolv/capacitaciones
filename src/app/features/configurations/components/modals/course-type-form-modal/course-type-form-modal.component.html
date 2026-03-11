@@ -31,16 +31,17 @@ x<app-modal [isOpen]="isOpen" [config]="modalConfig" (modalClose)="onClose()">
                     <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">SELECCIONE LOS CAMPOS
                     </h3>
 
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div *ngFor="let field of registrationFields"
-                            class="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer"
+                            class="flex items-center gap-3 py-3 px-4 border rounded-xl bg-gray-50/40 hover:bg-gray-50 border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all cursor-pointer"
                             (click)="toggleField(field)">
 
-                            <div class="relative flex items-center justify-center h-5 w-5">
+                            <div class="relative flex items-center justify-center shrink-0">
                                 <input type="checkbox" [checked]="field.visible"
                                     class="h-5 w-5 text-[#8B1538] border-gray-300 rounded focus:ring-[#8B1538] cursor-pointer">
                             </div>
-                            <span class="text-sm font-medium text-gray-700 select-none">{{ field.label }}</span>
+                            <span class="text-sm font-semibold text-gray-800 select-none block w-full truncate">{{
+                                field.label }}</span>
                         </div>
                     </div>
                 </div>

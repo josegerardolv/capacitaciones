@@ -112,7 +112,9 @@ export interface AlertAction {
         </div>
 
         <!-- Footer del modal -->
-        <div class="institutional-modal-footer">
+        <div class="institutional-modal-footer"
+             [class.!justify-between]="config.actions && config.actions.length === 2"
+             [class.w-full]="config.actions && config.actions.length === 2">
           <!-- Acciones personalizadas -->
           <ng-container *ngIf="config.actions && config.actions.length > 0">
             <app-institutional-button
@@ -134,7 +136,7 @@ export interface AlertAction {
               ariaLabel: 'Cerrar alerta'
             }"
             (buttonClick)="close()">
-            Entendido
+            Enterado
           </app-institutional-button>
         </div>
       </div>
