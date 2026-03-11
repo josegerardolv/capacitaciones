@@ -222,18 +222,17 @@ export class CourseListComponent implements OnInit {
                     };
                 }
 
-                // 3. Mapear A Objeto Frontend
+                // mapear los cursos para que se muestren en la tabla
                 this.courses = items.map(backendCourse => {
                     const course = this.coursesService.mapBackendCourseToFrontend(backendCourse);
-                    // Agregar nombre del tipo de curso para la tabla
-                    const type = this.courseTypeOptions.find(t => t.value === course.courseTypeId);
+                    
+                    // Usamos el nombre que ya viene directamente del backend
                     return {
                         ...course,
-                        courseTypeName: type ? type.label : 'Sin Tipo'
-                    };
+                        courseTypeName: backendCourse.courseType?.name || 'Sin Tipo'
+                    }
                 });
 
-                // Ya no usamos allCourses vs filteredCourses para paginación local
                 // Asignamos directamente a la variable de tabla
                 this.tableConfig.loading = false;
             },
