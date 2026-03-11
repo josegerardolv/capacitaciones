@@ -12,6 +12,7 @@ import { InstitutionalButtonComponent } from "../../../../../shared/components/b
 import { TooltipDirective } from "../../../../../shared/components/tooltip/tooltip.directive";
 import { PDFGeneratorService } from "../../../../../core/services/pdf-generator.service";
 import { TemplateService } from "../../../../configurations/templates/services/template.service";
+import { MailService } from "../../../services/mail.service";
 import {
   CertificateTemplate,
   CanvasDesign,
@@ -68,6 +69,7 @@ export class DocumentsModalComponent implements OnInit {
     private notificationService: NotificationService,
     private pdfGenerator: PDFGeneratorService,
     private templateService: TemplateService,
+    private mailService: MailService,
   ) { }
 
   ngOnInit() { }
@@ -209,11 +211,32 @@ export class DocumentsModalComponent implements OnInit {
   }
 
   private sendPaymentOrderEmail(doc: DocumentRow) {
-    doc.emailSent = true;
-    this.notificationService.showSuccess(
-      "Enviado",
-      `La orden de pago se envió a: ${this.person?.email}`,
-    );
+    if (!this.person?.id) {
+        this.notificationService.showError("Error", "No se encontró el ID de la persona para enviar el correo.");
+        return;
+    }
+
+    this.notificationService.showSuccess("Enviando", "Enviando orden de pago por correo...");
+    const subject = `Orden de Pago: ${doc.name}`;
+
+    this.mailService.sendWithTemplate(this.person.id, 'constancia', subject).subscribe({
+        next: () => {
+            doc.emailSent = true;
+            this.notificationService.showSuccess(
+              "Enviado",
+              `La orden de pago se envió a: ${this.person?.email}`,
+            );
+        },
+        error: (err: any) => {
+            console.error(err);
+            if (err.status === 404) {
+               this.notificationService.showError("Error 404", "La plantilla 'constancia' no existe en el servidor Backend.");
+            } else {
+               const errorMsg = err.error?.message || "No se pudo enviar la orden de pago.";
+               this.notificationService.showError("Error del Servidor", errorMsg);
+            }
+        }
+    });
   }
 
   private downloadPaymentOrder(doc: DocumentRow) {
@@ -352,11 +375,129 @@ export class DocumentsModalComponent implements OnInit {
     }
   }
 
-  emailCertificate(doc: DocumentRow) {
-    this.notificationService.showSuccess(
-      "Enviado",
-      `Constancia enviada a: ${this.person?.email || "Correo del usuario"}`,
-    );
+  async emailCertificate(doc: DocumentRow) {
+    if (!this.person?.id) {
+        this.notificationService.showError("Error", "Falta el ID de la persona para enviar el correo.");
+        return;
+    }
+
+    this.notificationService.showSuccess("Enviando", "Generando Constancia y preparando envío...");
+    const subject = `Constancia: ${doc.name}`;
+
+    // --- LÓGICA DE GENERACIÓN DE PDF BASE64 ---
+    const enrollmentData = this.enrollment || (this.person as any)?._rawEnrollment;
+    if (!enrollmentData) {
+      this.notificationService.showError("Error", "No se encontraron datos de inscripción para generar el PDF.");
+      return;
+    }
+
+    const dce = enrollmentData.documentCoursesEnrollments?.find((d: any) => d.id?.toString() === doc.id);
+    const templateDoc = dce?.documentCourse?.templateDocument;
+    
+    if (!templateDoc?.fields?.length) {
+      this.notificationService.showError("Error", "No se encontró el diseño del template para adjuntar la constancia.");
+      return;
+    }
+
+    let design: CanvasDesign | null = null;
+    try {
+      design = TemplateService.parseDesign(templateDoc.fields);
+    } catch (e) {
+      this.notificationService.showError("Error", "El diseño del template no es válido.");
+      return;
+    }
+
+    if (!design) return;
+
+    const extractedVars = TemplateService.extractVariablesFromEnrollment(enrollmentData);
+    const variableValues: Record<string, string> = {};
+    extractedVars.forEach((v) => {
+      if (v.sampleValue) variableValues[v.name] = v.sampleValue;
+    });
+
+    if (dce?.folio != null) variableValues["folio"] = String(dce.folio);
+
+    const person = enrollmentData.person;
+    if (person) {
+      const fullName = [person.name, person.paternal_lastName, person.maternal_lastName]
+        .filter(Boolean).join(" ").trim();
+      if (fullName && !variableValues["nombre_completo"]) {
+        variableValues["nombre_completo"] = fullName;
+      }
+    }
+
+    const certTemplate: CertificateTemplate = {
+      id: templateDoc.id,
+      name: templateDoc.name || doc.name,
+      description: templateDoc.description || "",
+      category: templateDoc.category || "GENERAL",
+      claveConcepto: "",
+      pageConfig: design.pageConfig || this.templateService.getDefaultPageConfig(),
+      elements: design.elements || [],
+      variables: design.variables || [],
+    };
+
+    let base64Pdf: string | undefined = undefined;
+    try {
+      const result = await this.pdfGenerator.generateFromTemplate(certTemplate, variableValues, {
+          filename: `${doc.name}.pdf`,
+          action: "base64", // IMPORTANTE: Pedimos Base64 en lugar de descargar
+          imageQuality: 0.2 // REDUCIDO AL 20% DE CALIDAD PARA EVITAR ERROR 500 EN BASE64
+      });
+
+      if (result.success && result.dataUrl) {
+          // Extraer la cadena base64 limpia (quitar el prefijo de data URI si lo trae)
+          base64Pdf = result.dataUrl.includes('base64,') ? result.dataUrl.split('base64,')[1] : result.dataUrl;
+      } else {
+          this.notificationService.showError("Error", "No se adjuntó el PDF. Error interno de generación.");
+          return;
+      }
+    } catch(err) {
+        console.error("Error generating base64 PDF:", err);
+        return;
+    }
+    // ------------------------------------------
+
+    console.log("Enviando payload JSON a /mail/send-with-template:", {
+        personId: this.person.id,
+        template: 'constancia',
+        subject: subject,
+        file: base64Pdf ? `${base64Pdf.substring(0, 50)}... [TRUNCADO BASE64 VÁLIDO DE ${base64Pdf.length} CARACTERES]` : 'No se adjuntó'
+    });
+
+    this.mailService.sendWithTemplate(this.person.id, 'constancia', subject, base64Pdf, `${doc.name}.pdf`).subscribe({
+        next: () => {
+            this.alertConfig = {
+              title: "Envío Exitoso",
+              message: `La constancia se envió correctamente al correo: <strong>${this.person?.email || "del usuario"}</strong>.`,
+              type: "success",
+              actions: [ { label: 'Aceptar', variant: 'primary', action: () => { this.isAlertOpen = false; } } ]
+            };
+            this.isAlertOpen = true;
+        },
+        error: (err: any) => {
+            console.error(err);
+            
+            let errorTitle = "Error del Servidor";
+            let errorMessage = err.error?.message || "No se pudo enviar el correo de la constancia.";
+
+            if (err.status === 413) {
+               errorTitle = "Archivo Demasiado Grande";
+               errorMessage = "El tamaño del archivo PDF excede el límite permitido por el servidor de correos. Intente contactar a soporte.";
+            } else if (err.status === 404) {
+               errorTitle = "Error 404";
+               errorMessage = "La plantilla 'constancia' no existe en el servidor Backend.";
+            }
+
+            this.alertConfig = {
+              title: errorTitle,
+              message: errorMessage,
+              type: "danger",
+              actions: [ { label: 'Entendido', variant: 'outline', action: () => { this.isAlertOpen = false; } } ]
+            };
+            this.isAlertOpen = true;
+        }
+    });
   }
 
   // --- SIOX INTEGRATION ---

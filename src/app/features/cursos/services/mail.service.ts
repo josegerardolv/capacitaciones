@@ -129,4 +129,19 @@ export class MailService {
       html,
     });
   }
+
+  sendWithTemplate(personId: number, template: string = 'constancia', subject: string, fileBase64String?: string, fileName?: string): Observable<any> {
+    const payload: any = {
+      personId,
+      template,
+      subject
+    };
+
+    if (fileBase64String) {
+      payload.fileBase64 = fileBase64String;
+      payload.fileName = fileName || "constancia.pdf";
+    }
+
+    return this.http.post(`${environment.apiUrl}/mail/send-with-template-json`, payload);
+  }
 }
