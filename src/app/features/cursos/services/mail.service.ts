@@ -168,4 +168,42 @@ export class MailService {
       html,
     });
   }
+
+  sendCourseStatusEmail(recipientEmail: string, group: any, studentName: string, status: 'APROBADO' | 'REPROBADO'): Observable<any> {
+    const { courseName, groupName } = this.getGroupInfo(group);
+    
+    const isApproved = status === 'APROBADO';
+    const statusColor = isApproved ? '#28a745' : '#dc3545';
+    const statusText = isApproved ? 'APROBADO' : 'REPROBADO';
+
+    const body = `
+        <p>Estimado(a) <strong>${studentName}</strong>,</p>
+        <p>Te informamos que se ha procesado el resultado de tu evaluación para el siguiente curso:</p>
+
+        <div class="info-box">
+            <div class="info-row"><span class="info-label">Curso:</span> ${courseName}</div>
+            <div class="info-row"><span class="info-label">Grupo:</span> ${groupName}</div>
+            <div class="info-row" style="margin-top: 15px; text-align: center;">
+                <span style="font-size: 1.2em; font-weight: bold; color: ${statusColor}; border: 2px solid ${statusColor}; padding: 10px 20px; border-radius: 8px; display: inline-block;">
+                    ESTATUS: ${statusText}
+                </span>
+            </div>
+        </div>
+
+        <p>${isApproved 
+            ? '¡Felicidades! Ya puedes proceder con la gestión de tu constancia y pagos en nuestro portal.' 
+            : 'Lamentamos informarte que no has acreditado la evaluación en esta ocasión. Comunícate con la administración para más detalles.'}</p>
+        
+        <p>Si tienes alguna duda, estamos para servirte.</p>
+    `;
+
+    const title = isApproved ? 'Curso Aprobado' : 'Resultado de Evaluación';
+    const html = getEmailTemplate(title, body);
+
+    return this.http.post(`${environment.apiUrl}/mail/send`, {
+      to: recipientEmail,
+      subject: `Actualización de Estatus: ${statusText} - ${courseName}`,
+      html,
+    });
+  }
 }

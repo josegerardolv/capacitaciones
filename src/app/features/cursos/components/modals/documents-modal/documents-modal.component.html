@@ -43,10 +43,24 @@
       </div>
 
       <!-- Body -->
-      <div class="mb-6">
-        <h4 class="text-lg font-medium text-gob-wine mb-4">
-          Constancias Descargables
-        </h4>
+      <div class="mb-6 relative">
+        <!-- Overlay de Carga de Datos -->
+        <div 
+          *ngIf="isCheckingPayment" 
+          class="absolute inset-0 bg-white bg-opacity-60 z-10 flex flex-col items-center justify-center rounded-lg"
+        >
+          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-gob-wine mb-2"></div>
+          <p class="text-gob-wine font-medium">Actualizando información...</p>
+        </div>
+
+        <div class="flex items-center justify-between mb-4">
+          <h4 class="text-lg font-medium text-gob-wine">
+            Constancias Descargables
+          </h4>
+          <span *ngIf="isCheckingPayment" class="text-xs text-gray-500 italic">
+            Sincronizando con el servidor...
+          </span>
+        </div>
 
         <div class="overflow-x-auto border border-gray-200 rounded-lg">
           <table class="min-w-full divide-y divide-gray-200">
@@ -130,14 +144,18 @@
                         size: 'small',
                         icon: 'print',
                         iconPosition: 'only',
-                        disabled: doc.isLocked || doc.isPaid,
+                        disabled: doc.isLocked || doc.isPaid || isGeneratingPayment || doc.orderProcessed,
                       }"
                       [appTooltip]="
                         doc.isLocked
                           ? 'Debe cubrir los documentos obligatorios primero'
                           : doc.isPaid
                             ? 'Pago completado'
-                            : 'Imprimir Orden de Pago'
+                            : doc.orderProcessed
+                              ? 'Orden ya generada/enviada'
+                              : isGeneratingPayment 
+                                ? 'Generando link...'
+                                : 'Imprimir Orden de Pago'
                       "
                       tooltipPosition="top"
                       (buttonClick)="printPaymentOrder(doc)"
@@ -157,9 +175,11 @@
                       [appTooltip]="
                         doc.isLocked
                           ? 'Debe cubrir los documentos obligatorios primero'
-                          : doc.isPaid
-                            ? 'Descargar PDF'
-                            : 'Requiere Pago'
+                          : isDownloading
+                            ? 'Descargando...'
+                            : doc.isPaid
+                              ? 'Descargar PDF'
+                              : 'Requiere Pago'
                       "
                       tooltipPosition="top"
                       (buttonClick)="downloadCertificate(doc)"
@@ -174,14 +194,16 @@
                         icon: 'send',
                         iconPosition: 'only',
                         title: 'Enviar por Correo',
-                        disabled: doc.isLocked || !doc.isPaid,
+                        disabled: doc.isLocked || !doc.isPaid || isSendingEmail,
                       }"
                       [appTooltip]="
                         doc.isLocked
                           ? 'Debe cubrir los documentos obligatorios primero'
-                          : doc.isPaid
-                            ? 'Enviar por Correo'
-                            : 'Requiere Pago'
+                          : isSendingEmail
+                            ? 'Enviando...'
+                            : doc.isPaid
+                              ? 'Enviar por Correo'
+                              : 'Requiere Pago'
                       "
                       tooltipPosition="top"
                       (buttonClick)="emailCertificate(doc)"
@@ -190,7 +212,7 @@
                   </div>
                 </td>
               </tr>
-              <tr *ngIf="documents.length === 0">
+              <tr *ngIf="documents.length === 0 && !isCheckingPayment">
                 <td
                   colspan="4"
                   class="px-6 py-4 text-center text-sm text-gray-500 italic"
@@ -220,4 +242,12 @@
     (modalClose)="isAlertOpen = false"
   >
   </app-alert-modal>
+
+  <!-- Modal de Carga Institucional -->
+  <app-loading-modal
+    [isOpen]="isLoadingModalOpen"
+    [config]="loadingConfig"
+    (modalClose)="isLoadingModalOpen = false"
+  >
+  </app-loading-modal>
 </div>
