@@ -129,4 +129,81 @@ export class MailService {
       html,
     });
   }
+
+  sendWithTemplate(personId: number, template: string = 'constancia', subject: string, fileBase64String?: string, fileName?: string): Observable<any> {
+    const payload: any = {
+      personId,
+      template,
+      subject
+    };
+
+    if (fileBase64String) {
+      payload.fileBase64 = fileBase64String;
+      payload.fileName = fileName || "constancia.pdf";
+    }
+
+    return this.http.post(`${environment.apiUrl}/mail/send-with-template-json`, payload);
+  }
+
+  sendStripeInvoice(payload: any): Observable<any> {
+    return this.http.post(`${environment.apiUrl}/stripe/invoice`, payload);
+  }
+
+  sendPaymentUrlByMail(recipientEmail: string, courseName: string, studentName: string, stripeUrl: string): Observable<any> {
+    const body = `
+        <p>Hola <strong>${studentName}</strong>,</p>
+        <p>Se ha generado tu línea de captura para el curso o constancia: <strong>${courseName}</strong>.</p>
+        <p>Puedes realizar tu pago de manera rápida y segura con tarjeta bancaria usando el siguiente enlace de cobro:</p>
+        <div style="text-align: center; margin: 30px 0;">
+            <a href="${stripeUrl}" style="background-color: #6a1b31; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold; font-family: sans-serif; display: inline-block;">Pagar en Línea ahora</a>
+        </div>
+        <p>Si prefieres pagar en efectivo (OXXO/Bancos), presiona el enlace y busca la opción de descargar formato en formato PDF o descárgalo directamente desde el sistema de Capacitaciones.</p>
+    `;
+
+    const html = getEmailTemplate("Línea de Pago de Formato", body);
+
+    return this.http.post(`${environment.apiUrl}/mail/send`, {
+      to: recipientEmail,
+      subject: `Línea de Captura Generada: ${courseName}`,
+      html,
+    });
+  }
+
+  sendCourseStatusEmail(recipientEmail: string, group: any, studentName: string, status: 'APROBADO' | 'REPROBADO'): Observable<any> {
+    const { courseName, groupName } = this.getGroupInfo(group);
+    
+    const isApproved = status === 'APROBADO';
+    const statusColor = isApproved ? '#28a745' : '#dc3545';
+    const statusText = isApproved ? 'APROBADO' : 'REPROBADO';
+
+    const body = `
+        <p>Estimado(a) <strong>${studentName}</strong>,</p>
+        <p>Te informamos que se ha procesado el resultado de tu evaluación para el siguiente curso:</p>
+
+        <div class="info-box">
+            <div class="info-row"><span class="info-label">Curso:</span> ${courseName}</div>
+            <div class="info-row"><span class="info-label">Grupo:</span> ${groupName}</div>
+            <div class="info-row" style="margin-top: 15px; text-align: center;">
+                <span style="font-size: 1.2em; font-weight: bold; color: ${statusColor}; border: 2px solid ${statusColor}; padding: 10px 20px; border-radius: 8px; display: inline-block;">
+                    ESTATUS: ${statusText}
+                </span>
+            </div>
+        </div>
+
+        <p>${isApproved 
+            ? '¡Felicidades! Ya puedes proceder con la gestión de tu constancia y pagos en nuestro portal.' 
+            : 'Lamentamos informarte que no has acreditado la evaluación en esta ocasión. Comunícate con la administración para más detalles.'}</p>
+        
+        <p>Si tienes alguna duda, estamos para servirte.</p>
+    `;
+
+    const title = isApproved ? 'Curso Aprobado' : 'Resultado de Evaluación';
+    const html = getEmailTemplate(title, body);
+
+    return this.http.post(`${environment.apiUrl}/mail/send`, {
+      to: recipientEmail,
+      subject: `Actualización de Estatus: ${statusText} - ${courseName}`,
+      html,
+    });
+  }
 }

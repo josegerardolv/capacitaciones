@@ -56,7 +56,7 @@ export class DocumentSelectionModalComponent {
             this.documents = this.customDocuments.map(doc => ({
                 id: doc.id,
                 name: doc.name,
-                description: doc.description || doc.name, // Usar descripción si existe, sino nombre
+                description: doc.description || '', // Mostrar vacío si no hay descripción
                 cost: doc.cost, // Map cost
                 selected: !!doc.isMandatory, // Si es obligatorio, pre-seleccionar
                 disabled: !!doc.isMandatory  // Si es obligatorio, bloquear

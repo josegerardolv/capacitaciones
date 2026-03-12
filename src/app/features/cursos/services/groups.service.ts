@@ -206,4 +206,8 @@ export class GroupsService {
     deleteEnrollment(enrollmentId: number): Observable<any> {
         return this.http.delete(`${this.apiUrl}/enrollment/${enrollmentId}`);
     }
+
+    getEnrollmentById(enrollmentId: number): Observable<any> {
+        return this.http.get<any>(`${this.apiUrl}/enrollment/${enrollmentId}`);
+    }
 }

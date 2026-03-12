@@ -168,6 +168,7 @@ export class PersonRegistrationComponent implements OnInit {
                                 return {
                                     id: d.documentCourses || d.id || d.name || 'doc_unknown',
                                     name: d.name || 'Documento sin nombre',
+                                    description: d.description || '',
                                     templateId: d.templateId || d.id,
                                     isMandatory: d.isRequired !== undefined ? d.isRequired : (d.isMandatory !== undefined ? d.isMandatory : false),
                                     cost: calculatedCost
@@ -184,7 +185,8 @@ export class PersonRegistrationComponent implements OnInit {
                                 }
                                 return {
                                     id: d.id || d.templateDocument?.id || d.templateDocument || 'doc_unknown',
-                                    name: d.templateDocument?.name || d.templateDocumentObject?.name || d.name || 'Documento',
+                                    name: d.name || d.templateDocument?.name || d.templateDocumentObject?.name || 'Documento',
+                                    description: d.description || d.templateDocument?.description || d.templateDocumentObject?.description || '',
                                     templateId: d.templateDocument?.id || d.templateDocument,
                                     isMandatory: d.isRequired !== undefined ? d.isRequired : (d.isMandatory !== undefined ? d.isMandatory : false),
                                     cost: calculatedCost
@@ -213,6 +215,7 @@ export class PersonRegistrationComponent implements OnInit {
                                             return {
                                                 id: d.documentCourses || d.id || d.name || 'doc_unknown',
                                                 name: d.name || 'Documento sin nombre',
+                                                description: d.description || '',
                                                 templateId: d.templateId || d.id,
                                                 isMandatory: d.isRequired !== undefined ? d.isRequired : (d.isMandatory !== undefined ? d.isMandatory : false),
                                                 cost: calculatedCost
@@ -230,6 +233,7 @@ export class PersonRegistrationComponent implements OnInit {
                                             return {
                                                 id: d.id || d.templateDocument?.id || d.templateDocument || 'doc_unknown',
                                                 name: d.templateDocument?.name || d.templateDocumentObject?.name || d.name || 'Documento',
+                                                description: d.description || d.templateDocument?.description || d.templateDocumentObject?.description || '',
                                                 templateId: d.templateDocument?.id || d.templateDocument,
                                                 isMandatory: d.isRequired !== undefined ? d.isRequired : (d.isMandatory !== undefined ? d.isMandatory : false),
                                                 cost: calculatedCost
