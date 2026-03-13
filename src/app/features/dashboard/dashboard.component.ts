@@ -68,12 +68,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
     private startClock() {
         const updateTime = () => {
             const now = new Date();
-            this.timeString = now.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', hour12: false,  });
+            this.timeString = now.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', hour12: false });
             this.dateString = now.toLocaleDateString('es-MX', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
         };
 
         updateTime(); // Llamada inicial
-        this.timerSubscription = interval(60000).subscribe(updateTime);
+        this.timerSubscription = interval(1000).subscribe(updateTime);
     }
 
     private initMetrics() {
@@ -147,24 +147,25 @@ export class DashboardComponent implements OnInit, OnDestroy {
         const startDate = new Date(group.groupStartDate);
         startDate.setHours(0, 0, 0, 0);
 
-        if (today > startDate) return { text: 'Finalizado', type: 'neutral' };
-        if (today.getTime() === startDate.getTime()) return { text: 'En curso', type: 'info' };
-
-        if (group.endInscriptionDate) {
-            const endDate = new Date(group.endInscriptionDate);
-            endDate.setHours(0, 0, 0, 0);
-
-            if (today > endDate) return { text: 'Cerrado', type: 'danger' };
-
-            const diffTime = endDate.getTime() - today.getTime();
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-            if (diffDays === 0) return { text: 'Cierra hoy', type: 'warning' };
-            if (diffDays === 1) return { text: 'En 1 día', type: 'warning' };
-            if (diffDays <= 3 && diffDays > 1) return { text: `En ${diffDays} días`, type: 'warning' };
+        // 3. Finalizado (El curso ya pasó)
+        if (today > startDate) {
+            return { text: 'Finalizado', type: 'neutral' }; // Gris
         }
 
-        return { text: 'Abierto', type: 'success' };
+        // 2. En Curso (El curso es hoy)
+        if (today.getTime() === startDate.getTime()) {
+            return { text: 'En curso', type: 'info' }; // Azul
+        }
+
+        // 1. Próximo a Iniciar (Faltan días para arrancar el curso)
+        const diffTime = startDate.getTime() - today.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        if (diffDays === 1) return { text: 'Inicia mañana', type: 'warning' };
+        if (diffDays <= 3 && diffDays > 1) return { text: `Inicia en ${diffDays} días`, type: 'warning' };
+
+        // Falta más de 3 días para iniciar
+        return { text: 'Abierto', type: 'success' }; // Verde
     }
 
     private initTableData() {
@@ -175,14 +176,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
             { key: 'participants', label: 'Cantidad', sortable: true },
             { key: 'date', label: 'Fecha', sortable: true, template: this.dateTemplate },
             { key: 'time', label: 'Hora' },
-            { key: 'status', label: 'Estatus', template: this.statusTemplate }
+            { key: 'status.text', label: 'Estatus', sortable: true, template: this.statusTemplate }
         ];
 
         // Cargar datos reales desde el servicio
         this.tableConfig.loading = true;
         forkJoin({
-            groups: this.groupsService.getGroups(),
-            courses: this.coursesService.getCourses()
+            groups: this.groupsService.getGroups(1, 20), // Límite optimizado (antes 50)
+            courses: this.coursesService.getCourses(1, 20) // Límite optimizado (antes 100)
         }).subscribe({
             next: ({ groups: groupsResponse, courses: coursesResponse }) => {
                 // 1. Extraer Lista de Grupos (Manejo de Paginación vs Array Directo)
@@ -204,6 +205,22 @@ export class DashboardComponent implements OnInit, OnDestroy {
                 } else if (coursesResponse.items && Array.isArray(coursesResponse.items)) {
                     courses = coursesResponse.items;
                 }
+
+                // 2b. Ordenar grupos por fecha de vencimiento (vencimiento próximo primero, nulos al final)
+                groups.sort((a, b) => {
+                    // Prioridad 1: endInscriptionDate (vencimiento)
+                    if (a.endInscriptionDate && b.endInscriptionDate) {
+                        return new Date(a.endInscriptionDate).getTime() - new Date(b.endInscriptionDate).getTime();
+                    }
+                    if (a.endInscriptionDate) return -1;
+                    if (b.endInscriptionDate) return 1;
+
+                    // Prioridad 2: groupStartDate (si no hay vencimiento)
+                    if (a.groupStartDate && b.groupStartDate) {
+                        return new Date(a.groupStartDate).getTime() - new Date(b.groupStartDate).getTime();
+                    }
+                    return 0;
+                });
 
                 // AVISO: Anteriormente aquí se calculaban las métricas del dashboard (calendarMetric, graduationMetric, personMetric)
                 // de forma ineficiente leyendo y sumando todos los cursos devueltos por la API de grupos (Ej. groups.reduce).
