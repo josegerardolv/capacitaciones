@@ -68,12 +68,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
     private startClock() {
         const updateTime = () => {
             const now = new Date();
-            this.timeString = now.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            this.timeString = now.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', hour12: false,  });
             this.dateString = now.toLocaleDateString('es-MX', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
         };
 
         updateTime(); // Llamada inicial
-        this.timerSubscription = interval(1000).subscribe(updateTime);
+        this.timerSubscription = interval(60000).subscribe(updateTime);
     }
 
     private initMetrics() {
@@ -241,4 +241,3 @@ export class DashboardComponent implements OnInit, OnDestroy {
         });
     }
 }
-
