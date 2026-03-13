@@ -55,6 +55,7 @@ export class DocumentsModalComponent implements OnInit {
   @Input() person: Person | null = null;
   @Input() enrollment: any = null;
   @Input() courseTypeId: number | null = null;
+  @Input() group: any = null;
 
   @Output() onClose = new EventEmitter<void>();
 
@@ -381,6 +382,20 @@ export class DocumentsModalComponent implements OnInit {
       if (fullName && !variableValues["nombre_completo"]) variableValues["nombre_completo"] = fullName;
     }
 
+    const groupData = this.group;
+    const courseData = groupData?.course;
+    if (courseData?.name) {
+      variableValues["nombre_curso"] = String(courseData.name);
+    }
+    if (courseData?.duration != null) {
+      const hours = Math.round(Number(courseData.duration) / 60);
+      variableValues["tiempo_curso"] = `${hours} horas`;
+    }
+    if (groupData?.groupStartDate) {
+      const d = new Date(groupData.groupStartDate);
+      variableValues["fecha_curso"] = d.toLocaleDateString("es-MX");
+    }
+
     const certTemplate: CertificateTemplate = {
       id: templateDoc.id,
       name: templateDoc.name || doc.name,
@@ -459,6 +474,20 @@ export class DocumentsModalComponent implements OnInit {
     if (person) {
       const fullName = [person.name, person.paternal_lastName, person.maternal_lastName].filter(Boolean).join(" ").trim();
       if (fullName && !variableValues["nombre_completo"]) variableValues["nombre_completo"] = fullName;
+    }
+
+    const groupData = this.group;
+    const courseData = groupData?.course;
+    if (courseData?.name) {
+      variableValues["nombre_curso"] = String(courseData.name);
+    }
+    if (courseData?.duration != null) {
+      const hours = Math.round(Number(courseData.duration) / 60);
+      variableValues["tiempo_curso"] = `${hours} horas`;
+    }
+    if (groupData?.groupStartDate) {
+      const d = new Date(groupData.groupStartDate);
+      variableValues["fecha_curso"] = d.toLocaleDateString("es-MX");
     }
 
     const certTemplate: CertificateTemplate = {

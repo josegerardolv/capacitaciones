@@ -182,7 +182,9 @@
   <!-- Modal de Gestión de Documentos -->
   <app-documents-modal [isOpen]="isDocumentsModalOpen" [person]="selectedPersonForDocs"
     [enrollment]="$any(selectedPersonForDocs)?._rawEnrollment || null"
-    [courseTypeId]="currentGroup?.courseTypeId || null" (onClose)="closeDocumentsModal()">
+    [courseTypeId]="currentGroup?.courseTypeId || null"
+    [group]="currentGroup"
+    (onClose)="closeDocumentsModal()">
   </app-documents-modal>
 
   <!-- Modal de Información de Persona -->

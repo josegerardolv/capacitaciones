@@ -76,6 +76,8 @@ export interface EnrollmentWithVariables {
 export interface GroupWithEnrollments {
   group: { id: number; name: string };
   courseName?: string;
+  courseDuration?: number;
+  groupStartDate?: string;
   enrollments: EnrollmentWithVariables[];
 }
 
@@ -387,7 +389,7 @@ export class TemplateService {
     });
     othersFromDynamic.forEach((v) => {
       if (!byName.has(v.name))
-        byName.set(v.name, { ...v, sampleValue: undefined });
+        byName.set(v.name, { ...v });
     });
     const participanteNames = new Set(participante.map((p) => p.name));
     const others = Array.from(byName.values()).filter(
@@ -495,7 +497,7 @@ export class TemplateService {
       },
     ];
 
-    return fieldDefs
+    const personVars = fieldDefs
       .filter((def) => hasValue(def.getValue(enrollment)))
       .map((def) => {
         const sampleValue = String(def.getValue(enrollment)).trim();
@@ -510,6 +512,54 @@ export class TemplateService {
           sampleValue: sampleValue || undefined,
         };
       });
+
+    const courseVars: TemplateVariable[] = [];
+    const group = enrollment?.group;
+    const course = group?.course;
+
+    if (hasValue(course?.name)) {
+      courseVars.push({
+        name: "nombre_curso",
+        label: "Nombre del curso",
+        type: "text",
+        required: false,
+        icon: "school",
+        category: "curso",
+        description: "Nombre del curso",
+        sampleValue: String(course.name).trim(),
+      });
+    }
+
+    if (hasValue(course?.duration)) {
+      const hours = Math.round(Number(course.duration) / 60);
+      courseVars.push({
+        name: "tiempo_curso",
+        label: "Duración del curso",
+        type: "text",
+        required: false,
+        icon: "schedule",
+        category: "curso",
+        description: "Duración del curso en horas",
+        sampleValue: `${hours} horas`,
+      });
+    }
+
+    if (hasValue(group?.groupStartDate)) {
+      const d = new Date(group.groupStartDate);
+      const dateStr = d.toLocaleDateString("es-MX");
+      courseVars.push({
+        name: "fecha_curso",
+        label: "Fecha del curso",
+        type: "date",
+        required: false,
+        icon: "calendar_today",
+        category: "curso",
+        description: "Fecha de inicio del grupo",
+        sampleValue: dateStr,
+      });
+    }
+
+    return [...personVars, ...courseVars];
   }
 
   /**
@@ -656,6 +706,8 @@ export class TemplateService {
                   return {
                     group: { id: g.id, name: g.name || `Grupo ${g.id}` },
                     courseName: g.course?.name,
+                    courseDuration: g.course?.duration,
+                    groupStartDate: g.groupStartDate,
                     enrollments: enrollmentItems,
                   } as GroupWithEnrollments;
                 }),
@@ -782,6 +834,33 @@ export class TemplateService {
         icon: "devices",
         category: "curso",
         description: "Presencial, en línea, híbrido",
+      },
+      {
+        name: "nombre_curso",
+        label: "Nombre del curso",
+        type: "text",
+        required: false,
+        icon: "school",
+        category: "curso",
+        description: "Nombre del curso (desde API)",
+      },
+      {
+        name: "tiempo_curso",
+        label: "Duración del curso",
+        type: "text",
+        required: false,
+        icon: "schedule",
+        category: "curso",
+        description: "Duración del curso en horas (desde API)",
+      },
+      {
+        name: "fecha_curso",
+        label: "Fecha del curso",
+        type: "date",
+        required: false,
+        icon: "calendar_today",
+        category: "curso",
+        description: "Fecha de inicio del grupo (desde API)",
       },
 
       // Institución
