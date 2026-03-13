@@ -43,7 +43,6 @@ import { MailService } from '../../services/mail.service';
         ConfirmationModalComponent,
         AlertModalComponent,
         BreadcrumbComponent,
-        BreadcrumbComponent, // Duplicado de BreadcrumbComponent mantenido para coincidir con la estructura original
         FormsModule,
         UniversalIconComponent,
         LicenseSearchModalComponent,
