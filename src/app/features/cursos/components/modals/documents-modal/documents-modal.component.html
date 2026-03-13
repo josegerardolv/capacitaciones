@@ -12,7 +12,7 @@
     <div
       class="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75"
       aria-hidden="true"
-      (click)="close()"
+      (click)="canClose ? close() : null"
     ></div>
 
     <span
@@ -33,6 +33,7 @@
           Constancias
         </h3>
         <button
+          *ngIf="canClose"
           type="button"
           class="text-gray-400 hover:text-gray-500 focus:outline-none"
           (click)="close()"
