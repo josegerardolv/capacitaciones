@@ -82,6 +82,10 @@ export class DocumentsModalComponent implements OnInit {
     size: 'md'
   };
 
+  get canClose(): boolean {
+    return !this.isGeneratingPayment && !this.isDownloading && !this.isSendingEmail;
+  }
+
   constructor(
     private courseTypeService: CourseTypeService,
     private notificationService: NotificationService,
@@ -169,6 +173,7 @@ export class DocumentsModalComponent implements OnInit {
 
         const pendingPayment = paymentsList.find((p: any) => p.stripeUrl && p.status === 'PENDING');
         const defaultStripeUrl = pendingPayment ? pendingPayment.stripeUrl : undefined;
+        const defaultStripePdf = pendingPayment ? (pendingPayment.stripePdf || pendingPayment.pdf) : undefined;
 
         // Mantener estados locales como 'emailSent' si ya estaban en la lista actual
         const existingDoc = this.documents.find(d => d.id === dce.id.toString());
@@ -182,8 +187,9 @@ export class DocumentsModalComponent implements OnInit {
           templateId: template?.id,
           emailSent: existingDoc ? existingDoc.emailSent : (dce.emailSent || false),
           isLocked: false,
+          orderProcessed: existingDoc ? existingDoc.orderProcessed : (!!defaultStripeUrl || dce.emailSent || false),
           stripeUrl: existingDoc?.stripeUrl || defaultStripeUrl,
-          stripePdf: existingDoc?.stripePdf 
+          stripePdf: existingDoc?.stripePdf || defaultStripePdf
         };
       });
       return;
@@ -238,8 +244,10 @@ export class DocumentsModalComponent implements OnInit {
     const dce = enrollmentData.documentCoursesEnrollments?.find((d: any) => d.id?.toString() === doc.id);
     const templateDoc = dce?.documentCourse?.templateDocument;
     
-    const fullName = [this.person.name, this.person.paternal_lastName, this.person.maternal_lastName]
-        .filter(Boolean).join(" ").trim();
+    const p = this.person;
+    const fullName = (p.paternal_lastName && p.name.includes(p.paternal_lastName)) 
+        ? p.name 
+        : [p.name, p.paternal_lastName, p.maternal_lastName].filter(Boolean).join(" ").trim();
 
     if (doc.stripeUrl && doc.stripePdf) {
         this.showStripeModal(doc, doc.stripeUrl, doc.stripePdf, fullName);
@@ -265,7 +273,8 @@ export class DocumentsModalComponent implements OnInit {
     this.loadingConfig = {
       title: "Generando Línea de Captura",
       message: "Obteniendo información de SIOX...",
-      size: 'md'
+      size: 'md',
+      preventClose: true
     };
 
     this.mailService.sendStripeInvoice(payload).subscribe({
@@ -297,6 +306,9 @@ export class DocumentsModalComponent implements OnInit {
           title: "Línea de Captura",
           message: `Seleccione cómo desea entregar la Línea de Captura para: <strong>${doc.name}</strong>`,
           type: "success",
+          showCloseButton: false,
+          closeOnEscape: false,
+          closeOnOverlay: false,
           actions: [
             { 
               label: 'Enviar por Correo', 
@@ -377,7 +389,10 @@ export class DocumentsModalComponent implements OnInit {
 
     const person = enrollmentData.person;
     if (person) {
-      const fullName = [person.name, person.paternal_lastName, person.maternal_lastName].filter(Boolean).join(" ").trim();
+      const p = enrollmentData.person || person;
+      const fullName = (p.paternal_lastName && p.name.includes(p.paternal_lastName)) 
+        ? p.name 
+        : [p.name, p.paternal_lastName, p.maternal_lastName].filter(Boolean).join(" ").trim();
       if (fullName && !variableValues["nombre_completo"]) variableValues["nombre_completo"] = fullName;
     }
 
@@ -397,7 +412,8 @@ export class DocumentsModalComponent implements OnInit {
     this.loadingConfig = {
       title: "Generando Documento",
       message: `Preparando la descarga de ${doc.name}...`,
-      size: 'md'
+      size: 'md',
+      preventClose: true
     };
 
     try {
@@ -457,7 +473,10 @@ export class DocumentsModalComponent implements OnInit {
 
     const person = enrollmentData?.person;
     if (person) {
-      const fullName = [person.name, person.paternal_lastName, person.maternal_lastName].filter(Boolean).join(" ").trim();
+      const p = enrollmentData?.person || person;
+      const fullName = (p.paternal_lastName && p.name.includes(p.paternal_lastName)) 
+        ? p.name 
+        : [p.name, p.paternal_lastName, p.maternal_lastName].filter(Boolean).join(" ").trim();
       if (fullName && !variableValues["nombre_completo"]) variableValues["nombre_completo"] = fullName;
     }
 
@@ -477,7 +496,8 @@ export class DocumentsModalComponent implements OnInit {
     this.loadingConfig = {
       title: "Enviando Correo",
       message: `Generando PDF y enviando ${doc.name} a ${this.person.email}...`,
-      size: 'md'
+      size: 'md',
+      preventClose: true
     };
 
     try {

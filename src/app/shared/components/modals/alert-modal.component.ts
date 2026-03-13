@@ -11,6 +11,9 @@ export interface AlertConfig {
   showIcon?: boolean;
   actions?: AlertAction[];
   size?: 'sm' | 'md' | 'lg' | 'xl';
+  showCloseButton?: boolean;
+  closeOnEscape?: boolean;
+  closeOnOverlay?: boolean;
 }
 
 export interface AlertAction {
@@ -58,6 +61,7 @@ export interface AlertAction {
               ariaLabel: 'Cerrar modal'
             }"
             class="institutional-modal-close"
+            *ngIf="config.showCloseButton !== false"
             (buttonClick)="close()">
           </app-institutional-button>
         </div>
@@ -171,6 +175,9 @@ export class AlertModalComponent {
   }
 
   ngOnChanges(): void {
+    if (this.config.closeOnEscape !== undefined) this.closeOnEscape = this.config.closeOnEscape;
+    if (this.config.closeOnOverlay !== undefined) this.closeOnOverlay = this.config.closeOnOverlay;
+
     if (this.isOpen && this.config.autoClose) {
       this.startAutoClose();
     } else if (!this.isOpen) {
