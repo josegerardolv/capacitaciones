@@ -112,7 +112,7 @@ export class PublicRegistrationComponent implements OnInit {
 
                 // 1. Actualizar Info del Header
                 this.groupInfo = {
-                    courseName: group.courseTypeName || group.course?.name || group.name,
+                    courseName: group.courseName || group.courseTypeName || group.course?.name || group.name,
                     groupName: group.name,
                     slotsAvailable: group.availablePlaces !== undefined ? group.availablePlaces : ((group.limitStudents || 0) - (group.requests || 0)),
                     deadline: this.calculateDeadline(group)

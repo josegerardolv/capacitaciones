@@ -30,8 +30,8 @@ export interface PDFGeneratorInput {
 export interface PDFOutputOptions {
   /** Nombre del archivo (sin extensión) */
   filename?: string;
-  /** Acción: 'blob' retorna Blob, 'download' descarga, 'preview' abre en nueva pestaña */
-  action?: "blob" | "download" | "preview";
+  /** Acción: 'blob' retorna Blob, 'download' descarga, 'preview' abre en nueva pestaña, 'base64' retorna Base64 */
+  action?: "blob" | "download" | "preview" | "base64";
   /** Calidad de imagen (0-1, default: 0.92) */
   imageQuality?: number;
 }
@@ -661,8 +661,10 @@ export class PDFGeneratorService {
     const previewData: Record<string, string> = {};
 
     for (const variable of variables) {
-      // Si la variable tiene un valor por defecto explícito, lo usamos, de lo contrario dejamos que se vea el hook crudo {{variable}}
-      if (variable.defaultValue) {
+      // sampleValue tiene prioridad (valor real del grupo/enrollment), luego defaultValue
+      if (variable.sampleValue) {
+        previewData[variable.name] = variable.sampleValue;
+      } else if (variable.defaultValue) {
         previewData[variable.name] = variable.defaultValue;
       }
     }

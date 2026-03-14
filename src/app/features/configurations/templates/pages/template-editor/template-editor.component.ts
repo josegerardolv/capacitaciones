@@ -2098,10 +2098,12 @@ export class TemplateEditorComponent
     return this.template?.variables || [];
   }
 
-  /** Unión de variables de todos los enrollments (desduplicadas por name) */
+  /** Unión de variables de todos los enrollments (desduplicadas por name) + variables de curso del primer grupo */
   getAvailableVariablesFromGroups(): TemplateVariable[] {
     if (!this.groupsWithEnrollments.length) return [];
     const byName = new Map<string, TemplateVariable>();
+
+    // Variables de participante desde los enrollments
     this.groupsWithEnrollments.forEach((gwe) => {
       gwe.enrollments.forEach((ewv) => {
         ewv.variables.forEach((v) => {
@@ -2109,6 +2111,48 @@ export class TemplateEditorComponent
         });
       });
     });
+
+    // Variables de curso desde el primer grupo disponible
+    const firstGroup = this.groupsWithEnrollments[0];
+    if (firstGroup?.courseName) {
+      byName.set("nombre_curso", {
+        name: "nombre_curso",
+        label: "Nombre del curso",
+        type: "text",
+        required: false,
+        icon: "school",
+        category: "curso",
+        description: "Nombre del curso (desde API)",
+        sampleValue: firstGroup.courseName,
+      });
+    }
+    if (firstGroup?.courseDuration != null) {
+      const hours = Math.round(Number(firstGroup.courseDuration) / 60);
+      byName.set("tiempo_curso", {
+        name: "tiempo_curso",
+        label: "Duración del curso",
+        type: "text",
+        required: false,
+        icon: "schedule",
+        category: "curso",
+        description: "Duración del curso en horas (desde API)",
+        sampleValue: `${hours} horas`,
+      });
+    }
+    if (firstGroup?.groupStartDate) {
+      const d = new Date(firstGroup.groupStartDate);
+      byName.set("fecha_curso", {
+        name: "fecha_curso",
+        label: "Fecha del curso",
+        type: "date",
+        required: false,
+        icon: "calendar_today",
+        category: "curso",
+        description: "Fecha de inicio del grupo (desde API)",
+        sampleValue: d.toLocaleDateString("es-MX"),
+      });
+    }
+
     return Array.from(byName.values());
   }
 

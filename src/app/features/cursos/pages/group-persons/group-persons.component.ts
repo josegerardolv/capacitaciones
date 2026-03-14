@@ -43,7 +43,6 @@ import { MailService } from '../../services/mail.service';
         ConfirmationModalComponent,
         AlertModalComponent,
         BreadcrumbComponent,
-        BreadcrumbComponent, // Duplicado de BreadcrumbComponent mantenido para coincidir con la estructura original
         FormsModule,
         UniversalIconComponent,
         LicenseSearchModalComponent,
@@ -532,6 +531,16 @@ export class GroupPersonsComponent implements OnInit {
             this.groupsService.updateEnrollmentStatus(person.enrollmentId, result).subscribe({
                 next: () => {
                     person.status = result;
+
+                    //  ENVIAR CORREO DE NOTIFICACIÓN SI ES APROBADO O REPROBADO
+                    if (person.email) {
+                        this.mailService.sendCourseStatusEmail(person.email, this.currentGroup, person.name, result)
+                            .subscribe({
+                                next: () => console.log(`Correo de estatus ${result} enviado a ${person.email}`),
+                                error: (err) => console.error('Error enviando correo de estatus', err)
+                            });
+                    }
+
                     this.notificationService.showSuccess(
                         result === 'APROBADO' ? 'Aprobado' : 'Reprobado',
                         `El estatus de ${person.name} ha sido actualizado a ${result}.`

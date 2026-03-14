@@ -55,7 +55,8 @@ export class CourseTypeListComponent implements OnInit {
   tableColumns: TableColumn[] = [];
   tableConfig: TableConfig = {
     selectable: false,
-    loading: true
+    loading: true,
+    localSort: true
   };
 
   paginationConfig: PaginationConfig = {

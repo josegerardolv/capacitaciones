@@ -4,14 +4,14 @@ import { Router, RouterModule } from '@angular/router';
 import { TemplateService } from '../../services/template.service';
 import { Concept, TemplateDocument, CreateTemplateDocumentPayload, UpdateTemplateDocumentPayload } from '../../../../../core/models/template.model';
 // ConceptService removed, logic integrated in TemplateService
-import { InstitutionalTableComponent, TableColumn, TableConfig } from '../../../../../shared/components/institutional-table/institutional-table.component';
+import { InstitutionalTableComponent, TableColumn, TableConfig, SortEvent } from '../../../../../shared/components/institutional-table/institutional-table.component';
 import { TablePaginationComponent, PaginationConfig, PageChangeEvent } from '../../../../../shared/components/table-pagination/table-pagination.component';
 import { TooltipDirective } from '../../../../../shared/components/tooltip/tooltip.directive';
 import { ConfirmationModalComponent, ConfirmationConfig } from '../../../../../shared/components/modals/confirmation-modal.component';
 import { AlertModalComponent, AlertConfig } from '../../../../../shared/components/modals/alert-modal.component';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormControl } from '@angular/forms';
 import { ModalFormComponent } from '../../../../../shared/components/forms/modal-form.component';
-import { InputComponent } from '../../../../../shared/components/inputs/input.component';
+import { InputEnhancedComponent } from '../../../../../shared/components/inputs/input-enhanced.component';
 import { InstitutionalCardComponent } from '../../../../../shared/components/institutional-card/institutional-card.component';
 import { InstitutionalButtonComponent } from '../../../../../shared/components/buttons/institutional-button.component';
 import { SelectComponent, SelectOption } from '../../../../../shared/components/inputs/select.component';
@@ -32,8 +32,7 @@ import { UmasToPesosPipe } from '../../../../../shared/pipes/umas-to-pesos.pipe'
         RouterModule,
         ReactiveFormsModule,
         ModalFormComponent,
-        InputComponent,
-        InputComponent,
+        InputEnhancedComponent,
         SelectComponent,
         InstitutionalTableComponent,
         TablePaginationComponent,
@@ -42,7 +41,6 @@ import { UmasToPesosPipe } from '../../../../../shared/pipes/umas-to-pesos.pipe'
         ConfirmationModalComponent,
         AlertModalComponent,
         InstitutionalButtonComponent,
-        UniversalIconComponent,
         UniversalIconComponent,
         BreadcrumbComponent,
         TableFiltersComponent,
@@ -60,6 +58,11 @@ export class TemplatesListComponent implements OnInit {
     filteredTemplates: TemplateDocument[] = [];
     templates: TemplateDocument[] = [];
 
+    // Estado de ordenamiento y búsqueda
+    sortColumn: string | null = null;
+    sortDirection: 'asc' | 'desc' | null = null;
+    lastSearchTerm: string = '';
+
 
     concepts: Concept[] = [];
     conceptOptions: SelectOption[] = [];
@@ -75,7 +78,7 @@ export class TemplatesListComponent implements OnInit {
         loading: true,
         striped: false,
         hoverable: true,
-        localSort: true
+        localSort: false // Desactivamos sort local para manejarlo globalmente antes de paginar
     };
 
     tableColumns: TableColumn[] = [];
@@ -279,24 +282,69 @@ export class TemplatesListComponent implements OnInit {
     }
 
     onPageChange(event: PageChangeEvent) {
-        this.paginationConfig.currentPage = event.page;
-        this.paginationConfig.pageSize = event.pageSize;
+        this.paginationConfig = {
+            ...this.paginationConfig,
+            currentPage: event.page,
+            pageSize: event.pageSize
+        };
         this.updatePaginatedData();
     }
 
     filterData(query: string) {
-        const term = query.toLowerCase().trim();
-        if (!term) {
+        this.lastSearchTerm = query.toLowerCase().trim();
+
+        if (!this.lastSearchTerm) {
             this.filteredTemplates = [...this.allTemplates];
         } else {
             this.filteredTemplates = this.allTemplates.filter(t =>
-                t.name.toLowerCase().includes(term) ||
-                (t.paymentConcept?.concepto || '').toLowerCase().includes(term) ||
-                (t.description || '').toLowerCase().includes(term)
+                t.name.toLowerCase().includes(this.lastSearchTerm) ||
+                (t.paymentConcept?.concepto || '').toLowerCase().includes(this.lastSearchTerm) ||
+                (t.description || '').toLowerCase().includes(this.lastSearchTerm)
             );
         }
-        this.paginationConfig.totalItems = this.filteredTemplates.length;
+
+        // Aplicar ordenamiento actual si existe
+        if (this.sortColumn && this.sortDirection) {
+            this.applySort();
+        }
+
+        // Resetear a página 1 cuando se filtra y actualizar total
+        this.paginationConfig = {
+            ...this.paginationConfig,
+            currentPage: 1,
+            totalItems: this.filteredTemplates.length
+        };
         this.updatePaginatedData();
+    }
+
+    onSort(event: SortEvent) {
+        this.sortColumn = event.column;
+        this.sortDirection = event.direction;
+        this.applySort();
+        this.updatePaginatedData();
+    }
+
+    applySort() {
+        if (!this.sortColumn || !this.sortDirection) return;
+
+        this.filteredTemplates.sort((a: any, b: any) => {
+            const valueA = this.getNestedValue(a, this.sortColumn!);
+            const valueB = this.getNestedValue(b, this.sortColumn!);
+
+            let comparison = 0;
+            if (typeof valueA === 'string' && typeof valueB === 'string') {
+                comparison = valueA.localeCompare(valueB);
+            } else {
+                if (valueA < valueB) comparison = -1;
+                if (valueA > valueB) comparison = 1;
+            }
+
+            return this.sortDirection === 'asc' ? comparison : -comparison;
+        });
+    }
+
+    private getNestedValue(obj: any, path: string): any {
+        return path.split('.').reduce((acc, part) => acc && acc[part], obj);
     }
 
     updatePaginatedData() {
