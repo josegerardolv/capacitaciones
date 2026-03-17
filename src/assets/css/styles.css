@@ -3094,6 +3094,13 @@ app-institutional-button {
   width: auto !important;
 }
 
+/* Utilidad para botones que son full-width en móvil y auto en desktop */
+@media (min-width: 768px) {
+  .md\:full-width-auto.institutional-btn-full-width {
+    width: auto !important;
+  }
+}
+
 /* Estilos para componentes Angular con :host */
 :host {
   font-family: 'Montserrat', sans-serif !important;

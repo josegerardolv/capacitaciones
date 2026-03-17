@@ -99,8 +99,8 @@ import { UniversalIconComponent } from '../universal-icon/universal-icon.compone
                 aria-label="Abrir menú de usuario"
                 title="Abrir menú de usuario"
                 class="group user-menu-toggle flex items-center text-sm text-gray-700 hover:text-institucional-primario focus:outline-none focus:text-institucional-primario rounded-xl px-2 py-2 hover:bg-gradient-to-r hover:from-institucional-primario/5 hover:to-institucional-secundario/5 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-institucional-primario/50 hover:shadow-lg border border-gray-100 hover:border-institucional-primario/20 bg-gray-50/50 hover:bg-white transform hover:scale-[1.02] min-w-0 w-auto"
-                [style.width]="getMinButtonWidth() + 'px'"
-                [style.max-width]="'600px'">
+                [style.width]="isMobile ? 'auto' : getMinButtonWidth() + 'px'"
+                [style.max-width]="'min(600px, calc(100vw - 2rem))'">
                 
                 <!-- Avatar mejorado -->
                 <div class="relative w-8 h-8 avatar-shimmer rounded-full flex items-center justify-center shadow-institucional-lg ring-2 ring-white group-hover:ring-institucional-primario/20 transition-all duration-300 flex-shrink-0">
@@ -157,8 +157,8 @@ import { UniversalIconComponent } from '../universal-icon/universal-icon.compone
                 (keydown)="onMenuKeydown($event)"
                 class="absolute right-0 mt-2 glass-effect rounded-xl border border-gray-200 shadow-xl ring-1 ring-gray-100 z-[1000] overflow-hidden transform origin-top-right focus:outline-none dropdown-appear bg-white"
                 [style.width]="getDropdownWidth() + 'px'"
-                [style.min-width]="'280px'"
-                [style.max-width]="'400px'">
+                [style.min-width]="'min(280px, calc(100vw - 2rem))'"
+                [style.max-width]="'min(400px, calc(100vw - 2rem))'">
                 
                 <!-- Header del usuario con gradiente -->
                 <div class="bg-gradient-institucional-header p-4 text-white">
