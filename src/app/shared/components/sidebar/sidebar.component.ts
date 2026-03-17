@@ -44,6 +44,7 @@ import { filter } from 'rxjs/operators';
         'w-64': (!isCollapsed && isOpen) || (isMobile && isOpen),
         'w-16': !isMobile && isCollapsed && isOpen,
         'w-0': !isMobile && !isOpen,
+        'overflow-x-hidden': true,
         'overflow-hidden': (!isMobile && isCollapsed) || (!isMobile && !isOpen)
       }"
       [style.transition]="'width 0.3s ease-in-out, transform 0.3s ease-in-out'"
@@ -85,7 +86,7 @@ import { filter } from 'rxjs/operators';
       </div>
 
       <!-- Navegación -->
-      <nav class="sidebar-nav flex-1 px-2 py-4 space-y-1 overflow-y-auto"
+      <nav class="sidebar-nav flex-1 px-2 py-4 space-y-1 overflow-y-auto overflow-x-hidden"
            [class.px-1]="!isMobile && isCollapsed">
         <ng-container *ngFor="let item of menuItems">
           <!-- Item sin hijos -->

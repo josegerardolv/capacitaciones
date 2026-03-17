@@ -229,26 +229,28 @@ export class DashboardComponent implements OnInit, OnDestroy {
                 // 3. Mapeo para Tabla (Manejo de Relaciones Dinámicas)
                 // Aquí en el futuro lo más recomendable es que el backend envíe un endpoint "/dashboard/upcoming-groups" 
                 // para evitar traerse los miles de grupos solo para mostrar 10.
-                this.upcomingCourses = groups.map((g: Group) => {
-                    let courseName = 'Curso no encontrado';
+                this.upcomingCourses = groups
+                    .filter(g => this.getDynamicGroupStatus(g).text !== 'Finalizado')
+                    .map((g: Group) => {
+                        let courseName = 'Curso no encontrado';
 
-                    if (g.course && typeof g.course === 'object' && (g.course as any).name) {
-                        courseName = (g.course as any).name;
-                    } else {
-                        const courseFound = courses.find(c => c.id === Number(g.course));
-                        if (courseFound) courseName = courseFound.name;
-                    }
+                        if (g.course && typeof g.course === 'object' && (g.course as any).name) {
+                            courseName = (g.course as any).name;
+                        } else {
+                            const courseFound = courses.find(c => c.id === Number(g.course));
+                            if (courseFound) courseName = courseFound.name;
+                        }
 
-                    return {
-                        course: courseName,
-                        group: g.name,
-                        location: g.location,
-                        participants: g.limitStudents,
-                        date: g.groupStartDate,
-                        time: g.schedule,
-                        status: this.getDynamicGroupStatus(g)
-                    };
-                }).slice(0, 10); // Mostrar solo los 10 más recientes
+                        return {
+                            course: courseName,
+                            group: g.name,
+                            location: g.location,
+                            participants: g.limitStudents,
+                            date: g.groupStartDate,
+                            time: g.schedule,
+                            status: this.getDynamicGroupStatus(g)
+                        };
+                    }).slice(0, 10); // Mostrar solo los 10 más recientes
                 this.tableConfig.loading = false;
             },
             error: (err) => {
