@@ -296,7 +296,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
       try {
         const fileName = this.footerLogo.split('/').pop() || this.footerLogo;
         if (fileName === 'logo-semovi-principal.svg') {
-          return this.footerLogo.replace('logo-semovi-principal.svg', 'logo-semovi-vertical.svg');
+          return this.footerLogo.replace('logo-semovi-principal.svg', 'icono-gobernacion.svg');
         }
       } catch (e) {
         // en caso de path inesperado, devolver el original
@@ -311,7 +311,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
    */
   get isFooterLogoVertical(): boolean {
     const path = this.footerLogoComputed || '';
-    return path.split('/').pop() === 'logo-semovi-vertical.svg';
+    return path.split('/').pop() === 'icono-gobernacion.svg';
   }
 
   constructor(
