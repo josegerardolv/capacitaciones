@@ -3,11 +3,10 @@ import { CommonModule } from '@angular/common';
 import { AuthService } from '../../core/services/auth.service';
 import { User } from '../../core/models/auth.model';
 import { MetricCardComponent, MetricCardData } from '../../shared/components/metric-card/metric-card.component';
-import { Subscription, interval, forkJoin } from 'rxjs';
+import { Subscription, interval } from 'rxjs';
 import { DomSanitizer } from '@angular/platform-browser';
 import { InstitutionalTableComponent, TableColumn, TableConfig } from '../../shared/components/institutional-table/institutional-table.component';
 import { GroupsService } from '../cursos/services/groups.service';
-import { CoursesService } from '../cursos/services/courses.service';
 import { DashboardService } from './services/dashboard.service';
 import { Group } from '../../core/models/group.model';
 
@@ -47,7 +46,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
         private authService: AuthService,
         private sanitizer: DomSanitizer,
         private groupsService: GroupsService,
-        private coursesService: CoursesService,
         private dashboardService: DashboardService
     ) { }
 
@@ -179,82 +177,55 @@ export class DashboardComponent implements OnInit, OnDestroy {
             { key: 'status.text', label: 'Estatus', sortable: true, template: this.statusTemplate }
         ];
 
-        // Cargar datos reales desde el servicio
         this.tableConfig.loading = true;
-        forkJoin({
-            groups: this.groupsService.getGroups(1, 20), // Límite optimizado (antes 50)
-            courses: this.coursesService.getCourses(1, 20) // Límite optimizado (antes 100)
-        }).subscribe({
-            next: ({ groups: groupsResponse, courses: coursesResponse }) => {
-                // 1. Extraer Lista de Grupos (Manejo de Paginación vs Array Directo)
+        
+        // El backend maneja el filtrado de 'incoming' y el ordenamiento.
+        this.groupsService.getGroups(1, 10, '', undefined, true).subscribe({
+            next: (response) => {
                 let groups: Group[] = [];
-                if (Array.isArray(groupsResponse)) {
-                    groups = groupsResponse;
-                } else if (groupsResponse.data && Array.isArray(groupsResponse.data)) {
-                    groups = groupsResponse.data;
-                } else if (groupsResponse.items && Array.isArray(groupsResponse.items)) {
-                    groups = groupsResponse.items;
+                if (Array.isArray(response)) {
+                    groups = response;
+                } else if (response.data && Array.isArray(response.data)) {
+                    groups = response.data;
+                } else if (response.items && Array.isArray(response.items)) {
+                    groups = response.items;
                 }
 
-                // 2. Extraer Lista de Cursos (Manejo de Paginación vs Array Directo)
-                let courses: any[] = [];
-                if (Array.isArray(coursesResponse)) {
-                    courses = coursesResponse;
-                } else if (coursesResponse.data && Array.isArray(coursesResponse.data)) {
-                    courses = coursesResponse.data;
-                } else if (coursesResponse.items && Array.isArray(coursesResponse.items)) {
-                    courses = coursesResponse.items;
-                }
-
-                // 2b. Ordenar grupos por fecha de vencimiento (vencimiento próximo primero, nulos al final)
+                // 2. Filtrado (No mostrar finalizados) y Ordenamiento (Cercanos a vencer primero)
+                groups = groups.filter(g => this.getDynamicGroupStatus(g).text !== 'Finalizado');
+                
                 groups.sort((a, b) => {
-                    // Prioridad 1: endInscriptionDate (vencimiento)
                     if (a.endInscriptionDate && b.endInscriptionDate) {
                         return new Date(a.endInscriptionDate).getTime() - new Date(b.endInscriptionDate).getTime();
                     }
                     if (a.endInscriptionDate) return -1;
                     if (b.endInscriptionDate) return 1;
-
-                    // Prioridad 2: groupStartDate (si no hay vencimiento)
                     if (a.groupStartDate && b.groupStartDate) {
                         return new Date(a.groupStartDate).getTime() - new Date(b.groupStartDate).getTime();
                     }
                     return 0;
                 });
 
-                // AVISO: Anteriormente aquí se calculaban las métricas del dashboard (calendarMetric, graduationMetric, personMetric)
-                // de forma ineficiente leyendo y sumando todos los cursos devueltos por la API de grupos (Ej. groups.reduce).
-                // Eso se ha delegado al backend endpoint nuevo /statistics/dashboard y se carga vía la función loadStatistics().
+                // 3. Mapeo para Tabla (Solo 10 más recientes)
+                this.upcomingCourses = groups.map((g: Group) => {
+                    const courseName = (g.course && typeof g.course === 'object') 
+                        ? (g.course.name || 'Sin nombre') 
+                        : 'Curso no encontrado';
 
-                // 3. Mapeo para Tabla (Manejo de Relaciones Dinámicas)
-                // Aquí en el futuro lo más recomendable es que el backend envíe un endpoint "/dashboard/upcoming-groups" 
-                // para evitar traerse los miles de grupos solo para mostrar 10.
-                this.upcomingCourses = groups
-                    .filter(g => this.getDynamicGroupStatus(g).text !== 'Finalizado')
-                    .map((g: Group) => {
-                        let courseName = 'Curso no encontrado';
-
-                        if (g.course && typeof g.course === 'object' && (g.course as any).name) {
-                            courseName = (g.course as any).name;
-                        } else {
-                            const courseFound = courses.find(c => c.id === Number(g.course));
-                            if (courseFound) courseName = courseFound.name;
-                        }
-
-                        return {
-                            course: courseName,
-                            group: g.name,
-                            location: g.location,
-                            participants: g.limitStudents,
-                            date: g.groupStartDate,
-                            time: g.schedule,
-                            status: this.getDynamicGroupStatus(g)
-                        };
-                    }).slice(0, 10); // Mostrar solo los 10 más recientes
+                    return {
+                        course: courseName,
+                        group: g.name,
+                        location: g.location,
+                        participants: g.limitStudents,
+                        date: g.groupStartDate,
+                        time: g.schedule,
+                        status: this.getDynamicGroupStatus(g)
+                    };
+                }).slice(0, 10);
                 this.tableConfig.loading = false;
             },
             error: (err) => {
-                console.error('Error cargando cursos en dashboard', err);
+                console.error('Error cargando cursos entrantes en dashboard', err);
                 this.tableConfig.loading = false;
             }
         });
