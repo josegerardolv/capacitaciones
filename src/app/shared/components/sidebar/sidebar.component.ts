@@ -21,9 +21,9 @@ import { filter } from 'rxjs/operators';
  * - Paleta institucional (guinda, rosa, vino)
  */
 @Component({
-    selector: 'app-sidebar',
+  selector: 'app-sidebar',
   imports: [CommonModule, RouterModule, UniversalIconComponent, TooltipComponent],
-    template: `
+  template: `
   <!-- Tooltip reutilizable -->
   <app-tooltip
       [visible]="tooltipVisible"
@@ -57,8 +57,7 @@ import { filter } from 'rxjs/operators';
              [class.space-x-0]="!isMobile && isCollapsed" 
              [class.justify-center]="!isMobile && isCollapsed">
           <!-- Área clicable ampliada: imagen + texto dentro del mismo enlace -->
-          <a [routerLink]="['/']" title="Ir al inicio" class="inline-flex items-center space-x-3 focus:outline-none flex-1"
-             [class.space-x-0]="!isMobile && isCollapsed"
+          <a [routerLink]="['/']" title="Ir al inicio" class="inline-flex items-center focus:outline-none w-full"
              [class.justify-center]="!isMobile && isCollapsed">
             <img [src]="logo" 
                 [alt]="title + ' Logo'" 
@@ -95,9 +94,8 @@ import { filter } from 'rxjs/operators';
               [routerLink]="item.route"
               routerLinkActive="sidebar-selected-item"
               [routerLinkActiveOptions]="{exact: item.route === '/'}"
-              class="sidebar-item group flex items-center px-2 py-2 text-sm font-medium rounded-md text-gray-700 hover:text-institucional-primario hover:bg-gradient-to-r hover:from-institucional-primario/8 hover:to-institucional-secundario/8 transition-all duration-200 cursor-pointer"
+              class="sidebar-item group w-full flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 hover:text-institucional-primario transition-all duration-200 cursor-pointer"
               [class.justify-center]="!isMobile && isCollapsed"
-              [class.px-3]="!isMobile && isCollapsed"
               [title]="(!isMobile && isCollapsed) ? item.label : null"
               [attr.tabindex]="0"
               (click)="onItemClick(item)"
@@ -113,10 +111,9 @@ import { filter } from 'rxjs/operators';
                 class="flex-shrink-0 transition-colors duration-200"
                 [class.mr-3]="isMobile || !isCollapsed">
               </app-universal-icon>
-              <span [style.transition]="'opacity 0.3s ease-in-out, width 0.3s ease-in-out'" 
-                    [style.opacity]="(!isMobile && isCollapsed) ? '0' : '1'"
-                    [style.width]="(!isMobile && isCollapsed) ? '0' : 'auto'"
-                    [style.overflow]="(!isMobile && isCollapsed) ? 'hidden' : 'visible'">{{ item.label }}</span>
+              <span *ngIf="isMobile || !isCollapsed" 
+                    [style.transition]="'opacity 0.3s ease-in-out'" 
+                    class="truncate">{{ item.label }}</span>
             </a>
           </div>
 
@@ -131,7 +128,6 @@ import { filter } from 'rxjs/operators';
                 'text-gray-700 hover:text-institucional-primario hover:bg-gradient-to-r hover:from-institucional-primario/8 hover:to-institucional-secundario/8': !item.expanded && !isParentOfActiveRoute(item)
               }"
               [class.justify-center]="!isMobile && isCollapsed"
-              [class.px-3]="!isMobile && isCollapsed"
               [title]="(!isMobile && isCollapsed) ? item.label : null"
               [attr.tabindex]="0"
               [attr.aria-expanded]="item.expanded"
@@ -148,10 +144,9 @@ import { filter } from 'rxjs/operators';
                   class="flex-shrink-0 transition-colors duration-200"
                   [class.mr-3]="isMobile || !isCollapsed">
                 </app-universal-icon>
-                <span [style.transition]="'opacity 0.3s ease-in-out, width 0.3s ease-in-out'" 
-                      [style.opacity]="(!isMobile && isCollapsed) ? '0' : '1'"
-                      [style.width]="(!isMobile && isCollapsed) ? '0' : 'auto'"
-                      [style.overflow]="(!isMobile && isCollapsed) ? 'hidden' : 'visible'">{{ item.label }}</span>
+                <span *ngIf="isMobile || !isCollapsed" 
+                      [style.transition]="'opacity 0.3s ease-in-out'"
+                      class="truncate">{{ item.label }}</span>
               </div>
               
               <svg 
@@ -215,13 +210,12 @@ import { filter } from 'rxjs/operators';
       </div>
       </aside>
   `,
-    styles: [`
+  styles: [`
     /* Estilos institucionales para items seleccionados */
     .sidebar-selected-item {
       background: linear-gradient(135deg, var(--institucional-primario) 0%, var(--institucional-secundario) 100%) !important;
       color: white !important;
-      box-shadow: 0 2px 4px rgba(98, 17, 50, 0.2);
-      border-left: 4px solid var(--institucional-vino);
+      box-shadow: inset 4px 0 0 0 var(--institucional-vino), 0 2px 4px rgba(98, 17, 50, 0.2);
     }
     
     .sidebar-selected-item .universal-icon {
@@ -331,11 +325,11 @@ export class SidebarComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     // Si el componente no recibe inputs del padre, cargar estado desde localStorage
     this.loadSidebarStateIfNeeded();
-    
+
     // Configurar seguimiento de ruta actual
     this.currentRoute = this.router.url;
     this.updateMenuForCurrentRoute();
-    
+
     // Suscribirse a cambios de ruta
     this.routerSubscription = this.router.events
       .pipe(filter(event => event instanceof NavigationEnd))
@@ -357,7 +351,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
   private updateMenuForCurrentRoute(): void {
     // Expandir automáticamente el menú padre basado en la ruta actual
     expandMenuForRoute(this.currentRoute);
-    
+
     // Obtener el item padre para la ruta actual
     this.currentParentItem = getParentItemForRoute(this.currentRoute);
   }
@@ -373,7 +367,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
         const savedState = localStorage.getItem('sidebarState');
         if (savedState) {
           const state = JSON.parse(savedState);
-          
+
           // Solo aplicar si los valores actuales son los defaults
           if (this.isOpen === true && this.isCollapsed === false) {
             this.isOpen = state.sidebarOpen ?? true;
@@ -384,7 +378,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
         // Error silencioso
       }
     }
-    
+
     // Aplicar reglas por dispositivo si es necesario
     if (this.isMobile && this.isOpen) {
       this.isOpen = false;
@@ -418,7 +412,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
     if (!item.children || item.children.length === 0) {
       return false;
     }
-    
+
     const cleanRoute = this.currentRoute.split('?')[0].split('#')[0];
     return item.children.some(child => {
       if (child.route) {
@@ -458,13 +452,13 @@ export class SidebarComponent implements OnInit, OnDestroy {
     if (!this.isCollapsed || this.isMobile) return;
 
     clearTimeout(this.tooltipTimeout);
-    
+
     const rect = (event.target as HTMLElement).getBoundingClientRect();
     this.tooltipPosition = {
       x: rect.right + 8,
       y: rect.top + (rect.height / 2) - 20
     };
-    
+
     // Convertir MenuItem a TooltipItem
     this.tooltipItem = this.convertMenuItemToTooltipItem(item);
     this.tooltipVisible = true;
