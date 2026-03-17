@@ -72,6 +72,8 @@ export class GroupPersonsComponent implements OnInit {
     tableColumns: TableColumn[] = [];
     tableConfig: TableConfig = {
         loading: false,
+        striped: true,
+        hoverable: true,
         localSort: true,
         emptyMessage: 'No hay personas registradas en este grupo.'
     };

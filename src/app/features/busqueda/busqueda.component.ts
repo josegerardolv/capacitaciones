@@ -78,7 +78,7 @@ export class BusquedaComponent implements OnInit {
 
   tableColumns: TableColumn[] = [];
   tableConfig: TableConfig = {
-    striped: false,
+    striped: true,
     hoverable: true,
     localSort: true,
     loading: false
