@@ -2136,11 +2136,12 @@ export class TemplateEditorComponent
         icon: "schedule",
         category: "curso",
         description: "Duración del curso en horas (desde API)",
-        sampleValue: `${hours} horas`,
+        sampleValue: `${hours} ${hours === 1 ? "hora" : "horas"}`,
       });
     }
     if (firstGroup?.groupStartDate) {
       const d = new Date(firstGroup.groupStartDate);
+      const meses = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
       byName.set("fecha_curso", {
         name: "fecha_curso",
         label: "Fecha del curso",
@@ -2149,7 +2150,7 @@ export class TemplateEditorComponent
         icon: "calendar_today",
         category: "curso",
         description: "Fecha de inicio del grupo (desde API)",
-        sampleValue: d.toLocaleDateString("es-MX"),
+        sampleValue: `${d.getUTCDate()} de ${meses[d.getUTCMonth()]} del ${d.getUTCFullYear()}`,
       });
     }
 

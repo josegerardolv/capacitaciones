@@ -404,11 +404,12 @@ export class DocumentsModalComponent implements OnInit {
     }
     if (courseData?.duration != null) {
       const hours = Math.round(Number(courseData.duration) / 60);
-      variableValues["tiempo_curso"] = `${hours} horas`;
+      variableValues["tiempo_curso"] = `${hours} ${hours === 1 ? "hora" : "horas"}`;
     }
     if (groupData?.groupStartDate) {
       const d = new Date(groupData.groupStartDate);
-      variableValues["fecha_curso"] = d.toLocaleDateString("es-MX");
+      const meses = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+      variableValues["fecha_curso"] = `${d.getUTCDate()} de ${meses[d.getUTCMonth()]} del ${d.getUTCFullYear()}`;
     }
 
     const certTemplate: CertificateTemplate = {
@@ -502,11 +503,12 @@ export class DocumentsModalComponent implements OnInit {
     }
     if (courseData?.duration != null) {
       const hours = Math.round(Number(courseData.duration) / 60);
-      variableValues["tiempo_curso"] = `${hours} horas`;
+      variableValues["tiempo_curso"] = `${hours} ${hours === 1 ? "hora" : "horas"}`;
     }
     if (groupData?.groupStartDate) {
       const d = new Date(groupData.groupStartDate);
-      variableValues["fecha_curso"] = d.toLocaleDateString("es-MX");
+      const meses = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+      variableValues["fecha_curso"] = `${d.getUTCDate()} de ${meses[d.getUTCMonth()]} del ${d.getUTCFullYear()}`;
     }
 
     const certTemplate: CertificateTemplate = {

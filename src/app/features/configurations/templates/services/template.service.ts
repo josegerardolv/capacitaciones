@@ -540,13 +540,14 @@ export class TemplateService {
         icon: "schedule",
         category: "curso",
         description: "Duración del curso en horas",
-        sampleValue: `${hours} horas`,
+        sampleValue: `${hours} ${hours === 1 ? "hora" : "horas"}`,
       });
     }
 
     if (hasValue(group?.groupStartDate)) {
       const d = new Date(group.groupStartDate);
-      const dateStr = d.toLocaleDateString("es-MX");
+      const meses = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+      const dateStr = `${d.getUTCDate()} de ${meses[d.getUTCMonth()]} del ${d.getUTCFullYear()}`;
       courseVars.push({
         name: "fecha_curso",
         label: "Fecha del curso",
