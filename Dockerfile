@@ -1,44 +1,45 @@
-# =================================================================
-# ETAPA 1: Compilación de la aplicación de Angular
-# =================================================================
-# Usamos una imagen oficial de Node.js como base.
-# Se recomienda usar una versión LTS (Long-Term Support) específica.
-# Tu proyecto requiere node >=18.13.0, por lo que node:20 es una excelente opción.
-FROM node:20-slim AS build
+FROM node:20.18-alpine AS builder
 
-# Establecemos el directorio de trabajo dentro del contenedor.
-WORKDIR /app
+# Instalar pnpm directamente
+RUN npm install -g pnpm@9
 
-# Copiamos los archivos de definición de dependencias.
-# Al copiarlos primero, aprovechamos el caché de Docker si no han cambiado.
-COPY package.json package-lock.json ./
+WORKDIR /usr/src/app
 
-# Instalamos las dependencias del proyecto.
-RUN npm install 
+# Copiar archivos de dependencias
+COPY package.json pnpm-lock.yaml ./
 
-# Copiamos el resto de los archivos del proyecto al contenedor.
+# Instalar TODAS las dependencias
+RUN pnpm install --frozen-lockfile
+
+# Copiar código fuente
 COPY . .
 
-# Compilamos la aplicación para producción.
-# El resultado se guardará en el directorio /app/dist/semovi-frontend
-RUN npm run build:prod
+# Compilar NestJS
+RUN pnpm build
 
-# =================================================================
-# ETAPA 2: Servidor web para producción (Nginx)
-# =================================================================
-# Usamos una imagen oficial y ligera de Nginx.
-FROM nginx:1.25-alpine
 
-# Copiamos nuestra configuracións personalizada de Nginx.
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+FROM node:20.18-alpine
 
-# Copiamos los archivos compilados de la aplicación desde la etapa anterior.
-# La ruta de salida es `dist/capa-frontend` según angular.json, y los archivos
-# para el navegador se encuentran en el subdirectorio 'browser'.
-COPY --from=build /app/dist/capa-frontend/browser /usr/share/nginx/html
+# Instalar pnpm en runtime
+RUN npm install -g pnpm@9
 
-# Exponemos el puerto 80 para que el contenedor pueda recibir peticiones HTTP.
-EXPOSE 80
+WORKDIR /usr/src/app
+ENV NODE_ENV=production
 
-# Comando para iniciar Nginx cuando el contenedor se inicie.
-CMD ["nginx", "-g", "daemon off;"]
+# 1. Crear usuario y carpetas al inicio de esta etapa (Mejor para la caché) 
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup && \
+    mkdir -p /usr/src/app/uploads && \
+    chown -R appuser:appgroup /usr/src/app
+
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile --prod
+    
+# 2. Copiar el build (Asegurando que el dueño sea appuser al copiar)
+COPY --from=builder --chown=appuser:appgroup /usr/src/app/dist ./dist
+
+# 3. Cambiar el dueño de lo que acabas de instalar vía pnpm
+RUN chown -R appuser:appgroup /usr/src/app
+
+USER appuser
+EXPOSE 3000
+CMD ["node", "dist/main.js"]

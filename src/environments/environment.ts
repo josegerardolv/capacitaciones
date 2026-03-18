@@ -11,9 +11,9 @@ export const environment = {
     introspectUrl: 'https://capacitacion.p1.ws.semovi.dev/oauth/introspect'
   },
   app: {
-    name: 'OAuth SEMOVI',
-    version: '0.0.1',
-    description: 'Sistema de Capacitaciones OAuth 2.0 para SEMOVI'
+    name: 'Capacitaciones SEMOVI',
+    version: '0.8.0',
+    description: 'Sistema de Capacitaciones para SEMOVI'
   },
   useMocks: false
 };
