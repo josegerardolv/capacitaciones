@@ -15,7 +15,7 @@ export class GroupsService {
 
     constructor(private http: HttpClient) { }
 
-    getGroups(page: number = 1, limit: number = 10, search: string = '', courseId?: number): Observable<any> {
+    getGroups(page: number = 1, limit: number = 10, search: string = '', courseId?: number, incoming?: boolean): Observable<any> {
         let params = new HttpParams()
             .set('page', page.toString())
             .set('limit', limit.toString());
@@ -26,6 +26,10 @@ export class GroupsService {
 
         if (courseId) {
             params = params.set('course', courseId.toString());
+        }
+
+        if (incoming) {
+            params = params.set('incoming', 'true');
         }
 
         // Según Swagger, /group/search es el endpoint para "Listar y buscar grupos"

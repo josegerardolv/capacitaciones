@@ -56,6 +56,8 @@ export class CourseTypeListComponent implements OnInit {
   tableConfig: TableConfig = {
     selectable: false,
     loading: true,
+    striped: true,
+    hoverable: true,
     localSort: true
   };
 

@@ -70,7 +70,7 @@ export class CourseListComponent implements OnInit {
 
     tableConfig: TableConfig = {
         loading: true,
-        striped: false,
+        striped: true,
         hoverable: true,
         localSort: true
     };

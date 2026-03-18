@@ -197,12 +197,11 @@ import { filter } from 'rxjs/operators';
       <div class="px-4 py-3 border-t border-institucional-primario border-opacity-20 bg-white" [class.px-2]="isCollapsed">
         <div class="flex flex-col items-center gap-1">
           <a [routerLink]="['/']" title="Ir al inicio" class="inline-block">
-            <img [src]="footerLogoComputed" [alt]="orgName" class="object-contain flex-shrink-0"
+            <img [src]="footerLogoComputed" [alt]="orgName" class="object-contain flex-shrink-0 max-w-full"
                    [class.h-10]="isFooterLogoVertical"
                    [class.h-5]="!isFooterLogoVertical"
                    aria-hidden="false"/>
           </a>
-          <p></p>
           <div class="text-institucional-primario font-bold text-center leading-tight"
                [style.fontSize.px]="isFooterLogoVertical ? 8 : 12">
             © {{ currentYear }}
