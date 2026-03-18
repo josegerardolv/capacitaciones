@@ -18,7 +18,7 @@
           "builder": "@angular/build:application",
           "options": {
             "outputPath": {
-              "base": "dist/citas-frontend"
+              "base": "dist/capa-frontend"
             },
             "index": "src/index.html",
             "polyfills": [
@@ -48,8 +48,8 @@
                   },
                   {
                     "type": "anyComponentStyle",
-                    "maximumWarning": "8kb",
-                    "maximumError": "12kb"
+                    "maximumWarning": "20kb",
+                    "maximumError": "40kb"
                   }
                 ],
               "outputHashing": "all"

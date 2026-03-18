@@ -1,0 +1,345 @@
+<div class="min-h-screen">
+    <!-- Header Card -->
+    <app-institutional-card [config]="{ showHeader: false, showFooter: false, showShadow: true, showBorder: true }"
+        class="mb-6">
+        <div class="flex items-center gap-4">
+            <div class="p-3 rounded-lg bg-institucional-primario bg-opacity-10 flex items-center justify-center">
+                <app-universal-icon name="edit_note" type="material" class="w-6 h-6 text-white"></app-universal-icon>
+            </div>
+
+            <div class="min-w-0">
+                <h1 class="text-2xl md:text-3xl font-extrabold text-gray-900">{{ isEditMode ? 'Editar Tipo de Curso' :
+                    'Nuevo Tipo de Curso' }}</h1>
+                <p class="text-sm text-gray-500 mt-1">Configura los datos del curso, campos de registro y documentos
+                    asociados.</p>
+            </div>
+        </div>
+
+        <div class="mt-2 ml-4">
+            <app-breadcrumb [items]="breadcrumbItems"></app-breadcrumb>
+        </div>
+    </app-institutional-card>
+
+    <br>
+
+    <!-- Warning for existing courses (Rule 4.4) -->
+    <div *ngIf="isLockedByUsage"
+        class="mb-6 p-4 bg-amber-50 border-l-4 border-amber-400 rounded-r-lg flex items-start gap-3">
+        <app-universal-icon name="warning" type="material" class="text-amber-500 mt-0.5"></app-universal-icon>
+        <div>
+            <p class="text-amber-800 font-bold">Este Tipo de Curso ya tiene cursos asociados.</p>
+            <p class="text-amber-700 text-sm italic">Los cambios solo aplicarán a nuevos cursos.</p>
+        </div>
+    </div>
+
+    <form [formGroup]="form" class="space-y-6">
+
+        <!-- Split Layout: Basic Info (Left) & Fields (Right) -->
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+
+            <!-- Left Side: Basic Info -->
+            <app-institutional-card class="h-full block lg:col-span-2"
+                [ngClass]="{'opacity-65 pointer-events-none': isLockedByUsage}"
+                [config]="{ showHeader: false, showFooter: false, showShadow: true, showBorder: true, customClass: 'h-full !overflow-visible' }">
+                <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">DATOS TIPO CURSO</h3>
+                <div class="space-y-3">
+                    <app-input-enhanced controlName="name" [control]="form.get('name')" label="Nombre del tipo de curso"
+                        placeholder="Ingresa el nombre del tipo de curso" [required]="true" size="sm">
+                    </app-input-enhanced>
+                    <br>
+                    <app-input-enhanced controlName="description" [control]="form.get('description')"
+                        label="Descripción del tipo de curso" placeholder="Ingresa la descripción del tipo de curso"
+                        [required]="true" size="sm">
+                    </app-input-enhanced>
+                    <br>
+                    <div class="relative">
+                        <app-input-enhanced controlName="type" [control]="typeControl" label="Tipo de curso"
+                            placeholder="Escribe para buscar..." [required]="true" size="sm" [autocomplete]="'off'"
+                            (focus)="onTypeFocus()" (blur)="onTypeBlur()" (inputEvent)="handleTypeInput($event)">
+                        </app-input-enhanced>
+
+                        <!-- Dropdown List -->
+                        <ul *ngIf="showTypeDropdown && filteredTypeOptions.length > 0"
+                            class="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto focus:outline-none">
+                            <li *ngFor="let option of filteredTypeOptions" (click)="selectType(option)"
+                                class="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer transition-colors border-b border-gray-100 last:border-0">
+                                {{ option.label }}
+                            </li>
+                        </ul>
+
+                        <!-- No results -->
+                        <div *ngIf="showTypeDropdown && filteredTypeOptions.length === 0"
+                            class="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg px-4 py-3 text-sm text-gray-500 text-center">
+                            No se encontraron coincidencias.
+                        </div>
+                    </div>
+                </div>
+            </app-institutional-card>
+
+            <!-- Right Side: Fields Selection -->
+            <app-institutional-card class="h-full block lg:col-span-3"
+                [config]="{ showHeader: false, showFooter: false, showShadow: true, showBorder: true, customClass: 'h-full contents-flex' }">
+                <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">SELECCIONE LOS CAMPOS</h3>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <ng-container *ngFor="let field of registrationFields">
+                        <div
+                            class="flex items-center justify-between py-3 px-4 border rounded-xl bg-gray-50/40 hover:bg-gray-50 border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all gap-4">
+
+                            <!-- Left: Checkbox & Label (Controls Visibility) -->
+                            <div class="flex items-center gap-3 flex-1 min-w-0"
+                                [ngClass]="{'opacity-50': isVisibilityLocked(field) || (isLockedByUsage && isSavedField(field))}"
+                                (click)="!isVisibilityLocked(field) && !(isLockedByUsage && isSavedField(field)) && toggleField(field)">
+
+                                <div class="relative flex items-center justify-center shrink-0">
+                                    <input type="checkbox" [checked]="field.visible"
+                                        [disabled]="isVisibilityLocked(field) || (isLockedByUsage && isSavedField(field))"
+                                        class="h-5 w-5 text-[#8B1538] border-gray-300 rounded focus:ring-[#8B1538] transition-all"
+                                        [ngClass]="{'cursor-pointer': !isVisibilityLocked(field) && !(isLockedByUsage && isSavedField(field)), 'cursor-not-allowed': isVisibilityLocked(field) || (isLockedByUsage && isSavedField(field))}">
+                                </div>
+                                <span class="text-sm font-semibold text-gray-800 select-none truncate block w-full"
+                                    [ngClass]="{'cursor-not-allowed': isVisibilityLocked(field) || (isLockedByUsage && isSavedField(field)), 'cursor-pointer': !isVisibilityLocked(field) && !(isLockedByUsage && isSavedField(field))}"
+                                    title="{{field.label}}">
+                                    {{ field.label }}
+                                </span>
+                            </div>
+
+                            <!-- Right: Toggle Switch (Controls Required) -->
+                            <div class="flex items-center gap-3 shrink-0">
+                                <span
+                                    class="text-[10px] font-bold uppercase tracking-widest select-none hidden sm:block"
+                                    [ngClass]="field.required && field.visible ? 'text-[#8B1538]' : 'text-gray-400'">
+                                    {{ field.required && field.visible ? 'OBLIGATORIO' : 'OPCIONAL' }}
+                                </span>
+
+                                <!-- Toggle UI -->
+                                <button type="button"
+                                    (click)="field.visible && !(isLockedByUsage && isSavedField(field)) && toggleRequired(field, $event)"
+                                    [disabled]="!field.visible || isRequirementLocked(field) || (isLockedByUsage && isSavedField(field))"
+                                    class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none"
+                                    [ngClass]="{
+                                            'bg-[#8B1538]': field.visible && field.required, 
+                                            'bg-gray-200': !field.visible || !field.required,
+                                            'opacity-50 !cursor-not-allowed': !field.visible || isRequirementLocked(field) || (isLockedByUsage && isSavedField(field))
+                                        }" role="switch" [attr.aria-checked]="field.required">
+
+                                    <span aria-hidden="true"
+                                        class="absolute top-0.5 left-0.5 inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out"
+                                        [ngClass]="{'translate-x-5': field.visible && field.required, 'translate-x-0': !field.visible || !field.required}">
+                                    </span>
+                                </button>
+                            </div>
+
+                        </div>
+                    </ng-container>
+                </div>
+            </app-institutional-card>
+        </div>
+
+        <!-- Selected Templates Section -->
+        <app-institutional-card
+            [config]="{ showHeader: false, showFooter: false, showShadow: true, showBorder: false }">
+
+            <div class="flex justify-end mb-4">
+                <app-institutional-button (buttonClick)="openTemplateModal()"
+                    [config]="{variant: 'primary', title: 'Agregar Template', customClass: '!bg-[#8B1538] text-white hover:bg-[#6e0f2b]'}">
+                    Agregar Template
+                </app-institutional-button>
+            </div>
+
+            <!-- Empty State -->
+            <div *ngIf="selectedTemplates.length === 0" class="flex flex-col items-center justify-center py-16">
+                <h3 class="text-2xl font-extrabold text-gray-400 uppercase tracking-widest mt-4">SIN TEMPLATES AGREGADOS
+                </h3>
+            </div>
+
+            <!-- List State -->
+            <div *ngIf="selectedTemplates.length > 0" class="border flex flex-col gap-2 border-transparent">
+                <!-- Header row for large screens, optional but good for context -->
+                <div
+                    class="hidden md:grid md:grid-cols-12 gap-4 px-4 py-2 text-xs font-semibold text-gray-500 uppercase">
+                    <div class="col-span-3">Nombre</div>
+                    <div class="col-span-2">Concepto</div>
+                    <div class="col-span-2">Tipo</div>
+                    <div class="col-span-2 text-center">Obligatorio</div>
+                    <div class="col-span-2 text-right">Costo</div>
+                    <div class="col-span-1 text-center">Acciones</div>
+                </div>
+
+                <div *ngFor="let item of selectedTemplates"
+                    class="flex flex-col md:grid md:grid-cols-12 gap-4 items-center bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:border-[#8B1538]/50 transition-colors">
+
+                    <div class="col-span-3 w-full flex flex-col">
+                        <span class="font-bold text-gray-800">{{item.name}}</span>
+                        <span class="text-xs text-gray-500">{{item.description | slice:0:60}}{{(item.description.length
+                            || 0)
+                            > 60 ? '...' : ''}}</span>
+                    </div>
+
+                    <div class="col-span-2 w-full flex flex-col">
+                        <span class="font-medium text-gray-900">{{ item.paymentConcept?.concepto || 'Sin concepto'
+                            }}</span>
+                        <span class="text-xs text-gray-500 font-mono">{{ item.paymentConcept?.clave }}</span>
+                    </div>
+
+                    <div class="col-span-2 w-full flex">
+                        <span
+                            class="px-2 py-1 inline-flex text-xs leading-4 font-semibold rounded-md bg-blue-50 text-blue-700">
+                            {{ item.category || 'General' }}
+                        </span>
+                    </div>
+
+                    <div class="col-span-2 w-full flex justify-center">
+                        <span *ngIf="isMandatory(item.id)"
+                            class="px-3 py-1 text-xs font-bold rounded-full bg-green-100 text-green-800">Obligatorio</span>
+                        <span *ngIf="!isMandatory(item.id)"
+                            class="px-3 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-500">Opcional</span>
+                    </div>
+
+                    <div class="col-span-2 w-full flex md:justify-end">
+                        <span *ngIf="(item.paymentConcept?.umas || 0) > 0"
+                            class="font-medium text-gray-900 border border-gray-200 px-3 py-1 rounded-lg bg-gray-50 whitespace-nowrap">
+                            {{ (item.paymentConcept?.umas || 0) | umasToPesos | currency:'MXN' }}
+                        </span>
+                        <span *ngIf="!item.paymentConcept || (item.paymentConcept?.umas || 0) === 0"
+                            class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                            Gratuito
+                        </span>
+                    </div>
+
+                    <div class="col-span-1 w-full flex md:justify-center justify-end gap-3 mt-4 md:mt-0">
+                        <button type="button" (click)="openPreview(item)"
+                            class="text-gray-400 hover:text-blue-600 transition-colors bg-gray-50 p-2 rounded-full hover:bg-blue-50"
+                            title="Ver Vista Previa">
+                            <app-universal-icon name="visibility" type="material" class="w-5 h-5"></app-universal-icon>
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+
+        </app-institutional-card>
+
+    </form>
+
+    <br>
+
+    <!-- Footer Actions (Unwrapped) -->
+    <div class="flex justify-end gap-3 mt-6">
+        <app-institutional-button (buttonClick)="onCancel()"
+            [config]="{variant: 'secondary', title: 'Cancelar', customClass: 'border-gray-300 text-gray-600'}">
+            Cancelar
+        </app-institutional-button>
+        <app-institutional-button (buttonClick)="onSave()"
+            [config]="{variant: 'primary', title: isEditMode ? 'Actualizar tipo de curso' : 'Guardar tipo de curso', customClass: '!bg-[#9D2449]', loading: isLoading, disabled: isLoading}">
+            {{ isEditMode ? 'Actualizar Tipo de Curso' : 'Guardar Tipo de Curso' }}
+        </app-institutional-button>
+    </div>
+</div>
+
+<!-- Template Preview Modal -->
+<app-template-preview-modal [isOpen]="showPreviewModal" [template]="previewTemplate" (close)="showPreviewModal = false">
+</app-template-preview-modal>
+
+<!-- TEMPLATE SELECTION MODAL -->
+<div *ngIf="showTemplateModal"
+    class="fixed inset-0 z-40 flex items-center justify-center bg-black bg-opacity-40 backdrop-blur-sm transition-all duration-300">
+    <div
+        class="bg-white rounded-t-lg rounded-b-lg shadow-2xl w-[95%] max-w-7xl overflow-hidden flex flex-col max-h-[90vh] animate-fade-in-up">
+
+        <!-- Header -->
+        <div class="bg-[#8B1538] px-6 py-4 flex items-center justify-between">
+            <h2 class="text-xl font-bold text-white tracking-wide">Agregar Template</h2>
+            <button type="button" (click)="closeTemplateModal()"
+                class="text-white hover:text-gray-200 outline-none p-1 rounded-full hover:bg-[#6e0f2b] transition-colors">
+                <app-universal-icon name="close" type="material" class="w-6 h-6"></app-universal-icon>
+            </button>
+        </div>
+
+        <!-- Body -->
+        <div class="p-6 overflow-y-auto bg-gray-50 flex-grow min-h-[400px]">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+                <div class="flex items-center">
+                    <app-table-pagination [config]="paginationConfig" [showPageSizeSelector]="true"
+                        [showPaginationControls]="false" (pageChange)="onPageChange($event)"></app-table-pagination>
+                </div>
+                <div class="w-full md:w-auto min-w-[300px]">
+                    <app-table-filters [showGlobalSearch]="true"
+                        globalSearchPlaceholder="Buscar template para añadir..."
+                        (globalSearchChange)="filterTemplates($event)"></app-table-filters>
+                </div>
+            </div>
+
+            <div class="border rounded-lg overflow-hidden border-gray-200 bg-white">
+                <app-institutional-table [data]="displayedTemplates" [columns]="tableColumns" [config]="tableConfig"
+                    [selectedItems]="tempSelectedTemplates" [lockedItems]="lockedTemplates"
+                    (selectionChange)="onModalSelectionChange($event)">
+                </app-institutional-table>
+            </div>
+
+            <div class="mt-4">
+                <app-table-pagination [config]="paginationConfig" [showPageSizeSelector]="false"
+                    [showPaginationControls]="true" (pageChange)="onPageChange($event)"></app-table-pagination>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="px-6 py-4 bg-white border-t border-gray-200 flex justify-start gap-4 flex-row-reverse">
+            <app-institutional-button (buttonClick)="confirmTemplateSelection()"
+                [config]="{variant: 'primary', title: '+ Agregar', customClass: '!bg-[#8B1538] text-white'}">
+                + Agregar
+            </app-institutional-button>
+            <app-institutional-button (buttonClick)="closeTemplateModal()"
+                [config]="{variant: 'secondary', title: 'Cancelar', customClass: 'border border-gray-300 text-gray-700 hover:bg-gray-50'}">
+                Cancelar
+            </app-institutional-button>
+        </div>
+    </div>
+</div>
+
+<!-- PLANTILLAS NG (PLACEHOLDERS PARA LA TABLA) -->
+<!-- Se extraen del *ngIf para que los @ViewChild puedan referenciarlos sin problemas, incluso antes de abrir el modal -->
+<ng-template #actionsTemplate let-item>
+    <app-institutional-button [config]="{
+            variant: 'info',
+            size: 'small',
+            icon: 'visibility',
+            iconPosition: 'only',
+            title: 'Ver Vista Previa'
+        }" [appTooltip]="'Ver Vista Previa'" tooltipPosition="top" (buttonClick)="openPreview(item)">
+    </app-institutional-button>
+</ng-template>
+
+<ng-template #costTemplate let-item>
+    <span *ngIf="(item.paymentConcept?.umas || 0) > 0" class="font-medium text-gray-900">{{
+        (item.paymentConcept?.umas || 0) |
+        umasToPesos | currency:'MXN' }}</span>
+    <span *ngIf="!item.paymentConcept || (item.paymentConcept?.umas || 0) === 0"
+        class="px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800 tracking-wide">
+        Gratuito
+    </span>
+</ng-template>
+
+<ng-template #conceptTemplate let-item>
+    <div class="flex flex-col">
+        <span class="font-medium text-gray-900">{{ item.paymentConcept?.concepto || 'Sin concepto' }}</span>
+        <span class="text-xs text-gray-500 font-mono">{{ item.paymentConcept?.clave }}</span>
+    </div>
+</ng-template>
+
+<ng-template #categoryTemplate let-item>
+    <span
+        class="px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800 tracking-wide">
+        {{ item.category || 'General' }}
+    </span>
+</ng-template>
+
+<ng-template #mandatoryTemplate let-item>
+    <div class="flex justify-center" (click)="$event.stopPropagation()">
+        <input type="checkbox" [checked]="isMandatory(item.id)"
+            (change)="!(isLockedByUsage && isSavedTemplate(item.id)) && toggleMandatory(item.id, $event)"
+            class="h-4 w-4 text-[#8B1538] border-gray-300 rounded focus:ring-[#8B1538]"
+            [ngClass]="{'cursor-pointer': !(isLockedByUsage && isSavedTemplate(item.id)), 'cursor-not-allowed opacity-40': isLockedByUsage && isSavedTemplate(item.id)}"
+            [disabled]="isLockedByUsage && isSavedTemplate(item.id)">
+    </div>
+</ng-template>

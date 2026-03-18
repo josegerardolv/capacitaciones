@@ -65,7 +65,10 @@ import { ValidatorSpec, ValidationErrorMessages } from '../../interfaces/validat
               [disabled]="disabled || isDisabled"
               [attr.aria-invalid]="invalidTouched"
               [attr.aria-describedby]="getAriaDescribedBy()"
-              [value]="value || ''"
+              [value]="value !== null && value !== undefined ? value : ''"
+              [attr.min]="min"
+              [attr.max]="max"
+              [attr.step]="step"
               (focus)="onFocus()" 
               (blur)="onBlur()"
               (input)="onInput($event)"
@@ -92,7 +95,7 @@ import { ValidatorSpec, ValidationErrorMessages } from '../../interfaces/validat
               [disabled]="disabled || isDisabled"
               [attr.aria-invalid]="invalidTouched"
               [attr.aria-describedby]="getAriaDescribedBy()"
-              [value]="value || ''"
+                  [value]="value !== null && value !== undefined ? value : ''"
               (focus)="onFocus()" 
               (blur)="onBlur()"
               (input)="onInput($event)"
@@ -179,7 +182,7 @@ import { ValidatorSpec, ValidationErrorMessages } from '../../interfaces/validat
                  [readonly]="readonly"
                  [attr.aria-invalid]="invalidTouched"
                  [attr.aria-describedby]="getAriaDescribedBy()"
-                 [value]="value || ''"
+                 [value]="value !== null && value !== undefined ? value : ''"
                  (focus)="onFocus()" 
                  (blur)="onBlur()"
                  (input)="onInput($event)"
@@ -209,6 +212,36 @@ import { ValidatorSpec, ValidationErrorMessages } from '../../interfaces/validat
                  (keydown)="onKeyDown($event)"
                  (keyup)="onKeyUp($event)">
             </textarea>
+
+            <!-- File Input -->
+            <div *ngIf="type === 'file'" class="file-picker w-full">
+              <label [for]="controlId" class="file-btn cursor-pointer flex items-center">
+                <app-universal-icon name="upload_file" type="material" [size]="20" customClass="mr-2"></app-universal-icon>
+                Seleccionar archivo
+              </label>
+              <input 
+                  [id]="controlId"
+                  type="file" 
+                  class="hidden"
+                  [accept]="accept"
+                  [multiple]="multiple"
+                  (change)="onFileChange($event)"
+                  (blur)="onBlur()">
+               <span class="file-name text-sm ml-2">{{ lastFileName || 'Ningún archivo seleccionado' }}</span>
+            </div>
+
+            <!-- Range Input -->
+            <input *ngIf="type === 'range'"
+                 [id]="controlId"
+                 type="range"
+                 class="range-input w-full"
+                 [min]="min" 
+                 [max]="max" 
+                 [step]="step"
+                 [value]="value || 0"
+                 (input)="onInput($event)"
+                 (change)="onInput($event)"
+                 (blur)="onBlur()">
           </ng-container>
 
           <!-- Botón clear -->
@@ -553,12 +586,12 @@ export class InputEnhancedComponent implements OnInit, AfterViewInit, DoCheck, O
   @Input() rfc?: boolean;
   @Input() curp?: boolean;
   @Input() nss?: boolean;
-  
+
   // Dimensiones
   @Input() width?: string;
   @Input() height?: string;
   @Input() fullWidth = false;
-  
+
   // Variantes visuales básicas
   @Input() variant: 'filled' | 'outlined' = 'outlined';
   @Input() size: 'sm' | 'md' | 'lg' = 'md';
@@ -569,21 +602,21 @@ export class InputEnhancedComponent implements OnInit, AfterViewInit, DoCheck, O
   @Input() iconRightType?: 'bootstrap' | 'material' | 'universal';
   @Input() clear = false;
   @Input() extraClasses = '';
-  
+
   // Estados
   @Input() loading = false;
   @Input() readonly = false;
   @Input() disabled = false;
-  
+
   // Atributos HTML específicos
-  @Input() min?: number;
-  @Input() max?: number;
+  @Input() min?: number | string;
+  @Input() max?: number | string;
   @Input() step?: number | string;
   @Input() accept?: string;
   @Input() multiple = false;
   @Input() autocomplete?: string;
   @Input() rows = 3;
-  
+
   // Helper text y contador de caracteres
   @Input() helperText?: string;
   @Input() helperPosition: 'top' | 'bottom' = 'bottom';
@@ -595,6 +628,7 @@ export class InputEnhancedComponent implements OnInit, AfterViewInit, DoCheck, O
   @Output() blur = new EventEmitter<Event>();
   @Output() keydown = new EventEmitter<KeyboardEvent>();
   @Output() keyup = new EventEmitter<KeyboardEvent>();
+  @Output() inputEvent = new EventEmitter<Event>();
 
   controlId = '';
   isFocused = false;
@@ -605,11 +639,11 @@ export class InputEnhancedComponent implements OnInit, AfterViewInit, DoCheck, O
   private _lastControlValue: any = undefined;
   private _userHasInteracted = false; // Nueva bandera para rastrear interacción real del usuario
   private _initializedComplete = false; // Variable para evitar detectar falsas interacciones durante inicialización
-  
+
   // ControlValueAccessor properties
   private _value: any = null;
-  private _onChange: (value: any) => void = () => {};
-  private _onTouched: () => void = () => {};
+  private _onChange: (value: any) => void = () => { };
+  private _onTouched: () => void = () => { };
   private _disabled = false;
 
   @HostBinding('class.has-value')
@@ -635,13 +669,17 @@ export class InputEnhancedComponent implements OnInit, AfterViewInit, DoCheck, O
 
   private _validatorsApplied = false;
 
-  constructor(@Optional() private controlContainer: ControlContainer, private cdr: ChangeDetectorRef) {}
+  constructor(@Optional() private controlContainer: ControlContainer, private cdr: ChangeDetectorRef) { }
 
   ngOnInit(): void {
     this.controlId = this.controlName || `input-enhanced-${Math.random().toString(36).slice(2, 9)}`;
 
     // Intentar obtener el FormControl desde el contenedor padre
-    this.attemptControlConnection();
+    if (this.control) {
+      this.setupFormControlConnection();
+    } else {
+      this.attemptControlConnection();
+    }
 
     // Inicializar estado de label flotante según valor actual
     const currentValue = this._value || (this.control && this.control.value);
@@ -665,7 +703,7 @@ export class InputEnhancedComponent implements OnInit, AfterViewInit, DoCheck, O
       const tryConnection = () => {
         attempts++;
         this.attemptControlConnection();
-        
+
         if (!this.control && attempts < maxAttempts) {
           setTimeout(tryConnection, 50 * attempts); // Incrementar el delay progresivamente
         } else {
@@ -691,7 +729,7 @@ export class InputEnhancedComponent implements OnInit, AfterViewInit, DoCheck, O
 
   private attemptControlConnection(): void {
     if (this.control || !this.controlName) return;
-    
+
     // Estrategia 1: ControlContainer directo
     if (this.controlContainer && this.controlContainer.control) {
       const parent = this.controlContainer.control as any;
@@ -752,32 +790,36 @@ export class InputEnhancedComponent implements OnInit, AfterViewInit, DoCheck, O
       this._validatorsApplied = true;
     }
 
-    // Sincronizar valores
-    if (this._value !== undefined && this._value !== this.control.value) {
-      // Si el componente ya tiene un valor, aplicarlo al FormControl
-      this.control.setValue(this._value, { emitEvent: false });
-      this.control.markAsDirty();
-      this.control.markAsTouched();
-    } else {
-      // Si no, tomar el valor del FormControl
+    // Sincronizar valores - Priorizar el valor del FormControl
+    // Solo si el componente tiene un valor explícito y el control no, usamos el del componente
+    if (this.control.value !== null && this.control.value !== undefined && this.control.value !== '') {
+      // Tomar el valor del FormControl
       this._value = this.control.value;
+      this._shifted = true;
+    } else if (this._value !== undefined && this._value !== null && this._value !== '') {
+      // Si el componente tiene valor pero el control no, aplicar al control
+      this.control.setValue(this._value, { emitEvent: false });
+      this._shifted = true;
     }
-    
+
+    // Forzar actualización visual
+    this.cdr.markForCheck();
+
     // Suscribirse a cambios
     this._valueSub = this.control.valueChanges?.subscribe((val: any) => {
       this._value = val;
       const hasValue = !(val === null || val === undefined || val === '');
       if (hasValue !== this._shifted) {
         this._shifted = hasValue;
-        this.cdr.markForCheck();
       }
+      this.cdr.markForCheck();
     });
   }
 
   private setupAutofillDetection(): void {
     // Solo configurar para inputs de texto que realmente lo necesiten
     if (!['text', 'email', 'password'].includes(this.type)) return;
-    
+
     const inputElement = document.getElementById(this.controlId) as HTMLInputElement | HTMLTextAreaElement;
     if (!inputElement) return;
 
@@ -851,7 +893,7 @@ export class InputEnhancedComponent implements OnInit, AfterViewInit, DoCheck, O
     if (!spec.messages) spec.messages = {};
 
     const fns: ValidatorFn[] = [];
-    
+
     // Solo aplicar validadores que realmente se necesitan
     if (spec.required || this.required) fns.push(Validators.required);
     if (spec.minLength) fns.push(Validators.minLength(spec.minLength));
@@ -895,14 +937,14 @@ export class InputEnhancedComponent implements OnInit, AfterViewInit, DoCheck, O
     // 1. El control es inválido
     // 2. El usuario ha interactuado realmente con el campo (no solo programáticamente)
     // 3. El componente ha terminado de inicializarse
-    return !!(this.control && 
-              this.control.invalid && 
-              this._userHasInteracted && 
-              this._initializedComplete);
+    return !!(this.control &&
+      this.control.invalid &&
+      this._userHasInteracted &&
+      this._initializedComplete);
   }
 
   get labelShifted(): boolean {
-  return this._shifted || this.isFocused;
+    return this._shifted || this.isFocused;
   }
 
   get isRequired(): boolean {
@@ -1056,10 +1098,10 @@ export class InputEnhancedComponent implements OnInit, AfterViewInit, DoCheck, O
   // Método optimizado para obtener errores activos
   getActiveErrors(): string[] {
     if (!this.control?.errors) return [];
-    
+
     const errors: string[] = [];
     const errorKeys = Object.keys(this.control.errors);
-    
+
     for (const key of errorKeys) {
       const message = this.getMessage(key);
       if (!message) continue;
@@ -1086,13 +1128,13 @@ export class InputEnhancedComponent implements OnInit, AfterViewInit, DoCheck, O
 
       errors.push(message);
     }
-    
+
     return errors;
   }
 
   getMessage(key: string): string | undefined {
     const spec = this.validationMap?.[this.controlName];
-    
+
     // Primero intentar mensajes personalizados en validationMap
     if (spec?.messages) {
       if (spec.messages[key]) return spec.messages[key];
@@ -1103,7 +1145,7 @@ export class InputEnhancedComponent implements OnInit, AfterViewInit, DoCheck, O
     // Usar el servicio de validadores para obtener mensajes
     const errorValue = this.control?.errors?.[key];
     const customMessages = spec?.messages;
-    
+
     // Intentar obtener el mensaje del servicio
     const serviceMessage = ValidatorsService.getErrorMessage(key, errorValue, customMessages);
     if (serviceMessage !== `Error de validación: ${key}`) {
@@ -1138,12 +1180,12 @@ export class InputEnhancedComponent implements OnInit, AfterViewInit, DoCheck, O
 
   getRangeMin(): number {
     const spec = this.validationMap?.[this.controlName];
-    return spec?.min ?? this.min ?? 0;
+    return Number(spec?.min ?? this.min ?? 0);
   }
 
   getRangeMax(): number {
     const spec = this.validationMap?.[this.controlName];
-    return spec?.max ?? this.max ?? 100;
+    return Number(spec?.max ?? this.max ?? 100);
   }
 
   getRangePercent(): number {
@@ -1188,15 +1230,36 @@ export class InputEnhancedComponent implements OnInit, AfterViewInit, DoCheck, O
     const target = event.target as HTMLInputElement | HTMLTextAreaElement;
     const v = target?.value;
     const hasValue = !(v === null || v === undefined || v === '');
-    
+
     if (hasValue !== this._shifted) {
       this._shifted = hasValue;
     }
-    
-    // Actualizar el valor a través de ControlValueAccessor
-    this.value = v;
+    // Si es input tipo number, aplicar clamping con min/max y pasar número
+    if (this.type === 'number') {
+      let num = parseFloat(String(v));
+      if (isNaN(num)) {
+        // si está vacío o inválido, asignar cadena vacía
+        this.value = '';
+      } else {
+        const minVal = Number(this.min);
+        const maxVal = Number(this.max);
+        if (this.min !== undefined && !isNaN(minVal) && num < minVal) num = minVal;
+        if (this.max !== undefined && !isNaN(maxVal) && num > maxVal) num = maxVal;
+        // Asegurar que el elemento muestre el valor clamped
+        try {
+          (target as HTMLInputElement).value = String(num);
+        } catch (e) { /* ignore */ }
+        this.value = num;
+      }
+    } else {
+      // Actualizar el valor a través de ControlValueAccessor
+      this.value = v;
+    }
+
+    // Emitir evento input para escucha externa
+    this.inputEvent.emit(event);
   }
-  
+
   onPaste(event: ClipboardEvent): void {
     // Lógica de paste aquí...
   }
@@ -1212,12 +1275,12 @@ export class InputEnhancedComponent implements OnInit, AfterViewInit, DoCheck, O
   onFileChange(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (!input) return;
-    
+
     const files = input.files;
     if (files && files.length > 0) {
       const file = files[0];
       this.lastFileName = file.name;
-      
+
       if (this.control) {
         this.control.setValue(this.multiple ? Array.from(files) : file);
         this.control.markAsDirty();
@@ -1234,12 +1297,12 @@ export class InputEnhancedComponent implements OnInit, AfterViewInit, DoCheck, O
   // ControlValueAccessor implementation
   writeValue(value: any): void {
     this._value = value;
-    
+
     // Si tenemos un FormControl y el valor es diferente, actualizarlo
     if (this.control && this.control.value !== value) {
       this.control.setValue(value, { emitEvent: false });
     }
-    
+
     // Actualizar el estado del label flotante
     this._shifted = !!(value !== null && value !== undefined && value !== '');
     this.cdr.markForCheck();
@@ -1267,12 +1330,12 @@ export class InputEnhancedComponent implements OnInit, AfterViewInit, DoCheck, O
     this._value = val;
     this._onChange(val);
     this._onTouched();
-    
+
     // Estrategia simple: intentar conectar si no tenemos control
     if (!this.control && this.controlName) {
       this.attemptControlConnection();
     }
-    
+
     // Si tenemos FormControl, actualizarlo
     if (this.control) {
       // Emit the change so any valueChanges subscribers react (e.g., table-filters globalSearch)
@@ -1280,7 +1343,7 @@ export class InputEnhancedComponent implements OnInit, AfterViewInit, DoCheck, O
       this.control.markAsDirty();
       this.control.markAsTouched();
     }
-    
+
     // Actualizar el estado del label flotante
     this._shifted = !!(val !== null && val !== undefined && val !== '');
     this.cdr.markForCheck();

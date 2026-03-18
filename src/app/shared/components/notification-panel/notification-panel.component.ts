@@ -26,9 +26,9 @@ export interface Notification {
  * - Diseño profesional con paleta institucional
  */
 @Component({
-    selector: 'app-notification-panel',
-    imports: [CommonModule, RouterModule],
-    template: `
+  selector: 'app-notification-panel',
+  imports: [CommonModule, RouterModule],
+  template: `
     <!-- Overlay para cerrar panel -->
     <div 
       *ngIf="isOpen"
@@ -188,7 +188,7 @@ export interface Notification {
       </div>
     </div>
   `,
-    styles: []
+  styles: []
 })
 export class NotificationPanelComponent implements OnInit, OnDestroy {
   @Input() isOpen = false;
@@ -197,7 +197,7 @@ export class NotificationPanelComponent implements OnInit, OnDestroy {
   @Output() markAllAsRead = new EventEmitter<void>();
   @Output() markAsRead = new EventEmitter<string>();
 
-  constructor(private router: Router) {}
+  constructor(private router: Router) { }
 
   ngOnInit(): void {
     // Escuchar eventos de teclado para cerrar con ESC
@@ -307,7 +307,7 @@ export class NotificationPanelComponent implements OnInit, OnDestroy {
    */
   onActionClick(notification: Notification, event: Event): void {
     event.stopPropagation();
-    
+
     if (notification.actionUrl) {
       this.router.navigate([notification.actionUrl]);
       this.onClosePanel();

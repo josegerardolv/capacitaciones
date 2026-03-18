@@ -1,0 +1,307 @@
+import { Component, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormControl } from '@angular/forms';
+import { UniversalIconComponent } from '../../../../../shared/components/universal-icon/universal-icon.component';
+import { InstitutionalButtonComponent } from '../../../../../shared/components/buttons/institutional-button.component';
+import { InputEnhancedComponent } from '../../../../../shared/components/inputs/input-enhanced.component';
+import { CourseTypeConfig, DocumentConfig, RegistrationFieldConfig, DEFAULT_REGISTRATION_FIELDS } from '../../../../../core/models/course-type-config.model';
+import { TemplateService } from '../../../templates/services/template.service';
+import { TemplateDocument } from '../../../../../core/models/template.model';
+import { InstitutionalTableComponent, TableColumn, TableConfig } from '../../../../../shared/components/institutional-table/institutional-table.component';
+import { ModalComponent, ModalConfig } from '../../../../../shared/components/modals/modal.component';
+import { TemplatePreviewModalComponent } from '../template-preview-modal/template-preview-modal.component';
+import { UmasToPesosPipe } from '../../../../../shared/pipes/umas-to-pesos.pipe';
+
+@Component({
+  selector: 'app-course-type-form-modal',
+  standalone: true,
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    UniversalIconComponent,
+    InstitutionalButtonComponent,
+    InputEnhancedComponent,
+    InstitutionalTableComponent,
+    TemplatePreviewModalComponent,
+    ModalComponent,
+    UmasToPesosPipe
+  ],
+  templateUrl: './course-type-form-modal.component.html',
+  styles: [`
+    .modal-overlay {
+      background-color: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(2px);
+    }
+  `]
+})
+export class CourseTypeFormModalComponent implements OnInit {
+  @Input() isOpen = false;
+  @Input() courseTypeToEdit: CourseTypeConfig | null = null;
+
+  @Output() close = new EventEmitter<void>();
+  @Output() save = new EventEmitter<Partial<CourseTypeConfig>>();
+
+  form!: FormGroup;
+
+  modalConfig: ModalConfig = {
+    title: 'Configuración Curso',
+    size: 'fullscreen',
+    showCloseButton: true,
+    padding: true
+  };
+
+  // Configuración de campos
+  registrationFields: RegistrationFieldConfig[] = [];
+
+  // Configuración de Templates y Tabla
+  templates: TemplateDocument[] = [];
+  filteredTemplates: TemplateDocument[] = [];
+  selectedTemplates: TemplateDocument[] = [];
+  searchControl = new FormControl('');
+
+  tableConfig: TableConfig = {
+    selectable: true,
+    hoverable: true,
+    striped: false,
+    loading: false,
+    emptyMessage: 'No se encontraron templates'
+  };
+
+  @ViewChild('actionsTemplate') actionsTemplate!: any;
+  @ViewChild('costTemplate') costTemplate!: any;
+  @ViewChild('categoryTemplate') categoryTemplate!: any;
+  @ViewChild('mandatoryTemplate') mandatoryTemplate!: any;
+  @ViewChild('conceptTemplate') conceptTemplate!: any;
+
+  tableColumns: TableColumn[] = [
+    { key: 'name', label: 'Nombre', sortable: true, width: '220px' },
+    { key: 'category', label: 'Tipo', sortable: true, width: '150px', template: this.categoryTemplate },
+    { key: 'paymentConcept', label: 'Concepto (Siox)', sortable: false, minWidth: '300px' },
+    { key: 'mandatory', label: 'Obligatorio', align: 'center', width: '100px', template: this.mandatoryTemplate }, // Nueva Columna
+    { key: 'cost', label: 'Costo', sortable: false, width: '130px', align: 'right' },
+    { key: 'actions', label: 'Documento', align: 'center', width: '120px' }
+  ];
+
+  // Resto de propiedades...
+  showPreviewModal = false;
+  previewTemplate: TemplateDocument | null = null;
+  displayedTemplates: TemplateDocument[] = [];
+
+  // Set para rastrear obligatorios por ID de template
+  mandatoryDocuments: Set<number> = new Set();
+
+  constructor(
+    private fb: FormBuilder,
+    private templateService: TemplateService
+  ) { }
+
+  ngOnChanges(changes: any): void {
+    if (changes['isOpen'] && this.isOpen) {
+      // Recargar templates y estado al abrir
+      this.loadTemplates();
+      if (this.courseTypeToEdit) {
+        this.fillForm(this.courseTypeToEdit);
+      } else {
+        this.form.reset();
+        this.selectedTemplates = [];
+        this.mandatoryDocuments.clear(); // Limpiar obligatorios
+        this.initFields();
+      }
+    }
+  }
+
+  // ... (ngOnInit, initForm, etc. ok)
+
+  ngAfterViewInit() {
+    setTimeout(() => {
+      // Asignar templates a columnas
+      const actionsCol = this.tableColumns.find(c => c.key === 'actions');
+      if (actionsCol) actionsCol.template = this.actionsTemplate;
+
+      const costCol = this.tableColumns.find(c => c.key === 'cost');
+      if (costCol) costCol.template = this.costTemplate;
+
+      const categoryCol = this.tableColumns.find(c => c.key === 'category');
+      if (categoryCol) categoryCol.template = this.categoryTemplate;
+
+      const mandatoryCol = this.tableColumns.find(c => c.key === 'mandatory');
+      if (mandatoryCol) mandatoryCol.template = this.mandatoryTemplate;
+
+      const conceptCol = this.tableColumns.find(c => c.key === 'paymentConcept');
+      if (conceptCol) conceptCol.template = this.conceptTemplate;
+    });
+  }
+
+  loadTemplates() {
+    this.tableConfig.loading = true;
+    this.templateService.getTemplates().subscribe({
+      next: (data) => {
+        this.templates = data;
+        if (this.courseTypeToEdit && this.courseTypeToEdit.availableDocuments) {
+          const selectedIds = this.courseTypeToEdit.availableDocuments.map(d => d.templateId);
+          this.selectedTemplates = this.templates.filter(t => selectedIds.includes(t.id));
+
+          this.mandatoryDocuments.clear();
+          this.courseTypeToEdit.availableDocuments.forEach(doc => {
+            if (doc.isMandatory && doc.templateId) {
+              this.mandatoryDocuments.add(doc.templateId);
+            }
+          });
+
+          this.templates.forEach(t => {
+            if (!t.paymentConcept) {
+              this.mandatoryDocuments.add(t.id);
+            }
+          });
+
+
+          if (this.selectedTemplates.length > 0) {
+            this.filteredTemplates = [...this.selectedTemplates];
+          }
+        } else {
+          this.selectedTemplates = [];
+          this.mandatoryDocuments.clear();
+
+          this.templates.forEach(t => {
+            if (!t.paymentConcept) {
+              this.mandatoryDocuments.add(t.id);
+            }
+          });
+
+          this.filteredTemplates = [...this.templates];
+        }
+
+        this.updateDisplayedTemplates();
+        this.tableConfig.loading = false;
+      },
+      error: (err) => {
+        console.error('Error cargando templates', err);
+        this.tableConfig.loading = false;
+      }
+    });
+  }
+
+  ngOnInit(): void {
+    this.initForm();
+    this.initFields();
+
+    // Lógica de búsqueda
+    this.searchControl.valueChanges.subscribe(val => {
+      this.filterTemplates(val || '');
+    });
+  }
+
+  filterTemplates(query: string) {
+    if (!query) {
+      // Si se limpia el filtro, mostrar TODOS los templates (para permitir agregar nuevos)
+      this.filteredTemplates = [...this.templates];
+    } else {
+      const lower = query.toLowerCase();
+      this.filteredTemplates = this.templates.filter(t => t.name.toLowerCase().includes(lower));
+    }
+
+    this.updateDisplayedTemplates();
+  }
+
+  updateDisplayedTemplates() {
+    // Mostrar todos los filtrados (el scroll del contenedor maneja el desbordamiento)
+    this.displayedTemplates = this.filteredTemplates;
+  }
+
+  initForm() {
+    this.form = this.fb.group({
+      name: ['', Validators.required],
+      description: ['', Validators.required],
+      category: ['', Validators.required]
+      // paymentType removed as it depends on template cost
+    });
+  }
+
+  initFields() {
+    this.registrationFields = JSON.parse(JSON.stringify(DEFAULT_REGISTRATION_FIELDS));
+    // Ocultar todos los campos por defecto para nuevos tipos de curso
+    this.registrationFields.forEach(f => f.visible = false);
+  }
+
+  fillForm(data: CourseTypeConfig) {
+    this.form.patchValue({
+      name: data.name,
+      description: data.description,
+      category: (data as any).category // Se asume que vendrá en el objeto o se manejará como extra
+      // paymentType removed
+    });
+
+    if (data.registrationFields) {
+      data.registrationFields.forEach(savedField => {
+        const match = this.registrationFields.find(f => f.fieldName === savedField.fieldName);
+        if (match) {
+          match.visible = savedField.visible;
+          match.required = savedField.required;
+        }
+      });
+    }
+  }
+
+  toggleField(field: RegistrationFieldConfig) {
+    field.visible = !field.visible;
+  }
+
+  // Manejar selección de tabla
+  onSelectionChange(event: any) {
+    this.selectedTemplates = event.selectedItems;
+  }
+
+  openPreview(template: TemplateDocument) {
+    this.previewTemplate = template;
+    this.showPreviewModal = true;
+  }
+
+  toggleMandatory(templateId: number, event: Event) {
+    event.stopPropagation(); // Evitar que seleccione la fila si es click en checkbox
+    if (this.mandatoryDocuments.has(templateId)) {
+      this.mandatoryDocuments.delete(templateId);
+    } else {
+      this.mandatoryDocuments.add(templateId);
+    }
+  }
+
+  isMandatory(templateId: number): boolean {
+    return this.mandatoryDocuments.has(templateId);
+  }
+
+  onSave() {
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
+    }
+
+    const formValue = this.form.value;
+
+    const availableDocuments: DocumentConfig[] = this.selectedTemplates.map(t => ({
+      id: `doc_temp_${t.id}`,
+      name: t.name,
+      description: t.description || t.name,
+      templateId: t.id,
+      cost: t.paymentConcept?.umas || 0,
+      requiresApproval: false,
+      isMandatory: this.mandatoryDocuments.has(t.id) // Guardar estado
+    }));
+
+    const hasPaidDocument = availableDocuments.some(doc => doc.cost && doc.cost > 0);
+    const paymentType = hasPaidDocument ? 'De Paga' : 'Gratuito';
+
+    const config: Partial<CourseTypeConfig> = {
+      ...formValue,
+      status: 'Activo',
+      paymentType: paymentType,
+      registrationFields: this.registrationFields,
+      availableDocuments: availableDocuments
+    };
+
+    this.save.emit(config);
+  }
+
+  onClose() {
+    this.close.emit();
+  }
+}

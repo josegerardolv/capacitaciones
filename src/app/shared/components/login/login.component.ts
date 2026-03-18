@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { LoginRequest } from '../../../core/models/auth.model';
+import { AppConfigService } from '../../../core/services/app-config.service';
 
 @Component({
   selector: 'app-login',
@@ -19,16 +20,16 @@ import { LoginRequest } from '../../../core/models/auth.model';
           <!-- Header -->
           <div class="text-center">
             <div class="mx-auto h-20 w-20 bg-guinda-600 rounded-2xl flex items-center justify-center shadow-lg mb-6 transform hover:scale-105 transition-all duration-300">
-              <img src="assets/images/icons/Icon_vino.svg" alt="SEMOVI Logo" class="h-12 w-12">
+              <img [src]="appConfig.get('logoLogin')" alt="Logo" class="h-12 w-12">
             </div>
             <h2 class="text-2xl sm:text-3xl font-bold text-guinda-900 mb-2">
-              Sistema de Soporte Informático
+              <!-- TODO: Cambiar por el nombre del sistema -->
+              Sistema de Capacitaciones
             </h2>
             <p class="text-sm sm:text-base text-gray-600 mb-8">
               <span class="font-semibold text-guinda-700">SEMOVI</span> - Secretaría de Movilidad
             </p>
           </div>
-
           <!-- Formulario de Login -->
           <form class="space-y-6" [formGroup]="loginForm" (ngSubmit)="onSubmit()">
             <div class="space-y-4">
@@ -45,10 +46,11 @@ import { LoginRequest } from '../../../core/models/auth.model';
                     id="username"
                     name="username"
                     type="text"
+                    autocomplete="username"
                     required
                     formControlName="username"
                     class="block w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-institucional-guinda focus:border-institucional-guinda transition-all duration-200 bg-white hover:bg-gray-50 focus:bg-white"
-                    placeholder="Ingrese su usuario"
+                    placeholder="Ingresa Correo Institucional"
                     [class.border-red-400]="loginForm.get('username')?.invalid && loginForm.get('username')?.touched"
                     [class.ring-red-400]="loginForm.get('username')?.invalid && loginForm.get('username')?.touched"
                     [class.bg-red-50]="loginForm.get('username')?.invalid && loginForm.get('username')?.touched"
@@ -75,10 +77,11 @@ import { LoginRequest } from '../../../core/models/auth.model';
                     id="password"
                     name="password"
                     type="password"
+                    autocomplete="current-password"
                     required
                     formControlName="password"
                     class="block w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-institucional-guinda focus:border-institucional-guinda transition-all duration-200 bg-white hover:bg-gray-50 focus:bg-white"
-                    placeholder="Ingrese su contraseña"
+                    placeholder="Ingrese su Contraseña"
                     [class.border-red-400]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched"
                     [class.ring-red-400]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched"
                     [class.bg-red-50]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched"
@@ -131,12 +134,13 @@ import { LoginRequest } from '../../../core/models/auth.model';
           <div class="text-center mt-8 pt-6 border-t border-gray-200">
             <div class="flex items-center justify-center space-x-2 text-sm text-gray-600">
               <div class="h-6 w-6 bg-guinda-600 rounded-lg flex items-center justify-center shadow-sm">
-                <img src="assets/images/icons/Icon_vino.svg" alt="SEMOVI Logo" class="h-4 w-4">
+                <img src="assets/images/icons/icono-gobernacion.svg" alt="SEMOVI Logo" class="h-4 w-4">
               </div>
-              <span class="font-medium">© 2025 SEMOVI Oaxaca</span>
+              <span class="font-medium">© {{ currentYear }} SEMOVI Oaxaca</span>
             </div>
             <p class="text-xs text-gray-500 mt-2">
-              Sistema de Soporte Técnico - <span class="font-semibold">Versión 1.0.0</span>
+              <!-- TODO: Cambiar por el nombre del sistema -->
+              Sistema de Capacitaciones - <span class="font-semibold">Versión {{ appConfig.get('version') }}</span>
             </p>
           </div>
         </div>
@@ -149,11 +153,16 @@ export class LoginComponent implements OnInit {
   isLoading = false;
   loginError = '';
 
+  get currentYear(): number {
+    return new Date().getFullYear();
+  }
+
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
     private notificationService: NotificationService,
-    private router: Router
+    private router: Router,
+    public appConfig: AppConfigService
   ) {
     this.loginForm = this.fb.group({
       username: ['', [Validators.required]],

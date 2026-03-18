@@ -35,8 +35,8 @@ export interface User {
   person?: {
     id: number;
     first_name: string;
-    last_name: string;
-    second_last_name?: string;
+    paternal_lastName: string;
+    maternal_lastName?: string;
     full_name: string;
     email: string;
     phone?: string;
@@ -183,7 +183,7 @@ export interface ResetPasswordRequest {
 export class UserService {
   private readonly apiUrl = `${environment.apiUrl}/api/catalogs/users`;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   /**
    * Obtener lista de usuarios con paginación y filtros

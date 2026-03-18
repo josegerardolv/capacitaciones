@@ -21,9 +21,20 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
         // Server-side error
         switch (error.status) {
           case 401:
-            errorMessage = 'No autorizado. Por favor, inicia sesión nuevamente.';
-            authService.logout();
-            router.navigate(['/login']);
+            // No redirigir al login si es una petición de la zona pública
+            const isPublicRequest = req.url.includes('/group/registro/') ||
+              req.url.includes('/public/') ||
+              req.url.includes('/person') ||
+              req.url.includes('/enrollment');
+            const isPublicRoute = router.url.includes('/public/register');
+
+            if (isPublicRequest || isPublicRoute) {
+              errorMessage = 'No se pudieron validar los datos o la sesión no es válida para este recurso.';
+            } else {
+              errorMessage = 'No autorizado. Por favor, inicia sesión nuevamente.';
+              authService.logout();
+              router.navigate(['/login']);
+            }
             break;
           case 403:
             errorMessage = 'No tienes permisos para realizar esta acción.';
@@ -40,7 +51,9 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
       }
 
       // Show notification for user-facing errors
-      if (error.status !== 401) {
+      const isPublic = req.url.includes('/group/registro/') || req.url.includes('/public/') || router.url.includes('/public/register');
+
+      if (error.status !== 401 || isPublic) {
         notificationService.error('Error', errorMessage);
       }
 

@@ -1,6 +1,6 @@
 {
-  "name": "semovi-frontend",
-  "version": "1.0.0",
+  "name": "ui-capacitaciones-dsmsv",
+  "version": "0.8.0",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
@@ -27,6 +27,8 @@
     "@types/qrcode": "^1.5.5",
     "@zxing/library": "^0.21.3",
     "@zxing/ngx-scanner": "^20.0.0",
+    "fabric": "^6.9.1",
+    "jspdf": "^4.0.0",
     "material-design-icons": "^3.0.1",
     "qrcode": "^1.5.4",
     "rxjs": "^7.8.2",
@@ -34,12 +36,14 @@
     "zone.js": "~0.15.0"
   },
   "devDependencies": {
-    "@angular-devkit/build-angular": "^20.2.6",
-    "@angular/cli": "^20.2.6",
-    "@angular/compiler-cli": "^20.3.15",
+    "@angular-devkit/build-angular": "^20.3.16",
+    "@angular/cli": "^20.3.16",
+    "@angular/compiler-cli": "^20.3.16",
     "@tailwindcss/forms": "^0.5.9",
     "@tailwindcss/typography": "^0.5.15",
+    "@types/fabric": "^5.3.10",
     "@types/jasmine": "~5.1.9",
+    "@types/jsdom": "^27.0.0",
     "@types/node": "^22.12.0",
     "autoprefixer": "^10.4.20",
     "jasmine-core": "~5.9.0",
@@ -49,11 +53,13 @@
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0",
     "postcss": "^8.4.49",
+    "sass": "^1.97.3",
     "tailwindcss": "^3.4.17",
     "typescript": "~5.8.0"
   },
   "overrides": {
-    "vite": ">=7.1.11"
+    "vite": ">=7.1.11",
+    "webpack": "^5.94.0"
   },
   "engines": {
     "node": ">=18.13.0",

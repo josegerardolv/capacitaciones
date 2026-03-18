@@ -16,7 +16,7 @@ export const ICON_MAPPINGS = {
   close: { bootstrap: 'x', material: 'close' },
   back: { bootstrap: 'arrow-left', material: 'arrow_back' },
   forward: { bootstrap: 'arrow-right', material: 'arrow_forward' },
-  
+
   // Controles de sidebar  
   'arrow-bar-left': { bootstrap: 'arrow-bar-left', material: 'keyboard_arrow_left' },
   'arrow-bar-right': { bootstrap: 'arrow-bar-right', material: 'keyboard_arrow_right' },
@@ -24,14 +24,14 @@ export const ICON_MAPPINGS = {
   'chevron-double-right': { bootstrap: 'chevron-double-right', material: 'keyboard_double_arrow_right' },
   'x-lg': { bootstrap: 'x-lg', material: 'close' },
   list: { bootstrap: 'list', material: 'menu' },
-  
+
   // Usuarios y personas
   user: { bootstrap: 'person', material: 'person' },
   users: { bootstrap: 'people', material: 'people' },
   groups: { bootstrap: 'people-fill', material: 'groups' },
   userAdd: { bootstrap: 'person-add', material: 'person_add' },
   userRemove: { bootstrap: 'person-dash', material: 'person_remove' },
-  
+
   // Acciones
   add: { bootstrap: 'plus', material: 'add' },
   edit: { bootstrap: 'pencil', material: 'edit' },
@@ -40,50 +40,52 @@ export const ICON_MAPPINGS = {
   cancel: { bootstrap: 'x', material: 'cancel' },
   search: { bootstrap: 'search', material: 'search' },
   filter: { bootstrap: 'funnel', material: 'filter_list' },
-  
+
   // Aplicaciones y sistemas
   apps: { bootstrap: 'grid-3x3-gap', material: 'apps' },
   settings: { bootstrap: 'gear', material: 'settings' },
   tools: { bootstrap: 'tools', material: 'build' },
-  
+
   // Seguridad
   security: { bootstrap: 'shield-check', material: 'security' },
   lock: { bootstrap: 'lock', material: 'lock' },
   unlock: { bootstrap: 'unlock', material: 'lock_open' },
   verified: { bootstrap: 'patch-check', material: 'verified_user' },
-  
+
   // Reportes y análisis
   reports: { bootstrap: 'file-earmark-bar-graph', material: 'assessment' },
   analytics: { bootstrap: 'bar-chart-line', material: 'analytics' },
   chart: { bootstrap: 'graph-up', material: 'show_chart' },
-  
+
   // Estados
   success: { bootstrap: 'check-circle', material: 'check_circle' },
   error: { bootstrap: 'x-circle', material: 'error' },
   warning: { bootstrap: 'exclamation-triangle', material: 'warning' },
   info: { bootstrap: 'info-circle', material: 'info' },
-  
+
   // Navegación UI
   chevronDown: { bootstrap: 'chevron-down', material: 'keyboard_arrow_down' },
   chevronUp: { bootstrap: 'chevron-up', material: 'keyboard_arrow_up' },
   chevronLeft: { bootstrap: 'chevron-left', material: 'keyboard_arrow_left' },
   chevronRight: { bootstrap: 'chevron-right', material: 'keyboard_arrow_right' },
-  
+
   // Archivos y documentos
   file: { bootstrap: 'file-earmark', material: 'description' },
   folder: { bootstrap: 'folder', material: 'folder' },
   download: { bootstrap: 'download', material: 'download' },
   upload: { bootstrap: 'upload', material: 'upload' },
-  
+  print: { bootstrap: 'printer', material: 'print' },
+  send: { bootstrap: 'send', material: 'send' },
+
   // Comunicación
   email: { bootstrap: 'envelope', material: 'email' },
   phone: { bootstrap: 'telephone', material: 'phone' },
   chat: { bootstrap: 'chat', material: 'chat' },
-  
+
   // Tiempo
   calendar: { bootstrap: 'calendar', material: 'event' },
   clock: { bootstrap: 'clock', material: 'schedule' },
-  
+
   // Otros
   visibility: { bootstrap: 'eye', material: 'visibility' },
   visibilityOff: { bootstrap: 'eye-slash', material: 'visibility_off' },
@@ -118,7 +120,7 @@ export function convertIcon(iconName: string, fromType: IconType, toType: IconTy
       return mapping[toType];
     }
   }
-  
+
   // Si no hay mapeo, devolver el icono original
   return iconName;
 }

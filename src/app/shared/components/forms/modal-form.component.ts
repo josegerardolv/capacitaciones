@@ -19,11 +19,16 @@ export interface FormAction {
   template: `
     <!-- Overlay del modal mejorado -->
     <div *ngIf="isOpen" 
-         class="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in"
+         class="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex justify-center z-50 p-4 animate-fade-in"
+         [ngClass]="{
+           'items-center': position === 'center',
+           'items-start pt-20': position === 'top',
+           'items-end pb-20': position === 'bottom'
+         }"
          (click)="onOverlayClick($event)">
       
       <!-- Contenedor del modal -->
-      <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden animate-modal-in border border-gray-100"
+      <div class="bg-white rounded-2xl shadow-2xl w-full max-h-[95vh] overflow-visible animate-modal-in flex flex-col"
            [class.max-w-sm]="size === 'sm'"
            [class.max-w-lg]="size === 'md'"
            [class.max-w-2xl]="size === 'lg'"
@@ -32,7 +37,7 @@ export interface FormAction {
            (click)="$event.stopPropagation()">
         
         <!-- Header del modal mejorado -->
-        <div class="bg-gradient-institucional p-6">
+        <div class="bg-gradient-institucional rounded-t-2xl p-6 relative z-0">
           <div class="flex items-center justify-between">
             <div>
               <h3 *ngIf="title" class="text-xl font-bold text-white">{{ title }}</h3>
@@ -49,9 +54,9 @@ export interface FormAction {
         </div>
 
         <!-- Contenido scrolleable -->
-        <div class="max-h-[60vh] overflow-y-auto p-6">
-          <div class="p-6">
-            <form [formGroup]="formGroup" (ngSubmit)="onSubmit()">
+        <div class="flex-1 p-4 custom-scrollbar overflow-visible relative z-10">
+          <div class="p-6 overflow-visible relative z-10">
+            <form [formGroup]="formGroup" (ngSubmit)="onSubmit()" class="overflow-visible relative z-10">
               
               <!-- Contenido dinámico del formulario -->
               <div class="space-y-4">
@@ -78,7 +83,7 @@ export interface FormAction {
         </div>
 
         <!-- Footer con acciones mejorado -->
-        <div class="flex items-center justify-between p-6 border-t border-gray-200 bg-gray-50">
+        <div class="flex items-center justify-between p-6 border-t border-gray-200 bg-gray-50 relative z-0 rounded-b-2xl">
           <div class="flex items-center gap-3">
             <!-- Botones secundarios -->
             <button *ngFor="let action of secondaryActions" 
@@ -116,6 +121,7 @@ export class ModalFormComponent {
   @Input() title?: string;
   @Input() subtitle?: string;
   @Input() size: 'sm' | 'md' | 'lg' | 'xl' | 'full' = 'lg';
+  @Input() position: 'center' | 'top' | 'bottom' = 'center';
   @Input() closeOnEscape = true;
   @Input() closeOnOverlay = true;
   @Input() isLoading = false;
@@ -166,7 +172,7 @@ export class ModalFormComponent {
 
   close(): void {
     if (this.isLoading) return;
-    
+
     this.isOpen = false;
     document.body.style.overflow = ''; // Restaurar scroll del body
     this.modalClose.emit();
@@ -184,17 +190,17 @@ export class ModalFormComponent {
     if (action.label === 'Cancelar') {
       this.close();
     }
-    
+
     if (action.action) {
       action.action();
     }
-    
+
     this.actionClick.emit(action);
   }
 
   getButtonClass(variant: string): string {
     const baseClasses = 'inline-flex items-center gap-2 px-6 py-3 font-semibold rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 focus:outline-none focus:ring-4';
-    
+
     switch (variant) {
       case 'primary':
         return `${baseClasses} bg-institucional-primario hover:bg-institucional-primario-dark text-white shadow-lg hover:shadow-xl focus:ring-institucional-secundario focus:ring-opacity-50`;

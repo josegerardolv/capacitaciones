@@ -27,7 +27,7 @@ export const SIDEBAR_MENU_CONFIG: MenuItem[] = [
     icon: 'house',
     iconType: 'bootstrap',
     route: '/dashboard',
-    roles: ['ADMINISTRADOR', 'SUPER_ADMINISTRADOR', 'CAPTURISTA', 'CONSULTA', 'SUPERVISOR']
+    roles: ['admin', 'SUPER_ADMINISTRADOR', 'CAPTURISTA', 'CONSULTA', 'SUPERVISOR']
   },
   {
     id: 'cursos',
@@ -35,7 +35,7 @@ export const SIDEBAR_MENU_CONFIG: MenuItem[] = [
     icon: 'people',
     iconType: 'bootstrap',
     route: '/cursos',
-    roles: ['ADMINISTRADOR', 'SUPER_ADMINISTRADOR', 'CAPTURISTA', 'SUPERVISOR']
+    roles: ['admin', 'SUPER_ADMINISTRADOR', 'CAPTURISTA', 'SUPERVISOR']
   },
   {
     id: 'busqueda',
@@ -43,72 +43,47 @@ export const SIDEBAR_MENU_CONFIG: MenuItem[] = [
     icon: 'search',
     iconType: 'bootstrap',
     route: '/busqueda',
-    roles: ['ADMINISTRADOR', 'SUPER_ADMINISTRADOR', 'CAPTURISTA', 'CONSULTA', 'SUPERVISOR']
-  },
-  {
-    id: 'documentos',
-    label: 'Documentos',
-    icon: 'file-text', // Similar icons: file-earmark-text
-    iconType: 'bootstrap',
-    roles: ['ADMINISTRADOR', 'SUPER_ADMINISTRADOR', 'SUPERVISOR'],
-    children: [
-      {
-        id: 'certificados',
-        label: 'Certificados',
-        icon: 'award',
-        iconType: 'bootstrap',
-        route: '/documentos/certificados',
-        roles: ['ADMINISTRADOR', 'SUPER_ADMINISTRADOR', 'SUPERVISOR']
-      },
-      {
-        id: 'tarjetones',
-        label: 'Tarjetones',
-        icon: 'card-heading',
-        iconType: 'bootstrap',
-        route: '/documentos/tarjetones',
-        roles: ['ADMINISTRADOR', 'SUPER_ADMINISTRADOR', 'SUPERVISOR']
-      }
-    ]
+    roles: ['admin', 'SUPER_ADMINISTRADOR', 'CAPTURISTA', 'CONSULTA', 'SUPERVISOR']
   },
   {
     id: 'configuracion',
     label: 'Configuración',
     icon: 'gear',
     iconType: 'bootstrap',
-    roles: ['ADMINISTRADOR', 'SUPER_ADMINISTRADOR'],
+    roles: ['admin', 'SUPER_ADMINISTRADOR'],
     children: [
       {
-        id: 'encuesta',
-        label: 'Encuesta',
-        icon: 'clipboard-data',
+        id: 'config-cursos',
+        label: 'Tipo de Cursos',
+        icon: 'person',
         iconType: 'bootstrap',
-        route: '/config/encuesta',
-        roles: ['ADMINISTRADOR', 'SUPER_ADMINISTRADOR']
+        route: '/config/config-cursos',
+        roles: ['admin', 'SUPER_ADMINISTRADOR']
       },
       {
-        id: 'contrasena',
-        label: 'Contraseña',
-        icon: 'key',
+        id: 'templates',
+        label: 'Templates',
+        icon: 'file-text',
         iconType: 'bootstrap',
-        route: '/config/contrasena',
-        roles: ['ADMINISTRADOR', 'SUPER_ADMINISTRADOR']
+        route: '/config/templates',
+        roles: ['admin', 'SUPER_ADMINISTRADOR', 'SUPERVISOR']
       },
       {
-        id: 'notificaciones',
-        label: 'Notificaciones',
-        icon: 'bell',
-        iconType: 'bootstrap',
-        route: '/config/notificaciones',
-        roles: ['ADMINISTRADOR', 'SUPER_ADMINISTRADOR']
+        id: 'concepto',
+        label: 'Conceptos',
+        icon: 'paid',
+        iconType: 'material',
+        route: '/config/concepto',
+        roles: ['admin', 'SUPER_ADMINISTRADOR']
       },
-      {
-        id: 'usuarios',
-        label: 'Gestión de usuarios',
-        icon: 'person-gear',
-        iconType: 'bootstrap',
-        route: '/config/usuarios',
-        roles: ['SUPER_ADMINISTRADOR']
-      }
+      // {
+      //   id: 'encuesta',
+      //   label: 'Encuesta',
+      //   icon: 'clipboard-data',
+      //   iconType: 'bootstrap',
+      //   route: '/config/encuesta',
+      //   roles: ['admin', 'SUPER_ADMINISTRADOR']
+      // }
     ]
   }
 ];

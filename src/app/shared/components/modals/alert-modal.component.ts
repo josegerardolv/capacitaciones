@@ -11,6 +11,9 @@ export interface AlertConfig {
   showIcon?: boolean;
   actions?: AlertAction[];
   size?: 'sm' | 'md' | 'lg' | 'xl';
+  showCloseButton?: boolean;
+  closeOnEscape?: boolean;
+  closeOnOverlay?: boolean;
 }
 
 export interface AlertAction {
@@ -58,6 +61,7 @@ export interface AlertAction {
               ariaLabel: 'Cerrar modal'
             }"
             class="institutional-modal-close"
+            *ngIf="config.showCloseButton !== false"
             (buttonClick)="close()">
           </app-institutional-button>
         </div>
@@ -85,9 +89,7 @@ export interface AlertAction {
           </div>
           
           <!-- Mensaje -->
-          <p class="text-center mb-6" [id]="'modal-desc-' + modalId">
-            {{ config.message }}
-          </p>
+          <div class="text-center mb-6" [id]="'modal-desc-' + modalId" [innerHTML]="config.message"></div>
           
           <!-- Contenido adicional -->
           <div *ngIf="hasContent" class="mb-6">
@@ -114,7 +116,9 @@ export interface AlertAction {
         </div>
 
         <!-- Footer del modal -->
-        <div class="institutional-modal-footer">
+        <div class="institutional-modal-footer"
+             [class.!justify-between]="config.actions && config.actions.length === 2"
+             [class.w-full]="config.actions && config.actions.length === 2">
           <!-- Acciones personalizadas -->
           <ng-container *ngIf="config.actions && config.actions.length > 0">
             <app-institutional-button
@@ -136,7 +140,7 @@ export interface AlertAction {
               ariaLabel: 'Cerrar alerta'
             }"
             (buttonClick)="close()">
-            Entendido
+            Enterado
           </app-institutional-button>
         </div>
       </div>
@@ -171,6 +175,9 @@ export class AlertModalComponent {
   }
 
   ngOnChanges(): void {
+    if (this.config.closeOnEscape !== undefined) this.closeOnEscape = this.config.closeOnEscape;
+    if (this.config.closeOnOverlay !== undefined) this.closeOnOverlay = this.config.closeOnOverlay;
+
     if (this.isOpen && this.config.autoClose) {
       this.startAutoClose();
     } else if (!this.isOpen) {
@@ -226,7 +233,7 @@ export class AlertModalComponent {
 
   getActionClass(variant?: string): string {
     const baseClasses = 'inline-flex items-center gap-2 px-6 py-3 font-semibold rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 shadow-md hover:shadow-lg focus:outline-none focus:ring-4';
-    
+
     switch (variant) {
       case 'primary':
         return `${baseClasses} bg-institucional-primario hover:bg-institucional-primario-dark text-white focus:ring-institucional-secundario`;
@@ -241,7 +248,7 @@ export class AlertModalComponent {
 
   private startAutoClose(): void {
     this.stopAutoClose();
-    
+
     const delay = this.config.autoCloseDelay || 5000;
     this.timeLeft = Math.ceil(delay / 1000);
     this.progressPercentage = 100;
@@ -250,7 +257,7 @@ export class AlertModalComponent {
     this.countdownTimer = setInterval(() => {
       this.timeLeft--;
       this.progressPercentage = (this.timeLeft / Math.ceil(delay / 1000)) * 100;
-      
+
       if (this.timeLeft <= 0) {
         clearInterval(this.countdownTimer);
       }

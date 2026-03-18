@@ -1,0 +1,24 @@
+<div *ngIf="isOpen" class="modal-wrapper">
+    <!-- Loader de renderizado mientras se genera en el Canvas -->
+    <div *ngIf="isGenerating"
+        class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-gradient-to-br from-institucional-primario/90 via-institucional-vino/95 to-institucional-primario/90 backdrop-blur-sm">
+        <div class="animate-spin rounded-full h-16 w-16 border-4 border-white border-t-transparent mb-4"></div>
+        <p class="text-white font-medium text-lg tracking-wide animate-pulse">Generando vista previa de {{
+            template?.name || 'Formato' }}...</p>
+    </div>
+
+    <!-- Canvas oculto para procesar la imagen -->
+    <div style="display: none;">
+        <canvas #previewCanvas></canvas>
+    </div>
+
+    <!-- Galería de Imágenes (Se activa al terminar de generar) -->
+    <app-gallery-modal *ngIf="!isGenerating && galleryItems.length > 0 && !showAlert" [isOpen]="true"
+        [items]="galleryItems" [showThumbnails]="false" (modalClose)="onClose()">
+    </app-gallery-modal>
+
+    <!-- Alerta cuando no hay un diseño configurado -->
+    <app-alert-modal *ngIf="showAlert" [isOpen]="true" [config]="alertConfig" (modalClose)="onClose()"
+        (actionClick)="onClose()">
+    </app-alert-modal>
+</div>

@@ -3,6 +3,15 @@ module.exports = {
   content: [
     "./src/**/*.{html,ts}",
   ],
+  safelist: [
+    'bg-primary-700',
+    'bg-secondary-500',
+    'rounded-full',
+    'rounded-xl',
+    'text-white',
+    'hover:text-primary-100',
+    'text-primary-200',
+  ],
   theme: {
     extend: {
       colors: {
@@ -15,8 +24,8 @@ module.exports = {
           400: '#f2858f',
           500: '#e85a6b',
           600: '#d43041',
-          700: '#8B1538', // Guinda principal institucional
-          800: '#6B1028', // Guinda oscuro
+          700: '#9D2449', // Guinda principal institucional
+          800: '#7A1C38', // Guinda oscuro
           900: '#4d0c1d',
         },
         secondary: {
@@ -45,9 +54,9 @@ module.exports = {
         },
         // Colores específicos institucional
         institucional: {
-          guinda: '#8B1538',
-          'guinda-dark': '#6B1028',
-          'guinda-light': '#A61E42',
+          guinda: '#9D2449',
+          'guinda-dark': '#7A1C38',
+          'guinda-light': '#B3305A',
           rosa: '#D63384',
           'rosa-dark': '#B02A57',
           'rosa-light': '#E85AA0',
@@ -64,7 +73,7 @@ module.exports = {
           rojo: '#ff4c64',
           amarillo: '#fec152',
           celeste: '#0797d4',
-          'vino-gob': '#9d2648',
+          'vino-gob': '#9D2449',
           turquesa: '#00afa5',
           blanco: '#ffffff',
         },
@@ -81,15 +90,15 @@ module.exports = {
         mono: ['Montserrat'],
       },
       boxShadow: {
-        'institucional': '0 4px 6px -1px rgba(139, 21, 56, 0.1), 0 2px 4px -1px rgba(139, 21, 56, 0.06)',
-        'institucional-lg': '0 10px 15px -3px rgba(139, 21, 56, 0.1), 0 4px 6px -2px rgba(139, 21, 56, 0.05)',
+        'institucional': '0 4px 6px -1px rgba(157, 36, 73, 0.1), 0 2px 4px -1px rgba(157, 36, 73, 0.06)',
+        'institucional-lg': '0 10px 15px -3px rgba(157, 36, 73, 0.1), 0 4px 6px -2px rgba(157, 36, 73, 0.05)',
         'rosa': '0 4px 6px -1px rgba(214, 51, 132, 0.1), 0 2px 4px -1px rgba(214, 51, 132, 0.06)',
       },
       backgroundImage: {
-        'gradient-institucional': 'linear-gradient(135deg, #8B1538 0%, #6B1028 100%)',
+        'gradient-institucional': 'linear-gradient(135deg, #9D2449 0%, #7A1C38 100%)',
         'gradient-institucional-accent': 'linear-gradient(135deg, #D63384 0%, #B02A57 100%)',
-        'gradient-header': 'linear-gradient(90deg, #8B1538 0%, #D63384 50%, #722F37 100%)',
-        'gradient-institucional-triple': 'linear-gradient(135deg, #8B1538 0%, #D63384 50%, #722F37 100%)',
+        'gradient-header': 'linear-gradient(90deg, #9D2449 0%, #D63384 50%, #722F37 100%)',
+        'gradient-institucional-triple': 'linear-gradient(135deg, #9D2449 0%, #D63384 50%, #722F37 100%)',
       }
     },
   },

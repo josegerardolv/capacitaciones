@@ -1,6 +1,9 @@
 import { Component, EventEmitter, Input, Output, OnChanges, SimpleChanges, ViewChild, TemplateRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { forkJoin } from 'rxjs';
+import { FormGroup, FormBuilder, FormControl, ReactiveFormsModule } from '@angular/forms'; // FormControl agregado
 import { Group } from '../../../../core/models/group.model';
+import { Person } from '../../../../core/models/person.model';
 import { InstitutionalButtonComponent } from '../../../../shared/components/buttons/institutional-button.component';
 import {
     InstitutionalTableComponent,
@@ -8,32 +11,48 @@ import {
     TableConfig,
     SelectionEvent
 } from '../../../../shared/components/institutional-table/institutional-table.component';
+import { TablePaginationComponent, PaginationConfig, PageChangeEvent } from '../../../../shared/components/table-pagination/table-pagination.component';
 import { ConfirmationModalComponent, ConfirmationConfig } from '../../../../shared/components/modals/confirmation-modal.component';
-
-interface Request {
-    id: number;
-    name: string;
-    curp: string;
-    sex: 'Hombre' | 'Mujer';
-    address: string;
-    nuc: string;
-}
+import { ModalComponent } from '../../../../shared/components/modals/modal.component';
+import { GroupsService } from '../../services/groups.service';
+import { TableFiltersComponent } from '@/app/shared/components/table-filters/table-filters.component';
+import { MailService } from '../../services/mail.service';
+import { NotificationService } from '../../../../core/services/notification.service';
+import { InstitutionalBadgeComponent } from '../../../../shared/components/badge/institutional-badge.component';
 
 @Component({
     selector: 'app-group-requests',
     standalone: true,
-    imports: [CommonModule, InstitutionalButtonComponent, InstitutionalTableComponent, ConfirmationModalComponent],
+    imports: [
+        CommonModule,
+        InstitutionalButtonComponent,
+        InstitutionalTableComponent,
+        ConfirmationModalComponent,
+        TablePaginationComponent,
+        ReactiveFormsModule,
+        ModalComponent,
+        InstitutionalBadgeComponent,
+        TableFiltersComponent],
     templateUrl: './group-requests.component.html'
 })
 export class GroupRequestsComponent implements OnChanges {
     @Input() isOpen = false;
     @Input() group: Group | null = null;
     @Output() close = new EventEmitter<void>();
+    @Output() requestsUpdated = new EventEmitter<void>();
 
     @ViewChild('actionsTemplate', { static: true }) actionsTemplate!: TemplateRef<any>;
 
-    requests: Request[] = [];
-    selectedRequests: Request[] = [];
+    allRequests: Person[] = [];
+    filteredRequests: Person[] = [];
+    requests: Person[] = [];
+    selectedRequests: Person[] = [];
+    acceptedCount: number = 0;
+    pendingRequestsCount: number = 0;
+    rejectCount: number = 0;
+    availablePlaces: number = 0;
+
+
 
     tableConfig: TableConfig = {
         loading: false,
@@ -45,6 +64,15 @@ export class GroupRequestsComponent implements OnChanges {
     };
 
     tableColumns: TableColumn[] = [];
+    paginationConfig: PaginationConfig = {
+        pageSize: 10,
+        totalItems: 0,
+        currentPage: 1,
+        pageSizeOptions: [10, 20, 50],
+        showInfo: true
+    };
+
+    dummyFormGroup: FormGroup; // Grupo de formulario ficticio declarado
 
     // --- MODALES GENÉRICOS ---
     isConfirmOpen = false;
@@ -57,45 +85,94 @@ export class GroupRequestsComponent implements OnChanges {
     };
     private pendingConfirmAction: (() => void) | null = null;
 
-    ngOnInit() {
-        // Inicializamos las columnas. Aunque actionsTemplate es static: true,
-        // es buena práctica asegurarnos que el view esté listo.
-        this.initColumns();
-    }
-
-    // Carga de datos iniciales
-    private loadRequests(): Request[] {
-        return [
-            { id: 1, name: 'Juan Perez', curp: 'EQPH100809MSPTPV34', sex: 'Hombre', address: 'Oaxaca, Centro', nuc: '01-191' },
-            { id: 2, name: 'Sergio Gonzalez', curp: 'VXCE910803MCCRCK34', sex: 'Hombre', address: 'Reforma, Centro', nuc: '25-545' },
-            { id: 3, name: 'Sofia Torres', curp: 'DVQU511101MYNHMF37', sex: 'Mujer', address: 'Oaxaca, Lomas del Bosque', nuc: '61-464' },
-        ];
+    constructor(
+        private fb: FormBuilder,
+        private groupsService: GroupsService,
+        private mailService: MailService,
+        private notificationService: NotificationService
+    ) {
+        this.dummyFormGroup = this.fb.group({});
     }
 
     ngOnChanges(changes: SimpleChanges) {
-        if (changes['isOpen'] && this.isOpen) {
-            this.requests = this.loadRequests();
-            this.selectedRequests = [];
-            // Re-inicializamos columnas para asegurar que el template se vincule correctamente
-            this.initColumns();
+        if (changes['isOpen'] && this.isOpen && this.group) {
+            this.loadGroupRequests();
         }
+    }
+
+    loadGroupRequests() {
+        this.tableConfig.loading = true;
+        this.allRequests = [];
+        this.filteredRequests = [];
+        this.requests = [];
+        this.selectedRequests = [];
+        this.acceptedCount = 0;
+
+        if (!this.group) return;
+
+        // NOTA: Se ha eliminado la consulta doble ineficiente (N+1). 
+        // Ahora el conteo de ocupación se lee directamente de la propiedad `acceptedCount` del grupo,
+        // la cual debe ser proporcionada por el backend en el endpoint `/group/search` o `/group/{id}`.
+        this.acceptedCount = this.group.acceptedCount || 0;
+        this.pendingRequestsCount = this.group.pendingRequestsCount || 0;
+        this.rejectCount = this.group.rejectCount || 0;
+        this.availablePlaces = this.group.availablePlaces || (this.group.limitStudents - this.acceptedCount);
+
+        this.groupsService.getRequestsByGroupId(this.group.id).subscribe({
+            next: (pendingData) => {
+                // Solicitudes pendientes o rechazadas
+                this.allRequests = pendingData.filter((r: any) => !r.dateReject && r.isAcepted !== true);
+
+                this.selectedRequests = [];
+                this.initColumns(); // Re-vinculamos templates
+                this.filterData('');
+                this.tableConfig.loading = false;
+            },
+            error: (err) => {
+                console.error('Error loading group requests', err);
+                this.tableConfig.loading = false;
+            }
+        });
+    }
+
+    get isGroupFull(): boolean {
+        if (!this.group || !this.group.limitStudents) return false;
+        return this.acceptedCount >= this.group.limitStudents;
     }
 
     initColumns() {
-        this.tableColumns = [
-            { key: 'name', label: 'Nombre', sortable: true },
+        // Columnas base estrictas solicitadas por reglas de negocio
+        const columns: TableColumn[] = [
+            { key: 'name', label: 'Nombre Completo', sortable: true },
             { key: 'curp', label: 'CURP', sortable: true },
-            { key: 'sex', label: 'Sexo', sortable: true },
-            { key: 'address', label: 'Dirección', sortable: true },
-            { key: 'nuc', label: 'NUC', sortable: true },
-            { key: 'actions', label: 'Solicitud', align: 'center', template: this.actionsTemplate }
+            { key: 'phone', label: 'Teléfono', sortable: true }
         ];
-    }
 
-    onOverlayClick(event: MouseEvent) {
-        if ((event.target as HTMLElement).classList.contains('institutional-modal-overlay')) {
-            this.closeModal();
+        // Columnas dinámicas limitadas a Licencia y NUC
+        if (this.group?.course?.courseType?.courseConfigField) {
+            this.group.course.courseType.courseConfigField.forEach((field: any) => {
+                const configField = field.requirementFieldPerson;
+                if (configField) {
+                    const label = configField.fieldName;
+                    const key = label.toLowerCase();
+
+                    if (key.includes('licencia')) {
+                        if (!columns.find(c => c.key === 'license')) {
+                            columns.push({ key: 'license', label: label, sortable: true });
+                        }
+                    } else if (key.includes('nuc')) {
+                        if (!columns.find(c => c.key === 'nuc')) {
+                            columns.push({ key: 'nuc', label: label, sortable: true });
+                        }
+                    }
+                }
+            });
         }
+
+        // Columna de acciones siempre al final
+        columns.push({ key: 'actions', label: 'Solicitud', align: 'center', template: this.actionsTemplate });
+
+        this.tableColumns = columns;
     }
 
     closeModal() {
@@ -104,6 +181,11 @@ export class GroupRequestsComponent implements OnChanges {
 
     onSelectionChange(event: SelectionEvent) {
         this.selectedRequests = event.selectedItems;
+    }
+    onPageChange(event: PageChangeEvent) {
+        this.paginationConfig.currentPage = event.page;
+        this.paginationConfig.pageSize = event.pageSize;
+        this.updatePaginatedData();
     }
 
     // --- HELPERS PARA MODALES ---
@@ -121,7 +203,12 @@ export class GroupRequestsComponent implements OnChanges {
         this.pendingConfirmAction = null;
     }
 
-    acceptRequest(id: number) {
+    acceptRequest(personId: number, enrollmentId?: number, email?: string) {
+        if (!enrollmentId) {
+            console.error('No enrollment ID provided');
+            return;
+        }
+
         this.openConfirm({
             title: 'Aceptar Solicitud',
             message: '¿Estás seguro de aceptar esta solicitud?',
@@ -129,12 +216,29 @@ export class GroupRequestsComponent implements OnChanges {
             confirmText: 'Aceptar',
             cancelText: 'Cancelar'
         }, () => {
-            this.requests = this.requests.filter(r => r.id !== id);
-            this.clearSelection();
+            this.groupsService.acceptEnrollment(enrollmentId).subscribe({
+                next: () => {
+                    this.allRequests = this.allRequests.filter(r => r.enrollmentId !== enrollmentId);
+                    this.acceptedCount++; // Incrementar el contador local
+                    this.filterData('');
+                    this.clearSelection();
+                    this.requestsUpdated.emit(); // <---- EMITIR CAMBIO
+
+                    if (email) {
+                        this.mailService.sendAcceptanceEmail(email, this.group).subscribe();
+                    }
+                },
+                error: (err) => console.error('Error accepting enrollment', err)
+            });
         });
     }
 
-    rejectRequest(id: number) {
+    rejectRequest(personId: number, enrollmentId?: number, email?: string) {
+        if (!enrollmentId) {
+            console.error('No enrollment ID provided');
+            return;
+        }
+
         this.openConfirm({
             title: 'Rechazar Solicitud',
             message: '¿Estás seguro de rechazar esta solicitud?',
@@ -142,8 +246,19 @@ export class GroupRequestsComponent implements OnChanges {
             confirmText: 'Rechazar',
             cancelText: 'Cancelar'
         }, () => {
-            this.requests = this.requests.filter(r => r.id !== id);
-            this.clearSelection();
+            this.groupsService.rejectEnrollment(enrollmentId).subscribe({
+                next: () => {
+                    this.allRequests = this.allRequests.filter(r => r.enrollmentId !== enrollmentId);
+                    this.filterData('');
+                    this.clearSelection();
+                    this.requestsUpdated.emit(); // <---- EMITIR CAMBIO
+
+                    if (email) {
+                        this.mailService.sendRejectionEmail(email, this.group).subscribe();
+                    }
+                },
+                error: (err) => console.error('Error rejecting enrollment', err)
+            });
         });
     }
 
@@ -158,16 +273,72 @@ export class GroupRequestsComponent implements OnChanges {
             confirmText: isAccept ? 'Aceptar Todas' : 'Rechazar Todas',
             cancelText: 'Cancelar'
         }, () => {
-            const selectedIds = this.selectedRequests.map(r => r.id);
-            this.requests = this.requests.filter(r => !selectedIds.includes(r.id));
-            this.clearSelection();
+            // Filtrar solo los que tienen enrollmentId válido
+            const requestsToProcess = this.selectedRequests.filter(r => r.enrollmentId);
+            if (requestsToProcess.length === 0) return;
+
+            // Crear array de observables
+            const observables = requestsToProcess.map(r =>
+                isAccept
+                    ? this.groupsService.acceptEnrollment(r.enrollmentId!)
+                    : this.groupsService.rejectEnrollment(r.enrollmentId!)
+            );
+
+            forkJoin(observables).subscribe({
+                next: () => {
+                    // Remover todos los procesados de la lista local usando enrollmentId
+                    const processedEnrollmentIds = requestsToProcess.map(r => r.enrollmentId);
+
+                    // Novedad: Enviar correos a los procesados
+                    requestsToProcess.forEach(r => {
+                        if (r.email) {
+                            if (isAccept) {
+                                this.mailService.sendAcceptanceEmail(r.email, this.group).subscribe();
+                            } else {
+                                this.mailService.sendRejectionEmail(r.email, this.group).subscribe();
+                            }
+                        }
+                    });
+
+                    this.allRequests = this.allRequests.filter(r => !processedEnrollmentIds.includes(r.enrollmentId));
+                    this.filterData('');
+                    this.clearSelection();
+                    this.requestsUpdated.emit(); // <---- EMITIR CAMBIO
+                },
+                error: (err) => console.error('Error processing bulk requests', err)
+            });
         });
     }
 
     private clearSelection() {
         this.selectedRequests = [];
-        // Forzamos actualización de referencia para que la tabla detecte el cambio
-        this.requests = [...this.requests];
+        this.filterData('');
+    }
+
+    // onPageChange eliminado (duplicado)
+
+    filterData(query: string) {
+        const term = query.toLowerCase().trim();
+        if (!term) {
+            this.filteredRequests = [...this.allRequests];
+        } else {
+            this.filteredRequests = this.allRequests.filter(r =>
+                r.name.toLowerCase().includes(term) ||
+                (r.curp || '').toLowerCase().includes(term)
+            );
+        }
+        this.paginationConfig.totalItems = this.filteredRequests.length;
+        this.updatePaginatedData();
+    }
+
+    updatePaginatedData() {
+        const start = (this.paginationConfig.currentPage - 1) * this.paginationConfig.pageSize;
+        const end = start + this.paginationConfig.pageSize;
+        this.requests = this.filteredRequests.slice(start, end);
+    }
+
+    get modalTitle(): string {
+        return this.group ? `Solicitudes para el Grupo: ${this.group.name}` : 'Solicitudes';
     }
 
     get showBulkActions(): boolean {

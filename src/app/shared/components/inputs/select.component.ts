@@ -51,23 +51,40 @@ type ValidatorSpec = {
             <span *ngIf="!iconLeftType || iconLeftType !== 'universal'">{{ iconLeft }}</span>
           </span>
 
-          <!-- Input principal simulado -->
-          <div
+          <!-- Input principal (Input real si es searchable, Div si no) -->
+          <input
+            *ngIf="searchable; else divInput"
             [id]="controlId"
-            class="peer cursor-pointer"
+            type="text"
+            class="peer"
             [class]="inputClass"
             [ngClass]="cachedStateClasses"
-            [attr.aria-expanded]="isOpen"
-            [attr.aria-haspopup]="true"
-            [attr.role]="'combobox'"
-            (click)="toggleDropdown(); $event.stopPropagation()"
-            (keydown)="onKeyDown($event)">
-            
-            <!-- Texto mostrado -->
-            <span class="block truncate" [class.text-gray-400]="!selectedOption">
-              {{ selectedOption ? selectedOption.label : placeholder }}
-            </span>
-          </div>
+            [placeholder]="placeholder"
+            [value]="isOpen ? searchTerm : (selectedOption ? selectedOption.label : '')"
+            (input)="onSearch($any($event.target).value)"
+            (focus)="openDropdown()"
+            (click)="isOpen = true; $event.stopPropagation()"
+            (keydown)="onKeyDown($event)"
+            [disabled]="control?.disabled">
+
+          <ng-template #divInput>
+            <div
+              [id]="controlId"
+              class="peer cursor-pointer"
+              [class]="inputClass"
+              [ngClass]="cachedStateClasses"
+              [attr.aria-expanded]="isOpen"
+              [attr.aria-haspopup]="true"
+              [attr.role]="'combobox'"
+              (click)="toggleDropdown(); $event.stopPropagation()"
+              (keydown)="onKeyDown($event)">
+              
+              <!-- Texto mostrado -->
+              <span class="block truncate" [class.text-gray-400]="!selectedOption">
+                {{ selectedOption ? selectedOption.label : placeholder }}
+              </span>
+            </div>
+          </ng-template>
 
           <!-- Floating label simplificado -->
           <label
@@ -98,7 +115,7 @@ type ValidatorSpec = {
         <!-- Dropdown panel -->
         <div 
           *ngIf="isOpen"
-          class="absolute z-[9999] w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto"
+          class="absolute z-[9999] w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-80 overflow-auto"
           [style.width]="getComputedWidth() || '100%'"
           role="listbox"
           [attr.aria-label]="'Opciones disponibles'"
@@ -106,22 +123,22 @@ type ValidatorSpec = {
           (mousedown)="$event.stopPropagation()">
           
           <!-- No options message -->
-          <div *ngIf="options.length === 0" class="px-4 py-3 text-sm text-gray-500 text-center">
-            No hay opciones disponibles
+          <div *ngIf="filteredOptions.length === 0" class="px-4 py-3 text-sm text-gray-500 text-center">
+            {{ searchTerm ? 'No se encontraron resultados' : 'No hay opciones disponibles' }}
           </div>
 
           <!-- Options list -->
-          <ng-container *ngIf="options.length > 0">
+          <ng-container *ngIf="filteredOptions.length > 0">
             <!-- Opciones agrupadas -->
             <ng-container *ngIf="hasGroups(); else simpleOptionsList">
-              <div *ngFor="let group of getGroups()">
+              <div *ngFor="let group of getFilteredGroups()">
                 <!-- Group header -->
                 <div class="px-4 py-2 text-xs font-semibold text-gray-500 bg-gray-50 border-b border-gray-200">
                   {{ group }}
                 </div>
                 <!-- Group options -->
                 <div 
-                  *ngFor="let option of getOptionsByGroup(group); let i = index"
+                  *ngFor="let option of getFilteredOptionsByGroup(group); let i = index"
                   class="option-item"
                   [class.highlighted]="highlightedIndex === getGlobalIndex(option)"
                   [class.selected]="isSelected(option)"
@@ -148,7 +165,7 @@ type ValidatorSpec = {
             <!-- Opciones simples -->
             <ng-template #simpleOptionsList>
               <div 
-                *ngFor="let option of options; trackBy: trackByOption; let i = index"
+                *ngFor="let option of filteredOptions; trackBy: trackByOption; let i = index"
                 class="option-item"
                 [class.highlighted]="highlightedIndex === i"
                 [class.selected]="isSelected(option)"
@@ -201,6 +218,7 @@ type ValidatorSpec = {
       padding: 0 4px;
       font-family: 'Montserrat', sans-serif;
       font-weight: 500;
+      margin-left: 1rem;
     }
 
     .label--shifted {
@@ -231,9 +249,11 @@ type ValidatorSpec = {
     }
 
     .peer:disabled {
-      background-color: var(--gray-50);
+      background-color: transparent;
       color: var(--gray-400);
       cursor: not-allowed;
+      opacity: 0.5;
+      border-color: var(--gray-200);
     }
 
     /* Dropdown styles */
@@ -313,7 +333,7 @@ export class SelectComponent implements OnInit, AfterViewInit, OnChanges {
   @Input() height?: string;
   @Input() extraClasses = '';
   @Input() helperText = '';
-  
+
   // Variantes visuales y presentaciones
   @Input() variant: 'filled' | 'outlined' | 'borderless' | 'underlined' | 'rounded' | 'square' = 'outlined';
   @Input() size: 'xs' | 'sm' | 'md' | 'lg' | 'xl' = 'md';
@@ -322,7 +342,11 @@ export class SelectComponent implements OnInit, AfterViewInit, OnChanges {
   @Input() iconRight?: string;
   @Input() iconLeftType?: 'bootstrap' | 'material' | 'universal';
   @Input() iconRightType?: 'bootstrap' | 'material' | 'universal';
-  
+
+  // Search properties
+  @Input() searchable = false;
+  @Input() searchPlaceholder = 'Buscar...';
+
   // NUEVAS PROPIEDADES DE PERSONALIZACIÓN
   @Input() customStyle?: any;
   @Input() theme?: string;
@@ -331,6 +355,7 @@ export class SelectComponent implements OnInit, AfterViewInit, OnChanges {
 
   // Output events
   @Output() change = new EventEmitter<any>();
+  @Output() search = new EventEmitter<string>();
 
   // Estado interno
   controlId = '';
@@ -339,6 +364,15 @@ export class SelectComponent implements OnInit, AfterViewInit, OnChanges {
   selectedOption: SelectOption | null = null;
   highlightedIndex = -1;
   isInitializing = true;
+  searchTerm = '';
+
+  get filteredOptions(): SelectOption[] {
+    if (!this.searchTerm) return this.options;
+    const term = this.searchTerm.toLowerCase();
+    return this.options.filter(option =>
+      option.label.toLowerCase().includes(term)
+    );
+  }
 
   // Cache para optimización de rendimiento
   private _cachedStateClasses: any = {};
@@ -360,7 +394,7 @@ export class SelectComponent implements OnInit, AfterViewInit, OnChanges {
     @Optional() private controlContainer: ControlContainer,
     private elementRef: ElementRef,
     private cdr: ChangeDetectorRef
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.controlId = this.controlName || `select-${Math.random().toString(36).slice(2, 9)}`;
@@ -394,12 +428,12 @@ export class SelectComponent implements OnInit, AfterViewInit, OnChanges {
     if (changes['options'] && this.control) {
       this.updateSelectedOption(this.control.value);
     }
-    
+
     if (changes['validationMap'] && this.control) {
       this.setupValidators();
       this._isClassesDirty = true; // Invalidar cache cuando cambian validaciones
     }
-    
+
     // Forzar detección de cambios
     this.cdr.markForCheck();
   }
@@ -408,9 +442,10 @@ export class SelectComponent implements OnInit, AfterViewInit, OnChanges {
     // Setup validators
     this.setupValidators();
 
-    // Watch for value changes
-    if (this.control!.value) {
-      this.updateSelectedOption(this.control!.value);
+    // Watch for value changes - Siempre intentar actualizar la opción seleccionada
+    const currentValue = this.control!.value;
+    if (currentValue !== null && currentValue !== undefined) {
+      this.updateSelectedOption(currentValue);
     }
 
     this.control!.valueChanges.subscribe(value => {
@@ -418,7 +453,7 @@ export class SelectComponent implements OnInit, AfterViewInit, OnChanges {
       // Forzar detección cuando cambia el valor
       this.cdr.markForCheck();
     });
-    
+
     // Forzar detección inicial
     this.cdr.detectChanges();
   }
@@ -429,9 +464,9 @@ export class SelectComponent implements OnInit, AfterViewInit, OnChanges {
     const spec = this.validationMap?.[this.controlName];
     if (spec) {
       if (!spec.messages) spec.messages = {};
-      
+
       const fns: ValidatorFn[] = [];
-      
+
       if (spec.required || this.required) {
         fns.push(Validators.required);
       }
@@ -473,8 +508,9 @@ export class SelectComponent implements OnInit, AfterViewInit, OnChanges {
   openDropdown(): void {
     this.isOpen = true;
     this._isClassesDirty = true;
-    this.highlightedIndex = this.selectedOption ? 
-      this.options.findIndex(option => option.value === this.selectedOption!.value) : -1;
+    this.searchTerm = ''; // Reset search when opening
+    this.highlightedIndex = this.selectedOption ?
+      this.filteredOptions.findIndex(option => option.value === this.selectedOption!.value) : -1;
     this.cdr.markForCheck();
   }
 
@@ -483,7 +519,7 @@ export class SelectComponent implements OnInit, AfterViewInit, OnChanges {
       this.isOpen = false;
       this._isClassesDirty = true;
       this.highlightedIndex = -1;
-      
+
       // Forzar la detección de cambios si es necesario
       if (this.cdr) {
         this.cdr.detectChanges();
@@ -503,21 +539,29 @@ export class SelectComponent implements OnInit, AfterViewInit, OnChanges {
     if (option.disabled) return;
 
     this.selectedOption = option;
-    
+
     if (this.control) {
       this.control.setValue(option.value);
       this.control.markAsDirty();
       this.control.markAsTouched();
     }
-    
+
     this.change.emit(option.value);
-    
+
     // Cerrar el dropdown de forma más robusta
     setTimeout(() => {
       this.closeDropdown();
+      this.searchTerm = '';
       // Forzar detección después de selección
       this.cdr.detectChanges();
     }, 0);
+  }
+
+  onSearch(term: string): void {
+    this.searchTerm = term;
+    this.highlightedIndex = -1;
+    this.search.emit(term);
+    this.cdr.markForCheck();
   }
 
   onKeyDown(event: KeyboardEvent): void {
@@ -555,7 +599,7 @@ export class SelectComponent implements OnInit, AfterViewInit, OnChanges {
     if (enabledOptions.length === 0) return;
 
     let newIndex = this.highlightedIndex + direction;
-    
+
     if (newIndex < 0) {
       newIndex = this.options.length - 1;
     } else if (newIndex >= this.options.length) {
@@ -577,11 +621,11 @@ export class SelectComponent implements OnInit, AfterViewInit, OnChanges {
     // Usar un timeout para asegurar que se ejecute después de otros eventos
     setTimeout(() => {
       const target = event.target as HTMLElement;
-      
+
       // Verificar si el clic fue dentro del componente o del dropdown
-      if (target && 
-          this.isOpen && 
-          !this.elementRef.nativeElement.contains(target)) {
+      if (target &&
+        this.isOpen &&
+        !this.elementRef.nativeElement.contains(target)) {
         this.closeDropdown();
       }
     }, 0);
@@ -590,11 +634,11 @@ export class SelectComponent implements OnInit, AfterViewInit, OnChanges {
   @HostListener('document:mousedown', ['$event'])
   onDocumentMouseDown(event: Event): void {
     const target = event.target as HTMLElement;
-    
+
     // Cerrar inmediatamente en mousedown si es fuera del componente
-    if (target && 
-        this.isOpen && 
-        !this.elementRef.nativeElement.contains(target)) {
+    if (target &&
+      this.isOpen &&
+      !this.elementRef.nativeElement.contains(target)) {
       this.closeDropdown();
     }
   }
@@ -713,6 +757,18 @@ export class SelectComponent implements OnInit, AfterViewInit, OnChanges {
 
   getOptionsByGroup(group: string): SelectOption[] {
     return this.options.filter(option => option.group === group);
+  }
+
+  getFilteredGroups(): string[] {
+    const groups = this.filteredOptions
+      .filter(option => option.group)
+      .map(option => option.group!)
+      .filter((group, index, array) => array.indexOf(group) === index);
+    return groups;
+  }
+
+  getFilteredOptionsByGroup(group: string): SelectOption[] {
+    return this.filteredOptions.filter(option => option.group === group);
   }
 
   // Track by function for performance

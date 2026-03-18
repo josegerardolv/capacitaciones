@@ -17,10 +17,10 @@ import { UniversalIconComponent } from '../universal-icon/universal-icon.compone
 */
 
 @Component({
-    selector: 'app-header',
-    imports: [CommonModule, RouterModule, UniversalIconComponent],
-    template: `
-  <header class="bg-white shadow-md border-b border-gray-300 select-none">
+  selector: 'app-header',
+  imports: [CommonModule, RouterModule, UniversalIconComponent],
+  template: `
+  <header class="bg-white shadow-md border-b border-gray-300 select-none sticky top-0 md:relative z-[1000]">
       <div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center min-h-[85px]">
           
@@ -65,6 +65,27 @@ import { UniversalIconComponent } from '../universal-icon/universal-icon.compone
           <div class="flex items-center space-x-4">
             
 
+            <!-- Notificaciones -->
+            <button
+              (click)="onToggleNotifications()"
+              class="relative p-2 text-gray-400 hover:text-institucional-primario focus:outline-none focus:text-institucional-primario focus:bg-institucional-primario focus:bg-opacity-10 rounded-full transition-colors duration-200"
+              aria-label="Ver notificaciones"
+              title="Notificaciones">
+              <app-universal-icon 
+                name="bell" 
+                [type]="'bootstrap'"
+                [size]="20" 
+                customClass="h-6 w-6" 
+                aria-hidden="true">
+              </app-universal-icon>
+              
+              <!-- Badge de notificaciones -->
+              <span *ngIf="notificationCount > 0" 
+                class="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full ring-2 ring-white bg-red-500 text-[10px] font-bold text-white shadow-sm animate-pulse">
+                {{ notificationCount > 9 ? '9+' : notificationCount }}
+              </span>
+            </button>
+
             <!-- Menú de usuario -->
             <div class="relative" #userMenuRef>
               <button
@@ -78,8 +99,8 @@ import { UniversalIconComponent } from '../universal-icon/universal-icon.compone
                 aria-label="Abrir menú de usuario"
                 title="Abrir menú de usuario"
                 class="group user-menu-toggle flex items-center text-sm text-gray-700 hover:text-institucional-primario focus:outline-none focus:text-institucional-primario rounded-xl px-2 py-2 hover:bg-gradient-to-r hover:from-institucional-primario/5 hover:to-institucional-secundario/5 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-institucional-primario/50 hover:shadow-lg border border-gray-100 hover:border-institucional-primario/20 bg-gray-50/50 hover:bg-white transform hover:scale-[1.02] min-w-0 w-auto"
-                [style.width]="getMinButtonWidth() + 'px'"
-                [style.max-width]="'600px'">
+                [style.width]="isMobile ? 'auto' : getMinButtonWidth() + 'px'"
+                [style.max-width]="'min(600px, calc(100vw - 2rem))'">
                 
                 <!-- Avatar mejorado -->
                 <div class="relative w-8 h-8 avatar-shimmer rounded-full flex items-center justify-center shadow-institucional-lg ring-2 ring-white group-hover:ring-institucional-primario/20 transition-all duration-300 flex-shrink-0">
@@ -134,10 +155,10 @@ import { UniversalIconComponent } from '../universal-icon/universal-icon.compone
                 aria-labelledby="user-menu-button"
                 tabindex="-1"
                 (keydown)="onMenuKeydown($event)"
-                class="absolute right-0 mt-2 glass-effect rounded-xl border border-gray-200 shadow-xl ring-1 ring-gray-100 z-50 overflow-hidden transform origin-top-right focus:outline-none dropdown-appear bg-white"
+                class="absolute right-0 mt-2 glass-effect rounded-xl border border-gray-200 shadow-xl ring-1 ring-gray-100 z-[1000] overflow-hidden transform origin-top-right focus:outline-none dropdown-appear bg-white"
                 [style.width]="getDropdownWidth() + 'px'"
-                [style.min-width]="'280px'"
-                [style.max-width]="'400px'">
+                [style.min-width]="'min(280px, calc(100vw - 2rem))'"
+                [style.max-width]="'min(400px, calc(100vw - 2rem))'">
                 
                 <!-- Header del usuario con gradiente -->
                 <div class="bg-gradient-institucional-header p-4 text-white">
@@ -178,6 +199,7 @@ import { UniversalIconComponent } from '../universal-icon/universal-icon.compone
                 <div class="">
                   <!-- Mis Tickets -->
                   <a
+                    *ngIf="false"
                     routerLink="/tickets"
                     (click)="closeUserMenu()"
                     role="menuitem"
@@ -200,6 +222,7 @@ import { UniversalIconComponent } from '../universal-icon/universal-icon.compone
 
                   <!-- Mi Perfil -->
                   <a
+                  *ngIf="false"
                     routerLink="/profile"
                     (click)="closeUserMenu()"
                     role="menuitem"
@@ -253,8 +276,8 @@ import { UniversalIconComponent } from '../universal-icon/universal-icon.compone
       </div>
     </header>
   `,
-    styles: [
-        `
+  styles: [
+    `
     /* Animaciones del dropdown mejoradas */
     .dropdown-appear {
       animation: dropdownIn 300ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
@@ -415,7 +438,7 @@ import { UniversalIconComponent } from '../universal-icon/universal-icon.compone
       vertical-align: middle;
     }
     `
-    ]
+  ]
 })
 export class HeaderComponent {
   @Input() sidebarOpen = false;
@@ -434,7 +457,7 @@ export class HeaderComponent {
   @ViewChild('userMenu', { static: false }) userMenuElement!: ElementRef;
   @ViewChild('userToggleButton', { static: false }) userToggleButton!: ElementRef;
 
-  constructor(private authService: AuthService) {}
+  constructor(private authService: AuthService) { }
 
   /**
    * Emite evento para toggle del sidebar
@@ -458,8 +481,8 @@ export class HeaderComponent {
       return this.sidebarOpen ? 'x-lg' : 'list';
     } else {
 
-  // En desktop el botón principal muestra/oculta el sidebar
-    return this.sidebarOpen ? 'layout-sidebar-inset' : 'layout-sidebar';
+      // En desktop el botón principal muestra/oculta el sidebar
+      return this.sidebarOpen ? 'layout-sidebar-inset' : 'layout-sidebar';
     }
   }
 
@@ -470,8 +493,8 @@ export class HeaderComponent {
     if (this.isMobile) {
       return this.sidebarOpen ? 'Cerrar menú' : 'Abrir menú';
     } else {
-  // En desktop: botón principal show/hide
-  return this.sidebarOpen ? 'Ocultar sidebar' : 'Mostrar sidebar';
+      // En desktop: botón principal show/hide
+      return this.sidebarOpen ? 'Ocultar sidebar' : 'Mostrar sidebar';
     }
   }
 
@@ -510,7 +533,7 @@ export class HeaderComponent {
     // Tomar el mayor de los textos mostrados (nombre y rol)
     const contentWidth = Math.max(emailWidth, nameWidth);
     const fixedElementsWidth = 90; // Avatar (32px) + icono (14px) + padding (16px) + espacios y margins (28px)
-    
+
     // Permitir mayor ancho para nombres largos
     return Math.min(Math.max(contentWidth + fixedElementsWidth, 180), 600);
   }
@@ -545,7 +568,7 @@ export class HeaderComponent {
     // Tomar el mayor de todos los textos
     const contentWidth = Math.max(nameWidth, emailWidth, roleWidth, menuItemsWidth);
     const fixedElementsWidth = 130; // Avatar (40px) + iconos containers (48px) + padding total (32px) + margins (10px)
-    
+
     // Asegurar que dropdown sea al menos tan ancho como el botón calculado
     const buttonWidth = this.getMinButtonWidth();
     const computed = Math.min(Math.max(contentWidth + fixedElementsWidth, 280), 800);
@@ -639,32 +662,32 @@ export class HeaderComponent {
     if (!person) {
       return 'U';
     }
-    
+
     // Usar first_name y last_name si están disponibles, o nombre como fallback
     const firstName = person.first_name || '';
-    const lastName = person.last_name || '';
+    const lastName = person.paternal_lastName || '';
 
     if (firstName && lastName) {
       return (firstName[0] + lastName[0]).toUpperCase();
     }
-    
+
     // Fallback al campo nombre si existe
     if (this.currentUser.full_name) {
       const nameParts = this.currentUser.full_name.trim().split(' ').filter((part: string) => part.length > 0);
       if (nameParts.length === 0) {
         return '';
       }
-      
+
       if (nameParts.length === 1) {
         const name = nameParts[0];
         return name.length >= 2 ? name.substring(0, 2).toUpperCase() : name[0].toUpperCase();
       }
-      
+
       const firstNamePart = nameParts[0];
       const lastNamePart = nameParts[1];
       return (firstNamePart[0] + lastNamePart[0]).toUpperCase();
     }
-    
+
     return 'U';
   }
 
@@ -676,21 +699,21 @@ export class HeaderComponent {
       return 'Usuario';
     }
 
-    let person = this.currentUser.person; 
-    
+    let person = this.currentUser.person;
+
     if (!person) {
       return 'Usuario';
     }
 
     // Usar first_name y last_name si están disponibles
-    if (person.first_name && person.last_name) {
-      let fullName = `${person.first_name} ${person.last_name}`;
-      if (person.second_last_name) {
-        fullName += ` ${person.second_last_name}`;
+    if (person.first_name && person.paternal_lastName) {
+      let fullName = `${person.first_name} ${person.paternal_lastName}`;
+      if (person.maternal_lastName) {
+        fullName += ` ${person.maternal_lastName}`;
       }
       return fullName;
     }
-    
+
     // Fallback al campo nombre
     return person.full_name || 'Usuario';
   }
@@ -700,7 +723,7 @@ export class HeaderComponent {
    */
   getRoleDisplayName(): string {
     //console.log(this.currentUser);
-    
+
     const roleMap: { [key: string]: string } = {
       'CALLCENTER_TI': 'Call Center TI'
     };
@@ -725,7 +748,6 @@ export class HeaderComponent {
   async logout(): Promise<void> {
     try {
       await this.authService.logout();
-      console.log('Logout exitoso');
       this.closeUserMenu();
       // Redirigir al login después del logout exitoso
       window.location.href = '/login';

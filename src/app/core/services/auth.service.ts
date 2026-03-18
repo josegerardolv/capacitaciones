@@ -5,7 +5,7 @@ import { map, catchError, tap, switchMap, retry, finalize } from 'rxjs/operators
 import { Router } from '@angular/router';
 import { ComponentLoadingService } from '../../shared/services/component-loading.service';
 
-import { User, LoginRequest, LoginResponse, AuthTokens } from '../models/auth.model';
+import { User, LoginRequest, LoginResponse, AuthTokens, BackendLoginResponse } from '../models/auth.model';
 import { environment } from '../../../environments/environment';
 import { NotificationService } from '../../shared/services/notification.service';
 
@@ -122,12 +122,12 @@ export class AuthService {
     this.getStorage().removeItem(this.TOKEN_KEY);
     this.getStorage().removeItem(this.REFRESH_TOKEN_KEY);
     this.getStorage().removeItem(this.USER_KEY);
-    
+
     this.tokenSubject.next(null);
     this.refreshTokenSubject.next(null);
     this.currentUserSubject.next(null);
     this.isAuthenticatedSubject.next(false);
-    
+
     this.clearRefreshTimer();
   }
 
@@ -150,35 +150,72 @@ export class AuthService {
     this.clearTokens();
 
     const body = {
-      grant_type: 'password',
+      /*grant_type: 'password',
       username: credentials.username,
       password: credentials.password,
       client_id: environment.oauth.clientId,
-      scope: environment.oauth.scopes.join(' ')
+      scope: environment.oauth.scopes.join(' ')*/
+      email: credentials.username,
+      password: credentials.password
     };
 
-    return this.http.post<AuthTokens>(`${environment.apiUrl}/oauth/token`, body, {
+    return this.http.post<BackendLoginResponse>(`${environment.apiUrl}/auth/login`, body, {
       headers: {
         'Content-Type': 'application/json'
       }
     }).pipe(
       map(response => {
-        if (response && response.access_token && response.user) {
-          // Almacenar tokens
-          this.setAccessToken(response.access_token);
-          if (response.refresh_token) {
-            this.setRefreshToken(response.refresh_token);
-          }
-          
-          // Crear y almacenar objeto User
-          const user = this.mapTokenResponseToUser(response);
+        if (response && response.token) {
+          // 1. Almacenar el token
+          this.setAccessToken(response.token);
+          // (No refresh token provided by backend yet)
+
+          // 2. Mapear la respuesta mínima del backend a nuestro modelo User completo
+          // Backend devuelve: { user: { usuario_id: "1", rol: 2 }, token: "..." }
+          // Necesitamos construir un objeto User válido para evitar crashes
+
+          const roleMapping: { [key: number]: string } = {
+            1: 'admin',
+            2: 'admin', // Asumiendo 2 es admin basado en el email 'administrador'
+            3: 'capturista',
+            4: 'supervisor',
+            5: 'consulta'
+          };
+
+          const roleName = roleMapping[response.user.rol] || 'user';
+          const userId = response.user.usuario_id.toString();
+
+          // Extraer nombres reales si el backend los envía
+          const fullName = response.user.persona_nombre || response.user.usuario?.split('@')[0].toUpperCase() || 'USUARIO';
+          const areaName = response.user.modulo_nombre || 'General';
+
+          // Construir usuario basado en la nueva estructura del Backend
+          const user: User = {
+            id: userId,
+            username: response.user.usuario,
+            email: response.user.usuario,
+            name: fullName,
+            role: roleName,
+            role_id: response.user.rol.toString(),
+            person: {
+              id: response.user.persona?.toString() || userId,
+              first_name: fullName,
+              paternal_lastName: '',
+              email: response.user.usuario,
+              area: { id: response.user.area?.toString() || '1', name: areaName },
+              instalacion: { id: response.user.modulo?.toString() || '1', name: areaName }
+            },
+            area: { id: response.user.area?.toString() || '1', name: areaName },
+            instalacion: { id: response.user.modulo?.toString() || '1', name: areaName }
+          };
+
           this.setUser(user);
-          
-          // Inicializar renovación automática
+
+          // Inicializar renovación automática (si el token tiene exp)
           this.initializeTokenRefreshTimer();
-          
-          return { 
-            success: true, 
+
+          return {
+            success: true,
             message: 'Sesión iniciada exitosamente',
             user: user
           };
@@ -197,7 +234,7 @@ export class AuthService {
    */
   logout(): Observable<any> {
     const hasToken = !!this.getAccessToken();
-    
+
     // Limpiar tokens y datos localmente primero
     this.clearTokens();
 
@@ -345,7 +382,7 @@ export class AuthService {
    */
   private ensureValidToken(): Observable<string> {
     const token = this.getAccessToken();
-    
+
     if (!token) {
       return throwError(() => new Error('No access token available'));
     }
@@ -377,7 +414,7 @@ export class AuthService {
       const payload = JSON.parse(atob(token.split('.')[1]));
       const currentTime = Math.floor(Date.now() / 1000);
       const bufferTime = 5 * 60; // 5 minutos de buffer
-      
+
       return payload.exp && (payload.exp - currentTime) < bufferTime;
     } catch (error) {
       console.warn('Error decoding token:', error);
@@ -420,7 +457,7 @@ export class AuthService {
           if (response.refresh_token) {
             this.setRefreshToken(response.refresh_token);
           }
-          
+
           // Actualizar usuario si viene en la respuesta
           if (response.user) {
             const user = this.mapTokenResponseToUser(response);
@@ -443,7 +480,7 @@ export class AuthService {
    */
   private initializeTokenRefreshTimer(): void {
     this.clearRefreshTimer();
-    
+
     const token = this.getAccessToken();
     if (!token) return;
 
@@ -451,10 +488,10 @@ export class AuthService {
       const payload = JSON.parse(atob(token.split('.')[1]));
       const currentTime = Math.floor(Date.now() / 1000);
       const expiresIn = payload.exp - currentTime;
-      
+
       // Renovar 10 minutos antes de la expiración
       const refreshTime = Math.max(0, (expiresIn - 600) * 1000);
-      
+
       this.refreshTimer = setTimeout(() => {
         this.refreshAccessToken().subscribe({
           next: () => {
@@ -466,7 +503,7 @@ export class AuthService {
           }
         });
       }, refreshTime);
-      
+
     } catch (error) {
       console.warn('Error parsing token for refresh timer:', error);
     }
@@ -490,21 +527,21 @@ export class AuthService {
   isAuthenticated(): boolean {
     const token = this.getAccessToken();
     const user = this.getCurrentUser();
-    
+
     if (!token || !user) {
       return false;
     }
-    
+
     // Verificar si el token no ha expirado
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
       const currentTime = Math.floor(Date.now() / 1000);
-      
+
       if (payload.exp && payload.exp < currentTime) {
         this.clearSession();
         return false;
       }
-      
+
       return true;
     } catch (error) {
       console.warn('Token inválido:', error);
@@ -519,7 +556,7 @@ export class AuthService {
   async checkAuthStatus(): Promise<boolean> {
     const token = this.getAccessToken();
     const user = this.getCurrentUser();
-    
+
     if (!token || !user) {
       return false;
     }
@@ -527,12 +564,12 @@ export class AuthService {
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
       const currentTime = Math.floor(Date.now() / 1000);
-      
+
       if (payload.exp && payload.exp < currentTime) {
         this.clearSession();
         return false;
       }
-      
+
       return true;
     } catch (error) {
       console.warn('Validación de token falló:', error);
@@ -548,7 +585,7 @@ export class AuthService {
     const token = this.getAccessToken();
     const user = this.getCurrentUser();
     const isAuth = !!(token && user);
-    
+
     this.isAuthenticatedSubject.next(isAuth);
   }
 
@@ -619,7 +656,7 @@ export class AuthService {
     }
 
     const person = response.person;
-    const fullName = `${person.first_name} ${person.last_name}${person.second_last_name ? ' ' + person.second_last_name : ''}`;
+    const fullName = `${person.first_name} ${person.paternal_lastName}${person.maternal_lastName ? ' ' + person.maternal_lastName : ''}`;
 
     return {
       id: response.user.id.toString(),
@@ -631,8 +668,8 @@ export class AuthService {
       person: {
         id: person.id.toString(),
         first_name: person.first_name || '',
-        last_name: person.last_name || '',
-        second_last_name: person.second_last_name || '',
+        paternal_lastName: person.paternal_lastName || '',
+        maternal_lastName: person.maternal_lastName || '',
         email: response.user.email,
         phone: '',
         position: response.work_schedule?.puesto || 'Usuario',
@@ -727,7 +764,7 @@ export class AuthService {
 
     // Para otros errores, simplemente reenviarlos
     let errorMessage = 'Error en la petición';
-    
+
     switch (error.status) {
       case 400:
         errorMessage = error.error?.message || error.error?.error || 'Solicitud incorrecta. Verifique los datos enviados';

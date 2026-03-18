@@ -1,55 +1,59 @@
 import { Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
-import { delay } from 'rxjs/operators';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { Course } from '../../../core/models/course.model';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { environment } from 'src/environments/environment';
 
 @Injectable({
     providedIn: 'root'
 })
 export class CoursesService {
+    private apiUrl = `${environment.apiUrl}`;
 
-    // Listado de cursos para pruebas locales
-    private courses: Course[] = [
-        {
-            id: 1,
-            code: 'A05',
-            description: 'Lorem Ipsum is simply dummy text of the',
-            duration: '3 horas'
-        },
-        {
-            id: 2,
-            code: 'A06',
-            description: 'Lorem Ipsum is simply dummy text of the',
-            duration: '2 horas'
-        },
-        {
-            id: 3,
-            code: 'B13',
-            description: 'Lorem Ipsum is simply dummy text of the',
-            duration: '1 hora'
-        },
-        {
-            id: 4,
-            code: 'C01',
-            description: 'Curso de manejo básico para principiantes',
-            duration: '5 horas'
-        },
-        {
-            id: 5,
-            code: 'C02',
-            description: 'Curso avanzado de seguridad vial',
-            duration: '4 horas'
+    constructor(private http: HttpClient) { }
+
+    getCourses(page: number = 1, limit: number = 10, search: string = '', courseTypeId?: number): Observable<any> {
+        let params = new HttpParams()
+            .set('page', page.toString())
+            .set('limit', limit.toString());
+
+        if (courseTypeId) {
+            params = params.set('courseTypeId', courseTypeId.toString());
         }
-    ];
 
-    constructor() { }
+        if (search) {
+            params = params.set('name', search);
+            return this.http.get<any>(`${this.apiUrl}/course/search`, { params });
+        }
 
-    getCourses(): Observable<Course[]> {
-        return of([...this.courses]).pipe(delay(500));
+        return this.http.get<any>(`${this.apiUrl}/course`, { params });
+    }
+
+    getCourseById(id: number): Observable<Course> {
+        return this.http.get<any>(`${this.apiUrl}/course/${id}`).pipe(
+            map(backendCourse => this.mapBackendCourseToFrontend(backendCourse))
+        );
+    }
+
+    mapBackendCourseToFrontend(backendCourse: any): Course {
+        return {
+            ...backendCourse,
+            // Conservamos únicamente esta línea porque corrige el bug visual de "Sin Tipo"
+            // al extraer el ID si el backend devuelve un objeto anidado.
+            courseTypeId: backendCourse.courseTypeId || backendCourse.courseType?.id
+        };
+    }
+
+    createCourse(course: Omit<Course, 'id'>): Observable<Course> {
+        return this.http.post<Course>(`${this.apiUrl}/course`, course);
+    }
+
+    updateCourse(id: number, updatedCourse: Course): Observable<Course> {
+        return this.http.patch<Course>(`${this.apiUrl}/course/${id}`, updatedCourse);
     }
 
     deleteCourse(id: number): Observable<boolean> {
-        this.courses = this.courses.filter(c => c.id !== id);
-        return of(true).pipe(delay(300));
+        return this.http.delete<boolean>(`${this.apiUrl}/course/${id}`);
     }
 }
