@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { environment } from '../../../environments/environment';
 
 export interface AppConfig {
   title: string;
@@ -33,7 +34,7 @@ export class AppConfigService {
     navValidateLabel: 'Validar',
     footerCopyrightTemplate: '© {{year}} {{org}}. Todos los derechos reservados.',
     footerTagline: 'Sistema de Capacitaciones', // TODO: Cambiar por el nombre del sistema
-    version: '1.0.0'
+    version: environment.app.version // se cambia la version en el archivo environment.ts
   };
 
   constructor() { }

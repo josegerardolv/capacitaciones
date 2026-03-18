@@ -102,7 +102,7 @@ export class FooterComponent {
     this.headerTitle = this.appConfig.get('headerTitle') || this.appConfig.get('orgName') || 'SEMOVI Oaxaca';
     this.headerSubtitle = this.appConfig.get('headerSubtitle') || this.appConfig.get('subtitle') || 'Secretaría de Movilidad';
     this.footerTagline = this.appConfig.get('footerTagline') || 'Sistema de Gestión de Citas';
-    this.version = this.appConfig.get('version') || '2.0.0';
+    this.version = this.appConfig.get('version') || '';
     this.footerCopyrightTemplate = this.appConfig.get('footerCopyrightTemplate') || '© {{year}} {{org}}. Todos los derechos reservados.';
     const org = this.appConfig.get('orgName') || this.headerTitle;
     this.copyright = this.footerCopyrightTemplate.replace('{{year}}', String(this.currentYear)).replace('{{org}}', org);
