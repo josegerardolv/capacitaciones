@@ -112,20 +112,20 @@
 </div>
 
 <app-modal-form *ngIf="showModal" [isOpen]="showModal" [title]="modalMode === 'create' ? 'Nuevo Grupo' : 'Editar Grupo'"
-    (modalClose)="closeModal()" (formSubmit)="onGroupModalSubmit()" [size]="'full'"
+    (modalClose)="closeModal()" (formSubmit)="onGroupModalSubmit()" [size]="'xl'" [position]="'center'"
     [primaryActions]="modalActionsPrimary" [secondaryActions]="modalActionsSecondary" [formGroup]="groupModalForm"
     [isLoading]="!!isSaving">
 
-    <div class="px-10 py-8">
+    <div class="px-5 sm:px-8 md:px-10 py-6 md:py-8 overflow-y-auto overflow-x-hidden max-h-[55vh] md:max-h-[60vh] lg:max-h-[65vh]">
         <!-- Sección 1: Detalles Generales -->
-        <div class="mb-10">
+        <div class="mb-8 md:mb-10">
             <h3
-                class="text-xs font-bold text-institucional-primario uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
+                class="text-xs font-bold text-institucional-primario uppercase tracking-[0.2em] mb-4 md:mb-6 flex items-center gap-2">
                 <span class="w-1.5 h-1.5 bg-institucional-primario rounded-full"></span>
                 Detalles Generales
             </h3>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <div class="col-span-1">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-8">
+                <div class="col-span-1 sm:col-span-2 lg:col-span-1">
                     <app-input-enhanced controlName="name" [control]="groupModalForm.get('name')"
                         label="Nombre del grupo" placeholder="Ej. Matutino B" [required]="true" [floating]="true"
                         [fullWidth]="true">
@@ -151,12 +151,12 @@
         <div>
             <!-- Programación y Registro - Movida hacia abajo para balancear el espacio -->
             <h3
-                class="text-xs font-bold text-institucional-primario uppercase tracking-widest flex items-center gap-2 mb-6">
+                class="text-xs font-bold text-institucional-primario uppercase tracking-widest flex items-center gap-2 mb-4 md:mb-6">
                 <span class="w-1.5 h-1.5 bg-institucional-primario rounded-full"></span>
                 Programación y Registro
             </h3>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <div class="col-span-1">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-8">
+                <div class="col-span-1 sm:col-span-2 lg:col-span-1">
                     <app-compact-date-input #datePicker formControlName="date" label="Fecha de inicio"
                         placeholder="Selecciona fecha" [required]="true" [minDate]="$any(minDateForForm)"
                         [floating]="true" [fullWidth]="true" [preferredPosition]="'top'"
