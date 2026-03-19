@@ -76,7 +76,7 @@ export class TemplatesListComponent implements OnInit {
 
     tableConfig: TableConfig = {
         loading: true,
-        striped: false,
+        striped: true, // cambia el color de las filas alternas
         hoverable: true,
         localSort: false // Desactivamos sort local para manejarlo globalmente antes de paginar
     };
