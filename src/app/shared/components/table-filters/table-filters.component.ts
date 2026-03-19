@@ -25,9 +25,9 @@ export interface FilterValue {
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, InputEnhancedComponent, SelectComponent, InstitutionalButtonComponent],
   template: `
-    <div class="institucional-table-filters">
+    <div class="institucional-table-filters flex-col md:flex-row items-stretch md:items-center">
       <!-- Búsqueda global -->
-      <div class="institucional-form-group global-search-container" *ngIf="showGlobalSearch">
+      <div class="institucional-form-group global-search-container w-full md:w-auto md:min-w-[300px]" *ngIf="showGlobalSearch">
         <app-input-enhanced
           [control]="globalSearchControl"
           [placeholder]="globalSearchPlaceholder || 'Buscar...'"
@@ -36,19 +36,18 @@ export interface FilterValue {
           [variant]="'outlined'"
           [floating]="false"
           [size]="'sm'"
-          [fullWidth]="false"
-          [width]="'300px'"
+          [fullWidth]="true"
           [height]="'38px'"
           extraClasses="compact-search-input">
         </app-input-enhanced>
       </div>
 
       <!-- Filtros específicos -->
-      <form [formGroup]="filterForm" class="flex flex-wrap items-end gap-4">
+      <form [formGroup]="filterForm" class="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-end gap-3 sm:gap-4 w-full md:w-auto flex-1">
         <div 
           *ngFor="let filter of filters" 
-          class="institucional-form-group"
-          [style.width]="filter.width || 'auto'">
+          class="institucional-form-group w-full sm:w-auto"
+          [style.width]="filter.width ? filter.width : ''">
           
           <!-- Filtro de texto -->
           <app-input-enhanced 
@@ -59,7 +58,7 @@ export interface FilterValue {
             [variant]="'outlined'"
             [floating]="true"
             [size]="'md'"
-            [width]="filter.width || 'auto'">
+            [fullWidth]="true">
           </app-input-enhanced>
 
           <!-- Filtro numérico -->
@@ -72,7 +71,7 @@ export interface FilterValue {
             [variant]="'outlined'"
             [floating]="true"
             [size]="'md'"
-            [width]="filter.width || 'auto'">
+            [fullWidth]="true">
           </app-input-enhanced>
 
           <!-- Filtro de fecha -->
@@ -84,7 +83,7 @@ export interface FilterValue {
             [variant]="'outlined'"
             [floating]="true"
             [size]="'md'"
-            [width]="filter.width || 'auto'">
+            [fullWidth]="true">
           </app-input-enhanced>
 
           <!-- Filtro de selección -->
@@ -98,7 +97,7 @@ export interface FilterValue {
             [variant]="'outlined'"
             [floating]="true"
             [size]="'md'"
-            [width]="filter.width || 'auto'">
+            [fullWidth]="true">
           </app-select>
 
           <!-- Filtro booleano -->
@@ -112,11 +111,11 @@ export interface FilterValue {
             [variant]="'outlined'"
             [size]="'md'"
             [floating]="true"
-            [width]="filter.width || 'auto'">
+            [fullWidth]="true">
           </app-select>
 
           <!-- Filtro de rango de fechas -->
-          <div *ngIf="filter.type === 'daterange'" class="flex gap-2">
+          <div *ngIf="filter.type === 'daterange'" class="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full">
             <app-input-enhanced 
               [control]="getFilterControl(filter.key + '_from')"
               [label]="filter.label + ' (Desde)'"
@@ -124,8 +123,8 @@ export interface FilterValue {
               [placeholder]="'Desde'"
               [variant]="'outlined'"
               [size]="'md'"
-              [width]="'auto'"
               [floating]="true"
+              [fullWidth]="true"
               extraClasses="flex-1">
             </app-input-enhanced>
             <app-input-enhanced 
@@ -135,8 +134,8 @@ export interface FilterValue {
               [placeholder]="'Hasta'"
               [variant]="'outlined'"
               [size]="'md'"
-              [width]="'auto'"
               [floating]="true"
+              [fullWidth]="true"
               extraClasses="flex-1">
             </app-input-enhanced>
           </div>
@@ -144,7 +143,7 @@ export interface FilterValue {
       </form>
 
       <!-- Acciones de filtros -->
-      <div class="institucional-table-filter-actions">
+      <div class="institucional-table-filter-actions w-full md:w-auto mt-2 md:mt-0 flex flex-row justify-center md:justify-end gap-2 md:ml-auto">
         <app-institutional-button *ngIf="activeFiltersCount > 0 || globalSearchControl.value"
           [config]="{
             variant: 'secondary',
@@ -152,6 +151,7 @@ export interface FilterValue {
           }"
           title="Limpiar filtros"
           (buttonClick)="clearFilters()">
+          <span class="md:hidden ml-1">Limpiar</span>
         </app-institutional-button>
 
         <app-institutional-button *ngIf="filters.length > 0"
@@ -161,7 +161,8 @@ export interface FilterValue {
           }"
           title="Filtros avanzados"
           (buttonClick)="toggleAdvancedFilters()">
-          Filtros avanzados
+          <span class="hidden md:inline">Filtros avanzados</span>
+          <span class="md:hidden ml-1">Filtros</span>
         </app-institutional-button>
       </div>
     </div>
@@ -189,35 +190,10 @@ export interface FilterValue {
     </div>
   `,
   styles: [`
-    .flex {
-      display: flex;
-    }
-    
-    .flex-wrap {
-      flex-wrap: wrap;
-    }
-    
-    .items-end {
-      align-items: flex-end;
-    }
-    
-    .gap-4 {
-      gap: 1rem;
-    }
-    
-    .gap-2 {
-      gap: 0.5rem;
-    }
-    
-    .flex-1 {
-      flex: 1;
-    }
-    
     .institucional-table-filter-actions {
       display: flex;
       align-items: center;
       gap: 0.5rem;
-      margin-left: auto;
     }
     
     .institucional-table-active-filters {

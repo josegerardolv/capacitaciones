@@ -112,20 +112,20 @@
 </div>
 
 <app-modal-form *ngIf="showModal" [isOpen]="showModal" [title]="modalMode === 'create' ? 'Nuevo Grupo' : 'Editar Grupo'"
-    (modalClose)="closeModal()" (formSubmit)="onGroupModalSubmit()" [size]="'full'"
+    (modalClose)="closeModal()" (formSubmit)="onGroupModalSubmit()" [size]="'xl'" [position]="'center'"
     [primaryActions]="modalActionsPrimary" [secondaryActions]="modalActionsSecondary" [formGroup]="groupModalForm"
     [isLoading]="!!isSaving">
 
-    <div class="px-10 py-8">
+    <div class="px-5 sm:px-8 md:px-10 py-6 md:py-8 overflow-y-auto max-h-[75vh] lg:overflow-visible lg:max-h-none">
         <!-- Sección 1: Detalles Generales -->
-        <div class="mb-10">
+        <div class="mb-8 md:mb-10">
             <h3
-                class="text-xs font-bold text-institucional-primario uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
+                class="text-xs font-bold text-institucional-primario uppercase tracking-[0.2em] mb-4 md:mb-6 flex items-center gap-2">
                 <span class="w-1.5 h-1.5 bg-institucional-primario rounded-full"></span>
                 Detalles Generales
             </h3>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <div class="col-span-1">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-8">
+                <div class="col-span-1 sm:col-span-2 lg:col-span-1">
                     <app-input-enhanced controlName="name" [control]="groupModalForm.get('name')"
                         label="Nombre del grupo" placeholder="Ej. Matutino B" [required]="true" [floating]="true"
                         [fullWidth]="true">
@@ -151,12 +151,12 @@
         <div>
             <!-- Programación y Registro - Movida hacia abajo para balancear el espacio -->
             <h3
-                class="text-xs font-bold text-institucional-primario uppercase tracking-widest flex items-center gap-2 mb-6">
+                class="text-xs font-bold text-institucional-primario uppercase tracking-widest flex items-center gap-2 mb-4 md:mb-6">
                 <span class="w-1.5 h-1.5 bg-institucional-primario rounded-full"></span>
                 Programación y Registro
             </h3>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <div class="col-span-1">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-8">
+                <div class="col-span-1 sm:col-span-2 lg:col-span-1">
                     <app-compact-date-input #datePicker formControlName="date" label="Fecha de inicio"
                         placeholder="Selecciona fecha" [required]="true" [minDate]="$any(minDateForForm)"
                         [floating]="true" [fullWidth]="true" [preferredPosition]="'top'"
@@ -300,7 +300,7 @@
     (modalClose)="isUrlDateModalOpen = false" (formSubmit)="submitUrlGeneration()" [size]="'lg'" [position]="'center'"
     [primaryActions]="urlModalActions.slice(1)" [secondaryActions]="urlModalActions.slice(0,1)" [formGroup]="urlForm">
 
-    <div class="space-y-6">
+    <div class="space-y-6 overflow-y-auto max-h-[75vh] lg:overflow-visible lg:max-h-none px-1">
         <div class="bg-blue-50 p-4 rounded-md mb-4">
             <div class="flex flex-col gap-2">
                 <div class="flex items-center">
