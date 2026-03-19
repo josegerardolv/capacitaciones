@@ -116,7 +116,7 @@
     [primaryActions]="modalActionsPrimary" [secondaryActions]="modalActionsSecondary" [formGroup]="groupModalForm"
     [isLoading]="!!isSaving">
 
-    <div class="px-5 sm:px-8 md:px-10 py-6 md:py-8 overflow-y-auto overflow-x-hidden max-h-[55vh] md:max-h-[60vh] lg:max-h-[65vh]">
+    <div class="px-5 sm:px-8 md:px-10 py-6 md:py-8 overflow-y-auto max-h-[75vh] lg:overflow-visible lg:max-h-none">
         <!-- Sección 1: Detalles Generales -->
         <div class="mb-8 md:mb-10">
             <h3
@@ -300,7 +300,7 @@
     (modalClose)="isUrlDateModalOpen = false" (formSubmit)="submitUrlGeneration()" [size]="'lg'" [position]="'center'"
     [primaryActions]="urlModalActions.slice(1)" [secondaryActions]="urlModalActions.slice(0,1)" [formGroup]="urlForm">
 
-    <div class="space-y-6">
+    <div class="space-y-6 overflow-y-auto max-h-[75vh] lg:overflow-visible lg:max-h-none px-1">
         <div class="bg-blue-50 p-4 rounded-md mb-4">
             <div class="flex flex-col gap-2">
                 <div class="flex items-center">
