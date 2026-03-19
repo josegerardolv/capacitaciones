@@ -200,30 +200,44 @@ export class GroupListComponent implements OnInit {
     getDynamicGroupStatus(group: Group): { text: string, type: 'success' | 'warning' | 'danger' | 'info' | 'neutral' } {
         if (!group.groupStartDate) return { text: 'Sin fecha', type: 'neutral' };
 
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        // 1. Obtener "Hoy" a medianoche local
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-        const startDate = new Date(group.groupStartDate);
-        startDate.setHours(0, 0, 0, 0);
+        // 2. Obtener "Fecha del Curso" a medianoche local (forzando parseo local si es string ISO)
+        let rawDate = group.groupStartDate;
+        let d: Date;
+        
+        if (typeof rawDate === 'string') {
+            const datePart = rawDate.split('T')[0]; // Extraer YYYY-MM-DD
+            const [y, m, day] = datePart.split('-').map(Number);
+            d = new Date(y, m - 1, day);
+        } else {
+            d = new Date(rawDate);
+        }
+        
+        const startDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
 
-        // 3. Finalizado (El curso ya pasó)
-        if (today > startDate) {
+        // 3. Comparación por días de calendario
+        const diffTime = startDate.getTime() - today.getTime();
+        const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+        if (diffDays < 0) {
             return { text: 'Finalizado', type: 'neutral' }; // Gris
         }
-
-        // 2. En Curso (El curso es hoy)
-        if (today.getTime() === startDate.getTime()) {
+        
+        if (diffDays === 0) {
             return { text: 'En curso', type: 'info' }; // Azul
         }
 
-        // 1. Próximo a Iniciar (Faltan días para arrancar el curso)
-        const diffTime = startDate.getTime() - today.getTime();
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        if (diffDays === 1) {
+            return { text: 'Inicia mañana', type: 'warning' }; // Amarillo
+        }
 
-        if (diffDays === 1) return { text: 'Inicia mañana', type: 'warning' };
-        if (diffDays <= 3 && diffDays > 1) return { text: `Inicia en ${diffDays} días`, type: 'warning' };
+        if (diffDays <= 3) {
+            return { text: `Inicia en ${diffDays} días`, type: 'warning' };
+        }
 
-        // Falta más de 3 días para iniciar
         return { text: 'Abierto', type: 'success' }; // Verde
     }
 

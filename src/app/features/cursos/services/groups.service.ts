@@ -189,7 +189,11 @@ export class GroupsService {
     }
 
     acceptEnrollment(enrollmentId: number): Observable<any> {
-        return this.http.patch(`${this.apiUrl}/enrollment/${enrollmentId}`, { isAcepted: true, isActive: true });
+        return this.http.patch(`${this.apiUrl}/enrollment/${enrollmentId}`, { 
+            isAcepted: true, 
+            isActive: true,
+            isApproved: 'CURSANDO' 
+        });
     }
 
     cancelEnrollment(enrollmentId: number): Observable<any> {
@@ -203,7 +207,7 @@ export class GroupsService {
     /**
      * Actualiza el estatus del alumno en el curso (CURSANDO, REPROBADO, APROBADO)
      */
-    updateEnrollmentStatus(enrollmentId: number, isApproved: 'CURSANDO' | 'REPROBADO' | 'APROBADO'): Observable<any> {
+    updateEnrollmentStatus(enrollmentId: number, isApproved: 'CURSANDO' | 'APROBADO' | 'REPROBADO'): Observable<any> {
         return this.http.patch(`${this.apiUrl}/enrollment/${enrollmentId}`, { isApproved: isApproved });
     }
 

@@ -1,8 +1,8 @@
 <!-- Main Content -->
-<div class="w-full px-12 py-4">
+<div class="w-full min-h-screen bg-[#f8f9fa] px-4 md:px-12 py-8 flex justify-center">
 
     <app-institutional-card [config]="{ variant: 'standard', size: 'auto', showFooter: false, showShadow: true }"
-        class="w-full max-w-3xl">
+        class="w-full max-w-7xl">
 
         <!-- Header de la carta (slot) -->
         <div slot="header" class="card-institucional-header p-6">
@@ -12,7 +12,7 @@
                     <p class="font-medium text-lg">{{ groupInfo.courseName }}</p>
                     <p class="opacity-80">{{ groupInfo.groupName }}</p>
                 </div>
-                <div class="flex flex-col items-end">
+                <div class="flex flex-col md:items-end">
                     <div class="bg-white/20 px-3 py-1 rounded-full backdrop-blur-sm mb-1">
                         <span class="font-semibold">{{ groupInfo.slotsAvailable }} lugares disponibles</span>
                     </div>
@@ -20,18 +20,55 @@
                 </div>
             </div>
 
-            <!-- SECCIÓN NUEVA: Desglose de Documentos/Templates -->
+            <!-- SECCIÓN OPTIMIZADA: Desglose de Documentos/Templates -->
             <div *ngIf="availableDocuments.length > 0" class="mt-4 border-t border-white/20 pt-3">
-                <p class="text-sm font-semibold text-white/80 mb-2">Documentos Incluidos:</p>
-                <div class="flex flex-wrap gap-2">
-                    <span *ngFor="let doc of availableDocuments"
-                        class="px-2 py-1 rounded text-xs font-medium bg-white text-primary-800 border border-transparent shadow-sm flex items-center gap-1">
-                        <i class="material-icons text-xs">description</i>
-                        {{ doc.name }}
-                        <span *ngIf="doc.cost > 0" class="ml-1 text-red-600 font-bold">({{ doc.cost | currency:'MXN':'symbol-narrow':'1.2-2' }})</span>
-                        <span *ngIf="doc.cost === 0" class="ml-1 text-green-700 font-bold">(Gratuito)</span>
-                        <span *ngIf="doc.isMandatory" class="ml-1 text-gray-500 italic">(Obligatorio)</span>
-                    </span>
+                <div class="flex items-center justify-between mb-2">
+                    <p class="text-sm font-semibold text-white/80">Documentos Incluidos:</p>
+                </div>
+                
+                <div class="flex flex-nowrap overflow-x-auto gap-2 pb-1 scrollbar-hide">
+                    <!-- VISTA MÓVIL: Solo 1 elemento + el "más" -->
+                    <div class="flex md:hidden gap-2 w-full">
+                        <ng-container *ngIf="availableDocuments.length > 0">
+                            <span class="flex-shrink-0 px-2 py-1 rounded text-[10px] font-medium bg-white text-primary-800 border border-transparent shadow-sm flex items-center gap-1">
+                                <i class="material-icons text-[12px]">description</i>
+                                <span class="max-w-[100px] truncate">{{ availableDocuments[0].name }}</span>
+                                <span *ngIf="availableDocuments[0].isMandatory" class="text-gray-500 italic text-[9px]">(Obligatorio)</span>
+                            </span>
+                            <button *ngIf="availableDocuments.length > 1" (click)="isAllDocsModalOpen = true"
+                                class="flex-shrink-0 px-2 py-1 rounded text-[10px] font-bold bg-[#B38E5D] text-white hover:bg-[#8F724A] transition-colors shadow-sm">
+                                + {{ availableDocuments.length - 1 }} más
+                            </button>
+                        </ng-container>
+                    </div>
+
+                    <!-- VISTA DESKTOP: Lógica anterior (solo obligatorios o primeros 3) -->
+                    <div class="hidden md:flex gap-2">
+                        <ng-container *ngIf="mandatoryDocuments.length > 0">
+                            <span *ngFor="let doc of mandatoryDocuments"
+                                class="flex-shrink-0 px-2 py-1 rounded text-xs font-medium bg-white text-primary-800 border border-transparent shadow-sm flex items-center gap-1">
+                                <i class="material-icons text-xs">description</i>
+                                {{ doc.name }}
+                                <span class="ml-1 text-gray-500 italic">(Obligatorio)</span>
+                            </span>
+                            <button *ngIf="otherDocumentsCount > 0" (click)="isAllDocsModalOpen = true"
+                                class="flex-shrink-0 px-3 py-1 rounded text-xs font-bold bg-[#B38E5D] text-white hover:bg-[#8F724A] transition-colors shadow-sm">
+                                + {{ otherDocumentsCount }} más
+                            </button>
+                        </ng-container>
+
+                        <ng-container *ngIf="mandatoryDocuments.length === 0">
+                            <span *ngFor="let doc of availableDocuments.slice(0, 3)"
+                                class="flex-shrink-0 px-2 py-1 rounded text-xs font-medium bg-white text-primary-800 border border-transparent shadow-sm flex items-center gap-1">
+                                <i class="material-icons text-xs">description</i>
+                                {{ doc.name }}
+                            </span>
+                            <button *ngIf="availableDocuments.length > 3" (click)="isAllDocsModalOpen = true"
+                                class="flex-shrink-0 px-3 py-1 rounded text-xs font-bold bg-[#B38E5D] text-white hover:bg-[#8F724A] transition-colors shadow-sm">
+                                + {{ availableDocuments.length - 3 }} más
+                            </button>
+                        </ng-container>
+                    </div>
                 </div>
             </div>
         </div>
@@ -130,5 +167,54 @@
         [customDocuments]="availableDocuments" (modalClose)="isDocumentsModalOpen = false"
         (confirm)="onDocumentsConfirmed($event)">
     </app-document-selection-modal>
+
+    <!-- Modal de Listado Completo de Documentos -->
+    <app-modal [isOpen]="isAllDocsModalOpen" [config]="{ title: 'Lista de Documentos Incluidos', size: 'xl', padding: false }"
+        (modalClose)="isAllDocsModalOpen = false">
+        <div class="p-4 md:p-8">
+            <p class="text-gray-600 mb-6 text-sm md:text-base">A continuación se listan todos los documentos y conceptos de pago incluidos en este trámite.</p>
+            
+            <div class="overflow-hidden border border-gray-100 rounded-xl shadow-sm bg-white">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="w-[35%] px-4 md:px-6 py-4 text-left text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-widest">Documento</th>
+                            <th class="hidden md:table-cell w-[45%] px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-widest">Descripción</th>
+                            <th class="w-[20%] px-4 md:px-6 py-4 text-right text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-widest">Costo</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-50">
+                        <tr *ngFor="let doc of availableDocuments" class="hover:bg-gray-50/50 transition-colors duration-200 text-xs md:text-sm">
+                            <td class="w-[35%] px-4 md:px-6 py-5 align-top">
+                                <div class="flex items-start gap-2 md:gap-3">
+                                    <div class="p-1.5 md:p-2 bg-red-50 rounded-lg shrink-0">
+                                        <i class="material-icons text-primary-700 text-base md:text-lg">description</i>
+                                    </div>
+                                    <div class="flex flex-col min-w-0">
+                                        <span class="font-bold text-gray-900 break-words leading-tight">{{ doc.name }}</span>
+                                        <span *ngIf="doc.isMandatory" class="mt-1 text-[8px] md:text-[10px] text-primary-700 font-extrabold tracking-tight">OBLIGATORIO</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="hidden md:table-cell w-[45%] px-6 py-5 text-gray-500 leading-relaxed align-top">
+                                {{ doc.description || 'Sin descripción detallada' }}
+                            </td>
+                            <td class="w-[20%] px-4 md:px-6 py-5 text-right align-top shrink-0">
+                                <span *ngFor="let d of [doc.cost]" class="font-bold text-primary-800 text-sm md:text-base">
+                                    <span *ngIf="d > 0">{{ d | currency:'MXN':'symbol-narrow':'1.2-2' }}</span>
+                                    <span *ngIf="d === 0" class="text-green-600">Gratis</span>
+                                </span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div slot="footer" class="p-4 flex justify-end">
+            <app-institutional-button (buttonClick)="isAllDocsModalOpen = false" [config]="{ variant: 'primary', size: 'medium', icon: 'check' }">
+                Entendido
+            </app-institutional-button>
+        </div>
+    </app-modal>
 
 </div>

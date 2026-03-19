@@ -13,11 +13,22 @@ import { LicenseSearchModalComponent } from '../../components/modals/license-sea
 import { CourseTypeConfig, RegistrationFieldConfig, DEFAULT_REGISTRATION_FIELDS } from '../../../../core/models/course-type-config.model';
 import { NotificationService } from '../../../../core/services/notification.service';
 import { REQUIREMENT_FIELD_NAMES, normalizeFieldName } from '../../../../core/constants/requirement-names.constants';
+import { ModalComponent } from '../../../../shared/components/modals/modal.component';
+import { InstitutionalButtonComponent } from '../../../../shared/components/buttons/institutional-button.component';
 
 @Component({
     selector: 'app-public-registration',
     standalone: true,
-    imports: [CommonModule, PersonFormComponent, AlertModalComponent, InstitutionalCardComponent, DocumentSelectionModalComponent, LicenseSearchModalComponent],
+    imports: [
+        CommonModule, 
+        PersonFormComponent, 
+        AlertModalComponent, 
+        InstitutionalCardComponent, 
+        DocumentSelectionModalComponent, 
+        LicenseSearchModalComponent,
+        ModalComponent,
+        InstitutionalButtonComponent
+    ],
     templateUrl: './public-registration.component.html'
 })
 export class PublicRegistrationComponent implements OnInit {
@@ -55,6 +66,15 @@ export class PublicRegistrationComponent implements OnInit {
     currentCourseType: CourseType = 'LICENCIA'; // Fallback
     prefilledData: any = null; // Datos precargados de la búsqueda
     currentPersonId: number | null = null; // ID de la persona encontrada
+    isAllDocsModalOpen = false; // Estado para el modal que lista TODOS los documentos
+
+    get mandatoryDocuments() {
+        return this.availableDocuments.filter(doc => doc.isMandatory);
+    }
+
+    get otherDocumentsCount() {
+        return Math.max(0, this.availableDocuments.length - this.mandatoryDocuments.length);
+    }
 
     constructor(
         private route: ActivatedRoute,
@@ -189,6 +209,9 @@ export class PublicRegistrationComponent implements OnInit {
                         // Fallback absoluto para arrays legacy de 'documents'
                         this.availableDocuments = processDocumentCourses(group.documents);
                     }
+
+                    // 4. Ordenar: Obligatorios primero
+                    this.availableDocuments.sort((a, b) => (b.isMandatory ? 1 : 0) - (a.isMandatory ? 1 : 0));
 
                     this.setupFormFields(populatedConfig || {} as any, directFields);
 

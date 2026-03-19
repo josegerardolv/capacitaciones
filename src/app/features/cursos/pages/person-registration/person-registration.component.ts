@@ -453,6 +453,7 @@ export class PersonRegistrationComponent implements OnInit {
             groupId: Number(groupId),
             isAcepted: true,
             isActive: true,
+            isApproved: 'CURSANDO',
             dateReject: null,
             personId: this.currentPersonId,
             person: personDataForPayload,

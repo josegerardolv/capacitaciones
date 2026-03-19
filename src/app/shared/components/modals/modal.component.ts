@@ -44,7 +44,7 @@ export interface ModalConfig {
         </div>
 
         <!-- Body -->
-        <div class="flex-1 overflow-auto" [class.p-8]="config.padding !== false">
+        <div class="flex-1 overflow-auto" [class.p-4]="config.padding !== false" [class.md:p-8]="config.padding !== false">
           <div class="relative">
             <ng-content></ng-content>
           </div>
@@ -72,7 +72,21 @@ export interface ModalConfig {
   `]
 })
 export class ModalComponent {
-  @Input() isOpen = false;
+  private _isOpen = false;
+
+  @Input() 
+  set isOpen(value: boolean) {
+    this._isOpen = value;
+    if (value) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+  }
+
+  get isOpen(): boolean {
+    return this._isOpen;
+  }
   @Input() modalId: string = Math.random().toString(36).slice(2);
   @Input() config: ModalConfig = {
     showHeader: true,

@@ -268,7 +268,7 @@ export class GroupPersonsComponent implements OnInit {
                         documentCoursesEnrollments: item.documentCoursesEnrollments || [],
                         // Mapeo de estatus del curso (CURSANDO, APROBADO, REPROBADO)
                         // Para compatibilidad con mocks o el endpoint real
-                        status: item.status || item.isApproved || 'CURSANDO',
+                        status: item.isApproved || item.status || 'CURSANDO',
                         _rawEnrollment: item // Preservar enrollment completo para generación de PDF
                     };
 
@@ -509,7 +509,7 @@ export class GroupPersonsComponent implements OnInit {
 
     // LÓGICA DE NEGOCIO 
 
-    setExamResult(person: any, result: 'APROBADO' | 'REPROBADO') {
+    setExamResult(person: any, result: 'CURSANDO' | 'APROBADO' | 'REPROBADO') {
         const title = result === 'APROBADO' ? 'Aprobar Persona' : 'Reprobar Persona';
         const message = result === 'APROBADO'
             ? `¿Está seguro de que desea APROBAR a ${person.name}?\nEsta acción habilitará la gestión de documentos.`

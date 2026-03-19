@@ -12,14 +12,26 @@ export class MailService {
     const courseName = group?.course?.name || "Curso";
     const groupName = group?.name || "Grupo";
 
-    const startDate = group?.groupStartDate
-      ? new Date(group.groupStartDate).toLocaleDateString("es-MX", {
-          weekday: "long",
-          day: "numeric",
-          month: "long",
-          year: "numeric",
-        })
-      : "Por definir";
+    const rawDate = group?.groupStartDate;
+    let startDate = "Por definir";
+
+    if (rawDate) {
+      let d: Date;
+      if (typeof rawDate === 'string') {
+        const datePart = rawDate.split('T')[0];
+        const [y, m, day] = datePart.split('-').map(Number);
+        d = new Date(y, m - 1, day);
+      } else {
+        d = new Date(rawDate);
+      }
+
+      startDate = d.toLocaleDateString("es-MX", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      });
+    }
 
     const schedule = group?.schedule || "Por definir";
     const location = group?.location || "Por definir";
@@ -169,7 +181,7 @@ export class MailService {
     });
   }
 
-  sendCourseStatusEmail(recipientEmail: string, group: any, studentName: string, status: 'APROBADO' | 'REPROBADO'): Observable<any> {
+  sendCourseStatusEmail(recipientEmail: string, group: any, studentName: string, status: 'CURSANDO' | 'APROBADO' | 'REPROBADO'): Observable<any> {
     const { courseName, groupName } = this.getGroupInfo(group);
     
     const isApproved = status === 'APROBADO';
