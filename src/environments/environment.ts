@@ -14,6 +14,5 @@ export const environment = {
     name: 'Capacitaciones SEMOVI',
     version: '0.8.5',
     description: 'Sistema de Capacitaciones para SEMOVI'
-  },
-  useMocks: false
+  }
 };
