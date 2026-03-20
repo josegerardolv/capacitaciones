@@ -218,4 +218,13 @@ export class GroupsService {
     getEnrollmentById(enrollmentId: number): Observable<any> {
         return this.http.get<any>(`${this.apiUrl}/enrollment/${enrollmentId}`);
     }
+
+    /**
+     * Verifica una inscripción/documento mediante su UUID público (QR)
+     */
+    getEnrollmentByUuid(uuid: string): Observable<any> {
+        return this.http.get<any>(`${this.apiUrl}/enrollment/verify/${uuid}`).pipe(
+            map(response => response?.data || response)
+        );
+    }
 }
