@@ -137,7 +137,7 @@ export class DocumentsModalComponent implements OnInit {
           if (this.person && freshEnrollment.person) {
             // Unir datos frescos de la persona manteniéndolos actualizados (teléfono, dirección, etc.)
             this.person = {
-              ...this.person,
+              ...this.person, 
               ...freshEnrollment.person,
               documentCourseEnrollments: freshEnrollment.documentCourseEnrollments || []
             };
