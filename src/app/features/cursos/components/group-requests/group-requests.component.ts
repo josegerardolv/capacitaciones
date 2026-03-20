@@ -101,39 +101,44 @@ export class GroupRequestsComponent implements OnChanges {
     }
 
     loadGroupRequests() {
-        this.tableConfig.loading = true;
-        this.allRequests = [];
-        this.filteredRequests = [];
-        this.requests = [];
-        this.selectedRequests = [];
-        this.acceptedCount = 0;
-
         if (!this.group) return;
+        this.tableConfig.loading = true;
 
-        // NOTA: Se ha eliminado la consulta doble ineficiente (N+1). 
-        // Ahora el conteo de ocupación se lee directamente de la propiedad `acceptedCount` del grupo,
-        // la cual debe ser proporcionada por el backend en el endpoint `/group/search` o `/group/{id}`.
-        this.acceptedCount = this.group.acceptedCount || 0;
-        this.pendingRequestsCount = this.group.pendingRequestsCount || 0;
-        this.rejectCount = this.group.rejectCount || 0;
-        this.availablePlaces = this.group.availablePlaces || (this.group.limitStudents - this.acceptedCount);
+        const page = this.paginationConfig.currentPage;
+        const limit = this.paginationConfig.pageSize;
 
-        this.groupsService.getRequestsByGroupId(this.group.id).subscribe({
-            next: (pendingData) => {
-                // Solicitudes pendientes o rechazadas
-                this.allRequests = pendingData.filter((r: any) => !r.dateReject && r.isAcepted !== true);
+        this.groupsService.getRequestsByGroupId(this.group.id, page, limit).subscribe({
+            next: (response: any) => {
+                let items = [];
+                if (response.data) {
+                    items = response.data;
+                    if (response.meta) {
+                        this.paginationConfig = {
+                            ...this.paginationConfig,
+                            totalItems: Number(response.meta.total)
+                        };
+                    }
+                } else if (Array.isArray(response)) {
+                    items = response;
+                    this.paginationConfig.totalItems = items.length;
+                }
 
+                this.allRequests = items;
                 this.selectedRequests = [];
-                this.initColumns(); // Re-vinculamos templates
-                this.filterData('');
+                this.initColumns();
+                this.filterData(this.currentSearchTerm);
                 this.tableConfig.loading = false;
             },
             error: (err) => {
                 console.error('Error loading group requests', err);
+                this.notificationService.showError('Error', 'No se pudieron cargar las solicitudes.');
                 this.tableConfig.loading = false;
             }
         });
     }
+
+    // Guardar término de búsqueda si existe
+    currentSearchTerm: string = '';
 
     get isGroupFull(): boolean {
         if (!this.group || !this.group.limitStudents) return false;
@@ -185,7 +190,7 @@ export class GroupRequestsComponent implements OnChanges {
     onPageChange(event: PageChangeEvent) {
         this.paginationConfig.currentPage = event.page;
         this.paginationConfig.pageSize = event.pageSize;
-        this.updatePaginatedData();
+        this.loadGroupRequests();
     }
 
     // --- HELPERS PARA MODALES ---
@@ -220,7 +225,7 @@ export class GroupRequestsComponent implements OnChanges {
                 next: () => {
                     this.allRequests = this.allRequests.filter(r => r.enrollmentId !== enrollmentId);
                     this.acceptedCount++; // Incrementar el contador local
-                    this.filterData('');
+                    this.filterData(this.currentSearchTerm);
                     this.clearSelection();
                     this.requestsUpdated.emit(); // <---- EMITIR CAMBIO
 
@@ -249,7 +254,7 @@ export class GroupRequestsComponent implements OnChanges {
             this.groupsService.rejectEnrollment(enrollmentId).subscribe({
                 next: () => {
                     this.allRequests = this.allRequests.filter(r => r.enrollmentId !== enrollmentId);
-                    this.filterData('');
+                    this.filterData(this.currentSearchTerm);
                     this.clearSelection();
                     this.requestsUpdated.emit(); // <---- EMITIR CAMBIO
 
@@ -301,7 +306,7 @@ export class GroupRequestsComponent implements OnChanges {
                     });
 
                     this.allRequests = this.allRequests.filter(r => !processedEnrollmentIds.includes(r.enrollmentId));
-                    this.filterData('');
+                    this.filterData(this.currentSearchTerm);
                     this.clearSelection();
                     this.requestsUpdated.emit(); // <---- EMITIR CAMBIO
                 },
@@ -312,23 +317,21 @@ export class GroupRequestsComponent implements OnChanges {
 
     private clearSelection() {
         this.selectedRequests = [];
-        this.filterData('');
+        this.filterData(this.currentSearchTerm);
     }
 
     // onPageChange eliminado (duplicado)
 
     filterData(query: string) {
         const term = query.toLowerCase().trim();
-        if (!term) {
-            this.filteredRequests = [...this.allRequests];
+        if (this.currentSearchTerm !== term) {
+            this.currentSearchTerm = term;
+            this.paginationConfig.currentPage = 1;
+            this.loadGroupRequests();
         } else {
-            this.filteredRequests = this.allRequests.filter(r =>
-                r.name.toLowerCase().includes(term) ||
-                (r.curp || '').toLowerCase().includes(term)
-            );
+            // Si el término es el mismo, solo actualizar vista local (o nada si ya se cargó)
+            this.requests = [...this.allRequests];
         }
-        this.paginationConfig.totalItems = this.filteredRequests.length;
-        this.updatePaginatedData();
     }
 
     updatePaginatedData() {

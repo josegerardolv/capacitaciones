@@ -36,63 +36,54 @@ export class GroupsService {
         return this.http.get<any>(`${this.apiUrl}/group/search`, { params });
     }
 
-    getPersonsByGroupId(groupId: number): Observable<Person[]> {
-        return this.http.get<any>(`${this.apiUrl}/person?group=${groupId}`).pipe(
-            map(response => response?.data || response)
-        );
-    }
-
-    getEnrollmentsByGroupId(groupId: number, isAcepted: boolean = true): Observable<any[]> {
-        const params = new HttpParams().set('isAcepted', isAcepted.toString());
-        return this.http.get<any[]>(`${this.apiUrl}/enrollment/group/${groupId}`, { params });
-    }
-
-    getRequestsByGroupId(groupId: number): Observable<Person[]> {
-        const params = new HttpParams().set('isAcepted', 'false');
-        return this.http.get<any[]>(`${this.apiUrl}/enrollment/group/${groupId}`, { params }).pipe(
-            map(response => response.map(item => {
-                // Flatten responses into the root object for the table
-                const dynamicFields: any = {};
-                if (item.enrollmentResponse) {
-                    item.enrollmentResponse.forEach((resp: any) => {
-                        // Intentar mapear por el nombre del campo del requisito
-                        const fieldName = resp.courseConfigField?.requirementFieldPerson?.fieldName;
-                        if (fieldName) {
-                            // Normalizar (ej: "Dirección" -> "address")
-                            // Usaremos una lógica simple de mapeo aquí
-                            const lower = fieldName.toLowerCase();
-                            if (lower.includes('dirección')) dynamicFields['address'] = resp.value;
-                            else if (lower.includes('sexo')) dynamicFields['sex'] = resp.value;
-                            else if (lower.includes('telefono')) dynamicFields['phone'] = resp.value;
-                            else if (lower.includes('licencia')) dynamicFields['license'] = resp.value;
-                            else if (lower.includes('nuc')) dynamicFields['nuc'] = resp.value;
-                            else if (lower.includes('correo') || lower.includes('email')) {
-                                if (resp.value) dynamicFields['email'] = resp.value;
-                            }
-                            else dynamicFields[fieldName] = resp.value;
-                        }
-                    });
+    getEnrollmentsByGroupId(groupId: number, page: number = 1, limit: number = 10): Observable<any> {
+        const params = new HttpParams()
+            .set('page', page.toString())
+            .set('limit', limit.toString());
+        return this.http.get<any>(`${this.apiUrl}/enrollment/group/${groupId}`, { params }).pipe(
+            map(response => {
+                if (response.data) {
+                    response.data = response.data.map((item: any) => this.flattenEnrollment(item));
+                } else if (Array.isArray(response)) {
+                    return response.map((item: any) => this.flattenEnrollment(item));
                 }
-
-                // Contador de documentos que este alumno en específico está solicitando
-                const documentCount = (item.documentCoursesEnrollments || []).length;
-
-                const fullName = [item.person?.name, item.person?.paternal_lastName, item.person?.maternal_lastName]
-                    .filter(Boolean)
-                    .join(' ')
-                    .trim();
-
-                return {
-                    ...item.person,
-                    name: fullName || 'Sin Nombre',
-                    ...dynamicFields,
-                    enrollmentId: item.enrollmentId,
-                    dateReject: item.dateReject,
-                    isAcepted: item.isAcepted,
-                    documentCount: documentCount
-                };
-            }))
+                return response;
+            })
         );
+    }
+
+    getRequestsByGroupId(groupId: number, page: number = 1, limit: number = 10): Observable<any> {
+        const params = new HttpParams()
+            .set('isAcepted', 'false')
+            .set('page', page.toString())
+            .set('limit', limit.toString());
+        return this.http.get<any>(`${this.apiUrl}/enrollment/group/${groupId}`, { params }).pipe(
+            map(response => {
+                if (response.data) {
+                    response.data = response.data.map((item: any) => this.flattenEnrollment(item));
+                } else if (Array.isArray(response)) {
+                    return response.map((item: any) => this.flattenEnrollment(item));
+                }
+                return response;
+            })
+        );
+    }
+
+    private flattenEnrollment(item: any): any {
+        const fullName = [item.person?.name, item.person?.paternal_lastName, item.person?.maternal_lastName]
+            .filter(Boolean)
+            .join(' ')
+            .trim();
+
+        return {
+            ...item.person, // Extendemos los datos de la persona (address, curp, phone, license, etc.)
+            name: fullName || 'Sin Nombre',
+            enrollmentId: item.enrollmentId,
+            status: item.isApproved || item.status || 'CURSANDO', // Estatus para la tabla
+            dateReject: item.dateReject,
+            isAcepted: item.isAcepted,
+            _rawEnrollment: item // Preservar referencia completa
+        };
     }
 
     // Payload structure based on BACKEND_INTEGRATION.md
@@ -189,7 +180,11 @@ export class GroupsService {
     }
 
     acceptEnrollment(enrollmentId: number): Observable<any> {
-        return this.http.patch(`${this.apiUrl}/enrollment/${enrollmentId}`, { isAcepted: true, isActive: true });
+        return this.http.patch(`${this.apiUrl}/enrollment/${enrollmentId}`, { 
+            isAcepted: true, 
+            isActive: true,
+            isApproved: 'CURSANDO' 
+        });
     }
 
     cancelEnrollment(enrollmentId: number): Observable<any> {
@@ -203,7 +198,7 @@ export class GroupsService {
     /**
      * Actualiza el estatus del alumno en el curso (CURSANDO, REPROBADO, APROBADO)
      */
-    updateEnrollmentStatus(enrollmentId: number, isApproved: 'CURSANDO' | 'REPROBADO' | 'APROBADO'): Observable<any> {
+    updateEnrollmentStatus(enrollmentId: number, isApproved: 'CURSANDO' | 'APROBADO' | 'REPROBADO'): Observable<any> {
         return this.http.patch(`${this.apiUrl}/enrollment/${enrollmentId}`, { isApproved: isApproved });
     }
 
@@ -213,5 +208,14 @@ export class GroupsService {
 
     getEnrollmentById(enrollmentId: number): Observable<any> {
         return this.http.get<any>(`${this.apiUrl}/enrollment/${enrollmentId}`);
+    }
+
+    /**
+     * Verifica una inscripción/documento mediante su UUID público (QR)
+     */
+    getEnrollmentByUuid(uuid: string): Observable<any> {
+        return this.http.get<any>(`${this.apiUrl}/enrollment/verify/${uuid}`).pipe(
+            map(response => response?.data || response)
+        );
     }
 }

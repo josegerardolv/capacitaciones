@@ -36,6 +36,10 @@ export const routes: Routes = [
       {
         path: 'register/:id', // ID del token/grupo
         loadComponent: () => import('./features/cursos/pages/public-registration/public-registration.component').then(m => m.PublicRegistrationComponent)
+      },
+      {
+        path: 'verify/:uuid', // UUID del documento/inscripción (QR)
+        loadComponent: () => import('./features/documentos/pages/verification/document-verification.component').then(m => m.DocumentVerificationComponent)
       }
     ]
   },

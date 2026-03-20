@@ -200,30 +200,44 @@ export class GroupListComponent implements OnInit {
     getDynamicGroupStatus(group: Group): { text: string, type: 'success' | 'warning' | 'danger' | 'info' | 'neutral' } {
         if (!group.groupStartDate) return { text: 'Sin fecha', type: 'neutral' };
 
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        // 1. Obtener "Hoy" a medianoche local
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-        const startDate = new Date(group.groupStartDate);
-        startDate.setHours(0, 0, 0, 0);
+        // 2. Obtener "Fecha del Curso" a medianoche local (forzando parseo local si es string ISO)
+        let rawDate = group.groupStartDate;
+        let d: Date;
+        
+        if (typeof rawDate === 'string') {
+            const datePart = rawDate.split('T')[0]; // Extraer YYYY-MM-DD
+            const [y, m, day] = datePart.split('-').map(Number);
+            d = new Date(y, m - 1, day);
+        } else {
+            d = new Date(rawDate);
+        }
+        
+        const startDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
 
-        // 3. Finalizado (El curso ya pasó)
-        if (today > startDate) {
+        // 3. Comparación por días de calendario
+        const diffTime = startDate.getTime() - today.getTime();
+        const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+        if (diffDays < 0) {
             return { text: 'Finalizado', type: 'neutral' }; // Gris
         }
-
-        // 2. En Curso (El curso es hoy)
-        if (today.getTime() === startDate.getTime()) {
+        
+        if (diffDays === 0) {
             return { text: 'En curso', type: 'info' }; // Azul
         }
 
-        // 1. Próximo a Iniciar (Faltan días para arrancar el curso)
-        const diffTime = startDate.getTime() - today.getTime();
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        if (diffDays === 1) {
+            return { text: 'Inicia mañana', type: 'warning' }; // Amarillo
+        }
 
-        if (diffDays === 1) return { text: 'Inicia mañana', type: 'warning' };
-        if (diffDays <= 3 && diffDays > 1) return { text: `Inicia en ${diffDays} días`, type: 'warning' };
+        if (diffDays <= 3) {
+            return { text: `Inicia en ${diffDays} días`, type: 'warning' };
+        }
 
-        // Falta más de 3 días para iniciar
         return { text: 'Abierto', type: 'success' }; // Verde
     }
 
@@ -327,26 +341,27 @@ export class GroupListComponent implements OnInit {
                 { label: `Curso: ${shortCourseName}` }
             ];
 
-            // Cargar detalles del curso para obtener courseTypeId, LUEGO cargar grupos
-            this.coursesService.getCourses().pipe(timeout(5000)).subscribe({
-                next: (response) => {
-                    let courses: any[] = [];
-                    if (Array.isArray(response)) {
-                        courses = response;
-                    } else if (response.data) {
-                        courses = response.data;
-                    } else if (response.items) {
-                        courses = response.items;
+            // OPTIMIZACIÓN: Cargar SOLO el curso necesario en lugar de bajar TODOS los cursos
+            this.coursesService.getCourseById(Number(this.cursoId)).pipe(timeout(5000)).subscribe({
+                next: (course: any) => {
+                    this.currentCourse = course;
+                    
+                    // Actualizar nombre en Breadcrumb si no vino por query param
+                    if (!this.courseNameFromQuery) {
+                        const cleanName = course.name.replace(/^Curso[:\s]+/i, '').trim();
+                        const shortName = cleanName.length > 30 ? cleanName.substring(0, 30) + '...' : cleanName;
+                        this.breadcrumbItems = [
+                            { label: 'Cursos', url: '/cursos' },
+                            { label: `Curso: ${shortName}` }
+                        ];
                     }
-
-                    this.currentCourse = courses.find((c: any) => c.id === +this.cursoId!);
-                    this.loadGroups(); // Llamar DESPUÉS de establecer currentCourse
+                    
+                    this.loadGroups();
                 },
                 error: (err) => {
-                    console.error('Error loading course details:', err);
+                    console.error('Error loading single course details:', err);
                     this.tableConfig.loading = false;
                     this.notificationService.error('Error', 'No se pudieron cargar los detalles del curso.');
-                    // Aún así cargamos grupos, aunque sin contexto del curso
                     this.loadGroups();
                 }
             });
@@ -363,7 +378,9 @@ export class GroupListComponent implements OnInit {
     currentSearchTerm: string = '';
 
     loadGroups() {
-        this.tableConfig.loading = true;
+        if (this.groups.length === 0) {
+            this.tableConfig.loading = true;
+        }
 
         const page = this.paginationConfig.currentPage;
         const limit = this.paginationConfig.pageSize;

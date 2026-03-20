@@ -15,7 +15,7 @@ import { NotificationService } from '../../../../core/services/notification.serv
 import { FormsModule } from '@angular/forms';
 import { UniversalIconComponent } from "@/app/shared/components";
 // ... (imports)
-import { Person } from '../../../../core/models/person.model';
+import { Person, PaymentStatus } from '../../../../core/models/person.model';
 import { GroupsService } from '../../services/groups.service';
 
 import { LicenseSearchModalComponent } from '../../components/modals/license-search-modal/license-search-modal.component';
@@ -245,77 +245,33 @@ export class GroupPersonsComponent implements OnInit {
     loadPersons() {
         if (!this.currentGroupId) return;
         this.tableConfig.loading = true;
-        this.allEnrollments = [];
-        this.filteredEnrollments = [];
-        this.persons = [];
-        // NO reseteamos acceptedCount ni isGroupFull aquí para evitar parpadeo si ya los puso loadGroupDetails
 
-        this.groupsService.getEnrollmentsByGroupId(+this.currentGroupId).subscribe({
-            next: (data: any[]) => {
-                // Adaptamos la estructura: el componente de tabla espera las propiedades a nivel raíz
-                this.allEnrollments = data.map(item => {
-                    // Concatenar nombre completo para mostrar
-                    const fullName = [item.person?.name, item.person?.paternal_lastName, item.person?.maternal_lastName]
-                        .filter(Boolean)
-                        .join(' ')
-                        .trim();
+        const page = this.paginationConfig.currentPage;
+        const limit = this.paginationConfig.pageSize;
 
-                    const flattened: any = {
-                        ...item.person,
-                        name: fullName || 'Sin Nombre',
-                        enrollmentId: item.enrollmentId,
-                        responses: item.enrollmentResponse,
-                        documentCoursesEnrollments: item.documentCoursesEnrollments || [],
-                        // Mapeo de estatus del curso (CURSANDO, APROBADO, REPROBADO)
-                        // Para compatibilidad con mocks o el endpoint real
-                        status: item.status || item.isApproved || 'CURSANDO',
-                        _rawEnrollment: item // Preservar enrollment completo para generación de PDF
-                    };
-
-                    // Extraer respuestas dinámicas a la raíz para que la tabla las vea
-                    if (item.enrollmentResponse && Array.isArray(item.enrollmentResponse)) {
-                        const idToFieldName: Record<number, string> = {
-                            4: 'address', 5: 'nuc', 6: 'sex', 7: 'email',
-                            8: 'phone', 9: 'license', 10: 'curp'
+        this.groupsService.getEnrollmentsByGroupId(+this.currentGroupId, page, limit).subscribe({
+            next: (response: any) => {
+                // El servicio ya se encarga del mapeo básico y aplanado (flattening)
+                let items = [];
+                if (response.data) {
+                    items = response.data;
+                    if (response.meta) {
+                        this.paginationConfig = {
+                            ...this.paginationConfig,
+                            totalItems: Number(response.meta.total)
                         };
-
-                        item.enrollmentResponse.forEach((resp: any) => {
-                            const fieldData = resp.courseConfigField?.requirementFieldPerson;
-                            const rfpId = typeof fieldData === 'object' ? fieldData.id : fieldData;
-
-                            if (rfpId) {
-                                // 1. Usar nombre amigable si existe
-                                const friendlyName = idToFieldName[rfpId];
-                                if (friendlyName) {
-                                    flattened[friendlyName] = resp.value;
-                                }
-                                // 2. Siempre guardar por ID por si acaso
-                                flattened[`field_${rfpId}`] = resp.value;
-                            } else {
-                                // Tratar de mapear por el fieldName directamente
-                                const fName = fieldData?.fieldName || resp.courseConfigField?.fieldName;
-                                if (fName) {
-                                    const lower = fName.toLowerCase();
-                                    if (lower.includes('dirección')) flattened['address'] = resp.value;
-                                    else if (lower.includes('sexo')) flattened['sex'] = resp.value;
-                                    else if (lower.includes('telefono') || lower.includes('celular') || lower.includes('contacto')) flattened['phone'] = resp.value;
-                                    else if (lower.includes('licencia')) flattened['license'] = resp.value;
-                                    else if (lower.includes('nuc')) flattened['nuc'] = resp.value;
-                                    else if (lower.includes('correo') || lower.includes('email')) flattened['email'] = resp.value;
-                                    else flattened[fName] = resp.value;
-                                }
-                            }
-                        });
                     }
+                } else if (Array.isArray(response)) {
+                    items = response;
+                    this.paginationConfig.totalItems = items.length;
+                }
 
-                    return flattened;
-                });
-                this.filterData('');
+                this.persons = items;
+                this.allEnrollments = items; // Para compatibilidad con filtros locales si no hay búsqueda server
 
                 // Calcular estado de ocupación global (Priorizar conteo total del server)
-                // Si el server no mandó el contador, usamos el tamaño del array
                 if (this.currentGroup && this.currentGroup.acceptedCount === undefined) {
-                    this.acceptedCount = this.allEnrollments.length;
+                    this.acceptedCount = this.paginationConfig.totalItems;
                     if (this.currentGroup.limitStudents) {
                         this.isGroupFull = this.acceptedCount >= this.currentGroup.limitStudents;
                     }
@@ -334,34 +290,24 @@ export class GroupPersonsComponent implements OnInit {
     onPageChange(event: PageChangeEvent) {
         this.paginationConfig.currentPage = event.page;
         this.paginationConfig.pageSize = event.pageSize;
-        this.updatePaginatedData();
+        this.loadPersons(); // Recargar del servidor
     }
-
-
 
     filterData(query: string) {
+        // Por ahora mantenemos el término solo visual o reseteamos a pag 1 si se busca
         const term = query.toLowerCase().trim();
-        this.currentSearchTerm = term;
-        if (!term) {
-            this.filteredEnrollments = [...this.allEnrollments];
-        } else {
-            this.filteredEnrollments = this.allEnrollments.filter(p =>
-                p.name.toLowerCase().includes(term) ||
-                (p.paternal_lastName || '').toLowerCase().includes(term) ||
-                (p.maternal_lastName || '').toLowerCase().includes(term) ||
-                (p.license || '').toLowerCase().includes(term) ||
-                (p.curp || '').toLowerCase().includes(term)
-            );
+        if (this.currentSearchTerm !== term) {
+            this.currentSearchTerm = term;
+            this.paginationConfig.currentPage = 1;
+
+            // Si el backend no soporta búsqueda, esto recargará la pag 1 de todos.
+            // Si el backend SI soporta búsqueda, deberías pasar term a getEnrollmentsByGroupId.
+            this.loadPersons();
         }
-        this.paginationConfig.totalItems = this.filteredEnrollments.length;
-        this.updatePaginatedData();
     }
 
-    updatePaginatedData() {
-        const start = (this.paginationConfig.currentPage - 1) * this.paginationConfig.pageSize;
-        const end = start + this.paginationConfig.pageSize;
-        this.persons = this.filteredEnrollments.slice(start, end);
-    }
+
+
 
     initColumns() {
         // Columnas por defecto (Respaldo)
@@ -509,7 +455,7 @@ export class GroupPersonsComponent implements OnInit {
 
     // LÓGICA DE NEGOCIO 
 
-    setExamResult(person: any, result: 'APROBADO' | 'REPROBADO') {
+    setExamResult(person: any, result: 'CURSANDO' | 'APROBADO' | 'REPROBADO') {
         const title = result === 'APROBADO' ? 'Aprobar Persona' : 'Reprobar Persona';
         const message = result === 'APROBADO'
             ? `¿Está seguro de que desea APROBAR a ${person.name}?\nEsta acción habilitará la gestión de documentos.`
@@ -560,13 +506,13 @@ export class GroupPersonsComponent implements OnInit {
 
     requestTarjeton(person: Person) {
         // 1. Ya pagado -> Descargar Final
-        if (person.paymentStatus === 'Pagado') {
+        if (person.paymentStatus === PaymentStatus.PAID) {
             this.downloadFinalTarjeton(person);
             return;
         }
 
         // 2. Pago Pendiente -> Verificar
-        if (person.paymentStatus === 'Pendiente') {
+        if (person.paymentStatus === PaymentStatus.PENDING) {
             this.openConfirm({
                 title: 'Verificar Pago',
                 message: `Existe una orden de pago pendiente para ${person.name}.\n¿Desea verificar el estatus del pago ahora?`,
@@ -639,7 +585,7 @@ export class GroupPersonsComponent implements OnInit {
 
     generatePaymentOrder(person: Person, mode: 'download' | 'email') {
         person.requestTarjeton = true; // Actualizado a requestTarjeton
-        person.paymentStatus = 'Pendiente';
+        person.paymentStatus = PaymentStatus.PENDING;
 
         setTimeout(() => {
             if (mode === 'email') {
@@ -662,7 +608,7 @@ export class GroupPersonsComponent implements OnInit {
         this.openAlert('Verificando', 'Consultando estatus de pago...', 'info');
 
         setTimeout(() => {
-            person.paymentStatus = 'Pagado'; // Marcamos como pagado
+            person.paymentStatus = PaymentStatus.PAID; // Marcamos como pagado
             this.notificationService.showSuccess(
                 'Pago Confirmado',
                 `El pago de ${person.name} ha sido validado correctamente.`
@@ -677,7 +623,7 @@ export class GroupPersonsComponent implements OnInit {
 
     viewCertificate(person: Person) {
         // Validación: El curso debe estar pagado para descargar constancia
-        if (person.coursePaymentStatus !== 'Pagado') {
+        if (person.coursePaymentStatus !== PaymentStatus.PAID) {
             this.openConfirm({
                 title: 'Pago de Curso Pendiente',
                 message: `La persona ${person.name} no ha pagado el curso.\n¿Desea validar el pago ahora?`,
@@ -687,7 +633,7 @@ export class GroupPersonsComponent implements OnInit {
             }, () => {
                 this.openAlert('Verificando', 'Validando pago del curso...', 'info');
                 setTimeout(() => {
-                    person.coursePaymentStatus = 'Pagado';
+                    person.coursePaymentStatus = PaymentStatus.PAID;
                     this.notificationService.showSuccess('Pago Validado', 'El pago ha sido registrado. Descargando constancia...');
                 }, 1000);
             });
