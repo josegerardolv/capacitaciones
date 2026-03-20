@@ -15,7 +15,7 @@ import { NotificationService } from '../../../../core/services/notification.serv
 import { FormsModule } from '@angular/forms';
 import { UniversalIconComponent } from "@/app/shared/components";
 // ... (imports)
-import { Person } from '../../../../core/models/person.model';
+import { Person, PaymentStatus } from '../../../../core/models/person.model';
 import { GroupsService } from '../../services/groups.service';
 
 import { LicenseSearchModalComponent } from '../../components/modals/license-search-modal/license-search-modal.component';
@@ -361,6 +361,8 @@ export class GroupPersonsComponent implements OnInit {
         const start = (this.paginationConfig.currentPage - 1) * this.paginationConfig.pageSize;
         const end = start + this.paginationConfig.pageSize;
         this.persons = this.filteredEnrollments.slice(start, end);
+        // Asegurar que la configuración se actualice de forma inmutable para evitar bugs visuales
+        this.paginationConfig = { ...this.paginationConfig };
     }
 
     initColumns() {
@@ -560,13 +562,13 @@ export class GroupPersonsComponent implements OnInit {
 
     requestTarjeton(person: Person) {
         // 1. Ya pagado -> Descargar Final
-        if (person.paymentStatus === 'Pagado') {
+        if (person.paymentStatus === PaymentStatus.PAID) {
             this.downloadFinalTarjeton(person);
             return;
         }
 
         // 2. Pago Pendiente -> Verificar
-        if (person.paymentStatus === 'Pendiente') {
+        if (person.paymentStatus === PaymentStatus.PENDING) {
             this.openConfirm({
                 title: 'Verificar Pago',
                 message: `Existe una orden de pago pendiente para ${person.name}.\n¿Desea verificar el estatus del pago ahora?`,
@@ -639,7 +641,7 @@ export class GroupPersonsComponent implements OnInit {
 
     generatePaymentOrder(person: Person, mode: 'download' | 'email') {
         person.requestTarjeton = true; // Actualizado a requestTarjeton
-        person.paymentStatus = 'Pendiente';
+        person.paymentStatus = PaymentStatus.PENDING;
 
         setTimeout(() => {
             if (mode === 'email') {
@@ -662,7 +664,7 @@ export class GroupPersonsComponent implements OnInit {
         this.openAlert('Verificando', 'Consultando estatus de pago...', 'info');
 
         setTimeout(() => {
-            person.paymentStatus = 'Pagado'; // Marcamos como pagado
+            person.paymentStatus = PaymentStatus.PAID; // Marcamos como pagado
             this.notificationService.showSuccess(
                 'Pago Confirmado',
                 `El pago de ${person.name} ha sido validado correctamente.`
@@ -677,7 +679,7 @@ export class GroupPersonsComponent implements OnInit {
 
     viewCertificate(person: Person) {
         // Validación: El curso debe estar pagado para descargar constancia
-        if (person.coursePaymentStatus !== 'Pagado') {
+        if (person.coursePaymentStatus !== PaymentStatus.PAID) {
             this.openConfirm({
                 title: 'Pago de Curso Pendiente',
                 message: `La persona ${person.name} no ha pagado el curso.\n¿Desea validar el pago ahora?`,
@@ -687,7 +689,7 @@ export class GroupPersonsComponent implements OnInit {
             }, () => {
                 this.openAlert('Verificando', 'Validando pago del curso...', 'info');
                 setTimeout(() => {
-                    person.coursePaymentStatus = 'Pagado';
+                    person.coursePaymentStatus = PaymentStatus.PAID;
                     this.notificationService.showSuccess('Pago Validado', 'El pago ha sido registrado. Descargando constancia...');
                 }, 1000);
             });

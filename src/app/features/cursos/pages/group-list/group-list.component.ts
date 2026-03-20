@@ -341,26 +341,27 @@ export class GroupListComponent implements OnInit {
                 { label: `Curso: ${shortCourseName}` }
             ];
 
-            // Cargar detalles del curso para obtener courseTypeId, LUEGO cargar grupos
-            this.coursesService.getCourses().pipe(timeout(5000)).subscribe({
-                next: (response) => {
-                    let courses: any[] = [];
-                    if (Array.isArray(response)) {
-                        courses = response;
-                    } else if (response.data) {
-                        courses = response.data;
-                    } else if (response.items) {
-                        courses = response.items;
+            // OPTIMIZACIÓN: Cargar SOLO el curso necesario en lugar de bajar TODOS los cursos
+            this.coursesService.getCourseById(Number(this.cursoId)).pipe(timeout(5000)).subscribe({
+                next: (course: any) => {
+                    this.currentCourse = course;
+                    
+                    // Actualizar nombre en Breadcrumb si no vino por query param
+                    if (!this.courseNameFromQuery) {
+                        const cleanName = course.name.replace(/^Curso[:\s]+/i, '').trim();
+                        const shortName = cleanName.length > 30 ? cleanName.substring(0, 30) + '...' : cleanName;
+                        this.breadcrumbItems = [
+                            { label: 'Cursos', url: '/cursos' },
+                            { label: `Curso: ${shortName}` }
+                        ];
                     }
-
-                    this.currentCourse = courses.find((c: any) => c.id === +this.cursoId!);
-                    this.loadGroups(); // Llamar DESPUÉS de establecer currentCourse
+                    
+                    this.loadGroups();
                 },
                 error: (err) => {
-                    console.error('Error loading course details:', err);
+                    console.error('Error loading single course details:', err);
                     this.tableConfig.loading = false;
                     this.notificationService.error('Error', 'No se pudieron cargar los detalles del curso.');
-                    // Aún así cargamos grupos, aunque sin contexto del curso
                     this.loadGroups();
                 }
             });
@@ -377,7 +378,9 @@ export class GroupListComponent implements OnInit {
     currentSearchTerm: string = '';
 
     loadGroups() {
-        this.tableConfig.loading = true;
+        if (this.groups.length === 0) {
+            this.tableConfig.loading = true;
+        }
 
         const page = this.paginationConfig.currentPage;
         const limit = this.paginationConfig.pageSize;

@@ -1,3 +1,10 @@
+export enum PaymentStatus {
+  PAID = 'PAID',
+  PENDING = 'PENDING',
+  DUE = 'DUE',
+  FAILED = 'FAILED'
+}
+
 export interface Person {
     id: number;
     enrollmentId?: number;
@@ -8,8 +15,8 @@ export interface Person {
     curp: string;
     status: 'Pendiente' | 'Aprobado' | 'No Aprobado';
     requestTarjeton: boolean;
-    paymentStatus?: 'Pendiente' | 'Pagado'; // Estatus global de pago
-    coursePaymentStatus?: 'Pendiente' | 'Pagado'; // Estatus de pago del Curso
+    paymentStatus?: PaymentStatus; // Estatus global de pago
+    coursePaymentStatus?: PaymentStatus; // Estatus de pago del Curso
     sex?: 'Hombre' | 'Mujer' | 'H' | 'M';
     address?: string;
     phone?: string;

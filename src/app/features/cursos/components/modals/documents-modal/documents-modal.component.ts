@@ -1,6 +1,6 @@
 import { Component, EventEmitter, Input, Output, OnInit } from "@angular/core";
 import { CommonModule } from "@angular/common";
-import { Person } from "../../../../../core/models/person.model";
+import { Person, PaymentStatus } from "../../../../../core/models/person.model";
 import { UniversalIconComponent } from "../../../../../shared/components/universal-icon/universal-icon.component";
 import { CourseTypeService } from "../../../../../core/services/course-type.service";
 import { NotificationService } from "../../../../../core/services/notification.service";
@@ -35,6 +35,7 @@ export interface DocumentRow {
   stripeUrl?: string; // Cache de la URL de pago para evitar múltiples llamadas
   stripePdf?: string; // Cache del PDF de Stripe
   orderProcessed?: boolean; // Bloqueo de botón tras entrega
+  paymentStatus?: PaymentStatus; // Estatus detallado del pago (PENDING, PAID, DUE, FAILED)
 }
 
 @Component({
@@ -119,15 +120,14 @@ export class DocumentsModalComponent implements OnInit {
       return;
     }
 
-    this.isCheckingPayment = true;
-    // Usar el endpoint de grupo que el usuario prefiere por ser más confiable (isAcepted=true)
-    this.groupsService.getEnrollmentsByGroupId(Number(groupId), true).subscribe({
-      next: (enrollments: any[]) => {
-        // Buscar el enrollment específico dentro de la lista del grupo
-        const freshEnrollment = enrollments.find(e => 
-          (e.enrollmentId || e.id) === enrollmentId
-        );
-
+    const isFirstLoad = this.documents.length === 0;
+    if (isFirstLoad) {
+      this.isCheckingPayment = true;
+    }
+    
+    // OPTIMIZACIÓN: Usar el endpoint individual en lugar de descargar TODO el grupo
+    this.groupsService.getEnrollmentById(Number(enrollmentId)).subscribe({
+      next: (freshEnrollment: any) => {
         if (freshEnrollment) {
           // Mantener la inscripción actualizada para estatus de pago
           this.enrollment = { ...this.enrollment, ...freshEnrollment };
@@ -135,6 +135,8 @@ export class DocumentsModalComponent implements OnInit {
           // Actualizar la relación de documentos en la persona
           if (this.person) {
             (this.person as any).documentCoursesEnrollments = freshEnrollment.documentCoursesEnrollments || [];
+            // Guardar objeto raw para descargas posteriores
+            (this.person as any)._rawEnrollment = freshEnrollment;
           }
         }
         
@@ -142,7 +144,7 @@ export class DocumentsModalComponent implements OnInit {
         this.isCheckingPayment = false;
       },
       error: (err) => {
-        console.error("Error al refrescar inscripción por grupo:", err);
+        console.error("Error al refrescar inscripción individual:", err);
         this.loadDocuments();
         this.isCheckingPayment = false;
       },
@@ -166,11 +168,17 @@ export class DocumentsModalComponent implements OnInit {
         const cost = umas * this.UMA_VALUE;
 
         const paymentsList = dce.payments || [];
-        const hasPaidStatus = paymentsList.some((p: any) => 
-            p.isPaid === true || p.status === 'PAID' || p.status === 'succeeded' || p.status === 'COMPLETED'
-        );
+        const hasPaidStatus = paymentsList.some((p: any) => {
+            // PRIORIDAD: Si el estatus es PENDING, NO está pagado (aunque isPaid sea true por error del backend)
+            if (p.status === PaymentStatus.PENDING) return false;
+            return p.isPaid === true || p.status === PaymentStatus.PAID || p.status === 'succeeded' || p.status === 'COMPLETED';
+        });
         
         const isPaidFlag = (cost === 0) ? true : hasPaidStatus;
+
+        // NUEVO: Obtener el estatus más reciente para mostrarlo en el badge
+        const lastPayment = paymentsList.length > 0 ? paymentsList[paymentsList.length - 1] : null;
+        const currentStatus = lastPayment ? lastPayment.status : (isPaidFlag ? PaymentStatus.PAID : PaymentStatus.PENDING);
 
         const pendingPayment = paymentsList.find((p: any) => p.stripeUrl && p.status === 'PENDING');
         const defaultStripeUrl = pendingPayment ? pendingPayment.stripeUrl : undefined;
@@ -219,6 +227,7 @@ export class DocumentsModalComponent implements OnInit {
             isPaid: isPaid,
             templateId: doc.templateId,
             isLocked: isLocked,
+            paymentStatus: isPaid ? PaymentStatus.PAID : PaymentStatus.PENDING
           };
         });
     });
