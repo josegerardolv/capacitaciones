@@ -167,8 +167,9 @@ export class GroupPersonsComponent implements OnInit {
             this.groupLabel = `Grupo ${this.currentGroupId}`;
         }
 
-        const rawGroupName = this.groupLabel ? this.groupLabel.replace(/^Grupo[:\s]+/i, '').trim() : 'Detalle';
-        const shortGroupName = rawGroupName.length > 25 ? rawGroupName.substring(0, 25) + '...' : rawGroupName;
+        let cleanName = this.groupLabel ? this.groupLabel.replace(/^Grupo[:\s]+/i, '').trim() : '';
+        if (!cleanName) cleanName = this.groupLabel || 'Detalle';
+        const shortGroupName = cleanName.length > 25 ? cleanName.substring(0, 25) + '...' : cleanName;
 
         this.breadcrumbItems.push({
             label: `Grupo: ${shortGroupName}`
@@ -188,8 +189,9 @@ export class GroupPersonsComponent implements OnInit {
                 if (group.name) {
                     this.groupLabel = `Grupo ${group.name}`;
                     if (this.breadcrumbItems.length > 2) {
-                        const rawGroupName = group.name.replace(/^Grupo[:\s]+/i, '').trim();
-                        const shortGroupName = rawGroupName.length > 25 ? rawGroupName.substring(0, 25) + '...' : rawGroupName;
+                        let cleanName = group.name.replace(/^Grupo[:\s]+/i, '').trim();
+                        if (!cleanName) cleanName = group.name;
+                        const shortGroupName = cleanName.length > 25 ? cleanName.substring(0, 25) + '...' : cleanName;
                         this.breadcrumbItems[2].label = `Grupo: ${shortGroupName}`;
                     }
                 }
@@ -359,40 +361,50 @@ export class GroupPersonsComponent implements OnInit {
     openNewPersonForm() {
         if (this.currentGroup) {
             const group = this.currentGroup;
-            const courseTypeId = group.courseTypeId ||
-                (group.course && typeof group.course === 'object' ? (group.course as any).courseType?.id : undefined) ||
-                (group.course && typeof group.course === 'object' ? (group.course as any).id : undefined);
-
-            if (courseTypeId) {
-                this.courseTypeService.getCourseTypeById(courseTypeId).subscribe(config => {
-                    if (config) {
-                        // Nueva lógica: Buscar IDs 9 (Licencia) o 5 (NUC)
-                        let needsSearch = false;
-                        if (config.courseConfigField) {
-                            needsSearch = config.courseConfigField.some((cf: any) => {
-                                const id = typeof cf.requirementFieldPerson === 'object' ? cf.requirementFieldPerson.id : cf.requirementFieldPerson;
-                                return id === 9 || id === 5;
-                            });
-                        }
-
-                        if (needsSearch) {
-                            this.isSearchModalOpen = true;
-                        } else {
-                            this.router.navigate(['nuevo'], {
-                                relativeTo: this.route,
-                                queryParamsHandling: 'merge',
-                                queryParams: { groupLabel: this.groupLabel }
-                            });
-                        }
-                    } else {
-                        this.isSearchModalOpen = true;
-                    }
-                });
+            // Priorizar configuración ya poblada en el grupo
+            const populatedConfig = group.course?.courseType;
+            
+            if (populatedConfig && populatedConfig.courseConfigField) {
+                this.navigateWithGroupData(populatedConfig);
             } else {
-                this.isSearchModalOpen = true;
+                // Si por alguna razón no viene, hacemos el fallback
+                const courseTypeId = group.courseTypeId || 
+                                     (group.course && typeof group.course === 'object' ? group.course.id : undefined);
+                
+                if (courseTypeId) {
+                    this.courseTypeService.getCourseTypeById(courseTypeId).subscribe(config => {
+                        this.navigateWithGroupData(config);
+                    });
+                } else {
+                    this.isSearchModalOpen = true;
+                }
             }
         } else {
             this.isSearchModalOpen = true;
+        }
+    }
+
+    private navigateWithGroupData(config: any) {
+        // Nueva lógica: Buscar IDs 9 (Licencia) o 5 (NUC)
+        let needsSearch = false;
+        if (config && config.courseConfigField) {
+            needsSearch = config.courseConfigField.some((cf: any) => {
+                const id = typeof cf.requirementFieldPerson === 'object' ? cf.requirementFieldPerson.id : cf.requirementFieldPerson;
+                return id === 9 || id === 5;
+            });
+        }
+
+        const navigationExtras = {
+            relativeTo: this.route,
+            queryParamsHandling: 'merge' as const,
+            queryParams: { groupLabel: this.groupLabel },
+            state: { groupData: this.currentGroup } // Pasar datos por el estado para evitar re-hit
+        };
+
+        if (needsSearch) {
+            this.isSearchModalOpen = true;
+        } else {
+            this.router.navigate(['nuevo'], navigationExtras);
         }
     }
 
@@ -410,7 +422,8 @@ export class GroupPersonsComponent implements OnInit {
                 sex: person.sex,
                 address: person.address,
                 groupLabel: this.groupLabel
-            }
+            },
+            state: { groupData: this.currentGroup } // Pasar datos
         });
         this.isSearchModalOpen = false;
     }
@@ -422,7 +435,8 @@ export class GroupPersonsComponent implements OnInit {
             queryParams: {
                 license: license,
                 groupLabel: this.groupLabel
-            }
+            },
+            state: { groupData: this.currentGroup } // Pasar datos
         });
         this.isSearchModalOpen = false;
     }

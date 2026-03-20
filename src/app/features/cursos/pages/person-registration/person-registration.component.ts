@@ -85,6 +85,7 @@ export class PersonRegistrationComponent implements OnInit {
         const courseName = this.route.snapshot.queryParamMap.get('courseName');
         const courseLabel = courseName ? courseName : (this.cursoId ? `Curso ${this.cursoId}` : 'Curso');
         let cleanCourseLabel = courseLabel.replace(/^Curso[:\s]+/i, '').trim();
+        if (!cleanCourseLabel) cleanCourseLabel = courseLabel;
         const shortCourseName = cleanCourseLabel.length > 30 ? cleanCourseLabel.substring(0, 30) + '...' : cleanCourseLabel;
 
         this.breadcrumbItems = [
@@ -97,10 +98,12 @@ export class PersonRegistrationComponent implements OnInit {
         ];
 
         const groupLabelParam = this.route.snapshot.queryParamMap.get('groupLabel');
+        const groupRawPrefix = groupLabelParam ? groupLabelParam.replace(/^Grupo[:\s]+/i, '').trim() : '';
+        const groupLabelToShow = groupRawPrefix || groupLabelParam || 'Cargando...';
 
         // El nombre del grupo lo cargaremos cuando tengamos los detalles del grupo más abajo
         this.breadcrumbItems.push({
-            label: groupLabelParam ? `Grupo: ${groupLabelParam.replace(/^Grupo[:\s]+/i, '').trim()}` : `Grupo: Cargando...`,
+            label: `Grupo: ${groupLabelToShow}`,
             url: `/cursos/${this.cursoId}/grupos/${this.groupId}/conductores`,
             queryParams: { courseName: courseLabel, groupLabel: groupLabelParam }
         });
@@ -113,152 +116,101 @@ export class PersonRegistrationComponent implements OnInit {
             }
         });
 
-        if (this.groupId) {
+        // OPTIMIZACIÓN: Intentar obtener los datos del grupo desde la navegación (Router State)
+        const navigation = this.router.getCurrentNavigation();
+        const stateData = navigation?.extras.state as { groupData: any };
+        const historyData = window.history.state?.groupData; // Respaldo por si se recarga parcialmente
+
+        if (stateData?.groupData || historyData) {
+            const group = stateData?.groupData || historyData;
+            this.processGroupData(group);
+        } else if (this.groupId) {
+            // Fallback: Si no hay estado (ej: recarga F5), hacemos el hit
             this.groupsService.getGroupById(+this.groupId).subscribe((group: any) => {
                 if (group) {
-                    this.currentGroup = group;
-                    this.currentGroupUuid = group.uuid; // Guardar UUID para el payload
-                    this.currentCourseType = 'GENERICO';
-
-                    // Actualizar nombre del grupo en las migas de pan ahora que lo tenemos
-                    if (this.breadcrumbItems.length > 1) {
-                        const rawGroupName = group.name ? group.name.replace(/^Grupo[:\s]+/i, '').trim() : `Grupo ${group.id}`;
-                        const shortGroupName = rawGroupName.length > 25 ? rawGroupName.substring(0, 25) + '...' : rawGroupName;
-                        this.breadcrumbItems[2].label = `Grupo: ${shortGroupName}`;
-                    }
-
-                    // Actualizar nombre del curso en las migas de pan si el backend lo trae (Respaldo robusto para F5/Recarga)
-                    if (group.course && group.course.name && this.breadcrumbItems.length > 1) {
-                        const rawCourseName = group.course.name.replace(/^Curso[:\s]+/i, '').trim();
-                        const shortCourseName = rawCourseName.length > 30 ? rawCourseName.substring(0, 30) + '...' : rawCourseName;
-                        this.breadcrumbItems[1].label = `Curso: ${shortCourseName}`;
-                    }
-
-                    // Optimización de Cupo: Usar contadores directos del servidor (Sin latencia de descarga)
-                    this.acceptedCount = group.acceptedCount || 0;
-                    const pendingCount = group.pendingRequestsCount || 0;
-
-                    if (group.availablePlaces !== undefined) {
-                        this.isGroupFull = group.availablePlaces <= 0;
-                    } else if (group.limitStudents) {
-                        this.isGroupFull = (this.acceptedCount + pendingCount) >= group.limitStudents;
-                    } else {
-                        this.isGroupFull = false;
-                    }
-
-                    if (this.isGroupFull) {
-                        this.showForm = false;
-                        this.isSearchModalOpen = false;
-                        return; // Detenemos la secuencia
-                    }
-
-                    // 1. INTENTAR USAR CONFIGURACIÓN YA POBLADA (RICH)
-                    // Si el grupo ya trae el courseConfigField con relaciones, lo usamos de inmediato.
-                    const populatedConfig = group.course?.courseType;
-
-                    if (populatedConfig && populatedConfig.courseConfigField && populatedConfig.courseConfigField.length > 0 && populatedConfig.courseConfigField[0].requirementFieldPerson) {
-                        this.setupFormFields(populatedConfig);
-                        // Poblar documentos disponibles si vienen poblados
-                        if (group.documents && group.documents.length > 0) {
-                            this.currentAvailableDocuments = group.documents.map((d: any) => {
-                                let calculatedCost = d.cost || 0;
-                                if (d.paymentConcept && d.paymentConcept.umas) {
-                                    calculatedCost = Number(d.paymentConcept.umas) * 117.31;
-                                }
-                                return {
-                                    id: d.documentCourses || d.id || d.name || 'doc_unknown',
-                                    name: d.name || 'Documento sin nombre',
-                                    description: d.description || '',
-                                    templateId: d.templateId || d.id,
-                                    isMandatory: d.isRequired !== undefined ? d.isRequired : (d.isMandatory !== undefined ? d.isMandatory : false),
-                                    cost: calculatedCost
-                                };
-                            });
-                        } else if (populatedConfig.documentCourses) {
-                            const docs = populatedConfig.documentCourses || [];
-                            this.currentAvailableDocuments = docs.map((d: any) => {
-                                let calculatedCost = 0;
-                                if (d.templateDocument?.paymentConcept?.umas) {
-                                    calculatedCost = Number(d.templateDocument.paymentConcept.umas) * 117.31;
-                                } else if (d.templateDocumentObject?.paymentConcept?.umas) {
-                                    calculatedCost = Number(d.templateDocumentObject.paymentConcept.umas) * 117.31;
-                                }
-                                return {
-                                    id: d.id || d.templateDocument?.id || d.templateDocument || 'doc_unknown',
-                                    name: d.name || d.templateDocument?.name || d.templateDocumentObject?.name || 'Documento',
-                                    description: d.description || d.templateDocument?.description || d.templateDocumentObject?.description || '',
-                                    templateId: d.templateDocument?.id || d.templateDocument,
-                                    isMandatory: d.isRequired !== undefined ? d.isRequired : (d.isMandatory !== undefined ? d.isMandatory : false),
-                                    cost: calculatedCost
-                                };
-                            });
-                        } else if (populatedConfig.availableDocuments) {
-                            this.currentAvailableDocuments = populatedConfig.availableDocuments;
-                        }
-                    } else {
-                        // 2. FALLBACK: CONSULTA DINÁMICA (Si viene incompleto o shallow)
-                        const courseTypeId = group.courseTypeId ||
-                            (group.course && typeof group.course === 'object' ? group.course.courseType?.id : undefined) ||
-                            (group.course && typeof group.course === 'object' ? group.course.id : undefined);
-
-                        if (courseTypeId) {
-                            this.courseTypeService.getCourseTypeById(courseTypeId).subscribe(config => {
-                                if (config) {
-                                    this.setupFormFields(config);
-                                    // Poblar documentos disponibles
-                                    if (group.documents && group.documents.length > 0) {
-                                        this.currentAvailableDocuments = group.documents.map((d: any) => {
-                                            let calculatedCost = d.cost || 0;
-                                            if (d.paymentConcept && d.paymentConcept.umas) {
-                                                calculatedCost = Number(d.paymentConcept.umas) * 117.31;
-                                            }
-                                            return {
-                                                id: d.documentCourses || d.id || d.name || 'doc_unknown',
-                                                name: d.name || 'Documento sin nombre',
-                                                description: d.description || '',
-                                                templateId: d.templateId || d.id,
-                                                isMandatory: d.isRequired !== undefined ? d.isRequired : (d.isMandatory !== undefined ? d.isMandatory : false),
-                                                cost: calculatedCost
-                                            };
-                                        });
-                                    } else if (config.documentCourses) {
-                                        const docs = config.documentCourses || [];
-                                        this.currentAvailableDocuments = docs.map((d: any) => {
-                                            let calculatedCost = 0;
-                                            if (d.templateDocument?.paymentConcept?.umas) {
-                                                calculatedCost = Number(d.templateDocument.paymentConcept.umas) * 117.31;
-                                            } else if (d.templateDocumentObject?.paymentConcept?.umas) {
-                                                calculatedCost = Number(d.templateDocumentObject.paymentConcept.umas) * 117.31;
-                                            }
-                                            return {
-                                                id: d.id || d.templateDocument?.id || d.templateDocument || 'doc_unknown',
-                                                name: d.templateDocument?.name || d.templateDocumentObject?.name || d.name || 'Documento',
-                                                description: d.description || d.templateDocument?.description || d.templateDocumentObject?.description || '',
-                                                templateId: d.templateDocument?.id || d.templateDocument,
-                                                isMandatory: d.isRequired !== undefined ? d.isRequired : (d.isMandatory !== undefined ? d.isMandatory : false),
-                                                cost: calculatedCost
-                                            };
-                                        });
-                                    } else if (config.availableDocuments) {
-                                        this.currentAvailableDocuments = config.availableDocuments;
-                                    }
-                                } else {
-                                    this.setupFallbackFields('GENERICO');
-                                }
-                            });
-                        } else {
-                            this.setupFallbackFields('GENERICO');
-                        }
-                    }
+                    this.processGroupData(group);
                 }
             });
         }
     }
 
+    private processGroupData(group: any) {
+        this.currentGroup = group;
+        this.currentGroupUuid = group.uuid;
+        this.currentCourseType = 'GENERICO';
+
+        // Update breadcrumbs
+        if (this.breadcrumbItems.length > 2) {
+            let cleanName = group.name ? group.name.replace(/^Grupo[:\s]+/i, '').trim() : '';
+            if (!cleanName) cleanName = group.name || `Grupo ${group.id}`;
+            const shortGroupName = cleanName.length > 25 ? cleanName.substring(0, 25) + '...' : cleanName;
+            this.breadcrumbItems[2].label = `Grupo: ${shortGroupName}`;
+        }
+
+        if (group.course?.name && this.breadcrumbItems.length > 1) {
+            const rawCourseName = group.course.name.replace(/^Curso[:\s]+/i, '').trim();
+            const shortCourseName = rawCourseName.length > 30 ? rawCourseName.substring(0, 30) + '...' : rawCourseName;
+            this.breadcrumbItems[1].label = `Curso: ${shortCourseName}`;
+        }
+
+        this.acceptedCount = group.acceptedCount || 0;
+        const pendingCount = group.pendingRequestsCount || 0;
+        this.isGroupFull = group.availablePlaces !== undefined ? group.availablePlaces <= 0 : (group.limitStudents ? (this.acceptedCount + pendingCount) >= group.limitStudents : false);
+
+        if (this.isGroupFull) {
+            this.showForm = false;
+            this.isSearchModalOpen = false;
+            return;
+        }
+
+        const populatedConfig = group.course?.courseType;
+        if (populatedConfig?.courseConfigField?.length) {
+            this.setupFormFields(populatedConfig);
+            this.loadAvailableDocuments(group, populatedConfig);
+        } else {
+            const courseTypeId = group.courseTypeId || group.course?.id;
+            if (courseTypeId) {
+                this.courseTypeService.getCourseTypeById(courseTypeId).subscribe(config => {
+                    if (config) {
+                        this.setupFormFields(config);
+                        this.loadAvailableDocuments(group, config);
+                    } else {
+                        this.setupFallbackFields('GENERICO');
+                    }
+                });
+            } else {
+                this.setupFallbackFields('GENERICO');
+            }
+        }
+    }
+
+    private loadAvailableDocuments(group: any, config: any) {
+        if (group.documents?.length) {
+            this.currentAvailableDocuments = group.documents.map((d: any) => this.mapDocument(d));
+        } else if (config.documentCourses?.length) {
+            this.currentAvailableDocuments = config.documentCourses.map((d: any) => this.mapDocument(d));
+        } else if (config.availableDocuments) {
+            this.currentAvailableDocuments = config.availableDocuments;
+        }
+    }
+
+    private mapDocument(d: any): DocumentConfig {
+        let calculatedCost = d.cost || 0;
+        const payment = d.paymentConcept || d.templateDocument?.paymentConcept || d.templateDocumentObject?.paymentConcept;
+        if (payment?.umas) calculatedCost = Number(payment.umas) * 117.31;
+        
+        return {
+            id: d.id || d.templateDocument?.id || 'doc_unknown',
+            name: d.name || d.templateDocument?.name || d.templateDocumentObject?.name || 'Documento',
+            description: d.description || d.templateDocument?.description || d.templateDocumentObject?.description || '',
+            templateId: d.templateDocument?.id || d.id,
+            isMandatory: d.isRequired !== undefined ? d.isRequired : (d.isMandatory !== undefined ? d.isMandatory : false),
+            cost: calculatedCost
+        };
+    }
+
     setupFormFields(config: CourseTypeConfig) {
-        // A. Mapear campos de registro (Soporta nuevo courseConfigField y legacy registrationFields)
         this.fieldsConfig = {
-            // CAMPOS BASE: Siempre visibles. Nombre/CURP/Email son obligatorios.
             'name': { fieldName: 'name', label: 'Nombre', visible: true, required: true },
             'paternal_lastName': { fieldName: 'paternal_lastName', label: 'Primer Apellido', visible: true, required: false },
             'maternal_lastName': { fieldName: 'maternal_lastName', label: 'Segundo Apellido', visible: true, required: false },
@@ -269,49 +221,23 @@ export class PersonRegistrationComponent implements OnInit {
             'nuc': { fieldName: 'nuc', label: 'NUC', visible: false, required: false }
         };
 
-        if (config.courseConfigField && config.courseConfigField.length > 0) {
-            // Nuevo formato: Mapear IDs a nombres de campo
-            const idToFieldName: Record<number, string> = {
-                4: 'address', 5: 'nuc', 6: 'sex', 7: 'email',
-                8: 'phone', 9: 'license', 10: 'curp'
-            };
-
+        if (config.courseConfigField?.length) {
+            const idToFieldName: Record<number, string> = { 4: 'address', 5: 'nuc', 6: 'sex', 7: 'email', 8: 'phone', 9: 'license', 10: 'curp' };
             config.courseConfigField.forEach((cf: any) => {
-                const fieldId = typeof cf.requirementFieldPerson === 'object'
-                    ? cf.requirementFieldPerson.id
-                    : cf.requirementFieldPerson;
-
+                const fieldId = typeof cf.requirementFieldPerson === 'object' ? cf.requirementFieldPerson.id : cf.requirementFieldPerson;
                 const fieldName = idToFieldName[fieldId];
-
-                if (fieldName) {
-                    if (this.fieldsConfig![fieldName]) {
-                        // Campo base o pre-configurado: habilitar y actualizar required
-                        this.fieldsConfig![fieldName].visible = true;
-                        this.fieldsConfig![fieldName].required = cf.required;
-                        this.fieldsConfig![fieldName].courseConfigFieldId = cf.id;
-                    } else {
-                        // Campo dinámico: agregar completo
-                        this.fieldsConfig![fieldName] = {
-                            fieldName: fieldName,
-                            label: fieldName,
-                            visible: true,
-                            required: cf.required,
-                            courseConfigFieldId: cf.id
-                        };
-                    }
+                if (fieldName && this.fieldsConfig![fieldName]) {
+                    this.fieldsConfig![fieldName].visible = true;
+                    this.fieldsConfig![fieldName].required = cf.required;
+                    this.fieldsConfig![fieldName].courseConfigFieldId = cf.id;
                 }
             });
         }
 
-        // B. Determinar si mostrar búsqueda
-        // Solo abrimos el buscador automáticamente si el curso EXPLÍCITAMENTE pide Licencia o NUC en su config
-        let needsLicenseSearch = false;
-        if (config.courseConfigField) {
-            needsLicenseSearch = config.courseConfigField.some((cf: any) => {
-                const id = typeof cf.requirementFieldPerson === 'object' ? cf.requirementFieldPerson.id : cf.requirementFieldPerson;
-                return id === 9 || id === 5; // 9 = Licencia, 5 = NUC
-            });
-        }
+        let needsLicenseSearch = config.courseConfigField?.some((cf: any) => {
+            const id = typeof cf.requirementFieldPerson === 'object' ? cf.requirementFieldPerson.id : cf.requirementFieldPerson;
+            return id === 9 || id === 5;
+        });
 
         if (needsLicenseSearch && !this.prefilledData) {
             this.isSearchModalOpen = true;
@@ -323,25 +249,15 @@ export class PersonRegistrationComponent implements OnInit {
     }
 
     onPersonFound(person: Person) {
-        this.currentPersonId = (person as any).id; // Guardamos el ID para el payload final
-
-        // Solo prellenar campos que son bases o están marcados como visibles en este curso
+        this.currentPersonId = (person as any).id;
         const data: any = { found: true };
         const alwaysPrefill = ['name', 'paternal_lastName', 'maternal_lastName', 'curp'];
-
-        alwaysPrefill.forEach(key => {
-            if ((person as any)[key]) data[key] = (person as any)[key];
-        });
-
-        // Solo prellenar campos adicionales si el curso ACTUAL los pide
+        alwaysPrefill.forEach(key => { if ((person as any)[key]) data[key] = (person as any)[key]; });
         if (this.fieldsConfig) {
             Object.keys(this.fieldsConfig).forEach(key => {
-                if (this.fieldsConfig![key]?.visible && (person as any)[key]) {
-                    data[key] = (person as any)[key];
-                }
+                if (this.fieldsConfig![key]?.visible && (person as any)[key]) data[key] = (person as any)[key];
             });
         }
-
         this.prefilledData = data;
         this.showForm = true;
         this.isSearchModalOpen = false;
@@ -357,22 +273,20 @@ export class PersonRegistrationComponent implements OnInit {
         if (courseType === 'LICENCIA') {
             this.fieldsConfig = {
                 license: { fieldName: 'license', label: 'Licencia', visible: true, required: true },
-                nuc: { fieldName: 'nuc', label: 'NUC', visible: true, required: false },
-                requestTarjeton: { fieldName: 'requestTarjeton', label: 'Tarjetón', visible: false, required: false }
+                nuc: { fieldName: 'nuc', label: 'NUC', visible: true, required: false }
             };
         } else {
             this.fieldsConfig = {
                 license: { fieldName: 'license', label: 'Licencia', visible: false, required: false },
-                nuc: { fieldName: 'nuc', label: 'NUC', visible: false, required: false },
-                requestTarjeton: { fieldName: 'requestTarjeton', label: 'Tarjetón', visible: false, required: false }
+                nuc: { fieldName: 'nuc', label: 'NUC', visible: false, required: false }
             };
         }
     }
 
-    // Modal State
+    // Document Select Modal Logic
     isDocumentsModalOpen = false;
     tempPersonData: any = null;
-    currentCourseType: CourseType = 'LICENCIA'; // Default
+    currentCourseType: CourseType = 'GENERICO';
 
     onPersonSaved(personData: any) {
         if (this.isGroupFull) {
