@@ -8,9 +8,9 @@ import {
   AlertModalComponent,
   AlertConfig,
 } from "../../../../../shared/components/modals/alert-modal.component";
-import { 
-  LoadingModalComponent, 
-  LoadingConfig 
+import {
+  LoadingModalComponent,
+  LoadingConfig
 } from "../../../../../shared/components/modals/loading-modal.component";
 import { InstitutionalButtonComponent } from "../../../../../shared/components/buttons/institutional-button.component";
 import { TooltipDirective } from "../../../../../shared/components/tooltip/tooltip.directive";
@@ -95,9 +95,9 @@ export class DocumentsModalComponent implements OnInit {
     private templateService: TemplateService,
     private mailService: MailService,
     private groupsService: GroupsService
-  ) {}
+  ) { }
 
-  ngOnInit(): void {}
+  ngOnInit(): void { }
 
   ngOnChanges(changes: any) {
     if (changes.isOpen?.currentValue === true) {
@@ -110,12 +110,13 @@ export class DocumentsModalComponent implements OnInit {
   }
 
   private refreshData() {
-    const enrollmentId = this.enrollment?.enrollmentId || this.enrollment?.id;
-    const groupId = this.enrollment?.group?.id || this.enrollment?.groupId || 
-                    (this.person as any)?._rawEnrollment?.group?.id;
+    // Resolver IDs de cualquier fuente disponible
+    const enrollmentId = this.enrollment?.enrollmentId || this.enrollment?.id || (this.person as any)?.enrollmentId;
+    const groupId = this.group?.id || this.enrollment?.group?.id || this.enrollment?.groupId ||
+      (this.person as any)?._rawEnrollment?.group?.id;
 
-    if (!enrollmentId || !groupId) {
-      console.warn("Faltan IDs para recarga: enrollmentId o groupId", { enrollmentId, groupId });
+    if (!enrollmentId) {
+      console.warn("Falta enrollmentId para recarga");
       this.loadDocuments();
       return;
     }
@@ -124,7 +125,7 @@ export class DocumentsModalComponent implements OnInit {
     if (isFirstLoad) {
       this.isCheckingPayment = true;
     }
-    
+
     // OPTIMIZACIÓN: Usar el endpoint individual en lugar de descargar TODO el grupo
     this.groupsService.getEnrollmentById(Number(enrollmentId)).subscribe({
       next: (freshEnrollment: any) => {
@@ -132,14 +133,19 @@ export class DocumentsModalComponent implements OnInit {
           // Mantener la inscripción actualizada para estatus de pago
           this.enrollment = { ...this.enrollment, ...freshEnrollment };
 
-          // Actualizar la relación de documentos en la persona
-          if (this.person) {
-            (this.person as any).documentCoursesEnrollments = freshEnrollment.documentCoursesEnrollments || [];
+          // Actualizar la relación de documentos y datos de la persona
+          if (this.person && freshEnrollment.person) {
+            // Unir datos frescos de la persona manteniéndolos actualizados (teléfono, dirección, etc.)
+            this.person = {
+              ...this.person,
+              ...freshEnrollment.person,
+              documentCourseEnrollments: freshEnrollment.documentCourseEnrollments || []
+            };
             // Guardar objeto raw para descargas posteriores
             (this.person as any)._rawEnrollment = freshEnrollment;
           }
         }
-        
+
         this.loadDocuments();
         this.isCheckingPayment = false;
       },
@@ -154,9 +160,9 @@ export class DocumentsModalComponent implements OnInit {
   loadDocuments() {
     if (!this.person) return;
 
-    // 1. NUEVA FORMA: Intentar leer desde person o desde enrollment (fresco o cache)
-    const enrollmentsDocs: any[] = (this.person as any).documentCoursesEnrollments || 
-                                    this.enrollment?.documentCoursesEnrollments || [];
+    // Priorizar datos de la inscripción (fresca o pasada por el padre)
+    const enrollmentData = this.enrollment || (this.person as any)?._rawEnrollment;
+    const enrollmentsDocs: any[] = enrollmentData?.documentCourseEnrollments || [];
 
     if (enrollmentsDocs && enrollmentsDocs.length > 0) {
       this.documents = enrollmentsDocs.map((dce) => {
@@ -169,11 +175,11 @@ export class DocumentsModalComponent implements OnInit {
 
         const paymentsList = dce.payments || [];
         const hasPaidStatus = paymentsList.some((p: any) => {
-            // PRIORIDAD: Si el estatus es PENDING, NO está pagado (aunque isPaid sea true por error del backend)
-            if (p.status === PaymentStatus.PENDING) return false;
-            return p.isPaid === true || p.status === PaymentStatus.PAID || p.status === 'succeeded' || p.status === 'COMPLETED';
+          // PRIORIDAD: Si el estatus es PENDING, NO está pagado (aunque isPaid sea true por error del backend)
+          if (p.status === PaymentStatus.PENDING) return false;
+          return p.isPaid === true || p.status === PaymentStatus.PAID || p.status === 'succeeded' || p.status === 'COMPLETED';
         });
-        
+
         const isPaidFlag = (cost === 0) ? true : hasPaidStatus;
 
         // NUEVO: Obtener el estatus más reciente para mostrarlo en el badge
@@ -241,8 +247,8 @@ export class DocumentsModalComponent implements OnInit {
 
   printPaymentOrder(doc: DocumentRow) {
     if (!this.person?.id) {
-        this.notificationService.showError("Error", "No se encontró el ID de la persona.");
-        return;
+      this.notificationService.showError("Error", "No se encontró el ID de la persona.");
+      return;
     }
 
     const enrollmentData = this.enrollment || (this.person as any)?._rawEnrollment;
@@ -251,31 +257,31 @@ export class DocumentsModalComponent implements OnInit {
       return;
     }
 
-    const dce = enrollmentData.documentCoursesEnrollments?.find((d: any) => d.id?.toString() === doc.id);
+    const dce = enrollmentData.documentCourseEnrollments?.find((d: any) => d.id?.toString() === doc.id);
     const templateDoc = dce?.documentCourse?.templateDocument;
-    
+
     const p = this.person;
-    const fullName = (p.paternal_lastName && p.name.includes(p.paternal_lastName)) 
-        ? p.name 
-        : [p.name, p.paternal_lastName, p.maternal_lastName].filter(Boolean).join(" ").trim();
+    const fullName = (p.paternal_lastName && p.name.includes(p.paternal_lastName))
+      ? p.name
+      : [p.name, p.paternal_lastName, p.maternal_lastName].filter(Boolean).join(" ").trim();
 
     if (doc.stripeUrl && doc.stripePdf) {
-        this.showStripeModal(doc, doc.stripeUrl, doc.stripePdf, fullName);
-        return;
+      this.showStripeModal(doc, doc.stripeUrl, doc.stripePdf, fullName);
+      return;
     }
 
     const payload = {
-        customer: {
-            email: this.person.email,
-            name: fullName,
-            personId: Number(this.person.id)
-        },
-        invoice: {
-            paymentConceptID: Number(templateDoc?.paymentConcept?.id) || 0,
-            description: doc.name
-        },
-        enrollment: Number(enrollmentData.enrollmentId || enrollmentData.id) || 0,
-        documentCourseEnrollment: Number(dce?.id) || 0
+      customer: {
+        email: this.person.email,
+        name: fullName,
+        personId: Number(this.person.id)
+      },
+      invoice: {
+        paymentConceptID: Number(templateDoc?.paymentConcept?.id) || 0,
+        description: doc.name
+      },
+      enrollment: Number(enrollmentData.enrollmentId || enrollmentData.id) || 0,
+      documentCourseEnrollment: Number(dce?.id) || 0
     };
 
     this.isGeneratingPayment = true;
@@ -288,84 +294,84 @@ export class DocumentsModalComponent implements OnInit {
     };
 
     this.mailService.sendStripeInvoice(payload).subscribe({
-        next: (response: any) => {
-            this.isGeneratingPayment = false;
-            this.isLoadingModalOpen = false;
-            doc.stripeUrl = response.url;
-            doc.stripePdf = response.pdf;
-            this.showStripeModal(doc, response.url, response.pdf, fullName);
-        },
-        error: (err: any) => {
-            this.isGeneratingPayment = false;
-            this.isLoadingModalOpen = false;
-            console.error("Error en Stripe Invoice:", err);
-            const errorMsg = err.error?.message || "Ocurrió un error al contactar el servidor de pagos.";
-            this.alertConfig = {
-              title: "Error de Pago",
-              message: errorMsg,
-              type: "danger",
-              actions: [ { label: 'Entendido', variant: 'outline', action: () => { this.isAlertOpen = false; } } ]
-            };
-            this.isAlertOpen = true;
-        }
+      next: (response: any) => {
+        this.isGeneratingPayment = false;
+        this.isLoadingModalOpen = false;
+        doc.stripeUrl = response.url;
+        doc.stripePdf = response.pdf;
+        this.showStripeModal(doc, response.url, response.pdf, fullName);
+      },
+      error: (err: any) => {
+        this.isGeneratingPayment = false;
+        this.isLoadingModalOpen = false;
+        console.error("Error en Stripe Invoice:", err);
+        const errorMsg = err.error?.message || "Ocurrió un error al contactar el servidor de pagos.";
+        this.alertConfig = {
+          title: "Error de Pago",
+          message: errorMsg,
+          type: "danger",
+          actions: [{ label: 'Entendido', variant: 'outline', action: () => { this.isAlertOpen = false; } }]
+        };
+        this.isAlertOpen = true;
+      }
     });
   }
 
   private showStripeModal(doc: DocumentRow, url: string, pdf: string, fullName: string) {
-      this.alertConfig = {
-          title: "Línea de Captura",
-          message: `Seleccione cómo desea entregar la Línea de Captura para: <strong>${doc.name}</strong>`,
-          type: "success",
-          showCloseButton: false,
-          closeOnEscape: false,
-          closeOnOverlay: false,
-          actions: [
-            { 
-              label: 'Enviar por Correo', 
-              variant: 'primary', 
-              action: () => { 
-                  this.isAlertOpen = false;
-                  
-                  // Mostrar cargando para el envío de mail de Stripe
-                  this.isLoadingModalOpen = true;
-                  this.loadingConfig = {
-                    title: "Enviando Línea de Captura",
-                    message: `Obteniendo información de SIOX para el envío a ${this.person?.email || 'su correo'}...`,
-                    size: 'md'
-                  };
+    this.alertConfig = {
+      title: "Línea de Captura",
+      message: `Seleccione cómo desea entregar la Línea de Captura para: <strong>${doc.name}</strong>`,
+      type: "success",
+      showCloseButton: false,
+      closeOnEscape: false,
+      closeOnOverlay: false,
+      actions: [
+        {
+          label: 'Enviar por Correo',
+          variant: 'primary',
+          action: () => {
+            this.isAlertOpen = false;
 
-                  this.mailService.sendPaymentUrlByMail(this.person?.email || '', doc.name, fullName, url).subscribe({
-                      next: () => {
-                          this.isLoadingModalOpen = false;
-                          doc.orderProcessed = true; // Bloquear botón
-                          this.alertConfig = {
-                            title: "¡Envío Exitoso!",
-                            message: `La línea de pago para <b>${doc.name}</b> ha sido enviada correctamente a <b>${this.person?.email}</b>.`,
-                            type: "success",
-                            actions: [{ label: 'Entendido', variant: 'outline', action: () => { this.isAlertOpen = false; } }]
-                          };
-                          this.isAlertOpen = true;
-                      },
-                      error: (err) => {
-                          this.isLoadingModalOpen = false;
-                          this.notificationService.showError("Error", "Ocurrió un problema al enviar el correo");
-                      }
-                  });
-              } 
-            },
-            { 
-              label: 'Descargar PDF', 
-              variant: 'secondary', 
-              action: () => { 
-                window.open(pdf, '_blank'); 
-                this.isAlertOpen = false;
+            // Mostrar cargando para el envío de mail de Stripe
+            this.isLoadingModalOpen = true;
+            this.loadingConfig = {
+              title: "Enviando Línea de Captura",
+              message: `Obteniendo información de SIOX para el envío a ${this.person?.email || 'su correo'}...`,
+              size: 'md'
+            };
+
+            this.mailService.sendPaymentUrlByMail(this.person?.email || '', doc.name, fullName, url).subscribe({
+              next: () => {
+                this.isLoadingModalOpen = false;
                 doc.orderProcessed = true; // Bloquear botón
-                this.notificationService.showSuccess("Descargado", "La línea de captura se abrió en una nueva pestaña.");
-              } 
-            }
-          ]
-      };
-      this.isAlertOpen = true;
+                this.alertConfig = {
+                  title: "¡Envío Exitoso!",
+                  message: `La línea de pago para <b>${doc.name}</b> ha sido enviada correctamente a <b>${this.person?.email}</b>.`,
+                  type: "success",
+                  actions: [{ label: 'Entendido', variant: 'outline', action: () => { this.isAlertOpen = false; } }]
+                };
+                this.isAlertOpen = true;
+              },
+              error: (err) => {
+                this.isLoadingModalOpen = false;
+                this.notificationService.showError("Error", "Ocurrió un problema al enviar el correo");
+              }
+            });
+          }
+        },
+        {
+          label: 'Descargar PDF',
+          variant: 'secondary',
+          action: () => {
+            window.open(pdf, '_blank');
+            this.isAlertOpen = false;
+            doc.orderProcessed = true; // Bloquear botón
+            this.notificationService.showSuccess("Descargado", "La línea de captura se abrió en una nueva pestaña.");
+          }
+        }
+      ]
+    };
+    this.isAlertOpen = true;
   }
 
   async downloadCertificate(doc: DocumentRow) {
@@ -377,7 +383,7 @@ export class DocumentsModalComponent implements OnInit {
       return;
     }
 
-    const dce = enrollmentData.documentCoursesEnrollments?.find((d: any) => d.id?.toString() === doc.id);
+    const dce = enrollmentData.documentCourseEnrollments?.find((d: any) => d.id?.toString() === doc.id);
     const templateDoc = dce?.documentCourse?.templateDocument;
     if (!templateDoc?.fields?.length) {
       this.notificationService.showError("Error", "No se encontró el diseño del template.");
@@ -400,8 +406,8 @@ export class DocumentsModalComponent implements OnInit {
     const person = enrollmentData.person;
     if (person) {
       const p = enrollmentData.person || person;
-      const fullName = (p.paternal_lastName && p.name.includes(p.paternal_lastName)) 
-        ? p.name 
+      const fullName = (p.paternal_lastName && p.name.includes(p.paternal_lastName))
+        ? p.name
         : [p.name, p.paternal_lastName, p.maternal_lastName].filter(Boolean).join(" ").trim();
       if (fullName && !variableValues["nombre_completo"]) variableValues["nombre_completo"] = fullName;
     }
@@ -417,7 +423,7 @@ export class DocumentsModalComponent implements OnInit {
     }
     if (groupData?.groupStartDate) {
       const d = new Date(groupData.groupStartDate);
-      const meses = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+      const meses = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
       variableValues["fecha_curso"] = `${d.getUTCDate()} de ${meses[d.getUTCMonth()]} del ${d.getUTCFullYear()}`;
     }
 
@@ -443,8 +449,8 @@ export class DocumentsModalComponent implements OnInit {
 
     try {
       const result = await this.pdfService.generateFromTemplate(certTemplate, variableValues, {
-          filename: `${doc.name}_${person?.name || "documento"}`,
-          action: "download",
+        filename: `${doc.name}_${person?.name || "documento"}`,
+        action: "download",
       });
 
       this.isLoadingModalOpen = false;
@@ -470,14 +476,14 @@ export class DocumentsModalComponent implements OnInit {
   async emailCertificate(doc: DocumentRow) {
     if (this.isSendingEmail) return;
     if (!this.person?.id) {
-        this.notificationService.showError("Error", "ID de persona no encontrado.");
-        return;
+      this.notificationService.showError("Error", "ID de persona no encontrado.");
+      return;
     }
 
     const enrollmentData = this.enrollment || (this.person as any)?._rawEnrollment;
-    const dce = enrollmentData?.documentCoursesEnrollments?.find((d: any) => d.id?.toString() === doc.id);
+    const dce = enrollmentData?.documentCourseEnrollments?.find((d: any) => d.id?.toString() === doc.id);
     const templateDoc = dce?.documentCourse?.templateDocument;
-    
+
     if (!templateDoc?.fields?.length) {
       this.notificationService.showError("Error", "No se encontró el diseño del template.");
       return;
@@ -499,8 +505,8 @@ export class DocumentsModalComponent implements OnInit {
     const person = enrollmentData?.person;
     if (person) {
       const p = enrollmentData?.person || person;
-      const fullName = (p.paternal_lastName && p.name.includes(p.paternal_lastName)) 
-        ? p.name 
+      const fullName = (p.paternal_lastName && p.name.includes(p.paternal_lastName))
+        ? p.name
         : [p.name, p.paternal_lastName, p.maternal_lastName].filter(Boolean).join(" ").trim();
       if (fullName && !variableValues["nombre_completo"]) variableValues["nombre_completo"] = fullName;
     }
@@ -516,7 +522,7 @@ export class DocumentsModalComponent implements OnInit {
     }
     if (groupData?.groupStartDate) {
       const d = new Date(groupData.groupStartDate);
-      const meses = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+      const meses = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
       variableValues["fecha_curso"] = `${d.getUTCDate()} de ${meses[d.getUTCMonth()]} del ${d.getUTCFullYear()}`;
     }
 
@@ -542,50 +548,50 @@ export class DocumentsModalComponent implements OnInit {
 
     try {
       const result = await this.pdfService.generateFromTemplate(certTemplate, variableValues, {
-          filename: `${doc.name}.pdf`,
-          action: "base64",
-          imageQuality: 0.2
+        filename: `${doc.name}.pdf`,
+        action: "base64",
+        imageQuality: 0.2
       });
 
       if (result.success && result.dataUrl) {
-          const base64Pdf = result.dataUrl.includes('base64,') ? result.dataUrl.split('base64,')[1] : result.dataUrl;
-          
-          this.mailService.sendWithTemplate(
-            this.person.id, 
-            'constancia', 
-            `Tu ${doc.name} - SEMOVI`, 
-            base64Pdf, 
-            `${doc.name}.pdf`
-          ).subscribe({
-              next: (res: any) => {
-                  this.isSendingEmail = false;
-                  this.isLoadingModalOpen = false;
-                  
-                  const successMsg = res?.message || "La constancia se envió correctamente.";
-                  this.alertConfig = {
-                    title: "¡Envío Exitoso!",
-                    message: `<b>${doc.name}</b> se envió correctamente a <b>${this.person?.email}</b>.<br><small>${successMsg}</small>`,
-                    type: "success",
-                    actions: [{ label: 'Cerrar', variant: 'outline', action: () => { this.isAlertOpen = false; } }]
-                  };
-                  this.isAlertOpen = true;
-                  doc.emailSent = true;
-              },
-              error: (err: any) => {
-                  this.isSendingEmail = false;
-                  this.isLoadingModalOpen = false;
-                  console.error(err);
-                  this.notificationService.showError("Error", err.error?.message || "No se pudo enviar el correo de la constancia.");
-              }
-          });
+        const base64Pdf = result.dataUrl.includes('base64,') ? result.dataUrl.split('base64,')[1] : result.dataUrl;
+
+        this.mailService.sendWithTemplate(
+          this.person.id,
+          'constancia',
+          `Tu ${doc.name} - SEMOVI`,
+          base64Pdf,
+          `${doc.name}.pdf`
+        ).subscribe({
+          next: (res: any) => {
+            this.isSendingEmail = false;
+            this.isLoadingModalOpen = false;
+
+            const successMsg = res?.message || "La constancia se envió correctamente.";
+            this.alertConfig = {
+              title: "¡Envío Exitoso!",
+              message: `<b>${doc.name}</b> se envió correctamente a <b>${this.person?.email}</b>.<br><small>${successMsg}</small>`,
+              type: "success",
+              actions: [{ label: 'Cerrar', variant: 'outline', action: () => { this.isAlertOpen = false; } }]
+            };
+            this.isAlertOpen = true;
+            doc.emailSent = true;
+          },
+          error: (err: any) => {
+            this.isSendingEmail = false;
+            this.isLoadingModalOpen = false;
+            console.error(err);
+            this.notificationService.showError("Error", err.error?.message || "No se pudo enviar el correo de la constancia.");
+          }
+        });
       } else {
-          this.isSendingEmail = false;
-          this.isLoadingModalOpen = false;
-          this.notificationService.showError("Error", "No se pudo generar el PDF para el envío.");
-      }
-    } catch(err) {
         this.isSendingEmail = false;
-        this.notificationService.showError("Error", "Error interno al procesar el documento.");
+        this.isLoadingModalOpen = false;
+        this.notificationService.showError("Error", "No se pudo generar el PDF para el envío.");
+      }
+    } catch (err) {
+      this.isSendingEmail = false;
+      this.notificationService.showError("Error", "Error interno al procesar el documento.");
     }
   }
 }
