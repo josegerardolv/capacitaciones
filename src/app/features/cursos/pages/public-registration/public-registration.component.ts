@@ -303,13 +303,10 @@ export class PublicRegistrationComponent implements OnInit {
         const expirationStr = group.endInscriptionDate || group.linkExpiration;
         if (!expirationStr) return 'Sin vigencia';
 
-        // Manejar tanto ISO strings como fechas simples
-        let exp: Date;
-        if (expirationStr.includes('T')) {
-            exp = new Date(expirationStr);
-        } else {
-            exp = new Date(expirationStr + 'T23:59:59');
-        }
+        // Forzar la expiración al final del día indicado (23:59:59)
+        // Esto evita que si el backend envía una hora (ej. 12:00) el enlace caduque a mitad del día
+        const datePart = expirationStr.split('T')[0];
+        const exp = new Date(datePart + 'T23:59:59');
 
         const now = new Date();
 
