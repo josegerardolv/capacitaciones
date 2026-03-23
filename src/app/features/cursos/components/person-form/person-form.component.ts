@@ -144,7 +144,7 @@ export class PersonFormComponent implements OnInit {
     }
 
     isVisible(field: string): boolean {
-        // CAMPOS QUE SIEMPRE SE MUESTRAN (Según Configuración del Sistema)
+        // CAMPOS QUE SIEMPRE SE MUESTRAN (Configuración del Sistema)
         const coreFields = ['name', 'paternal_lastName', 'maternal_lastName', 'curp', 'email', 'phone'];
         if (coreFields.includes(field)) return true;
 

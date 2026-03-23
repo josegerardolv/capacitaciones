@@ -328,7 +328,6 @@ export class PersonRegistrationComponent implements OnInit {
         const groupId = this.groupId ? +this.groupId : 1;
 
         // 1. SEPARAR DATOS: Person Table vs Dynamic Responses
-        // Columnas fijas en la tabla Person según el usuario
         const personTableFields = ['name', 'paternal_lastName', 'maternal_lastName', 'curp', 'email', 'license', 'nuc'];
 
         const personDataForPayload: any = {};
@@ -340,29 +339,20 @@ export class PersonRegistrationComponent implements OnInit {
             const fieldConfig = this.fieldsConfig![key];
             const isPersonTableField = personTableFields.includes(key);
 
-            // Valores procesados (limpiar vacíos)
+            // Valores procesados (limpiar vacíos para base de datos)
             const processedValue = (typeof value === 'string' && value.trim() === '') ? null : value;
 
-            // 1. Si es un campo dinámico (tiene ID de configuración)
-            if (fieldConfig && fieldConfig.courseConfigFieldId) {
+            // REGLA: Si es campo de tabla Person, va ahí (Curp, Email, etc. NUNCA van a responses)
+            if (isPersonTableField) {
+                personDataForPayload[key] = processedValue;
+            } 
+            // REGLA: Si es dinámico Y NO es de tabla Person (Phone, Sex, Address, etc.) va a responses
+            else if (fieldConfig && fieldConfig.courseConfigFieldId) {
                 responses.push({
                     courseConfigFieldId: fieldConfig.courseConfigFieldId,
                     value: value?.toString() || ''
                 });
-
-                // Si TAMBIÉN es un campo de la tabla Person, lo enviamos allí también
-                if (isPersonTableField && fieldConfig.visible) {
-                    personDataForPayload[key] = processedValue;
-                }
             }
-            // 2. Si NO es dinámico pero SÍ es un campo base de la tabla Person
-            else if (isPersonTableField) {
-                // Solo lo enviamos si no tiene configuración restrictiva o si es visible
-                if (!fieldConfig || fieldConfig.visible) {
-                    personDataForPayload[key] = processedValue;
-                }
-            }
-            // 3. Cualquier otro campo (ej. address, sex si no son requerimientos) se IGNORA para evitar Error 400
         });
 
         const enrollmentPayload: any = {

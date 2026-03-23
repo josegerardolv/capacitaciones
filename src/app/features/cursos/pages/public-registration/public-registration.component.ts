@@ -20,11 +20,11 @@ import { InstitutionalButtonComponent } from '../../../../shared/components/butt
     selector: 'app-public-registration',
     standalone: true,
     imports: [
-        CommonModule, 
-        PersonFormComponent, 
-        AlertModalComponent, 
-        InstitutionalCardComponent, 
-        DocumentSelectionModalComponent, 
+        CommonModule,
+        PersonFormComponent,
+        AlertModalComponent,
+        InstitutionalCardComponent,
+        DocumentSelectionModalComponent,
         LicenseSearchModalComponent,
         ModalComponent,
         InstitutionalButtonComponent
@@ -437,36 +437,28 @@ export class PublicRegistrationComponent implements OnInit {
     finalizeRegistration(personData: any, totalCost: number) {
 
         // 1. SEPARAR DATOS: Person Table vs Dynamic Responses
-        // Solo los campos CORE y los que NO tienen courseConfigFieldId van a la tabla Person
-        // El resto (dinámicos) van a la tabla de Responses.
+        const personTableFields = ['name', 'paternal_lastName', 'maternal_lastName', 'curp', 'email', 'license', 'nuc'];
+
         const personDataForPayload: any = {};
         const responses: any[] = [];
-        const personTableFields = ['name', 'paternal_lastName', 'maternal_lastName', 'curp', 'email', 'license', 'nuc'];
 
         Object.keys(personData).forEach(key => {
             const value = personData[key];
             const fieldConfig = this.fieldsConfig[key];
 
-            // Mejorar: Convertir cadenas vacías en null para campos opcionales en BD
+            // Limpiar vacíos para base de datos
             const processedValue = (typeof value === 'string' && value.trim() === '') ? null : value;
 
-            // Si es un campo dinámico (tiene ID de configuración)
-            if (fieldConfig && fieldConfig.courseConfigFieldId) {
+            // REGLA: Si es campo de tabla Person, va ahí (Curp, Email, etc. NUNCA van a responses)
+            if (personTableFields.includes(key)) {
+                personDataForPayload[key] = processedValue;
+            }
+            // REGLA: Si es dinámico Y NO es de tabla Person (Phone, Sex, Address, etc.) va a responses
+            else if (fieldConfig && fieldConfig.courseConfigFieldId) {
                 responses.push({
                     courseConfigFieldId: fieldConfig.courseConfigFieldId,
                     value: value?.toString() || ''
                 });
-
-                // Si el campo también existe en la tabla Person (ej. email, phone) Y es visible
-                if (personTableFields.includes(key) && fieldConfig.visible) {
-                    personDataForPayload[key] = processedValue;
-                }
-            } else if (personTableFields.includes(key)) {
-                // Es un campo base (name, curp, etc.)
-                // Solo lo enviamos si no tiene configuración (base pura) o si está marcado como visible
-                if (!fieldConfig || fieldConfig.visible) {
-                    personDataForPayload[key] = processedValue;
-                }
             }
         });
 
