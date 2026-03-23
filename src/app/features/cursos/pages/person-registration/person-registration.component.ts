@@ -224,19 +224,24 @@ export class PersonRegistrationComponent implements OnInit {
         };
 
         if (config.courseConfigField?.length) {
-            const idToFieldName: Record<number, string> = { 4: 'address', 5: 'nuc', 6: 'sex', 7: 'email', 8: 'phone', 9: 'license', 10: 'curp' };
+            const idToFieldName: Record<number, string> = { 4: 'address', 5: 'nuc', 6: 'sex', 8: 'phone', 9: 'license'};
             config.courseConfigField.forEach((cf: any) => {
-                const fieldId = typeof cf.requirementFieldPerson === 'object' ? cf.requirementFieldPerson.id : cf.requirementFieldPerson;
-                const fieldName = idToFieldName[fieldId];
-                if (fieldName && this.fieldsConfig![fieldName]) {
-                    this.fieldsConfig![fieldName].visible = true;
-                    this.fieldsConfig![fieldName].required = cf.required;
-                    this.fieldsConfig![fieldName].courseConfigFieldId = cf.id;
+                // SEGURIDAD: Validar que el campo no sea nulo antes de procesarlo
+                if (cf.requirementFieldPerson) {
+                    const fieldId = typeof cf.requirementFieldPerson === 'object' ? cf.requirementFieldPerson.id : cf.requirementFieldPerson;
+                    const fieldName = idToFieldName[fieldId];
+                    if (fieldName && this.fieldsConfig![fieldName]) {
+                        this.fieldsConfig![fieldName].visible = true;
+                        this.fieldsConfig![fieldName].required = cf.required;
+                        this.fieldsConfig![fieldName].courseConfigFieldId = cf.id;
+                    }
                 }
             });
         }
 
         let needsLicenseSearch = config.courseConfigField?.some((cf: any) => {
+            // SEGURIDAD: Validar que el campo no sea nulo antes de procesarlo
+            if (!cf.requirementFieldPerson) return false;
             const id = typeof cf.requirementFieldPerson === 'object' ? cf.requirementFieldPerson.id : cf.requirementFieldPerson;
             return id === 9 || id === 5;
         });

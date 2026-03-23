@@ -220,6 +220,9 @@ export class PublicRegistrationComponent implements OnInit {
                     const fieldsToCheck = directFields || populatedConfig?.courseConfigField || [];
 
                     needsLicenseSearch = fieldsToCheck.some((cf: any) => {
+                        // SEGURIDAD: Validar que el campo no sea nulo
+                        if (!cf.requirementFieldPerson && !cf.fieldName) return false;
+
                         let internalKey = '';
                         if (cf.fieldName) {
                             const normalized = normalizeFieldName(cf.fieldName);
@@ -230,7 +233,9 @@ export class PublicRegistrationComponent implements OnInit {
                             });
                         } else {
                             const id = typeof cf.requirementFieldPerson === 'object' ? cf.requirementFieldPerson.id : cf.requirementFieldPerson;
-                            internalKey = this.idToFieldName[id];
+                            // Usar mapeo local solo para campos no-core
+                            const idToFieldName: Record<number, string> = { 4: 'address', 5: 'nuc', 6: 'sex', 8: 'phone', 9: 'license' };
+                            internalKey = idToFieldName[id];
                         }
                         return internalKey === 'license' || internalKey === 'nuc';
                     });
@@ -279,8 +284,11 @@ export class PublicRegistrationComponent implements OnInit {
                 let needsLicenseSearch = false;
                 if (config.courseConfigField) {
                     needsLicenseSearch = config.courseConfigField.some((cf: any) => {
+                        // SEGURIDAD: Validar que el campo no sea nulo
+                        if (!cf.requirementFieldPerson) return false;
                         const id = typeof cf.requirementFieldPerson === 'object' ? cf.requirementFieldPerson.id : cf.requirementFieldPerson;
-                        const internalKey = this.idToFieldName[id];
+                        const idToFieldName: Record<number, string> = { 4: 'address', 5: 'nuc', 6: 'sex', 8: 'phone', 9: 'license' };
+                        const internalKey = idToFieldName[id];
                         return internalKey === 'license' || internalKey === 'nuc';
                     });
                 }
@@ -359,6 +367,9 @@ export class PublicRegistrationComponent implements OnInit {
                 // Caso A: Si tiene nombre (UUID suele mandarlo)
                 if (cf.fieldName) {
                     const normalizedBackend = normalizeFieldName(cf.fieldName);
+                    // REGLA: Si es CURP o Correo, NO los tratamos como dinámicos (van a person)
+                    if (normalizedBackend === 'curp' || normalizedBackend === 'email') return;
+
                     Object.entries(REQUIREMENT_FIELD_NAMES).forEach(([key, value]) => {
                         const normValue = normalizeFieldName(value);
                         if (cf.fieldName.toLowerCase() === value.toLowerCase() || normalizedBackend === normValue || normalizedBackend.startsWith(normValue) || normValue.startsWith(normalizedBackend)) {
@@ -367,10 +378,14 @@ export class PublicRegistrationComponent implements OnInit {
                     });
                     if (!fieldName) fieldName = normalizedBackend;
                 }
-                // Caso B: Si no tiene nombre (Fallback a mapeo por ID si estuviéramos en Admin, pero aquí no hay master list)
+                // Caso B: Si no tiene nombre (Fallback a mapeo por ID si estuviéramos en Admin)
                 else if (cf.requirementFieldPerson) {
                     const id = typeof cf.requirementFieldPerson === 'object' ? cf.requirementFieldPerson.id : cf.requirementFieldPerson;
-                    fieldName = this.idToFieldName[id];
+                    // REGLA: Si es ID 7 (Email) o 10 (CURP), ignorar mapping dinámico
+                    if (id === 7 || id === 10) return;
+                    
+                    const idToFieldName: Record<number, string> = { 4: 'address', 5: 'nuc', 6: 'sex', 8: 'phone', 9: 'license' };
+                    fieldName = idToFieldName[id];
                 }
 
                 if (fieldName && this.fieldsConfig[fieldName]) {

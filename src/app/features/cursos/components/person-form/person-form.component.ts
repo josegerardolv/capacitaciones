@@ -108,19 +108,21 @@ export class PersonFormComponent implements OnInit {
         Object.keys(this.form.controls).forEach(key => {
             // name, paternal_lastName and maternal_lastName always visible by default
             const cfg = this.fieldsConfig ? this.fieldsConfig[key] : undefined;
-
-            // Validators: add/remove required based on config.required (if provided)
             const control = this.form.get(key);
             if (!control) return;
 
+            // REGLA CRÍTICA: Si el campo NO es visible, removemos todos los validadores 
+            // (a menos que sea un campo core que siempre es visible)
+            const isCoreAlwaysVisible = ['name', 'paternal_lastName', 'maternal_lastName', 'curp', 'email', 'phone'].includes(key);
+            if (cfg && cfg.visible === false && !isCoreAlwaysVisible) {
+                control.clearValidators();
+                control.updateValueAndValidity({ emitEvent: false });
+                return;
+            }
+
             // Build validators keeping existing non-required validators
-            const currentValidators = control.validator ? [control.validator] : [];
-
-            // We need to inspect existing validators to preserve pattern/email etc.
-            // For simplicity, rebuild validators: if cfg.required true -> include Validators.required
             const validators: any[] = [];
-
-            // Preserve known specific validators by key
+            // ... (rest of the logic for visible fields)
             if (key === 'curp') {
                 validators.push(Validators.pattern(/^([A-Z][AEIOUX][A-Z]{2}\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])[HM](?:AS|B[CS]|C[CLMSH]|D[FG]|G[TR]|HG|JC|M[CNS]|N[ETL]|OC|PL|Q[TR]|S[PLR]|T[CSL]|VZ|YN|ZS)[B-DF-HJ-NP-TV-Z]{3}[A-Z\d])(\d)$/));
                 validators.push(Validators.minLength(18));
@@ -132,7 +134,6 @@ export class PersonFormComponent implements OnInit {
             if (cfg && cfg.required) {
                 validators.unshift(Validators.required);
             } else {
-                // keep previously required for 'name' if no config provided
                 if ((key === 'name') && !(cfg && cfg.required === false)) {
                     validators.unshift(Validators.required);
                 }

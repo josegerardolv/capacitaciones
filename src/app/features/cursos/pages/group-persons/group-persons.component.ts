@@ -222,7 +222,9 @@ export class GroupPersonsComponent implements OnInit {
 
                 // 1. Priorizar configuración RICH (Ya poblada en el grupo)
                 const populatedConfig = group.course?.courseType;
-                if (populatedConfig && populatedConfig.courseConfigField && populatedConfig.courseConfigField.length > 0 && populatedConfig.courseConfigField[0].requirementFieldPerson) {
+                const hasValidFields = populatedConfig && populatedConfig.courseConfigField?.some((cf: any) => cf.requirementFieldPerson !== null);
+
+                if (hasValidFields) {
                     this.updateColumns(populatedConfig);
                 } else {
                     // 2. Fallback: Configuración SIMPLE
@@ -334,7 +336,8 @@ export class GroupPersonsComponent implements OnInit {
         if (config.courseConfigField) {
             config.courseConfigField.forEach((cf: any) => {
                 const configField = cf.requirementFieldPerson;
-                if (configField) {
+                // SEGURIDAD: Validar que el campo no sea nulo antes de procesarlo
+                if (configField && typeof configField === 'object') {
                     const label = configField.fieldName || '';
                     const key = label.toLowerCase();
 
@@ -359,53 +362,21 @@ export class GroupPersonsComponent implements OnInit {
     }
 
     openNewPersonForm() {
-        if (this.currentGroup) {
-            const group = this.currentGroup;
-            // Priorizar configuración ya poblada en el grupo
-            const populatedConfig = group.course?.courseType;
-            
-            if (populatedConfig && populatedConfig.courseConfigField) {
-                this.navigateWithGroupData(populatedConfig);
-            } else {
-                // Si por alguna razón no viene, hacemos el fallback
-                const courseTypeId = group.courseTypeId || 
-                                     (group.course && typeof group.course === 'object' ? group.course.id : undefined);
-                
-                if (courseTypeId) {
-                    this.courseTypeService.getCourseTypeById(courseTypeId).subscribe(config => {
-                        this.navigateWithGroupData(config);
-                    });
-                } else {
-                    this.isSearchModalOpen = true;
-                }
-            }
-        } else {
-            this.isSearchModalOpen = true;
-        }
+        // Lógica solicitada: Siempre aplicar el Modal de Búsqueda (CURP/Licencia)
+        // Esto garantiza que siempre se intente recuperar datos antes de un registro limpio
+        this.isSearchModalOpen = true;
     }
 
     private navigateWithGroupData(config: any) {
-        // Nueva lógica: Buscar IDs 9 (Licencia) o 5 (NUC)
-        let needsSearch = false;
-        if (config && config.courseConfigField) {
-            needsSearch = config.courseConfigField.some((cf: any) => {
-                const id = typeof cf.requirementFieldPerson === 'object' ? cf.requirementFieldPerson.id : cf.requirementFieldPerson;
-                return id === 9 || id === 5;
-            });
-        }
-
+        // SEGURIDAD: Evitar crash si config o courseConfigField son nulos durante navegación
         const navigationExtras = {
             relativeTo: this.route,
             queryParamsHandling: 'merge' as const,
             queryParams: { groupLabel: this.groupLabel },
-            state: { groupData: this.currentGroup } // Pasar datos por el estado para evitar re-hit
+            state: { groupData: this.currentGroup } 
         };
 
-        if (needsSearch) {
-            this.isSearchModalOpen = true;
-        } else {
-            this.router.navigate(['nuevo'], navigationExtras);
-        }
+        this.router.navigate(['nuevo'], navigationExtras);
     }
 
     onPersonFound(person: Person) {
