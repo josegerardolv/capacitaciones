@@ -271,7 +271,8 @@ export class PersonRegistrationComponent implements OnInit {
     }
 
     onManualRegistration(license: string) {
-        this.prefilledData = { license };
+        // REGLA: Si no se encontró a la persona, limpiar todos los campos (no precargar la licencia buscada)
+        this.prefilledData = { found: false }; 
         this.showForm = true;
         this.isSearchModalOpen = false;
     }
@@ -342,6 +343,13 @@ export class PersonRegistrationComponent implements OnInit {
         Object.keys(personData).forEach(key => {
             const value = personData[key];
             const fieldConfig = this.fieldsConfig![key];
+
+            // REGLA DE ORO: Si el campo NO es visible para el usuario, NUNCA se envía al backend
+            // Esto evita guardar "basura" de búsquedas fallidas o configuraciones ocultas.
+            if (fieldConfig && fieldConfig.visible === false) {
+                return;
+            }
+
             const isPersonTableField = personTableFields.includes(key);
 
             // Valores procesados (limpiar vacíos para base de datos)

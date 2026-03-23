@@ -215,38 +215,9 @@ export class PublicRegistrationComponent implements OnInit {
 
                     this.setupFormFields(populatedConfig || {} as any, directFields);
 
-                    // C. Determinar si mostrar búsqueda
-                    let needsLicenseSearch = false;
-                    const fieldsToCheck = directFields || populatedConfig?.courseConfigField || [];
-
-                    needsLicenseSearch = fieldsToCheck.some((cf: any) => {
-                        // SEGURIDAD: Validar que el campo no sea nulo
-                        if (!cf.requirementFieldPerson && !cf.fieldName) return false;
-
-                        let internalKey = '';
-                        if (cf.fieldName) {
-                            const normalized = normalizeFieldName(cf.fieldName);
-                            Object.entries(REQUIREMENT_FIELD_NAMES).forEach(([key, value]) => {
-                                if (cf.fieldName.toLowerCase() === value.toLowerCase() || normalized === normalizeFieldName(value)) {
-                                    internalKey = key.toLowerCase();
-                                }
-                            });
-                        } else {
-                            const id = typeof cf.requirementFieldPerson === 'object' ? cf.requirementFieldPerson.id : cf.requirementFieldPerson;
-                            // Usar mapeo local solo para campos no-core
-                            const idToFieldName: Record<number, string> = { 4: 'address', 5: 'nuc', 6: 'sex', 8: 'phone', 9: 'license' };
-                            internalKey = idToFieldName[id];
-                        }
-                        return internalKey === 'license' || internalKey === 'nuc';
-                    });
-
-                    if (needsLicenseSearch) {
-                        this.isSearchModalOpen = true;
-                        this.showForm = false;
-                    } else {
-                        this.showForm = true;
-                        this.isSearchModalOpen = false;
-                    }
+                    // REGLA: Forzar siempre el Modal de BÚSQUEDA (CURP/Licencia)
+                    this.isSearchModalOpen = true;
+                    this.showForm = false;
                 } else {
                     // Fallback: Si no hay campos, mostrar formulario básico
                     this.showForm = true;
@@ -278,28 +249,9 @@ export class PublicRegistrationComponent implements OnInit {
                 this.availableDocuments = config.availableDocuments || [];
                 this.setupFormFields(config);
 
-                const licenseField = this.fieldsConfig['license'];
-
-                // C. Determinar si mostrar búsqueda (Sincronizado con setupFormFields lógica)
-                let needsLicenseSearch = false;
-                if (config.courseConfigField) {
-                    needsLicenseSearch = config.courseConfigField.some((cf: any) => {
-                        // SEGURIDAD: Validar que el campo no sea nulo
-                        if (!cf.requirementFieldPerson) return false;
-                        const id = typeof cf.requirementFieldPerson === 'object' ? cf.requirementFieldPerson.id : cf.requirementFieldPerson;
-                        const idToFieldName: Record<number, string> = { 4: 'address', 5: 'nuc', 6: 'sex', 8: 'phone', 9: 'license' };
-                        const internalKey = idToFieldName[id];
-                        return internalKey === 'license' || internalKey === 'nuc';
-                    });
-                }
-
-                if (needsLicenseSearch) {
-                    this.isSearchModalOpen = true;
-                    this.showForm = false;
-                } else {
-                    this.showForm = true;
-                    this.isSearchModalOpen = false;
-                }
+                // REGLA: Forzar siempre el Modal de BÚSQUEDA (CURP/Licencia)
+                this.isSearchModalOpen = true;
+                this.showForm = false;
             }
         });
     }
@@ -460,6 +412,11 @@ export class PublicRegistrationComponent implements OnInit {
         Object.keys(personData).forEach(key => {
             const value = personData[key];
             const fieldConfig = this.fieldsConfig[key];
+            
+            // Esto evita guardar "basura" de búsquedas fallidas o configuraciones ocultas.
+            if (fieldConfig && fieldConfig.visible === false) {
+                return;
+            }
 
             // Limpiar vacíos para base de datos
             const processedValue = (typeof value === 'string' && value.trim() === '') ? null : value;
@@ -559,9 +516,8 @@ export class PublicRegistrationComponent implements OnInit {
     }
 
     onManualRegistration(license: string) {
-        this.prefilledData = {
-            license: license
-        };
+        // REGLA: Si no se encontró a la persona, limpiar todos los campos (no precargar la licencia buscada)
+        this.prefilledData = { found: false }; 
         this.isSearchModalOpen = false;
         this.showForm = true;
     }
