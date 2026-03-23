@@ -216,12 +216,11 @@ export class PersonRegistrationComponent implements OnInit {
             'maternal_lastName': { fieldName: 'maternal_lastName', label: 'Segundo Apellido', visible: true, required: false },
             'curp': { fieldName: 'curp', label: 'CURP', visible: true, required: true },
             'email': { fieldName: 'email', label: 'Correo Electrónico', visible: true, required: true },
+            'phone': { fieldName: 'phone', label: 'Teléfono', visible: true, required: false },
             'license': { fieldName: 'license', label: 'Licencia', visible: false, required: false },
             'nuc': { fieldName: 'nuc', label: 'NUC', visible: false, required: false },
-            // Campos dinámicos
             'address': { fieldName: 'address', label: 'Dirección', visible: false, required: false },
-            'sex': { fieldName: 'sex', label: 'Sexo', visible: false, required: false },
-            'phone': { fieldName: 'phone', label: 'Teléfono', visible: false, required: false }
+            'sex': { fieldName: 'sex', label: 'Sexo', visible: false, required: false }
         };
 
         if (config.courseConfigField?.length) {

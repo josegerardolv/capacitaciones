@@ -144,8 +144,7 @@ export class PersonFormComponent implements OnInit {
     }
 
     isVisible(field: string): boolean {
-        // CAMPOS CORE: Siempre visibles (Estructura base de la persona)
-        // Email y Phone agregados por solicitud del usuario (Siempre visibles)
+        // CAMPOS QUE SIEMPRE SE MUESTRAN (Según Configuración del Sistema)
         const coreFields = ['name', 'paternal_lastName', 'maternal_lastName', 'curp', 'email', 'phone'];
         if (coreFields.includes(field)) return true;
 
@@ -156,16 +155,21 @@ export class PersonFormComponent implements OnInit {
     }
 
     isRequired(field: string): boolean {
-        // CAMPOS OBLIGATORIOS FIJOS: Nombre, CURP y Email (Críticos para el sistema)
+        // CAMPOS SIEMPRE OBLIGATORIOS (Configuración fija)
         const mandatoryCore = ['name', 'curp', 'email'];
         if (mandatoryCore.includes(field)) return true;
+
+        // CAMPOS SIEMPRE OPCIONALES (Apellidos)
+        if (field === 'paternal_lastName' || field === 'maternal_lastName') return false;
 
         if (!this.fieldsConfig) return false;
 
         const cfg = this.fieldsConfig[field];
 
         // Si el campo no es visible, nunca puede ser requerido para el usuario
-        if (cfg?.visible === false) return false;
+        if (cfg?.visible === false && !['name', 'paternal_lastName', 'maternal_lastName', 'curp', 'email', 'phone'].includes(field)) {
+            return false;
+        }
 
         return cfg?.required === true;
     }

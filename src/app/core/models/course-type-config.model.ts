@@ -63,12 +63,14 @@ export interface CourseTypeConfig {
 export const DEFAULT_REGISTRATION_FIELDS: RegistrationFieldConfig[] = [
     // Campos Base (El Backend asume que siempre se envían, no enviar ID en payload)
     { fieldName: 'name', label: 'Nombre', visible: true, required: true },
-    { fieldName: 'paternal_lastName', label: 'Primer Apellido', visible: true, required: false }, // No obligatorio según solicitud
-    { fieldName: 'maternal_lastName', label: 'Segundo Apellido', visible: true, required: false }, // Base (En tabla Person)
+    { fieldName: 'paternal_lastName', label: 'Primer Apellido', visible: true, required: false },
+    { fieldName: 'maternal_lastName', label: 'Segundo Apellido', visible: true, required: false },
     { fieldName: 'curp', label: 'CURP', visible: true, required: true },
 
     { fieldName: 'email', label: REQUIREMENT_FIELD_NAMES.EMAIL, visible: true, required: true },
     { fieldName: 'phone', label: REQUIREMENT_FIELD_NAMES.PHONE, visible: true, required: false },
+    
+    // Campos Dinámicos (Ocultos por defecto)
     { fieldName: 'address', label: REQUIREMENT_FIELD_NAMES.ADDRESS, visible: false, required: false },
     { fieldName: 'nuc', label: REQUIREMENT_FIELD_NAMES.NUC, visible: false, required: false },
     { fieldName: 'license', label: REQUIREMENT_FIELD_NAMES.LICENSE, visible: false, required: false },

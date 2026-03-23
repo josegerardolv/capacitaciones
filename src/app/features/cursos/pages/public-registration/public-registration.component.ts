@@ -338,8 +338,7 @@ export class PublicRegistrationComponent implements OnInit {
             this.fieldsConfig[f.fieldName] = { ...f, visible: false };
         });
 
-        // Forzar visibilidad de los campos núcleo que no se pueden ocultar
-        // Email, CURP y Phone son críticos y siempre deben mostrarse
+        // Forzar visibilidad de los campos núcleo que NO se pueden ocultar
         const coreFields = ['name', 'paternal_lastName', 'maternal_lastName', 'curp', 'email', 'phone'];
         coreFields.forEach(key => {
             if (this.fieldsConfig[key]) {
