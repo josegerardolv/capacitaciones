@@ -67,6 +67,17 @@
         </div>
     </div>
 
+    <!-- Overlay de Carga para Acciones -->
+    <div *ngIf="isLoadingAction" 
+         class="fixed inset-0 z-[10000] flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm transition-all duration-300">
+        <app-loading-spinner 
+            [title]="'Procesando'" 
+            [message]="loadingActionMessage"
+            [fullHeight]="false"
+            class="transform scale-110">
+        </app-loading-spinner>
+    </div>
+
 </app-modal>
 
 <!-- Actions Template (Moved outside *ngIf to ensure availability) -->
@@ -93,3 +104,7 @@
 <app-confirmation-modal [isOpen]="isConfirmOpen" [config]="confirmConfig" (confirm)="onConfirmYes()"
     (cancel)="isConfirmOpen = false" (modalClose)="isConfirmOpen = false">
 </app-confirmation-modal>
+
+<!-- Modal de Alerta de Resultado (Éxito/Error Post-Carga) -->
+<app-alert-modal [isOpen]="isResultModalOpen" [config]="resultModalConfig" (modalClose)="isResultModalOpen = false">
+</app-alert-modal>

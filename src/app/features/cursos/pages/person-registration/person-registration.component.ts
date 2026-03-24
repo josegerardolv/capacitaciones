@@ -53,6 +53,8 @@ export class PersonRegistrationComponent implements OnInit {
     fieldsConfig: Record<string, RegistrationFieldConfig> = {};
     showForm = false;
     isSearchModalOpen = false;
+    requireTypesCD = false;
+    isSearching = false;
 
     // Configuración del Modal Alerta
     isAlertOpen = false;
@@ -161,6 +163,12 @@ export class PersonRegistrationComponent implements OnInit {
             this.showForm = false;
             this.isSearchModalOpen = false;
             return;
+        }
+
+        // Detectar si el curso es de tipo LICENCIA o contiene 'motocicleta' para habilitar el filtro C/D
+        const ct = group.course?.courseType;
+        if (ct?.title === 'LICENCIA' || ct?.name === 'LICENCIA' || group.courseTypeId === 1 || group.course?.name?.toLowerCase().includes('motocicleta')) {
+            this.requireTypesCD = true;
         }
 
         const populatedConfig = group.course?.courseType;

@@ -79,6 +79,7 @@ export class GroupsService {
         return {
             ...item.person, // Extendemos los datos de la persona (address, curp, phone, license, etc.)
             name: fullName || 'Sin Nombre',
+            phone: item.person?.phone || item.person?.Telefono || '', // Normalización de Teléfono
             enrollmentId: item.enrollmentId,
             status: item.isApproved || item.status || 'CURSANDO', // Estatus para la tabla
             dateReject: item.dateReject,
@@ -111,12 +112,14 @@ export class GroupsService {
         return this.http.delete<void>(`${this.apiUrl}/group/${id}`);
     }
 
-    searchPersonByLicense(license: string, includeTypeCFilter: boolean = false): Observable<Person | null> {
+    searchPersonByLicense(license: string, types: string[] = []): Observable<Person | null> {
         let params = new HttpParams().set('numero', license);
 
-        // Agregar filtro de tipo si es requerido (ej. público)
-        if (includeTypeCFilter) {
-            params = params.append('tipo', 'TIPO_C');
+        // Agregar filtros de tipo si se proporcionan
+        if (types && types.length > 0) {
+            types.forEach(type => {
+                params = params.append('tipo', type);
+            });
         }
 
         // Consulta GraphQL real al servicio de licencias a través de nuestro proxy

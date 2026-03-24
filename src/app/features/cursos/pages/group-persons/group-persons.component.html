@@ -77,7 +77,8 @@
   </app-institutional-card>
 
   <!-- MODAL DE BÚSQUEDA (NUEVO REUTILIZABLE) -->
-  <app-license-search-modal [isOpen]="isSearchModalOpen" (modalClose)="isSearchModalOpen = false"
+  <app-license-search-modal [isOpen]="isSearchModalOpen" [requireTypesCD]="requireTypesCD"
+    (modalClose)="isSearchModalOpen = false"
     (personFound)="onPersonFound($event)" (manualRegistration)="onManualRegistration($event)">
   </app-license-search-modal>
 

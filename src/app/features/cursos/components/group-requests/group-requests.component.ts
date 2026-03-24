@@ -1,7 +1,8 @@
 import { Component, EventEmitter, Input, Output, OnChanges, SimpleChanges, ViewChild, TemplateRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { forkJoin } from 'rxjs';
-import { FormGroup, FormBuilder, FormControl, ReactiveFormsModule } from '@angular/forms'; // FormControl agregado
+import { forkJoin, of, switchMap } from 'rxjs';
+import { FormGroup, FormBuilder, FormControl, ReactiveFormsModule } from '@angular/forms';
+import { LoadingSpinnerComponent } from '../../../../shared/components/loading-spinner/loading-spinner.component';
 import { Group } from '../../../../core/models/group.model';
 import { Person } from '../../../../core/models/person.model';
 import { InstitutionalButtonComponent } from '../../../../shared/components/buttons/institutional-button.component';
@@ -13,6 +14,7 @@ import {
 } from '../../../../shared/components/institutional-table/institutional-table.component';
 import { TablePaginationComponent, PaginationConfig, PageChangeEvent } from '../../../../shared/components/table-pagination/table-pagination.component';
 import { ConfirmationModalComponent, ConfirmationConfig } from '../../../../shared/components/modals/confirmation-modal.component';
+import { AlertModalComponent, AlertConfig } from '../../../../shared/components/modals/alert-modal.component';
 import { ModalComponent } from '../../../../shared/components/modals/modal.component';
 import { GroupsService } from '../../services/groups.service';
 import { TableFiltersComponent } from '@/app/shared/components/table-filters/table-filters.component';
@@ -32,7 +34,9 @@ import { InstitutionalBadgeComponent } from '../../../../shared/components/badge
         ReactiveFormsModule,
         ModalComponent,
         InstitutionalBadgeComponent,
-        TableFiltersComponent],
+        TableFiltersComponent,
+        LoadingSpinnerComponent,
+        AlertModalComponent],
     templateUrl: './group-requests.component.html'
 })
 export class GroupRequestsComponent implements OnChanges {
@@ -51,6 +55,16 @@ export class GroupRequestsComponent implements OnChanges {
     pendingRequestsCount: number = 0;
     rejectCount: number = 0;
     availablePlaces: number = 0;
+    isLoadingAction: boolean = false;
+    loadingActionMessage: string = '';
+
+    // Modales de Alerta de Resultado
+    isResultModalOpen = false;
+    resultModalConfig: AlertConfig = {
+        title: '',
+        message: '',
+        type: 'success'
+    };
 
 
 
@@ -220,10 +234,7 @@ export class GroupRequestsComponent implements OnChanges {
     }
 
     acceptRequest(personId: number, enrollmentId?: number, email?: string) {
-        if (!enrollmentId) {
-            console.error('No enrollment ID provided');
-            return;
-        }
+        if (!enrollmentId) return;
 
         this.openConfirm({
             title: 'Aceptar Solicitud',
@@ -232,28 +243,47 @@ export class GroupRequestsComponent implements OnChanges {
             confirmText: 'Aceptar',
             cancelText: 'Cancelar'
         }, () => {
-            this.groupsService.acceptEnrollment(enrollmentId).subscribe({
-                next: () => {
+            this.isLoadingAction = true;
+            this.loadingActionMessage = 'Procesando aceptación y enviando correo de confirmación...';
+
+            this.groupsService.acceptEnrollment(enrollmentId).pipe(
+                switchMap(() => {
+                    if (email) {
+                        return this.mailService.sendAcceptanceEmail(email, this.group);
+                    }
+                    return of({ message: 'No email provided' });
+                })
+            ).subscribe({
+                next: (mailRes: any) => {
+                    this.isLoadingAction = false;
+                    const msg = (email && mailRes?.status === 200)
+                        ? `La solicitud de <b>${this.allRequests.find(r => r.enrollmentId === enrollmentId)?.name || 'la persona'}</b> ha sido aceptada y el correo de aviso se envió con éxito.`
+                        : 'La solicitud ha sido aceptada exitosamente.';
+                    
+                    this.resultModalConfig = {
+                        title: 'Aceptación Exitosa',
+                        message: msg,
+                        type: 'success'
+                    };
+                    this.isResultModalOpen = true;
+
                     this.allRequests = this.allRequests.filter(r => r.enrollmentId !== enrollmentId);
-                    this.acceptedCount++; // Incrementar el contador local
                     this.filterData(this.currentSearchTerm);
                     this.clearSelection();
-                    this.requestsUpdated.emit(); // <---- EMITIR CAMBIO
-
-                    if (email) {
-                        this.mailService.sendAcceptanceEmail(email, this.group).subscribe();
-                    }
+                    this.requestsUpdated.emit();
+                    this.loadGroupRequests();
                 },
-                error: (err) => console.error('Error accepting enrollment', err)
+                error: (err) => {
+                    this.isLoadingAction = false;
+                    console.error('Error in acceptance flow', err);
+                    this.notificationService.showError('Error', 'No se pudo completar el proceso o hubo un fallo en el envío del correo.');
+                }
             });
         });
     }
 
     rejectRequest(personId: number, enrollmentId?: number, email?: string) {
-        if (!enrollmentId) {
-            console.error('No enrollment ID provided');
-            return;
-        }
+        if (!enrollmentId) return;
 
         this.openConfirm({
             title: 'Rechazar Solicitud',
@@ -262,18 +292,41 @@ export class GroupRequestsComponent implements OnChanges {
             confirmText: 'Rechazar',
             cancelText: 'Cancelar'
         }, () => {
-            this.groupsService.rejectEnrollment(enrollmentId).subscribe({
-                next: () => {
+            this.isLoadingAction = true;
+            this.loadingActionMessage = 'Procesando rechazo y notificando por correo...';
+
+            this.groupsService.rejectEnrollment(enrollmentId).pipe(
+                switchMap(() => {
+                    if (email) {
+                        return this.mailService.sendRejectionEmail(email, this.group);
+                    }
+                    return of({ message: 'No email provided' });
+                })
+            ).subscribe({
+                next: (mailRes: any) => {
+                    this.isLoadingAction = false;
+                    const msg = (email && mailRes?.status === 200)
+                        ? `La solicitud de <b>${this.allRequests.find(r => r.enrollmentId === enrollmentId)?.name || 'la persona'}</b> ha sido rechazada y el correo de aviso se envió con éxito.`
+                        : 'La solicitud ha sido rechazada exitosamente.';
+                    
+                    this.resultModalConfig = {
+                        title: 'Rechazo Completado',
+                        message: msg,
+                        type: 'success'
+                    };
+                    this.isResultModalOpen = true;
+
                     this.allRequests = this.allRequests.filter(r => r.enrollmentId !== enrollmentId);
                     this.filterData(this.currentSearchTerm);
                     this.clearSelection();
-                    this.requestsUpdated.emit(); // <---- EMITIR CAMBIO
-
-                    if (email) {
-                        this.mailService.sendRejectionEmail(email, this.group).subscribe();
-                    }
+                    this.requestsUpdated.emit();
+                    this.loadGroupRequests();
                 },
-                error: (err) => console.error('Error rejecting enrollment', err)
+                error: (err) => {
+                    this.isLoadingAction = false;
+                    console.error('Error in rejection flow', err);
+                    this.notificationService.showError('Error', 'No se pudo completar el proceso de rechazo.');
+                }
             });
         });
     }
@@ -289,39 +342,52 @@ export class GroupRequestsComponent implements OnChanges {
             confirmText: isAccept ? 'Aceptar Todas' : 'Rechazar Todas',
             cancelText: 'Cancelar'
         }, () => {
-            // Filtrar solo los que tienen enrollmentId válido
             const requestsToProcess = this.selectedRequests.filter(r => r.enrollmentId);
             if (requestsToProcess.length === 0) return;
 
-            // Crear array de observables
+            this.isLoadingAction = true;
+            this.loadingActionMessage = `Procesando ${requestsToProcess.length} solicitudes...`;
+
             const observables = requestsToProcess.map(r =>
                 isAccept
                     ? this.groupsService.acceptEnrollment(r.enrollmentId!)
                     : this.groupsService.rejectEnrollment(r.enrollmentId!)
             );
 
-            forkJoin(observables).subscribe({
+            forkJoin(observables).pipe(
+                switchMap(() => {
+                    this.loadingActionMessage = 'Enviando correos de notificación...';
+                    const mailObservables = requestsToProcess
+                        .filter(r => r.email)
+                        .map(r => isAccept 
+                            ? this.mailService.sendAcceptanceEmail(r.email!, this.group) 
+                            : this.mailService.sendRejectionEmail(r.email!, this.group)
+                        );
+                    return mailObservables.length > 0 ? forkJoin(mailObservables) : of([]);
+                })
+            ).subscribe({
                 next: () => {
-                    // Remover todos los procesados de la lista local usando enrollmentId
+                    this.isLoadingAction = false;
+                    const actionLabel = isAccept ? 'aceptadas' : 'rechazadas';
+                    this.resultModalConfig = {
+                        title: isAccept ? 'Carga Masiva Exitosa' : 'Rechazo Masivo Completado',
+                        message: `Se han <b>${actionLabel} ${requestsToProcess.length} solicitudes</b> correctamente y se han enviado los correos de notificación correspondientes.`,
+                        type: 'success'
+                    };
+                    this.isResultModalOpen = true;
+
                     const processedEnrollmentIds = requestsToProcess.map(r => r.enrollmentId);
-
-                    // Novedad: Enviar correos a los procesados
-                    requestsToProcess.forEach(r => {
-                        if (r.email) {
-                            if (isAccept) {
-                                this.mailService.sendAcceptanceEmail(r.email, this.group).subscribe();
-                            } else {
-                                this.mailService.sendRejectionEmail(r.email, this.group).subscribe();
-                            }
-                        }
-                    });
-
                     this.allRequests = this.allRequests.filter(r => !processedEnrollmentIds.includes(r.enrollmentId));
                     this.filterData(this.currentSearchTerm);
                     this.clearSelection();
-                    this.requestsUpdated.emit(); // <---- EMITIR CAMBIO
+                    this.requestsUpdated.emit();
+                    this.loadGroupRequests();
                 },
-                error: (err) => console.error('Error processing bulk requests', err)
+                error: (err) => {
+                    this.isLoadingAction = false;
+                    console.error('Error in bulk flow', err);
+                    this.notificationService.showError('Error', 'Ocurrió un error al procesar las solicitudes masivamente.');
+                }
             });
         });
     }

@@ -57,7 +57,8 @@ export class GroupPersonsComponent implements OnInit {
 
     cursoId: string | null = null;
     currentGroupId: string | null = null;
-    currentGroup: Group | null = null; // Almacenar detalles completos del grupo
+    currentGroup: Group | null = null;
+    requireTypesCD = false;
     courseLabel: string = '';
     groupLabel: string = '';
     isGroupFull: boolean = false;
@@ -207,6 +208,12 @@ export class GroupPersonsComponent implements OnInit {
                     if (this.breadcrumbItems.length > 2 && this.breadcrumbItems[2].queryParams) {
                         this.breadcrumbItems[2].queryParams.courseName = this.courseLabel;
                     }
+                }
+
+                // Siempre requerir C/D si la búsqueda es necesaria por tipo de curso o categoría
+                const ct = group.course?.courseType;
+                if (ct?.title === 'LICENCIA' || ct?.name === 'LICENCIA' || group.courseTypeId === 1 || group.course?.name?.toLowerCase().includes('motocicleta')) {
+                    this.requireTypesCD = true;
                 }
 
                 // Optimización de Cupo: Calcular inmediatamente usando los contadores directos del backend

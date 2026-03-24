@@ -23,8 +23,8 @@ import { Router, ActivatedRoute } from '@angular/router';
 })
 export class LicenseSearchModalComponent implements OnInit {
     @Input() isOpen = false;
-    @Input() requireTypeC = false; // Nueva bandera para forzar búsqueda solo de Tipo C
-    @Input() allowClose = true; // Controlar si se puede cerrar el modal sin acción
+    @Input() requireTypesCD = false; // Nueva bandera para forzar búsqueda solo de Tipo C y D
+    @Input() allowClose = true; 
 
     @Output() modalClose = new EventEmitter<void>();
     @Output() personFound = new EventEmitter<Person>();
@@ -67,33 +67,42 @@ export class LicenseSearchModalComponent implements OnInit {
         if (!this.searchLicense.trim()) return;
 
         this.isSearching = true;
-        this.groupsService.searchPersonByLicense(this.searchLicense, this.requireTypeC).subscribe({
+        const types = this.requireTypesCD ? ['TIPO_C', 'TIPO_D'] : [];
+        this.groupsService.searchPersonByLicense(this.searchLicense, types).subscribe({
             next: (person) => {
                 this.isSearching = false;
 
                 if (person) {
-                    // ENCONTRADO: Emitir datos del conductor
                     this.personFound.emit(person);
                     this.close();
                 } else {
-                    // NO ENCONTRADO: Mostrar alerta
                     this.showNotFoundAlert();
                 }
             },
             error: (err) => {
                 this.isSearching = false;
                 console.error('Error buscando conductor:', err);
-                // Ante cualquier error de búsqueda (no encontrado, 401, etc.), permitimos continuar manualmente
-                this.showNotFoundAlert();
+                
+                // Extraer el mensaje específico del backend si existe (Capa de validación de tipo)
+                const backendMessage = err.error?.message;
+                this.showNotFoundAlert(backendMessage);
             }
         });
     }
 
-    showNotFoundAlert() {
+    showNotFoundAlert(customMessage?: string) {
+        // Ignoramos el mensaje del backend por estética (a petición del usuario)
+        // y usamos nuestra versión refinada que menciona los tipos C y D.
+        let errorMsg = 'No se encontró información con los datos proporcionados.';
+        
+        if (this.requireTypesCD) {
+            errorMsg = 'No se encontró una licencia válida para este proceso. <br><br><b>Nota:</b> Solo se aceptan licencias de <b>Tipo C (Servicio Público)</b> o <b>Tipo D</b> actualmente. <br><br>Si tiene los datos correctos, puede ingresarlos manualmente o revisar el CURP.';
+        }
+
         this.alertConfig = {
-            title: 'Error',
-            message: 'Ha ocurrido un error al procesar la solicitud (no encontrado). Por favor, ingrese manualmente la información.',
-            type: 'danger',
+            title: 'Búsqueda sin resultados',
+            message: errorMsg,
+            type: 'warning',
             actions: [
                 {
                     label: 'Reintentar',

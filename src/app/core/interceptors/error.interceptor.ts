@@ -52,8 +52,9 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
 
       // Show notification for user-facing errors
       const isPublic = req.url.includes('/group/registro/') || req.url.includes('/public/') || router.url.includes('/public/register');
+      const isLicenseSearch404 = error.status === 404 && req.url.includes('/api-licenses/license');
 
-      if (error.status !== 401 || isPublic) {
+      if ((error.status !== 401 || isPublic) && !isLicenseSearch404) {
         notificationService.error('Error', errorMessage);
       }
 
