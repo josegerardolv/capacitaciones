@@ -98,6 +98,7 @@ export class PersonFormComponent implements OnInit {
             this.applyFieldsConfig();
         }
         if (changes['initialData'] && changes['initialData'].currentValue) {
+            this.form.reset();
             this.form.patchValue(changes['initialData'].currentValue);
         }
     }

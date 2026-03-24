@@ -280,7 +280,7 @@ export class PersonRegistrationComponent implements OnInit {
 
     onManualRegistration(license: string) {
         // REGLA: Si no se encontró a la persona, limpiar todos los campos (no precargar la licencia buscada)
-        this.prefilledData = { found: false }; 
+        this.prefilledData = { found: false, license: '', curp: '' }; 
         this.showForm = true;
         this.isSearchModalOpen = false;
     }

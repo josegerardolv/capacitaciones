@@ -411,7 +411,8 @@ export class GroupPersonsComponent implements OnInit {
             relativeTo: this.route,
             queryParamsHandling: 'merge',
             queryParams: {
-                license: license,
+                license: null,
+                curp: null,
                 groupLabel: this.groupLabel
             },
             state: { groupData: this.currentGroup } // Pasar datos

@@ -227,9 +227,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
                         : 'Curso no encontrado';
 
                     return {
-                        course: courseName,
-                        group: g.name,
-                        location: g.location,
+                        course: this.toTitleCase(courseName),
+                        group: this.toTitleCase(g.name),
+                        location: this.toTitleCase(g.location),
                         participants: g.limitStudents,
                         date: g.groupStartDate,
                         time: g.schedule,
@@ -243,5 +243,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
                 this.tableConfig.loading = false;
             }
         });
+    }
+
+    // Helper para Capitalizar cada palabra (Title Case)
+    private toTitleCase(str: string | undefined | null): string {
+        if (!str) return '';
+        return String(str).toLowerCase().split(' ').map(word => 
+            word ? word.charAt(0).toUpperCase() + word.slice(1) : ''
+        ).join(' ');
     }
 }

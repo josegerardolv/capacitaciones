@@ -229,7 +229,8 @@ export class CourseListComponent implements OnInit {
                     // Usamos el nombre que ya viene directamente del backend
                     return {
                         ...course,
-                        courseTypeName: backendCourse.courseType?.name || 'Sin Tipo'
+                        name: this.toTitleCase(course.name),
+                        courseTypeName: this.toTitleCase(backendCourse.courseType?.name || 'Sin Tipo')
                     }
                 });
 
@@ -345,9 +346,14 @@ export class CourseListComponent implements OnInit {
 
         this.isSaving = true;
         const formValue = this.courseModalForm.getRawValue();
+        const formattedName = this.toTitleCase(formValue.name);
 
         if (this.modalMode === 'create') {
-            this.coursesService.createCourse(formValue).subscribe({
+            const createPayload = {
+                ...formValue,
+                name: formattedName
+            };
+            this.coursesService.createCourse(createPayload).subscribe({
                 next: () => {
                     this.isSaving = false;
                     this.showModal = false;
@@ -368,6 +374,7 @@ export class CourseListComponent implements OnInit {
             }
             const payload = {
                 ...formValue,
+                name: formattedName,
                 courseTypeId: Number(formValue.courseTypeId) // Asegurar número
             };
             this.coursesService.updateCourse(this.editingCourseId, payload).subscribe({
@@ -385,5 +392,13 @@ export class CourseListComponent implements OnInit {
                 }
             });
         }
+    }
+
+    // Helper para Capitalizar cada palabra (Title Case)
+    private toTitleCase(str: string | undefined | null): string {
+        if (!str) return '';
+        return String(str).toLowerCase().split(' ').map(word => 
+            word ? word.charAt(0).toUpperCase() + word.slice(1) : ''
+        ).join(' ');
     }
 }
