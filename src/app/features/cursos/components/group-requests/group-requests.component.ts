@@ -107,6 +107,17 @@ export class GroupRequestsComponent implements OnChanges {
         const page = this.paginationConfig.currentPage;
         const limit = this.paginationConfig.pageSize;
 
+        // Cargar estadísticas del grupo primero (para que los badges no estén en 0)
+        this.groupsService.getGroupById(this.group.id).subscribe({
+            next: (updatedGroup: any) => {
+                this.group = updatedGroup;
+                this.acceptedCount = updatedGroup.acceptedCount || 0;
+                this.pendingRequestsCount = updatedGroup.pendingRequestsCount || 0;
+                this.rejectCount = updatedGroup.rejectCount || 0;
+                this.availablePlaces = updatedGroup.availablePlaces !== undefined ? updatedGroup.availablePlaces : 0;
+            }
+        });
+        // Cargar la lista de solicitudes
         this.groupsService.getRequestsByGroupId(this.group.id, page, limit).subscribe({
             next: (response: any) => {
                 let items = [];

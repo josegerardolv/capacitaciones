@@ -36,8 +36,9 @@ export class GroupsService {
         return this.http.get<any>(`${this.apiUrl}/group/search`, { params });
     }
 
-    getEnrollmentsByGroupId(groupId: number, page: number = 1, limit: number = 10): Observable<any> {
+    getEnrollmentsByGroupId(groupId: number, page: number = 1, limit: number = 10): Observable<any> { // LISTA INSCRIPCIONES
         const params = new HttpParams()
+            .set('isAcepted', 'true')
             .set('page', page.toString())
             .set('limit', limit.toString());
         return this.http.get<any>(`${this.apiUrl}/enrollment/group/${groupId}`, { params }).pipe(
@@ -52,7 +53,7 @@ export class GroupsService {
         );
     }
 
-    getRequestsByGroupId(groupId: number, page: number = 1, limit: number = 10): Observable<any> {
+    getRequestsByGroupId(groupId: number, page: number = 1, limit: number = 10): Observable<any> { // SOLICITUDES PENDIENTES
         const params = new HttpParams()
             .set('isAcepted', 'false')
             .set('page', page.toString())
