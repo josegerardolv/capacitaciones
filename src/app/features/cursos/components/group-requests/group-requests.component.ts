@@ -136,17 +136,23 @@ export class GroupRequestsComponent implements OnChanges {
             next: (response: any) => {
                 let items = [];
                 if (response.data) {
-                    items = response.data;
+                    // FILTRO TEMPORAL: El backend está regresando rechazados en la lista de solicitudes.
+                    // Solo mostramos aquellos que NO tienen dateReject.
+                    items = response.data.filter((item: any) => !item.dateReject);
+
                     if (response.meta) {
                         this.paginationConfig = {
                             ...this.paginationConfig,
-                            totalItems: Number(response.meta.total)
+                            totalItems: items.length // Usar el conteo filtrado localmente
                         };
                     }
                 } else if (Array.isArray(response)) {
-                    items = response;
+                    items = response.filter((item: any) => !item.dateReject);
                     this.paginationConfig.totalItems = items.length;
                 }
+
+                // Sincronizar contador de pendientes si el backend está enviando datos sucios
+                this.pendingRequestsCount = items.length;
 
                 this.allRequests = items;
                 this.selectedRequests = [];

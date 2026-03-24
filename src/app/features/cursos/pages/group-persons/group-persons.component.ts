@@ -1,6 +1,7 @@
 import { Component, Input, OnInit, ViewChild, TemplateRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule, ActivatedRoute } from '@angular/router';
+import { forkJoin, of, switchMap, catchError } from 'rxjs';
 import { InstitutionalTableComponent, TableColumn, TableConfig } from '../../../../shared/components/institutional-table/institutional-table.component';
 import { InstitutionalButtonComponent } from '../../../../shared/components/buttons/institutional-button.component';
 import { InstitutionalBadgeComponent } from '../../../../shared/components/badge/institutional-badge.component';
@@ -25,6 +26,7 @@ import { TableFiltersComponent } from '@/app/shared/components/table-filters/tab
 import { DocumentsModalComponent } from '../../components/modals/documents-modal/documents-modal.component';
 import { ModalComponent } from '../../../../shared/components/modals/modal.component';
 import { MailService } from '../../services/mail.service';
+import { LoadingSpinnerComponent } from '../../../../shared/components/loading-spinner/loading-spinner.component';
 // ... existing code ...
 
 
@@ -48,7 +50,8 @@ import { MailService } from '../../services/mail.service';
         LicenseSearchModalComponent,
         TableFiltersComponent,
         DocumentsModalComponent,
-        ModalComponent
+        ModalComponent,
+        LoadingSpinnerComponent
     ],
     templateUrl: './group-persons.component.html'
 })
@@ -59,6 +62,7 @@ export class GroupPersonsComponent implements OnInit {
     currentGroupId: string | null = null;
     currentGroup: Group | null = null;
     requireTypesCD = false;
+    isProcessing = false;
     courseLabel: string = '';
     groupLabel: string = '';
     isGroupFull: boolean = false;
@@ -468,30 +472,35 @@ export class GroupPersonsComponent implements OnInit {
                 return;
             }
 
-            this.tableConfig.loading = true;
-            this.groupsService.updateEnrollmentStatus(person.enrollmentId, result).subscribe({
-                next: () => {
+            this.isProcessing = true;
+            this.groupsService.updateEnrollmentStatus(person.enrollmentId, result).pipe(
+                switchMap(() => {
+                    // Actualizar estado local inmediatamente para feedback visual en tabla si el refresco tarda
                     person.status = result;
 
-                    //  ENVIAR CORREO DE NOTIFICACIÓN SI ES APROBADO O REPROBADO
                     if (person.email) {
-                        this.mailService.sendCourseStatusEmail(person.email, this.currentGroup, person.name, result)
-                            .subscribe({
-                                next: () => console.log(`Correo de estatus ${result} enviado a ${person.email}`),
-                                error: (err) => console.error('Error enviando correo de estatus', err)
-                            });
+                        return this.mailService.sendCourseStatusEmail(person.email, this.currentGroup, person.name, result)
+                            .pipe(catchError(err => {
+                                console.error('Error enviando correo de estatus', err);
+                                return of({ error: true });
+                            }));
                     }
-
-                    this.notificationService.showSuccess(
+                    return of({ noEmail: true });
+                })
+            ).subscribe({
+                next: (res) => {
+                    this.isProcessing = false;
+                    this.openAlert(
                         result === 'APROBADO' ? 'Aprobado' : 'Reprobado',
-                        `El estatus de ${person.name} ha sido actualizado a ${result}.`
+                        `El estatus de ${person.name} ha sido actualizado a ${result} y se ha enviado la notificación por correo.`,
+                        'success'
                     );
-                    this.tableConfig.loading = false;
+                    this.loadPersons(); // Refrescar del server
                 },
                 error: (err) => {
+                    this.isProcessing = false;
                     console.error('Error updating status', err);
-                    this.notificationService.showError('Error', 'No se pudo actualizar el estatus.');
-                    this.tableConfig.loading = false;
+                    this.openAlert('Error', 'No se pudo actualizar el estatus o hubo un error en el servidor.', 'danger');
                 }
             });
         });
@@ -649,9 +658,10 @@ export class GroupPersonsComponent implements OnInit {
             confirmText: 'Cancelar Inscripción',
             cancelText: 'Volver'
         }, () => {
+            this.isProcessing = true;
             this.groupsService.cancelEnrollment(person.enrollmentId).subscribe({
                 next: () => {
-
+                    this.isProcessing = false;
                     // ✅ ENVIAR CORREO
                     if (person.email) {
                         this.mailService.sendRemovalEmail(person.email, this.currentGroup)
@@ -661,30 +671,21 @@ export class GroupPersonsComponent implements OnInit {
                             });
                     }
 
-                    this.notificationService.showSuccess(
-                        'Cancelado',
-                        `Se ha dado de baja la inscripción de ${person.name}.`
-                    );
+                    this.openAlert('Cancelación Exitosa', `Se ha dado de baja la inscripción de ${person.name} correctamente.`, 'success');
 
-                    // Filtrar de la tabla local
-                    this.allEnrollments = this.allEnrollments.filter(
-                        d => d.enrollmentId !== person.enrollmentId
-                    );
-
-                    // Actualizar cupo
+                    // Actualizar cupo localmente
                     this.acceptedCount = Math.max(0, this.acceptedCount - 1);
                     if (this.currentGroup && this.currentGroup.limitStudents) {
                         this.isGroupFull = this.acceptedCount >= this.currentGroup.limitStudents;
                     }
 
-                    this.filterData(this.currentSearchTerm || '');
+                    // FORZAR RECARGA REAL DESDE SERVER
+                    this.loadPersons();
                 },
                 error: (err) => {
+                    this.isProcessing = false;
                     console.error('Error canceling enrollment', err);
-                    this.notificationService.showError(
-                        'Error',
-                        'Ocurrió un error al intentar cancelar la inscripción.'
-                    );
+                    this.openAlert('Error', 'Ocurrió un error al intentar cancelar la inscripción.', 'danger');
                 }
             });
         });
@@ -703,16 +704,19 @@ export class GroupPersonsComponent implements OnInit {
             confirmText: 'Eliminar',
             cancelText: 'Cancelar'
         }, () => {
+            this.isProcessing = true;
             this.groupsService.deleteEnrollment(person.enrollmentId).subscribe({
                 next: () => {
-                    this.notificationService.showSuccess('Eliminado', `Se ha eliminado la inscripción de ${person.name}.`);
-                    // Filtrar asincrónicamente
-                    this.allEnrollments = this.allEnrollments.filter(d => d.enrollmentId !== person.enrollmentId);
-                    this.filterData(this.currentSearchTerm || '');
+                    this.isProcessing = false;
+                    this.openAlert('Eliminado con Éxito', `Se ha eliminado la inscripción de ${person.name} permanentemente.`, 'success');
+                    
+                    // FORZAR RECARGA REAL DESDE SERVER
+                    this.loadPersons();
                 },
                 error: (err) => {
+                    this.isProcessing = false;
                     console.error('Error deleting enrollment', err);
-                    this.notificationService.showError('Error', 'Ocurrió un error al intentar eliminar la inscripción.');
+                    this.openAlert('Error', 'Ocurrió un error al intentar eliminar la inscripción.', 'danger');
                 }
             });
         });

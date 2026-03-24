@@ -222,4 +222,15 @@
       </div>
     </div>
   </app-modal>
+  
+  <!-- (Bloqueante) -->
+  <div *ngIf="isProcessing" 
+       class="fixed inset-0 z-[10000] flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm transition-all duration-300">
+      <app-loading-spinner 
+          [title]="'Procesando'" 
+          [message]="'Por favor, espere mientras se completa la operación...'"
+          [fullHeight]="false"
+          class="transform scale-110">
+      </app-loading-spinner>
+  </div>
 </div>
