@@ -418,9 +418,12 @@ export class GroupListComponent implements OnInit {
                     }
 
                     // 3. (Opcional) Validación adicional
-                    // Los datos ya vienen filtrados por servidor, pero asignamos directamente.
-
-                    this.groups = items;
+                    // Transformar nombre y ubicación para que cada palabra inicie con mayúscula
+                    this.groups = items.map(item => ({
+                        ...item,
+                        name: this.toTitleCase(item.name),
+                        location: this.toTitleCase(item.location)
+                    }));
                     this.tableConfig.loading = false;
                 },
                 error: (err) => {
@@ -543,8 +546,8 @@ export class GroupListComponent implements OnInit {
         if (this.modalMode === 'create') {
             // Construimos el payload EXACTO como lo pide el Swagger/Backend
             const rawPayload = {
-                name: formValue.name,
-                location: formValue.location,
+                name: this.toTitleCase(formValue.name),
+                location: this.toTitleCase(formValue.location),
                 schedule: formValue.time, // "14:00"
                 limitStudents: Number(formValue.limitStudents),
                 groupStartDate: formValue.date,
@@ -573,8 +576,8 @@ export class GroupListComponent implements OnInit {
             }
 
             const payload = {
-                name: formValue.name,
-                location: formValue.location,
+                name: this.toTitleCase(formValue.name),
+                location: this.toTitleCase(formValue.location),
                 schedule: formValue.time, // "14:00"
                 limitStudents: Number(formValue.limitStudents),
                 groupStartDate: formValue.date,
@@ -1051,5 +1054,13 @@ export class GroupListComponent implements OnInit {
         const month = (dt.getMonth() + 1).toString().padStart(2, '0');
         const year = dt.getFullYear();
         return `${day}/${month}/${year}`;
+    }
+
+    // Helper para Capitalizar cada palabra (Title Case)
+    private toTitleCase(str: string | undefined | null): string {
+        if (!str) return '';
+        return String(str).toLowerCase().split(' ').map(word => 
+            word ? word.charAt(0).toUpperCase() + word.slice(1) : ''
+        ).join(' ');
     }
 }

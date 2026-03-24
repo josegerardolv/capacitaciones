@@ -131,8 +131,10 @@ export class ConceptsListComponent implements OnInit {
         this.tableConfig.loading = true;
         this.templateService.getConcepts().subscribe({
             next: (data) => {
-                this.allConcepts = data;
-                this.allConcepts = data;
+                this.allConcepts = data.map(item => ({
+                    ...item,
+                    concepto: this.toTitleCase(item.concepto)
+                }));
                 this.filterData('');
                 this.tableConfig.loading = false;
             },
@@ -200,9 +202,13 @@ export class ConceptsListComponent implements OnInit {
         }
 
         this.isSaving = true;
-        const formData = this.form.value;
+        const formData = this.form.getRawValue();
 
-        const payload = { clave: formData.clave, concepto: formData.concepto, umas: formData.umas };
+        const payload = { 
+            clave: formData.clave, 
+            concepto: this.toTitleCase(formData.concepto), 
+            umas: formData.umas 
+        };
 
         const request$ = this.editingId
             ? this.templateService.updateConcept(this.editingId, payload)
@@ -251,5 +257,13 @@ export class ConceptsListComponent implements OnInit {
     onConfirmYes() {
         if (this.pendingAction) this.pendingAction();
         this.isConfirmOpen = false;
+    }
+
+    // Helper para Capitalizar cada palabra (Title Case)
+    private toTitleCase(str: string | undefined | null): string {
+        if (!str) return '';
+        return String(str).toLowerCase().split(' ').map(word => 
+            word ? word.charAt(0).toUpperCase() + word.slice(1) : ''
+        ).join(' ');
     }
 }

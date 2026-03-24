@@ -115,12 +115,16 @@ export class CourseTypeListComponent implements OnInit {
     ).subscribe({
       next: (response) => {
         // Soporte para el objeto meta que envía el backend
-        this.courseTypes = response.data || response.items || response.results || [];
+        const items = response.data || response.items || response.results || [];
+        this.courseTypes = items.map((item: any) => ({
+          ...item,
+          name: this.toTitleCase(item.name)
+        }));
 
         // Actualizar referencia para disparar OnChanges en el componente de paginación
         this.paginationConfig = {
           ...this.paginationConfig,
-          totalItems: response.meta?.total || response.total || response.count || this.courseTypes.length
+          totalItems: response.meta?.total || response.total || response.count || items.length
         };
 
         this.tableConfig.loading = false;
@@ -239,5 +243,13 @@ export class CourseTypeListComponent implements OnInit {
     }
     this.isConfirmOpen = false;
     this.pendingAction = null;
+  }
+
+  // Helper para Capitalizar cada palabra (Title Case)
+  private toTitleCase(str: string | undefined | null): string {
+      if (!str) return '';
+      return String(str).toLowerCase().split(' ').map(word => 
+          word ? word.charAt(0).toUpperCase() + word.slice(1) : ''
+      ).join(' ');
   }
 }
